@@ -1,6 +1,6 @@
-#include <iostream>
+#include "Interpreter.h"
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
+int main(const int argc, char *argv[]) {
+    Interpreter::run(argc, argv);
     return 0;
 }
