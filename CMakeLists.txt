@@ -11,7 +11,11 @@ add_executable(cppython main.cpp
         headers/Parser.h
         sources/Lexer.cpp
         sources/Parser.cpp
-        sources/Interpreter.cpp)
+        sources/Interpreter.cpp
+        headers/Environment.h
+        headers/Value.h
+        sources/Environment.cpp
+        sources/Value.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

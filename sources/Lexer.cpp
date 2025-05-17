@@ -57,7 +57,7 @@ Token Lexer::nextToken(const QString& code) {
         return readString(code);
     }
     if (ch.isLetter() || ch == '_') {
-        return readIdentifier(code);
+        return readIdentifierOrBool(code);
     }
     return readOperator(code);
 }
@@ -117,19 +117,17 @@ Token Lexer::readString(const QString& code) {
 
 
 /**
- * Анализирует входной текст для извлечения идентификаторов или ключевых слов.
- * Этой метод начинает читать символы с позиции, указанной текущей позицией,
- * пока не встречает символ, который не является буквой или подчёркиванием.
- * Полученная строка проверяется на совпадение с набором ключевых слов, таких как "if",
- * "else" или "def". Если совпадение найдено, возвращается токен ключевого слова,
- * в противном случае возвращается токен идентификатора.
+ * Читает идентификатор, ключевое слово или значение типа булево из кода.
+ * Этот метод анализирует последовательность символов, начиная с текущей позиции,
+ * чтобы определить, является ли она идентификатором (например, именем переменной),
+ * ключевым словом (например, "if", "else", "def") или булевым значением ("True", "False").
  *
- * @param code Исходный текст, представленный в виде QString.
+ * @param code Исходный код, представленный в виде QString, из которого будет производиться чтение.
  *
- * @return Токен, содержащий тип TOKEN_KEYWORD, если слово совпадает с ключевым словом,
- *         или TOKEN_ID в случае идентификатора, а также соответствующую строку текста и номер строки.
+ * @return Объект типа Token, содержащий тип токена (TOKEN_ID, TOKEN_KEYWORD или TOKEN_BOOL),
+ *         строковое значение токена и номер строки, в которой токен находится.
  */
-Token Lexer::readIdentifier(const QString& code) {
+Token Lexer::readIdentifierOrBool(const QString& code) {
     const int start = pos;
     while (pos < code.length() && (code[pos].isLetter() || code[pos] == '_')) {
         pos++;
@@ -137,6 +135,9 @@ Token Lexer::readIdentifier(const QString& code) {
     QString id = code.mid(start, pos - start);
     if (id == "if" || id == "else" || id == "def") {
         return {TOKEN_KEYWORD, id, line};
+    }
+    if (id == "True" || id == "False") {
+        return {TOKEN_BOOL, id, line};
     }
     return {TOKEN_ID, id, line};
 }
