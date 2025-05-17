@@ -16,8 +16,9 @@ enum TokenType {
     TOKEN_ID, //для имен переменных
     TOKEN_NUMBER, //для числовых литералов (10, 3.14)
     TOKEN_STRING, //для строковых литералов
+    TOKEN_BOOL, //True, False
     TOKEN_KEYWORD, //if, else, def
-    TOKEN_OP, //+, -, =, ==
+    TOKEN_OP, //+, -, =, ==, ()
     TOKEN_NEWLINE, //\n
     TOKEN_INDENT, //отступы
     TOKEN_EOF //конец файла
@@ -60,7 +61,7 @@ private:
     Token nextToken(const QString& code); //Следующий токен
     Token readNumber(const QString& code); //Читает число
     Token readString(const QString& code); //Читает строку
-    Token readIdentifier(const QString& code); //Читает имя или ключевое слово
+    Token readIdentifierOrBool(const QString& code); //Читает имя или ключевое слово, или булево значение (True | False)
     Token readOperator(const QString& code); //Читает оператор(+, -, =)
     void skipWhitespace(const QString& code); //Пропускает пробелы, но не \n
     void skipComment(const QString& code); //Пропускает комментарии (#...)
