@@ -13,7 +13,38 @@
  */
 QVector<Token> Lexer::tokenize(const QString& code) {
     QVector<Token> tokens;
-    while (true) {
+    pos = 0; //текущая позиция в коде
+    line = 1;
+    column = 1;
+    indentStack.clear();
+    indentStack.push_back(0);
+
+    while (pos < code.length()) {
+        if (QChar ch = code[pos]; ch == '\n') {
+            tokens.push_back(Token(TOKEN_NEWLINE, "", line));
+            pos++;
+            line++;
+            column = 1;
+
+            int spaceCount = 0, tmpPos = pos;
+            while (tmpPos < code.length() && code[tmpPos] == ' ' || code[tmpPos] == '\t') {
+                if (code[tmpPos] == ' ')
+                    spaceCount++;
+                else if (code[tmpPos] == '\t')
+                    spaceCount +=4;
+                tmpPos++;
+            }
+            if (spaceCount > indentStack.last()) {
+                indentStack.append(spaceCount);
+                tokens.push_back(Token(TOKEN_INDENT, "", line));
+            } else while (spaceCount < indentStack.last()) {
+                    indentStack.pop_back();
+                    tokens.push_back(Token(TOKEN_DEDENT, "", line));
+                }
+            pos = tmpPos;
+            continue;
+        }
+
         Token token = nextToken(code);
         if (token.type == TOKEN_EOF) {
             break;
@@ -23,9 +54,13 @@ QVector<Token> Lexer::tokenize(const QString& code) {
             tokens.append(token);
         }
     }
-    pos = 0;
-    line = 0;
-    column = 0;
+    while (indentStack.size() > 1) {
+        indentStack.pop_back();
+        tokens.push_back(Token(TOKEN_DEDENT, "", line));
+    }
+
+    tokens.push_back(Token(TOKEN_EOF, "", line));
+
     return tokens;
 }
 
@@ -133,7 +168,7 @@ Token Lexer::readIdentifierOrBool(const QString& code) {
         pos++;
     }
     QString id = code.mid(start, pos - start);
-    if (id == "if" || id == "else" || id == "def") {
+    if (id == "if" || id == "elif" || id == "else" || id == "def") {
         return {TOKEN_KEYWORD, id, line};
     }
     if (id == "True" || id == "False") {

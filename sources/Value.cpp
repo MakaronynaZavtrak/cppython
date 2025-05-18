@@ -50,3 +50,53 @@ QString Value::toString() const
 
     return "Unknown unsupported type";
 }
+
+/**
+ * Преобразует экземпляр `Value` в булево значение в зависимости от его типа.
+ *
+ * Этот метод обрабатывает следующие типы: `int`, `double`, `bool`, `QString`,
+ * `ListPtr`, `DictPtr` и `FunctionPtr`. Для неподдерживаемых типов выбрасывается исключение.
+ *
+ * - Для `int`: возвращает `true`, если значение не равно 0.
+ * - Для `double`: возвращает `true`, если значение не равно 0.0.
+ * - Для `bool`: возвращает значение булевой переменной.
+ * - Для `QString`: возвращает `true`, если строка не пуста.
+ * - Для `ListPtr`: возвращает `true`, если указатель на список не является `nullptr`.
+ * - Для `DictPtr`: возвращает `true`, если указатель на словарь не является `nullptr`.
+ * - Для `FunctionPtr`: возвращает `true`, если указатель на функцию не является `nullptr`.
+ *
+ * @return Булево представление экземпляра `Value`.
+ * @throws std::runtime_error Если тип данных не поддерживается.
+ */
+bool Value::toBool() const {
+    if (std::holds_alternative<int>(data))
+    {
+        return std::get<int>(data) != 0;
+    }
+    if (std::holds_alternative<double>(data))
+    {
+        return std::get<double>(data) != 0.0;
+    }
+    if (std::holds_alternative<bool>(data))
+    {
+        return std::get<bool>(data);
+    }
+    if (std::holds_alternative<QString>(data))
+    {
+        return !std::get<QString>(data).isEmpty();
+    }
+    if (std::holds_alternative<ListPtr>(data))
+    {
+        return std::get<ListPtr>(data) != nullptr;
+    }
+    if (std::holds_alternative<DictPtr>(data))
+    {
+        return std::get<DictPtr>(data) != nullptr;
+    }
+    if (std::holds_alternative<FunctionPtr>(data))
+    {
+        return std::get<FunctionPtr>(data) != nullptr;
+    }
+
+    throw std::runtime_error("Unsupported type");
+}
