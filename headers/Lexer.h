@@ -11,17 +11,48 @@
  *
  * Каждый тип токена соответствует элементу обрабатываемого исходного кода.
  * Это позволяет лексеру классифицировать и разделять различные конструкции во входных данных.
+ * 
+ * - TOKEN_ID
+ * Идентификаторы, используемые для имен переменных, функций и других именованных элементов
+ * 
+ * - TOKEN_NUMBER
+ * Числовые литералы, включая целые числа и числа с плавающей точкой (например: 10, 3.14)
+ * 
+ * - TOKEN_STRING
+ * Строковые литералы, заключенные в кавычки (например: "hello", 'world')
+ * 
+ * - TOKEN_BOOL
+ * Логические значения True и False
+ * 
+ * - TOKEN_KEYWORD
+ * Ключевые слова языка, такие как if, else, def, while, for
+ * 
+ * - TOKEN_OP
+ * Операторы и разделители (+, -, *, /, =, ==, (, ), [ ], { })
+ * 
+ * - TOKEN_NEWLINE
+ * Символ новой строки (\n), используется для разделения инструкций
+ * 
+ * - TOKEN_INDENT
+ * Увеличение уровня отступа, определяющее начало нового блока кода
+ * 
+ * - TOKEN_DEDENT
+ * Уменьшение уровня отступа, определяющее конец текущего блока кода
+ * 
+ * - TOKEN_EOF
+ * Маркер конца файла, сигнализирующий о завершении входного потока
  */
 enum TokenType {
-    TOKEN_ID, //для имен переменных
-    TOKEN_NUMBER, //для числовых литералов (10, 3.14)
-    TOKEN_STRING, //для строковых литералов
-    TOKEN_BOOL, //True, False
-    TOKEN_KEYWORD, //if, else, def
-    TOKEN_OP, //+, -, =, ==, ()
-    TOKEN_NEWLINE, //\n
-    TOKEN_INDENT, //отступы
-    TOKEN_EOF //конец файла
+    TOKEN_ID,
+    TOKEN_NUMBER,
+    TOKEN_STRING,
+    TOKEN_BOOL,
+    TOKEN_KEYWORD,
+    TOKEN_OP,
+    TOKEN_NEWLINE,
+    TOKEN_INDENT,
+    TOKEN_DEDENT,
+    TOKEN_EOF
 };
 
 
@@ -57,13 +88,53 @@ private:
     int pos = 0; //текущая позиция в коде
     int line = 1; //текущая строка
     int column = 1; //текущий столбец
+    QVector<int> indentStack;
 
-    Token nextToken(const QString& code); //Следующий токен
-    Token readNumber(const QString& code); //Читает число
-    Token readString(const QString& code); //Читает строку
-    Token readIdentifierOrBool(const QString& code); //Читает имя или ключевое слово, или булево значение (True | False)
-    Token readOperator(const QString& code); //Читает оператор(+, -, =)
-    void skipWhitespace(const QString& code); //Пропускает пробелы, но не \n
-    void skipComment(const QString& code); //Пропускает комментарии (#...)
+    /**
+     * @brief Извлекает следующий токен из входного кода
+     * @param code Исходный код для обработки
+     * @return Token Следующий найденный токен
+     */
+    Token nextToken(const QString& code);
+
+        /**
+     * @brief Читает и возвращает числовой токен из входного кода
+     * @param code Исходный код для обработки
+     * @return Token Токен, содержащий числовое значение
+     */
+    Token readNumber(const QString &code);
+
+    /**
+     * @brief Читает и возвращает строковый токен из входного кода
+     * @param code Исходный код для обработки
+     * @return Token Токен, содержащий строковое значение
+     */
+    Token readString(const QString &code);
+
+    /**
+     * @brief Читает идентификатор, ключевое слово или булево значение
+     * @param code Исходный код для обработки
+     * @return Token Токен типа TOKEN_ID, TOKEN_KEYWORD или TOKEN_BOOL
+     */
+    Token readIdentifierOrBool(const QString &code);
+
+    /**
+     * @brief Читает и возвращает токен оператора
+     * @param code Исходный код для обработки
+     * @return Token Токен, содержащий оператор
+     */
+    Token readOperator(const QString &code);
+
+    /**
+     * @brief Пропускает пробельные символы (кроме символа новой строки)
+     * @param code Исходный код для обработки
+     */
+    void skipWhitespace(const QString &code);
+
+    /**
+     * @brief Пропускает однострочные комментарии, начинающиеся с #
+     * @param code Исходный код для обработки
+     */
+    void skipComment(const QString &code);
 };
 #endif // LEXER_H

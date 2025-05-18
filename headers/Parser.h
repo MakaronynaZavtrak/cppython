@@ -389,6 +389,94 @@ public:
 };
 
 /**
+ * @class IfNode
+ * @brief Представляет конструкцию условного ветвления в абстрактном синтаксическом дереве (AST).
+ *
+ * Класс IfNode моделирует оператор `if`, включая необязательные блоки `elif` и `else`.
+ * Он оценивает условие и выполняет соответствующий блок, если условие истинно.
+ * В случае множества ветвей `elif` они проверяются по порядку, пока одно из условий не окажется истинным.
+ * Если ни одно из условий не выполнено, в случае наличия выполняется блок `else`.
+ *
+ * @details
+ * Этот класс инкапсулирует логику и структуру оператора `if`. Он содержит:
+ * - Узел `condition` с основным условием `if`.
+ * - `body` — набор операторов для выполнения, если условие `if` истинно.
+ * - Необязательную последовательность условий `elif` и соответствующих им блоков.
+ * - Необязательный `elseBody` для выполнения, если ни одно из условий `if` или `elif` не оказалось истинным.
+ *
+ * Метод `eval` выполняет соответствующий блок, оценивая условия, и возвращает результат последнего выполненного оператора.
+ * Метод `toString` восстанавливает текстовое представление структуры оператора `if`.
+ */
+class IfNode final : public ASTNode {
+public:
+    IfNode(std::shared_ptr<ASTNode> condition,
+        std::vector<std::shared_ptr<ASTNode>> body,
+        std::vector<std::pair<std::shared_ptr<ASTNode>, std::vector<std::shared_ptr<ASTNode>>>> elifs,
+        std::vector<std::shared_ptr<ASTNode>> elseBody)
+    : condition(std::move(std::move(condition))), body(std::move(body)), elifs(std::move(elifs)), elseBody(std::move(elseBody)) {}
+
+    Value eval(Environment &env) const override {
+        if (condition->eval(env).toBool()) {
+            Value lastValue;
+            for (const auto& stmt : body) {
+                lastValue = stmt->eval(env);
+            }
+            return lastValue;
+        }
+
+        for (const auto& elif: elifs) {
+            if (elif.first->eval(env).toBool()) {
+                Value lastValue;
+                for (const auto& stmt : elif.second) {
+                    lastValue = stmt->eval(env);
+                }
+                return lastValue;
+            }
+        }
+
+        if (!elseBody.empty()) {
+            Value lastValue;
+            for (const auto& stmt : elseBody) {
+                lastValue = stmt->eval(env);
+            }
+            return lastValue;
+        }
+
+        return {};
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QString result = "if " + condition->toString() + ":\n";
+        for (const auto& stmt : body) {
+            result += "    " + stmt->toString() + "\n";
+        }
+
+        for (const auto& elif : elifs) {
+            result += "elif " + elif.first->toString() + ":\n";
+            for (const auto& stmt : elif.second) {
+                result += "    " + stmt->toString() + "\n";
+            }
+        }
+
+        if (!elseBody.empty()) {
+            result += "else:\n";
+            for (const auto& stmt : elseBody) {
+                result += "    " + stmt->toString() + "\n";
+            }
+        }
+
+        return result;
+    }
+
+private:
+    std::shared_ptr<ASTNode> condition;
+    std::vector<std::shared_ptr<ASTNode>> body;
+    std::vector<std::pair<std::shared_ptr<ASTNode>, std::vector<std::shared_ptr<ASTNode>>>> elifs;
+    std::vector<std::shared_ptr<ASTNode>> elseBody;
+};
+
+
+/**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
  *
@@ -498,6 +586,19 @@ private:
      * @param token Неожиданный токен
      */
     static void throwUnexpectedTokenError(const Token &token);
+
+    /**
+     * @brief Разбирает конструкцию условного оператора (`if`) и возвращает соответствующий узел AST.
+     * @return Узел AST, представляющий конструкцию условного оператора.
+     * Возвращенный узел содержит информацию о главном условии, теле, а также необязательных блоках `elif` и `else`.
+     */
+    std::shared_ptr<ASTNode> parseIfStatement();
+
+    /**
+     * @brief Разбирает блок кода и возвращает список узлов AST, представляющих инструкции внутри блока.
+     * @return Список узлов AST, представляющих проанализированные инструкции внутри блока кода.
+     */
+    std::vector<std::shared_ptr<ASTNode>> parseBlock();
 
     QVector<Token> tokens;
     int current = 0;

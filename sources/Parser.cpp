@@ -203,6 +203,11 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
                 return parseParenthesizedExpression();
             }
             break;
+        case TOKEN_KEYWORD:
+            if (token.value == "if") {
+                return parseIfStatement();
+            }
+            break;
         case TOKEN_EOF:
             return nullptr;
         default:
@@ -302,6 +307,101 @@ std::shared_ptr<ASTNode> Parser::parseParenthesizedExpression() {
  * @param token Токен, который оказался неожиданным в текущем контексте.
  */
 void Parser::throwUnexpectedTokenError(const Token &token) { throw std::runtime_error("Unexpected token: \"" + token.value.toStdString() + "\""); }
+
+/**
+     * @brief Разбирает конструкцию условного оператора (`if`) и возвращает соответствующий узел AST.
+     *
+     * @details
+     * Метод анализирует конструкцию условного оператора, включая его обязательные и необязательные части:
+     *  - `if` условие и тело.
+     *  - Необязательные блоки `elif` с условиями и телами.
+     *  - Необязательный блок `else` с телом.
+     *
+     * После ключевого слова `if` или `elif` ожидается логическое выражение,
+     * за которым обязательно должен следовать оператор `:`. После оператора `:` парсится соответствующий блок кода.
+     * Аналогичным образом, после ключевого слова `else` также требуется оператор `:` и блок кода.
+     * В случае, если токены не соответствуют ожидаемому синтаксису, выбрасывается исключение.
+     *
+     * @return Узел AST, представляющий конструкцию условного оператора.
+     *         Возвращенный узел содержит информацию о главном условии, теле, а также необязательных блоках `elif` и `else`.
+     *
+     * @throws std::runtime_error Если структура не соответствует ожидаемому синтаксису
+     *                            (например, отсутствует `:` после `if`, `elif` или `else`).
+     */
+std::shared_ptr<ASTNode> Parser::parseIfStatement() {
+    advance();
+
+    auto condition = parseAssignment();
+
+    if (peek().type != TOKEN_OP || peek().value != ":") {
+        throw std::runtime_error("Expected ':' after if condition");
+    }
+    advance();
+
+    auto body = parseBlock();
+
+    std::vector<std::pair<std::shared_ptr<ASTNode>, std::vector<std::shared_ptr<ASTNode>>>> elifs;
+    while (peek().type == TOKEN_KEYWORD && peek().value == "elif") {
+        advance();
+        auto elifCondition = parseAssignment();
+
+        if (peek().type != TOKEN_OP || peek().value != ":")
+            throw std::runtime_error("Expected ':' after elif condition");
+        advance();
+
+        auto elifBody = parseBlock();
+        elifs.emplace_back(elifCondition, elifBody);
+    }
+
+    std::vector<std::shared_ptr<ASTNode>> elseBody;
+    if (peek().type == TOKEN_KEYWORD && peek().value == "else") {
+        advance();
+        if (peek().type != TOKEN_OP || peek().value != ":")
+            throw std::runtime_error("Expected ':' after else");
+        advance();
+        elseBody = parseBlock();
+    }
+
+    return std::make_shared<IfNode>(condition, body, elifs, elseBody);
+}
+
+/**
+     * @brief Разбирает блок кода и возвращает список узлов AST, представляющих инструкции внутри блока.
+     *
+     * @details
+     * Метод обрабатывает отступы и структуры на основе токенов, представляющих начало
+     * и конец блока кода. Считывает строки, содержащие инструкции, до завершения блока.
+     * Ожидается отступ перед началом блока и соответствующее "разотступление" после его конца.
+     * Блоки кода обычно используются в управляющих конструкциях, таких как `if`, `while` и функциях.
+     *
+     * @return Список узлов AST, представляющих проанализированные инструкции внутри блока кода.
+     * В случае синтаксической ошибки (например, отсутствия отступов или их несогласованности)
+     * выбрасывается исключение `std::runtime_error`.
+     */
+std::vector<std::shared_ptr<ASTNode>> Parser::parseBlock() {
+    if (peek().type != TOKEN_NEWLINE)
+        throw std::runtime_error("Expected newline after statement");
+    advance();
+
+    if (peek().type != TOKEN_INDENT)
+        throw std::runtime_error("Expected indent after statement");
+    advance();
+
+    std::vector<std::shared_ptr<ASTNode>> statements;
+    while (peek().type != TOKEN_DEDENT && peek().type != TOKEN_EOF) {
+        statements.push_back(parseAssignment());
+        if (peek().type == TOKEN_NEWLINE)
+            advance();
+    }
+
+    if (peek().type == TOKEN_DEDENT) {
+        advance();
+    } else {
+        throw std::runtime_error("Expected dedent after block");
+    }
+
+    return statements;
+}
 
 /**
  * @brief Получает текущий токен в потоке токенов, не сдвигая позицию.
