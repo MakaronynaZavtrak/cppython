@@ -168,7 +168,8 @@ Token Lexer::readIdentifierOrBool(const QString& code) {
         pos++;
     }
     QString id = code.mid(start, pos - start);
-    if (id == "if" || id == "elif" || id == "else" || id == "def") {
+    if (id == "if" || id == "elif" || id == "else" ||
+        id == "def" || id == "while" || id == "break" || id == "continue") {
         return {TOKEN_KEYWORD, id, line};
     }
     if (id == "True" || id == "False") {
@@ -193,7 +194,8 @@ Token Lexer::readOperator(const QString& code) {
     if (pos < code.length()) {
         const QChar next = code[pos];
         if (QString combined = QString(op) + next; combined == "==" || combined == "+=" || combined == "!=" ||
-                                                   combined == "-=" || combined == "//" || combined == "**") {
+                                                   combined == "-=" || combined == "//" || combined == "**" ||
+                                                   combined == "<=" || combined == ">=") {
             pos++;
             return {TOKEN_OP, combined, line};
         }
