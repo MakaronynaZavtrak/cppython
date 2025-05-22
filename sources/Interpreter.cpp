@@ -52,7 +52,9 @@ void Interpreter::executeCode(const std::string& code, Lexer& lexer, Environment
         Parser parser(tokens);
         const std::shared_ptr<ASTNode> ast = parser.parse();
         const auto result = ast->eval(env);
-        if (!dynamic_cast<AssignNode*>(ast.get()) && !dynamic_cast<IfNode*>(ast.get())) {
+        if (!dynamic_cast<AssignNode*>(ast.get())
+            && !dynamic_cast<IfNode*>(ast.get())
+            && !dynamic_cast<WhileNode*>(ast.get())) {
             std::cout << result.toString().toStdString() << "\n";
         }
     } catch (const std::runtime_error& e) {

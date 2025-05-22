@@ -21,7 +21,15 @@ Parser::Parser(const QVector<Token>& tokens) : tokens(tokens) {}
  * @return Умный указатель на корневой ASTNode созданного абстрактного синтаксического дерева.
  *         Возвращает nullptr, если разбор завершился неудачно или не удалось построить синтаксическое дерево.
  */
-std::shared_ptr<ASTNode> Parser::parse() { return parseAssignment(); }
+std::shared_ptr<ASTNode> Parser::parse() {
+    if (peek().type == TOKEN_KEYWORD) {
+        if (peek().value == "if")       return parseIfStatement();
+        if (peek().value == "while")    return parseWhileStatement();
+        if (peek().value == "break")    return parseBreakStatement();
+        if (peek().value == "continue") return parseContinueStatement();
+    }
+    return parseAssignment();
+}
 
 /**
  * Разбирает выражение присваивания.
@@ -68,12 +76,12 @@ std::shared_ptr<ASTNode> Parser::parseComparison() {
     std::shared_ptr<ASTNode> left = parseAdditionAndSubtraction();
     while (peek().type == TOKEN_OP &&
            (peek().value == "==" || peek().value == "!=" ||
-            peek().value == "<" || peek().value == "<=") ||
-           peek().value == ">" || peek().value == ">=") {
+            peek().value == "<" || peek().value == "<=" ||
+            peek().value == ">" || peek().value == ">=")) {
         QString op = advance().value;
         std::shared_ptr<ASTNode> right = parseAdditionAndSubtraction();
         left = std::make_shared<BinOpNode>(left, op, right);
-           }
+    }
     return left;
 }
 
@@ -201,11 +209,6 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
         case TOKEN_OP:
             if (token.value == "(") {
                 return parseParenthesizedExpression();
-            }
-            break;
-        case TOKEN_KEYWORD:
-            if (token.value == "if") {
-                return parseIfStatement();
             }
             break;
         case TOKEN_EOF:
@@ -389,7 +392,7 @@ std::vector<std::shared_ptr<ASTNode>> Parser::parseBlock() {
 
     std::vector<std::shared_ptr<ASTNode>> statements;
     while (peek().type != TOKEN_DEDENT && peek().type != TOKEN_EOF) {
-        statements.push_back(parseAssignment());
+        statements.push_back(parse());
         if (peek().type == TOKEN_NEWLINE)
             advance();
     }
@@ -402,6 +405,67 @@ std::vector<std::shared_ptr<ASTNode>> Parser::parseBlock() {
 
     return statements;
 }
+
+/**
+ * @brief Разбирает конструкцию цикла `while` и возвращает соответствующий узел AST.
+ *
+ * Этот метод анализирует токены, представляющие оператор `while`, условие цикла,
+ * тело цикла, а также необязательный блок `else`. При обнаружении синтаксических
+ * ошибок выбрасывается исключение.
+ *
+ * @return Узел AST, представляющий конструкцию цикла `while`, включая состояние,
+ * тело цикла и необязательный блок `else` (если он присутствует).
+ */
+std::shared_ptr<ASTNode> Parser::parseWhileStatement() {
+    advance();
+    auto condition = parseAssignment();
+
+    if (peek().type != TOKEN_OP || peek().value != ":")
+        throw std::runtime_error("Expected ':' after while-condition");
+
+    advance();
+    auto body = parseBlock();
+    std::vector<std::shared_ptr<ASTNode>> elseBody;
+
+    if (peek().type == TOKEN_KEYWORD && peek().value == "else") {
+        advance();
+        if (peek().type != TOKEN_OP || peek().value != ":")
+            throw std::runtime_error("Expected ':' after else");
+        advance();
+        elseBody = parseBlock();
+    }
+
+    return std::make_shared<WhileNode>(condition, body, elseBody);
+}
+
+/**
+     * @brief Разбирает инструкцию `break` и возвращает соответствующий узел AST.
+     *
+     * Метод анализирует текущий токен, проверяя соответствие ключевому слову `break`,
+     * продвигает текущую позицию и создает узел AST, представляющий инструкцию `break`.
+     * Такой узел используется для указания на необходимость выхода из текущего цикла
+     * или блока кода.
+     *
+     * @return Узел AST, представляющий инструкцию `break`.
+     */
+std::shared_ptr<ASTNode> Parser::parseBreakStatement() {
+    advance();
+    return std::make_shared<BreakNode>();
+}
+
+/**
+ * @brief Разбирает инструкцию `continue` и возвращает соответствующий узел AST.
+ *
+ * Этот метод анализирует токен, представляющий инструкцию `continue`,
+ * продвигает парсер к следующему токену, и создает узел AST для инструкции `continue`.
+ *
+ * @return Узел AST, представляющий инструкцию `continue`.
+ */
+std::shared_ptr<ASTNode> Parser::parseContinueStatement() {
+    advance();
+    return std::make_shared<ContinueNode>();
+}
+
 
 /**
  * @brief Получает текущий токен в потоке токенов, не сдвигая позицию.

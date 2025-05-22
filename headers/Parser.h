@@ -475,6 +475,167 @@ private:
     std::vector<std::shared_ptr<ASTNode>> elseBody;
 };
 
+/**
+ * @class BreakException
+ * @brief Исключение, генерируемое для выхода из выполнения цикла.
+ *
+ * BreakException используется для имитации выполнения конструкции `break`
+ * внутри циклов. Это исключение может содержать сообщение для дополнительных
+ * описаний возникшей ситуации.
+ *
+ * @details
+ * Данный класс является производным от `std::exception` и предлагает
+ * возможность передачи текстового сообщения, доступного через метод `what`.
+ * Это сообщение помогает идентифицировать причину прерывания выполнения.
+ *
+ * @note
+ * Исключение `BreakException` обычно обрабатывается специально в интерпретаторе
+ * или компиляторе для управления потоком выполнения.
+ */
+class BreakException final : public std::exception {
+public:
+    explicit BreakException(std::string  message = "") : message(std::move(message)) {}
+
+    [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
+private:
+    std::string message;
+};
+
+/**
+ * @class ContinueException
+ * @brief Исключение, используемое для реализации оператора continue.
+ *
+ * Эта структура исключения предназначена для управления потоком выполнения в циклических конструкциях,
+ * таких как `while` или `for`. Она позволяет пропускать оставшуюся часть текущей итерации и переходить
+ * к следующей итерации цикла.
+ *
+ * @details
+ * Классу передается сообщение, описывающее причину возникновения исключения. Это сообщение
+ * может быть получено с помощью метода `what`, что делает удобной диагностику и отладку
+ * кода при возникновении подобных исключительных ситуаций.
+ *
+ * Этот класс является финальным и не может быть унаследован.
+ */
+class ContinueException final : public std::exception {
+public:
+    explicit ContinueException(std::string message = "") : message(std::move(message)) {}
+
+    [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
+private:
+    std::string message;
+};
+
+/**
+ * @class BreakNode
+ * @brief Представляет узел инструкции `break` в абстрактном синтаксическом дереве (AST).
+ *
+ * BreakNode — специализированный тип узла в AST, обозначающий выполнение
+ * инструкции `break`, которая обычно используется для выхода из цикла или других
+ * конструкций управления потоком. При вычислении он выбрасывает исключение BreakException,
+ * чтобы сигнализировать о прерывании нормального потока выполнения.
+ *
+ * @details
+ * Этот класс предназначен для появления в AST в тех местах исходного кода, где встречается
+ * инструкция `break`. Его поведение при вычислении состоит исключительно в выбрасывании исключения,
+ * а строковое представление — это слово "break". Этот узел нельзя наследовать или расширять,
+ * так как он объявлен как final.
+ */
+class BreakNode final : public ASTNode {
+public:
+    Value eval(Environment& env) const override { throw BreakException(); }
+
+    [[nodiscard]] QString toString() const override { return "break"; }
+};
+
+/**
+ * @class ContinueNode
+ * @brief Представляет оператор "continue" в абстрактном синтаксическом дереве (AST) интерпретатора.
+ *
+ * ContinueNode — это специализированный тип ASTNode, соответствующий ключевому слову "continue" в исходном коде.
+ * При вычислении он выбрасывает исключение ContinueException, чтобы сигнализировать о событии управления потоком,
+ * пропускающем оставшиеся инструкции в текущей итерации цикла.
+ *
+ * @details
+ * Этот узел используется для реализации поведения оператора "continue" в языках программирования.
+ * Метод `eval` генерирует исключение ContinueException, которое перехватывается на соответствующем уровне для изменения
+ * потока управления. Метод `toString` возвращает текстовое представление узла — строку "continue".
+ */
+class ContinueNode final : public ASTNode {
+    Value eval(Environment& env) const override { throw ContinueException(); }
+
+    [[nodiscard]] QString toString() const override { return "continue"; }
+};
+
+/**
+ * @class WhileNode
+ * @brief Представляет узел цикла "while" в абстрактном синтаксическом дереве (AST).
+ *
+ * WhileNode моделирует цикл "while" с опциональными блоками "else" и отвечает
+ * за выполнение тела цикла и опционального блока else, если условие цикла становится ложным.
+ *
+ * @details
+ * WhileNode многократно вычисляет условие, пока оно истинно.
+ * На каждой итерации выполняются инструкции из тела цикла. Особая обработка предусмотрена
+ * для исключений `break` и `continue` внутри цикла:
+ * - `ContinueException` приводит к пропуску оставшихся инструкций текущей итерации.
+ * - `BreakException` немедленно завершает цикл.
+ *
+ * Если цикл завершается без прерывания с помощью "break", выполняется опциональный блок "else" (если он есть).
+ * Возвращаемое значение метода `eval` — результат последнего выполненного выражения в теле цикла или теле else.
+ */
+class WhileNode final : public ASTNode {
+public:
+    WhileNode(std::shared_ptr<ASTNode> condition,
+        std::vector<std::shared_ptr<ASTNode>> body,
+        std::vector<std::shared_ptr<ASTNode>> elseBody)
+            : condition(std::move(condition))
+            , body(std::move(body))
+            , elseBody(std::move(elseBody)) {}
+
+    Value eval(Environment& env) const override {
+        Value last;
+        bool broken = false;
+
+        while (condition->eval(env).toBool()) {
+            try {
+                for (auto& stmt : body) {
+                    last = stmt->eval(env);
+                }
+            }
+            catch (const ContinueException& e) {}
+            catch (const BreakException& e) {
+                broken = true;
+                break;
+            }
+        }
+
+        if (!broken) {
+            for (auto& stmt : elseBody) {
+                last = stmt->eval(env);
+            }
+        }
+        return last;
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QString out = "while " + condition->toString() + ":\n";
+        for (auto& stmt : body) {
+            out += "\t" + stmt->toString() + "\n";
+        }
+        if (!elseBody.empty()) {
+            out += "else:\n";
+            for (auto& stmt : elseBody) {
+                out += "\t" + stmt->toString() + "\n";
+            }
+        }
+        return out;
+    }
+
+private:
+    std::shared_ptr<ASTNode> condition;
+    std::vector<std::shared_ptr<ASTNode>> body;
+    std::vector<std::shared_ptr<ASTNode>> elseBody;
+};
 
 /**
  * @class Parser
@@ -599,6 +760,24 @@ private:
      * @return Список узлов AST, представляющих проанализированные инструкции внутри блока кода.
      */
     std::vector<std::shared_ptr<ASTNode>> parseBlock();
+
+    /**
+     * @brief Разбирает конструкцию цикла `while` и возвращает соответствующий узел AST.
+     * @return Узел AST, представляющий конструкцию цикла `while`.
+     */
+    std::shared_ptr<ASTNode> parseWhileStatement();
+
+    /**
+     * @brief Разбирает инструкцию `break` и возвращает соответствующий узел AST.
+     * @return Узел AST, представляющий инструкцию `break`.
+     */
+    std::shared_ptr<ASTNode> parseBreakStatement();
+
+    /**
+     * @brief Разбирает инструкцию `continue` и возвращает соответствующий узел AST.
+     * @return Узел AST, представляющий инструкцию `continue`.
+     */
+    std::shared_ptr<ASTNode> parseContinueStatement();
 
     QVector<Token> tokens;
     int current = 0;
