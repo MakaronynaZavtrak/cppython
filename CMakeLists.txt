@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(Qt6 REQUIRED COMPONENTS Core LinguistTools)
 
+find_package(Python3 REQUIRED)
+message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
+
+
 add_executable(cppython main.cpp
         headers/Interpreter.h
         headers/Lexer.h
