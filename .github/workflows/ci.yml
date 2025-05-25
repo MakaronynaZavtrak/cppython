@@ -16,7 +16,8 @@ jobs:
       - name: Install Qt
         run: |
           sudo apt-get update
-          sudo apt-get install -y qt6-base-dev libqt6core6
+          sudo apt-get install -y qt6-base-dev libqt6core6 qt6-tools-dev qt6-l10n-tools
+
 
       - name: Install Python dependencies
         run: |
