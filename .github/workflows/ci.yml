@@ -1,0 +1,40 @@
+name: C++ and Python Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Qt
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev libqt6core6
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release
+
+      - name: Check build artifacts
+        run: |
+          ls -la ${{github.workspace}}/build/
+
+      - name: Run tests
+        run: |
+          cd ${{github.workspace}}
+          sed -i 's|os.path.join(ROOT, "cmake-build-debug", "cppython.exe")|os.path.join(ROOT, "build", "cppython")|g' tests/test_integration.py
+          python -m pytest tests/test_integration.py -v

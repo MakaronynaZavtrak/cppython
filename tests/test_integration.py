@@ -2,9 +2,15 @@ import subprocess
 import os
 import sys
 import pytest
+import platform
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MYPYTHON = os.path.join(ROOT, "cmake-build-debug", "cppython.exe")
+
+if platform.system() == "Windows":
+    MYPYTHON = os.path.join(ROOT, "cmake-build-debug", "cppython.exe")
+else:
+    MYPYTHON = os.path.join(ROOT, "build", "cppython")
+
 if not os.path.isfile(MYPYTHON):
     raise FileNotFoundError(f"Не найден ваш REPL: {MYPYTHON}")
 
