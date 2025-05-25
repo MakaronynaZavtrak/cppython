@@ -1,2 +1,5 @@
 /cmake-build-debug/
 /.idea/
+# Python bytecode
+__pycache__/
+*.py[cod]

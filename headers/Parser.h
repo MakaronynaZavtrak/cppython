@@ -124,18 +124,25 @@ public:
             (std::holds_alternative<double>(l.data) || std::holds_alternative<int>(l.data))
             &&
             (std::holds_alternative<double>(r.data) || std::holds_alternative<int>(r.data))
-        ) {
-            return evalTwoNumbers(l, r);
-        }
+        ) { return evalTwoNumbers(l, r); }
+
+        if (std::holds_alternative<QString>(l.data) && std::holds_alternative<QString>(r.data))
+            { return evalTwoStrings(l, r); }
+
         if (
-            (std::holds_alternative<QString>(l.data) || std::holds_alternative<int>(l.data))
-            &&
-            (std::holds_alternative<QString>(r.data) || std::holds_alternative<int>(r.data))
-        ) {
-            return std::holds_alternative<QString>(l.data) && std::holds_alternative<QString>(r.data)
-                       ? evalTwoStrings(l, r)
-                       : evalNumAndString(l, r);
-        }
+            (std::holds_alternative<QString>(l.data) && std::holds_alternative<int>(r.data))
+            ||
+            (std::holds_alternative<QString>(r.data) && std::holds_alternative<int>(l.data))
+        ) { return evalNumAndString(l, r); }
+
+        if (
+            (std::holds_alternative<bool>(l.data) && (std::holds_alternative<int>(r.data) || std::holds_alternative<double>(r.data)))
+            ||
+            (std::holds_alternative<bool>(r.data) && (std::holds_alternative<int>(l.data) || std::holds_alternative<double>(l.data)))
+        ) { return evalNumAndBool(l, r); }
+
+        if (std::holds_alternative<bool>(l.data) && std::holds_alternative<bool>(r.data))
+            { return evalTwoBools(l, r); }
 
         throw std::runtime_error("Unsupported operation: " + op.toStdString());
     }
@@ -181,27 +188,65 @@ public:
         const double lv = getNumericValue(l);
         const double rv = getNumericValue(r);
 
-        switch (const Operation currentOp = parseOperation(op)) {
-            case Operation::Add: return Value(lv + rv);
-            case Operation::Subtract: return Value(lv - rv);
-            case Operation::Multiply: return Value(lv * rv);
-            case Operation::Power: return Value(pow(lv, rv));
+        const bool l_is_double = std::holds_alternative<double>(l.data);
+        const bool r_is_double = std::holds_alternative<double>(r.data);
+
+        switch (parseOperation(op)) {
+            case Operation::Add:
+                if (!l_is_double && !r_is_double) {
+                    return Value(std::get<int>(l.data) + std::get<int>(r.data));
+                }
+                return Value(lv + rv);
+
+            case Operation::Subtract:
+                if (!l_is_double && !r_is_double) {
+                    return Value(std::get<int>(l.data) - std::get<int>(r.data));
+                }
+                return Value(lv - rv);
+
+            case Operation::Multiply:
+                if (!l_is_double && !r_is_double) {
+                    return Value(std::get<int>(l.data) * std::get<int>(r.data));
+                }
+                return Value(lv * rv);
+
+            case Operation::Power:
+                if (!l_is_double && !r_is_double && std::get<int>(r.data) >= 0) {
+                    const int li = std::get<int>(l.data);
+                    const int ri = std::get<int>(r.data);
+                    return Value(static_cast<int>(std::pow(li, ri)));
+                }
+                return Value(pow(lv, rv));
 
             case Operation::Divide:
-            case Operation::Modulo:
-            case Operation::IntDivide:
                 checkDivisionByZero(rv);
-                if (currentOp == Operation::Divide) return Value(lv / rv);
-                if (currentOp == Operation::Modulo) return Value(static_cast<int>(lv) % static_cast<int>(rv));
-                return Value(static_cast<int>(lv / rv));
+                return Value(lv / rv);
 
-            case Operation::Equal: return Value(lv == rv);
-            case Operation::NotEqual: return Value(lv != rv);
-            case Operation::Greater: return Value(lv > rv);
+            case Operation::Modulo: {
+                checkDivisionByZero(rv);
+                if (!l_is_double && !r_is_double) {
+                    return Value(std::get<int>(l.data) % std::get<int>(r.data));
+                }
+                const double div = std::floor(lv / rv);
+                const double rem = lv - rv * div;
+                return Value(rem);
+            }
+
+            case Operation::IntDivide: {
+                checkDivisionByZero(rv);
+                if (!l_is_double && !r_is_double) {
+                    return Value(std::get<int>(l.data) / std::get<int>(r.data));
+                }
+                return Value(static_cast<double>(static_cast<int>(lv / rv)));
+            }
+
+            case Operation::Equal:        return Value(lv == rv);
+            case Operation::NotEqual:     return Value(lv != rv);
+            case Operation::Greater:      return Value(lv > rv);
             case Operation::GreaterEqual: return Value(lv >= rv);
-            case Operation::Less: return Value(lv < rv);
-            case Operation::LessEqual: return Value(lv <= rv);
-            default: throw std::runtime_error("Unsupported operation: " + op.toStdString() + " in evalTwoNumbers");
+            case Operation::Less:         return Value(lv < rv);
+            case Operation::LessEqual:    return Value(lv <= rv);
+            default:                      throw std::runtime_error("Unsupported operation: " + op.toStdString() + " in evalTwoNumbers");
         }
     }
 
@@ -287,15 +332,14 @@ private:
         const QString rv = std::get<QString>(r.data);
 
         switch (parseOperation(op)) {
-            case Operation::Add: return Value(lv + rv);
-
-            case Operation::Equal: return Value(lv == rv);
-            case Operation::NotEqual: return Value(lv != rv);
-            case Operation::LessEqual: return Value(lv.compare(rv) <= 0);
-            case Operation::Less: return Value(lv.compare(rv) < 0);
+            case Operation::Add:          return Value(lv + rv);
+            case Operation::Equal:        return Value(lv == rv);
+            case Operation::NotEqual:     return Value(lv != rv);
+            case Operation::LessEqual:    return Value(lv.compare(rv) <= 0);
+            case Operation::Less:         return Value(lv.compare(rv) < 0);
             case Operation::GreaterEqual: return Value(lv.compare(rv) >= 0);
-            case Operation::Greater: return Value(lv.compare(rv) > 0);
-            default: throw std::runtime_error("Unsupported operation: " + op.toStdString() + "in evalTwoStrings");
+            case Operation::Greater:      return Value(lv.compare(rv) > 0);
+            default:                      throw std::runtime_error("Unsupported operation: " + op.toStdString() + "in evalTwoStrings");
         }
     }
 
@@ -314,18 +358,25 @@ private:
      * @throw std::runtime_error Если тип операции (`op`) не поддерживается.
      */
     [[nodiscard]] Value evalNumAndString(const Value &l, const Value &r) const {
-        if (std::holds_alternative<int>(l.data)) {
-            const int lv = std::get<int>(l.data);
-            const QString rv = std::get<QString>(r.data);
+        const bool swap = std::holds_alternative<int>(l.data) && std::holds_alternative<QString>(r.data);
+        auto [numVal, strVal] = swap
+        ? std::pair{ std::get<int>(l.data), std::get<QString>(r.data) }
+        : std::pair{ std::get<int>(r.data), std::get<QString>(l.data) };
 
-            if (op == "*") return Value(rv.repeated(lv));
-            throw std::runtime_error("Unsupported operation: " + op.toStdString());
+        switch (parseOperation(op)) {
+            case Operation::Multiply: return numVal > 0 ? Value(strVal.repeated(numVal)) : Value("");
+            default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
         }
-        const QString lv = std::get<QString>(l.data);
-        const int rv = std::get<int>(r.data);
-        if (op == "*") return Value(lv.repeated(rv));
+    }
 
-        throw std::runtime_error("Unsupported operation: " + op.toStdString());
+    [[nodiscard]] Value evalNumAndBool(const Value& l, const Value& r) const {
+        return std::holds_alternative<bool>(l.data)
+        ? evalTwoNumbers(Value(l.toBool() ? 1 : 0), r)
+        : evalTwoNumbers(l, Value(r.toBool() ? 1 : 0));
+    }
+
+    [[nodiscard]] Value evalTwoBools(const Value& l, const Value& r) const {
+        return evalTwoNumbers(Value(l.toBool() ? 1 : 0), Value(r.toBool() ? 1 : 0));
     }
 
     std::shared_ptr<ASTNode> left;
@@ -602,8 +653,8 @@ public:
                     last = stmt->eval(env);
                 }
             }
-            catch (const ContinueException& e) {}
-            catch (const BreakException& e) {
+            catch ([[maybe_unused]] const ContinueException& e) {}
+            catch ([[maybe_unused]] const BreakException& e) {
                 broken = true;
                 break;
             }
@@ -635,6 +686,83 @@ private:
     std::shared_ptr<ASTNode> condition;
     std::vector<std::shared_ptr<ASTNode>> body;
     std::vector<std::shared_ptr<ASTNode>> elseBody;
+};
+
+/**
+ * @class CompareNode
+ * @brief Реализует узел для операций сравнения в абстрактном синтаксическом дереве (AST).
+ *
+ * CompareNode представляет операцию сравнения между левым операндом и одним или несколькими
+ * правыми операндами с использованием операторов, таких как `<`, `<=`, `>`, `>=`, `==` или `!=`.
+ * Он последовательно вычисляет сравнения и гарантирует, что все условия выполняются для сложных выражений.
+ *
+ * @details
+ * Этот класс используется для вычисления выражений сравнения и получения логического результата. Он поддерживает
+ * как строковые сравнения, так и числовые сравнения, в зависимости от типов вычисляемых операндов.
+ * Если во время вычисления обнаруживается несоответствие (например, условие оператора не выполняется), вычисление
+ * останавливается и возвращает `false`. В противном случае возвращается `true`, если все сравнения успешны. Логическая
+ * цепочка сравнений позволяет естественным образом обрабатывать составные выражения (например, `a < b < c`).
+ *
+ * Метод `toString` создаёт текстовое представление выражения сравнения в формате AST.
+ *
+ * Класс не может быть далее унаследован и реализует поведение для узлов сравнения в AST.
+ */
+class CompareNode final : public ASTNode {
+    std::shared_ptr<ASTNode> left;
+    std::vector<QString> ops;
+    std::vector<std::shared_ptr<ASTNode>> rights;
+
+public:
+    CompareNode(std::shared_ptr<ASTNode> lhs,
+                std::vector<QString> operators,
+                std::vector<std::shared_ptr<ASTNode>> rgs)
+      : left(std::move(lhs)), ops(std::move(operators)), rights(std::move(rgs)) {}
+
+    Value eval(Environment &env) const override {
+        Value a = left->eval(env);
+        for (size_t i = 0; i < ops.size(); ++i) {
+            Value b = rights[i]->eval(env);
+            bool res = false;
+
+            if (std::holds_alternative<QString>(a.data) &&
+                std::holds_alternative<QString>(b.data))
+            {
+                auto sa = a.toString();
+                auto sb = b.toString();
+                const int cmp = QString::compare(sa, sb, Qt::CaseSensitive);
+
+                if      (ops[i] == "<" )  res = cmp <  0;
+                else if (ops[i] == "<=")  res = cmp <= 0;
+                else if (ops[i] == ">" )  res = cmp >  0;
+                else if (ops[i] == ">=")  res = cmp >= 0;
+                else if (ops[i] == "==")  res = cmp == 0;
+                else if (ops[i] == "!=")  res = cmp != 0;
+            }
+            else {
+                const double da = a.toDouble();
+                const double db = b.toDouble();
+
+                if      (ops[i] == "<" )  res = da <  db;
+                else if (ops[i] == "<=")  res = da <= db;
+                else if (ops[i] == ">" )  res = da >  db;
+                else if (ops[i] == ">=")  res = da >= db;
+                else if (ops[i] == "==")  res = da == db;
+                else if (ops[i] == "!=")  res = da != db;
+            }
+
+            if (!res) return Value(false);
+            a = std::move(b);
+        }
+        return Value(true);
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QString out = "(" + left->toString() + ")";
+        for (size_t i = 0; i < ops.size(); ++i) {
+            out += " " + ops[i] + " " + rights[i]->toString();
+        }
+        return out;
+    }
 };
 
 /**
