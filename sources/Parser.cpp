@@ -74,15 +74,27 @@ std::shared_ptr<ASTNode> Parser::parseAssignment() {
  */
 std::shared_ptr<ASTNode> Parser::parseComparison() {
     std::shared_ptr<ASTNode> left = parseAdditionAndSubtraction();
+    std::vector<QString> compOps;
+    std::vector<std::shared_ptr<ASTNode>> compRights;
+
     while (peek().type == TOKEN_OP &&
            (peek().value == "==" || peek().value == "!=" ||
             peek().value == "<" || peek().value == "<=" ||
             peek().value == ">" || peek().value == ">=")) {
         QString op = advance().value;
-        std::shared_ptr<ASTNode> right = parseAdditionAndSubtraction();
-        left = std::make_shared<BinOpNode>(left, op, right);
+        compOps.push_back(op);
+        compRights.push_back(parseAdditionAndSubtraction());
     }
-    return left;
+
+    if (compOps.empty()) {
+        return left;
+    }
+
+    return std::make_shared<CompareNode> (
+        left,
+        std::move(compOps),
+        std::move(compRights)
+    );
 }
 
 /**
@@ -173,7 +185,7 @@ std::shared_ptr<ASTNode> Parser::parsePower()
     std::shared_ptr<ASTNode> left = parsePrimary();
     if (peek().type == TOKEN_OP && peek().value == "**") {
         QString op = advance().value;
-        std::shared_ptr<ASTNode> right = parsePower();
+        std::shared_ptr<ASTNode> right = parseUnaryMinus();
         left = std::make_shared<BinOpNode>(left, op, right);
     }
     return left;

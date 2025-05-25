@@ -25,7 +25,12 @@ QString Value::toString() const
     }
     if (std::holds_alternative<double>(data))
     {
-        return QString::number(std::get<double>(data));
+        double d = std::get<double>(data);
+        QString s = QString::number(d, 'g', 15);
+        if (!s.contains('.') && !s.contains('e') && !s.contains('E')) {
+            s += ".0";
+        }
+        return s;
     }
     if (std::holds_alternative<bool>(data))
     {
@@ -99,4 +104,30 @@ bool Value::toBool() const {
     }
 
     throw std::runtime_error("Unsupported type");
+}
+
+/**
+ * Преобразует экземпляр `Value` в число с плавающей точкой (`double`), если это возможно.
+ *
+ * Этот метод обрабатывает следующие типы:
+ * - `int`: возвращает значение целого числа в виде `double`.
+ * - `double`: возвращает само значение.
+ * - `bool`: возвращает `1.0` для `true` и `0.0` для `false`.
+ *
+ * Если `Value` содержит неподдерживаемый тип, выбрасывает исключение `std::runtime_error`.
+ *
+ * @return Числовое значение типа `double`.
+ * @throws std::runtime_error если преобразование невозможно.
+ */
+double Value::toDouble() const {
+    if (std::holds_alternative<int>(data)) {
+        return std::get<int>(data);
+    }
+    if (std::holds_alternative<double>(data)) {
+        return std::get<double>(data);
+    }
+    if (std::holds_alternative<bool>(data)) {
+        return std::get<bool>(data) ? 1.0 : 0.0;
+    }
+    throw std::runtime_error("Cannot convert to double");
 }

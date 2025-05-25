@@ -59,5 +59,6 @@ public:
 
     [[nodiscard]] QString toString() const;
     [[nodiscard]] bool toBool() const;
+    [[nodiscard]] double toDouble() const;
 };
 #endif //VALUE_H
