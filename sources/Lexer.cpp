@@ -27,7 +27,7 @@ QVector<Token> Lexer::tokenize(const QString& code) {
             column = 1;
 
             int spaceCount = 0, tmpPos = pos;
-            while (tmpPos < code.length() && code[tmpPos] == ' ' || code[tmpPos] == '\t') {
+            while (tmpPos < code.length() && (code[tmpPos] == ' ' || code[tmpPos] == '\t')) {
                 if (code[tmpPos] == ' ')
                     spaceCount++;
                 else if (code[tmpPos] == '\t')
@@ -50,9 +50,7 @@ QVector<Token> Lexer::tokenize(const QString& code) {
             break;
         }
 
-        if (!token.value.isEmpty()) {
-            tokens.append(token);
-        }
+        tokens.append(token);
     }
     while (indentStack.size() > 1) {
         indentStack.pop_back();
@@ -168,13 +166,15 @@ Token Lexer::readIdentifierOrBool(const QString& code) {
         pos++;
     }
     QString id = code.mid(start, pos - start);
-    if (id == "if" || id == "elif" || id == "else" ||
-        id == "def" || id == "while" || id == "break" || id == "continue") {
-        return {TOKEN_KEYWORD, id, line};
+
+    if (keywords.count(id) == 1) {
+        return {TOKEN_KEYWORD, id, line, keywords.at(id)};
     }
+
     if (id == "True" || id == "False") {
         return {TOKEN_BOOL, id, line};
     }
+
     return {TOKEN_ID, id, line};
 }
 
@@ -195,7 +195,7 @@ Token Lexer::readOperator(const QString& code) {
         const QChar next = code[pos];
         if (QString combined = QString(op) + next; combined == "==" || combined == "+=" || combined == "!=" ||
                                                    combined == "-=" || combined == "//" || combined == "**" ||
-                                                   combined == "<=" || combined == ">=") {
+                                                   combined == "<=" || combined == ">=" || combined == "->") {
             pos++;
             return {TOKEN_OP, combined, line};
         }

@@ -23,9 +23,11 @@
  */
 class ASTNode {
 public:
+    using EnvPtr = std::shared_ptr<Environment>;
     virtual ~ASTNode() = default;
-    virtual Value eval(Environment &env) const = 0;
+    [[nodiscard]] virtual Value eval(EnvPtr env) const = 0;
     [[nodiscard]] virtual QString toString() const = 0;
+    [[nodiscard]] virtual bool shouldPrint() const { return true; }
 };
 
 
@@ -74,7 +76,7 @@ public:
         return "<Unknown type of value>";
     }
 
-    Value eval(Environment &env) const override { return {value}; }
+    [[nodiscard]] Value eval(EnvPtr env) const override { return {value}; }
 };
 
 /**
@@ -116,7 +118,7 @@ public:
      *         и операндов (например, числовой результат для арифметических операций, строковый результат для строковых операций).
      * @throws std::runtime_error Если операция не поддерживается для данных типов операндов.
      */
-    Value eval(Environment &env) const override {
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
         const Value l = left->eval(env);
         const Value r = right->eval(env);
 
@@ -403,7 +405,7 @@ public:
 
     QString name;
     [[nodiscard]] QString toString() const override { return name; }
-    Value eval(Environment &env) const override { return env.get(name); }
+    [[nodiscard]] Value eval(const EnvPtr env) const override { return env.get()->get(name); }
 };
 
 /**
@@ -424,19 +426,21 @@ public:
     AssignNode(QString varName, std::shared_ptr<ASTNode> valueExpr) :
     varName(std::move(varName)), valueExpr(std::move(valueExpr)) {}
 
-    QString varName;
-    std::shared_ptr<ASTNode> valueExpr;
-
-
-    Value eval(Environment &env) const override {
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
         Value val = valueExpr->eval(env);
-        env.set(varName, val);
+        env.get()->set(varName, val);
         return val;
     }
 
     [[nodiscard]] QString toString() const override {
         return varName + " = " + valueExpr->toString();
     }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+
+private:
+    QString varName;
+    std::shared_ptr<ASTNode> valueExpr;
 };
 
 /**
@@ -466,7 +470,7 @@ public:
         std::vector<std::shared_ptr<ASTNode>> elseBody)
     : condition(std::move(std::move(condition))), body(std::move(body)), elifs(std::move(elifs)), elseBody(std::move(elseBody)) {}
 
-    Value eval(Environment &env) const override {
+    [[nodiscard]] Value eval(EnvPtr env) const override {
         if (condition->eval(env).toBool()) {
             Value lastValue;
             for (const auto& stmt : body) {
@@ -519,6 +523,8 @@ public:
         return result;
     }
 
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+
 private:
     std::shared_ptr<ASTNode> condition;
     std::vector<std::shared_ptr<ASTNode>> body;
@@ -548,6 +554,7 @@ public:
     explicit BreakException(std::string  message = "") : message(std::move(message)) {}
 
     [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
+
 private:
     std::string message;
 };
@@ -572,6 +579,7 @@ public:
     explicit ContinueException(std::string message = "") : message(std::move(message)) {}
 
     [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
+
 private:
     std::string message;
 };
@@ -593,7 +601,7 @@ private:
  */
 class BreakNode final : public ASTNode {
 public:
-    Value eval(Environment& env) const override { throw BreakException(); }
+    [[nodiscard]] Value eval(EnvPtr env) const override { throw BreakException(); }
 
     [[nodiscard]] QString toString() const override { return "break"; }
 };
@@ -612,7 +620,7 @@ public:
  * потока управления. Метод `toString` возвращает текстовое представление узла — строку "continue".
  */
 class ContinueNode final : public ASTNode {
-    Value eval(Environment& env) const override { throw ContinueException(); }
+    [[nodiscard]] Value eval(EnvPtr env) const override { throw ContinueException(); }
 
     [[nodiscard]] QString toString() const override { return "continue"; }
 };
@@ -643,7 +651,7 @@ public:
             , body(std::move(body))
             , elseBody(std::move(elseBody)) {}
 
-    Value eval(Environment& env) const override {
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
         Value last;
         bool broken = false;
 
@@ -682,6 +690,8 @@ public:
         return out;
     }
 
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+
 private:
     std::shared_ptr<ASTNode> condition;
     std::vector<std::shared_ptr<ASTNode>> body;
@@ -718,7 +728,7 @@ public:
                 std::vector<std::shared_ptr<ASTNode>> rgs)
       : left(std::move(lhs)), ops(std::move(operators)), rights(std::move(rgs)) {}
 
-    Value eval(Environment &env) const override {
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
         Value a = left->eval(env);
         for (size_t i = 0; i < ops.size(); ++i) {
             Value b = rights[i]->eval(env);
@@ -765,6 +775,167 @@ public:
     }
 };
 
+class ReturnException final : public std::exception {
+public:
+    explicit ReturnException(Value val) : value(std::move(val)) {}
+
+    [[nodiscard]] const char* what() const noexcept override { return "ReturnException"; }
+
+    [[nodiscard]] Value getValue() const { return value; }
+
+private:
+    Value value;
+};
+
+class FunctionDefNode final : public ASTNode {
+public:
+    QString name;
+    std::vector<Param> params;
+    std::vector<std::shared_ptr<ASTNode>> body;
+
+    FunctionDefNode(QString name,
+                    std::vector<Param> params,
+                    std::vector<std::shared_ptr<ASTNode>> body)
+    : name(std::move(name)), params(std::move(params)), body(std::move(body)) {}
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        auto func = std::make_shared<FunctionValue>();
+
+        func->params = params;
+        func->body = body;
+        func->closure = env;
+
+
+        Value v(func);
+        env.get()->set(name, v);
+
+        return v;
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QString out = "def " + name + "(";
+
+        for (size_t i = 0; i < params.size(); ++i) {
+            out += params[i].name;
+
+            if (!params[i].type.isEmpty()) {
+                out += ": " + params[i].type;
+            }
+
+            if (i + 1 < params.size())
+                out += ", ";
+        }
+        out += "):\n";
+
+        for (auto& stmt : body) {
+            out += "\t" + stmt->toString() + "\n";
+        }
+
+        return out;
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class CallNode final : public ASTNode {
+public:
+    std::shared_ptr<ASTNode> callee;
+    std::vector<std::shared_ptr<ASTNode>> args;
+
+    CallNode(std::shared_ptr<ASTNode> callee, std::vector<std::shared_ptr<ASTNode>> args)
+        : callee(std::move(callee)), args(std::move(args)) {}
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        const Value funcVal = callee->eval(env);
+        const auto func = std::get<std::shared_ptr<FunctionValue>>(funcVal.data);
+
+        if (args.size() != func->params.size()) {
+            throw std::runtime_error("Argument count mismatch");
+        }
+
+        const auto local = std::make_shared<Environment>(func->closure);
+
+
+        for (size_t i = 0; i < func->params.size(); ++i) {
+            local->set(func->params[i].name, args[i]->eval(env));
+        }
+
+        Value result;
+        try {
+            for (const auto& stmt : func->body) {
+                result = stmt->eval(local);
+            }
+        } catch (ReturnException& e) {
+            return e.getValue();
+        }
+        return result;
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return callee->toString() + "(...)";
+    }
+};
+
+class ReturnNode final : public ASTNode {
+public:
+    explicit ReturnNode(std::shared_ptr<ASTNode> expr) : expr(std::move(expr)) {}
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        const Value val = expr ? expr->eval(env) : Value();
+        throw ReturnException(val);
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return "return ...";
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+
+private:
+    std::shared_ptr<ASTNode> expr;
+};
+
+class PassNode : public ASTNode {
+public:
+    [[nodiscard]] Value eval(std::shared_ptr<Environment> env) const override {
+        return {}; // None
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return "pass";
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class GlobalNode : public ASTNode {
+public:
+    std::vector<QString> names;
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        for (const auto& name : names) {
+            env->globalVars.insert(name);
+        }
+        return {};
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class NonlocalNode : public ASTNode {
+public:
+    std::vector<QString> names;
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        for (const auto& name : names) {
+            env->nonlocalVars.insert(name);
+        }
+        return {};
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -783,6 +954,7 @@ public:
 class Parser {
 public:
     explicit Parser(const QVector<Token> &tokens);
+
     std::shared_ptr<ASTNode> parse(); //Главный метод
 
 private:
@@ -906,6 +1078,15 @@ private:
      * @return Узел AST, представляющий инструкцию `continue`.
      */
     std::shared_ptr<ASTNode> parseContinueStatement();
+
+    std::shared_ptr<ASTNode> parseFunctionDef();
+
+    std::shared_ptr<ASTNode> parseReturn();
+
+    std::shared_ptr<ASTNode> parsePass();
+
+    std::shared_ptr<ASTNode> parseGlobalStatement();
+    std::shared_ptr<ASTNode> parseNonlocalStatement();
 
     QVector<Token> tokens;
     int current = 0;

@@ -4,6 +4,8 @@
 #include <QHash>
 #include <QString>
 
+#include "FunctionValue.h"
+
 class ASTNode;
 
 /**
@@ -23,11 +25,10 @@ class Value {
 public:
     using List = std::vector<Value>;
     using Dict = QHash<QString, Value>;
-    using Function = std::shared_ptr<ASTNode>;
 
     using ListPtr = std::shared_ptr<List>;
     using DictPtr = std::shared_ptr<Dict>;
-    using FunctionPtr = std::shared_ptr<Function>;
+    using FunctionPtr = std::shared_ptr<FunctionValue>;
 
     std::variant<
         int,
@@ -36,11 +37,12 @@ public:
         QString,
         ListPtr,
         DictPtr,
-        FunctionPtr
+        FunctionPtr,
+        std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
 
-    Value() = default;
+    Value() : data(std::monostate{}) {}
 
     explicit Value(int integer) : data(integer) {}
     explicit Value(double number) : data(number) {}
@@ -54,11 +56,11 @@ public:
     explicit Value(const Dict& dict) : data(std::make_shared<Dict>(dict)) {}
     explicit Value(Dict&& dict) : data(std::make_shared<Dict>(std::move(dict))) {}
 
-    explicit Value(const Function& func) : data(std::make_shared<Function>(func)) {}
-    explicit Value(Function&& func) : data(std::make_shared<Function>(std::move(func))) {}
+    explicit Value(FunctionPtr& func) : data(std::move(func)) {}
 
     [[nodiscard]] QString toString() const;
     [[nodiscard]] bool toBool() const;
     [[nodiscard]] double toDouble() const;
+    [[nodiscard]] bool isNone() const;
 };
 #endif //VALUE_H

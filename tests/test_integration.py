@@ -356,6 +356,122 @@ def test_single_line_expressions(expr, expected):
       "",
       "s"
       ], "25"),
+
+    # функции
+
+    # чтение значения аргумента
+    (["def f(x):",
+      "    return x * 2",
+      "",
+      "f(5)"
+      ], "10"),
+
+    # изменение аргумента
+    (["def f(x):",
+      "    x = x + 1",
+      "    return x",
+      "",
+      "f(5)"
+      ], "6"),
+
+    # нотирование типов
+    (["def sum(a: int, b: int) -> int:",
+      "    return a + b",
+      "",
+      "sum(5, 6)"
+      ], "11"),
+
+    # рекурсивный вызов
+    (["def factorial(n: int) -> int:",
+      "    if n == 0:",
+      "        return 1",
+      "    else:",
+      "        return n * factorial(n - 1)",
+      "",
+      "factorial(5)"
+      ], "120"),
+
+    # корректность области видимости
+    (["a = 5",
+      "def f():",
+      "    a = 6",
+      "    return a",
+      "",
+      "a",
+      ], "5"),
+
+    (["a = 5",
+      "def f():",
+      "    a = 6",
+      "    return a",
+      "",
+      "f()"
+      ], "6"),
+
+    # чтение внешней переменной
+    (["a = 10",
+      "def f():",
+      "    return a",
+      "",
+      "f()"
+      ], "10"),
+
+    # несколько вызовов
+    (["def f():",
+      "    x = 0",
+      "    x = x + 1",
+      "    return x",
+      "",
+      "f()"
+      ], "1"),
+
+    (["def f():",
+      "    x = 0",
+      "    x = x + 1",
+      "    return x",
+      "",
+      "f()",
+      "f()"
+      ], "1"),
+
+    # цикл while внутри функции
+    (["def fact(n):",
+      "    result = 1",
+      "    while n > 1:",
+      "        result = result * n",
+      "        n = n - 1",
+      "    return result",
+      "",
+      "fact(5)"
+      ], "120"),
+
+    # функция внутри функции
+    (["def outer():",
+      "    x = 5",
+      "    def inner():",
+      "        return x",
+      "    return inner()",
+      "",
+      "outer()"], "5"),
+
+    # while + return внутри
+    (["def f():",
+      "    i = 0",
+      "    while i < 10:",
+      "        return i",
+      "",
+      "f()"], "0"),
+
+    # break внутри функции
+    (["def f():",
+      "    i = 0",
+      "    while True:",
+      "        break",
+      "    return 42",
+      "",
+      "f()"], "42"),
+
+
 ])
 
 def test_multiline_expressions(commands, expected):

@@ -41,7 +41,7 @@ class Interpreter {
          * @param lexer Экземпляр лексического анализатора
          * @param env Окружение для выполнения кода
          */
-        static void executeCode(const std::string& code, Lexer& lexer, Environment& env);
+        static void executeCode(const std::string& code, Lexer& lexer, const std::shared_ptr<Environment> &env);
 
 
 };
