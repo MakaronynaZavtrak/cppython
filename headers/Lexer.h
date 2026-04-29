@@ -55,6 +55,33 @@ enum TokenType {
     TOKEN_EOF
 };
 
+enum class Keyword {
+    IF,
+    ELIF,
+    ELSE,
+    DEF,
+    WHILE,
+    BREAK,
+    CONTINUE,
+    RETURN,
+    PASS,
+    GLOBAL,
+    NONLOCAL
+};
+
+static const std::unordered_map<QString, Keyword> keywords = {
+    {"if", Keyword::IF},
+    {"elif", Keyword::ELIF},
+    {"else", Keyword::ELSE},
+    {"def", Keyword::DEF},
+    {"while", Keyword::WHILE},
+    {"break", Keyword::BREAK},
+    {"continue", Keyword::CONTINUE},
+    {"return", Keyword::RETURN},
+    {"pass", Keyword::PASS},
+    {"global", Keyword::GLOBAL},
+    {"nonlocal", Keyword::NONLOCAL}
+};
 
 /**
  * @struct Token
@@ -68,7 +95,13 @@ struct Token {
     QString value;
     int line; //Строка, где начинается токен
     // int column; //Столбец, где начинается токен
-    Token(const TokenType type, QString value, const int line) : type(type), value(std::move(value)), line(line) {}
+    Token(const TokenType type,
+        QString value,
+        const int line,
+        const std::optional<Keyword> keyword = std::nullopt)
+    : type(type), value(std::move(value)), line(line), keyword(keyword) {}
+
+    std::optional<Keyword> keyword;
 };
 
 /**

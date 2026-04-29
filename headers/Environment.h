@@ -2,6 +2,8 @@
 #define ENVIRONMENT_H
 #include "Value.h"
 #include <unordered_map>
+#include <unordered_set>
+#include <utility>
 
 /**
  * @class Environment
@@ -11,11 +13,18 @@
  * Он позволяет хранить и получать именованные значения, что делает его полезным для управления
  * переменными и связанными с ними данными в рамках определенного контекста.
  */
-class Environment {
+class Environment : public std::enable_shared_from_this<Environment> {
 public:
+    std::unordered_set<QString> globalVars;
+    std::unordered_set<QString> nonlocalVars;
+
     void set(const QString& name, const Value& value);
     Value& get(const QString& name);
+
+    explicit Environment(std::shared_ptr<Environment> parent = nullptr)
+       : parent(std::move(std::move(parent))) {}
 private:
     std::unordered_map<QString, Value> variables;
+    std::shared_ptr<Environment> parent;
 };
 #endif //ENVIRONMENT_H

@@ -52,6 +52,9 @@ QString Value::toString() const
     {
         return "<function>";
     }
+    if (std::holds_alternative<std::monostate>(data)) {
+        return "None";
+    }
 
     return "Unknown unsupported type";
 }
@@ -130,4 +133,8 @@ double Value::toDouble() const {
         return std::get<bool>(data) ? 1.0 : 0.0;
     }
     throw std::runtime_error("Cannot convert to double");
+}
+
+bool Value::isNone() const {
+    return std::holds_alternative<std::monostate>(data);;
 }

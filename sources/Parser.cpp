@@ -23,10 +23,16 @@ Parser::Parser(const QVector<Token>& tokens) : tokens(tokens) {}
  */
 std::shared_ptr<ASTNode> Parser::parse() {
     if (peek().type == TOKEN_KEYWORD) {
-        if (peek().value == "if")       return parseIfStatement();
-        if (peek().value == "while")    return parseWhileStatement();
-        if (peek().value == "break")    return parseBreakStatement();
-        if (peek().value == "continue") return parseContinueStatement();
+        switch (peek().keyword.value()) {
+            case Keyword::IF:       return parseIfStatement();
+            case Keyword::WHILE:    return parseWhileStatement();
+            case Keyword::BREAK:    return parseBreakStatement();
+            case Keyword::CONTINUE: return parseContinueStatement();
+            case Keyword::DEF:      return parseFunctionDef();
+            case Keyword::RETURN:   return parseReturn();
+            case Keyword::PASS:     return parsePass();
+            default:                break;
+        }
     }
     return parseAssignment();
 }
@@ -210,23 +216,13 @@ std::shared_ptr<ASTNode> Parser::parsePower()
  */
 std::shared_ptr<ASTNode> Parser::parsePrimary() {
     switch (const Token token = peek(); token.type) {
-        case TOKEN_NUMBER:
-            return parseNumberToken();
-        case TOKEN_STRING:
-            return parseStringToken();
-        case TOKEN_BOOL:
-            return parseBoolToken();
-        case TOKEN_ID:
-            return parseIdentifierToken();
-        case TOKEN_OP:
-            if (token.value == "(") {
-                return parseParenthesizedExpression();
-            }
-            break;
-        case TOKEN_EOF:
-            return nullptr;
-        default:
-            throwUnexpectedTokenError(token);
+        case TOKEN_NUMBER: return parseNumberToken();
+        case TOKEN_STRING: return parseStringToken();
+        case TOKEN_BOOL:   return parseBoolToken();
+        case TOKEN_ID:     return parseIdentifierToken();
+        case TOKEN_OP:     return token.value == "(" ? parseParenthesizedExpression() : nullptr;
+        case TOKEN_EOF:    return nullptr;
+        default:           throwUnexpectedTokenError(token);
     }
     return nullptr;
 }
@@ -276,7 +272,9 @@ std::shared_ptr<ASTNode> Parser::parseStringToken() { return std::make_shared<Va
  * @return Умный указатель на созданный узел ASTNode, представляющий логическое значение.
  *         Если токен невалиден, поведение не определено.
  */
-std::shared_ptr<ASTNode> Parser::parseBoolToken() { return std::make_shared<ValueNode>(Value(advance().value == "True")); }
+std::shared_ptr<ASTNode> Parser::parseBoolToken() {
+    return std::make_shared<ValueNode>(Value(advance().value == "True"));
+}
 
 /**
  * Парсит токен идентификатора и создает узел абстрактного синтаксического дерева (AST) для переменной.
@@ -286,7 +284,36 @@ std::shared_ptr<ASTNode> Parser::parseBoolToken() { return std::make_shared<Valu
  *
  * @return Умный указатель на вновь созданный узел VarNode, представляющий переменную.
  */
-std::shared_ptr<ASTNode> Parser::parseIdentifierToken() { return std::make_shared<VarNode>(advance().value); }
+std::shared_ptr<ASTNode> Parser::parseIdentifierToken() {
+    QString name = advance().value;
+
+    if (peek().type == TOKEN_OP && peek().value == "(") {
+        advance();
+
+        std::vector<std::shared_ptr<ASTNode>> args;
+
+        if (!(peek().type == TOKEN_OP && peek().value == ")")) {
+            while (true) {
+                args.push_back(parseAssignment());
+
+                if (peek().type == TOKEN_OP && peek().value == ",") {
+                    advance();
+                    continue;
+                }
+                break;
+            }
+        }
+
+        if (peek().type != TOKEN_OP || peek().value != ")")
+            throw std::runtime_error("Expected ')' in function call");
+
+        advance();
+
+        return std::make_shared<CallNode>(std::make_shared<VarNode>(name), args);
+    }
+
+    return std::make_shared<VarNode>(name);
+}
 
 /**
  * Разбирает выражение, заключенное в круглые скобки, и возвращает узел AST,
@@ -321,7 +348,9 @@ std::shared_ptr<ASTNode> Parser::parseParenthesizedExpression() {
  *
  * @param token Токен, который оказался неожиданным в текущем контексте.
  */
-void Parser::throwUnexpectedTokenError(const Token &token) { throw std::runtime_error("Unexpected token: \"" + token.value.toStdString() + "\""); }
+void Parser::throwUnexpectedTokenError(const Token &token) {
+    throw std::runtime_error("Unexpected token: \"" + token.value.toStdString() + "\"");
+}
 
 /**
      * @brief Разбирает конструкцию условного оператора (`if`) и возвращает соответствующий узел AST.
@@ -478,6 +507,88 @@ std::shared_ptr<ASTNode> Parser::parseContinueStatement() {
     return std::make_shared<ContinueNode>();
 }
 
+std::shared_ptr<ASTNode> Parser::parseFunctionDef() {
+    advance();
+
+    if (peek().type != TOKEN_ID) {
+        throw std::runtime_error("Expected function name");
+    }
+
+    QString name = advance().value;
+
+    if (peek().type != TOKEN_OP || peek().value != "(") {
+        throw std::runtime_error("Expected '(' after function name");
+    }
+
+    advance();
+
+    std::vector<Param> params;
+    if (!(peek().type == TOKEN_OP && peek().value == ")")) {
+        while (true) {
+            if (peek().type != TOKEN_ID)
+                throw std::runtime_error("Expected parameter name");
+
+            Param param {advance().value, ""};
+
+            if (peek().type == TOKEN_OP && peek().value == ":") {
+                advance();
+
+                if (peek().type != TOKEN_ID)
+                    throw std::runtime_error("Expected type after ':'");
+
+                param.type = advance().value;
+            }
+
+            params.push_back(param);
+
+            if (peek().type == TOKEN_OP && peek().value == ",") {
+                advance();
+                continue;
+            }
+
+            break;
+        }
+    }
+
+    if (peek().type == TOKEN_OP && peek().value == ")")
+        advance();
+
+    if (peek().type == TOKEN_OP && peek().value == "->") {
+        advance();
+
+        if (peek().type != TOKEN_ID)
+            throw std::runtime_error("Expected return type after '->'");
+
+        advance();
+    }
+
+    if (peek().type != TOKEN_OP || peek().value != ":")
+        throw std::runtime_error("Expected ':' after function signature");
+
+    advance();
+
+    auto body = parseBlock();
+
+    return std::make_shared<FunctionDefNode>(name, params, body);
+}
+
+std::shared_ptr<ASTNode> Parser::parseReturn() {
+    advance();
+
+    switch (peek().type) {
+        case TOKEN_NEWLINE:
+        case TOKEN_DEDENT:
+        case TOKEN_EOF:
+            return std::make_shared<ReturnNode>(nullptr);
+        default:
+            return std::make_shared<ReturnNode>(parseAssignment());
+    }
+}
+
+std::shared_ptr<ASTNode> Parser::parsePass() {
+    advance();
+    return std::make_shared<PassNode>();
+}
 
 /**
  * @brief Получает текущий токен в потоке токенов, не сдвигая позицию.
@@ -487,7 +598,11 @@ std::shared_ptr<ASTNode> Parser::parseContinueStatement() {
  *
  * @return Текущий токен, если позиция в потоке допустима; иначе токен типа TOKEN_EOF.
  */
-Token Parser::peek() const { return (current < tokens.size()) ? tokens[current] : Token(TOKEN_EOF, "", 0); }
+Token Parser::peek() const {
+    return current < tokens.size()
+    ? tokens[current]
+    : Token(TOKEN_EOF, "", 0);
+}
 
 /**
  * @brief Продвигает парсер к следующему токену и возвращает текущий токен.
@@ -498,4 +613,8 @@ Token Parser::peek() const { return (current < tokens.size()) ? tokens[current] 
  * @return Текущий Token до продвижения. Если достигнут конец потока токенов,
  *         возвращается токен TOKEN_EOF.
  */
-Token Parser::advance() { return (current < tokens.size()) ? tokens[current++] : Token(TOKEN_EOF, "", 0); }
+Token Parser::advance() {
+    return current < tokens.size()
+    ? tokens[current++]
+    : Token(TOKEN_EOF, "", 0);
+}

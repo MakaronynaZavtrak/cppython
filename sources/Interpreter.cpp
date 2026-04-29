@@ -46,15 +46,13 @@ std::string Interpreter::assembleCode(const std::vector<std::string>& lines) {
  * @param lexer Лексер, используемый для токенизации переданного кода.
  * @param env Среда, содержащая переменные и их значения, используемые во время интерпретации.
  */
-void Interpreter::executeCode(const std::string& code, Lexer& lexer, Environment& env) {
+void Interpreter::executeCode(const std::string& code, Lexer& lexer, const std::shared_ptr<Environment> &env) {
     try {
         const QVector<Token> tokens = lexer.tokenize(QString::fromStdString(code));
         Parser parser(tokens);
         const std::shared_ptr<ASTNode> ast = parser.parse();
-        const auto result = ast->eval(env);
-        if (!dynamic_cast<AssignNode*>(ast.get())
-            && !dynamic_cast<IfNode*>(ast.get())
-            && !dynamic_cast<WhileNode*>(ast.get())) {
+
+        if (const auto result = ast->eval(env); ast->shouldPrint() && !result.isNone()) {
             std::cout << result.toString().toStdString() << "\n";
         }
     } catch (const std::runtime_error& e) {
@@ -76,7 +74,7 @@ void Interpreter::run(int argc, char* argv[]) {
     std::cout << "Hello and welcome to my minimal Python interpreter!\n"
                  "Made by Semenov Oleg, with care from MathMech. Let's code!\n";
 
-    Environment env;
+    const auto env = std::make_shared<Environment>();
     Lexer lexer;
     std::vector<std::string> buffer;
     bool isInBlock = false;
