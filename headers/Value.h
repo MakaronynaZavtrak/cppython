@@ -6,6 +6,9 @@
 
 #include "FunctionValue.h"
 
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
+
 class ASTNode;
 
 /**
@@ -30,9 +33,12 @@ public:
     using DictPtr = std::shared_ptr<Dict>;
     using FunctionPtr = std::shared_ptr<FunctionValue>;
 
+    using BigInt = boost::multiprecision::cpp_int;
+    using BigFloat = boost::multiprecision::cpp_dec_float_50;
+
     std::variant<
-        int,
-        double,
+        BigInt,
+        BigFloat,
         bool,
         QString,
         ListPtr,
@@ -44,8 +50,8 @@ public:
 
     Value() : data(std::monostate{}) {}
 
-    explicit Value(int integer) : data(integer) {}
-    explicit Value(double number) : data(number) {}
+    explicit Value(BigInt integer) : data(integer) {}
+    explicit Value(BigFloat number) : data(number) {}
     explicit Value(bool boolean) : data(boolean) {}
     explicit Value(const QString& str) : data(str) {}
     explicit Value(const char* str) : data(QString(str)) {}
@@ -60,7 +66,8 @@ public:
 
     [[nodiscard]] QString toString() const;
     [[nodiscard]] bool toBool() const;
-    [[nodiscard]] double toDouble() const;
     [[nodiscard]] bool isNone() const;
+    [[nodiscard]] BigFloat toBigFloat() const;
+    [[nodiscard]] BigInt toBigInt() const;
 };
 #endif //VALUE_H

@@ -167,7 +167,7 @@ std::shared_ptr<ASTNode> Parser::parseUnaryMinus() {
     if (peek().type == TOKEN_OP && peek().value == "-") {
         advance();
         std::shared_ptr<ASTNode> rhs = parseUnaryMinus();
-        auto zero = std::make_shared<ValueNode>(Value(0));
+        auto zero = std::make_shared<ValueNode>(Value(Value::BigInt(0)));
         return std::make_shared<BinOpNode>(zero, "-", rhs);
     }
     return parsePower();
@@ -240,13 +240,25 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
  * @throws std::runtime_error В случае некорректного формата числа.
  */
 std::shared_ptr<ASTNode> Parser::parseNumberToken() {
-    switch (const Token token = advance(); token.value.count('.')) {
-        case 0:
-            return std::make_shared<ValueNode>(Value(token.value.toInt()));
-        case 1:
-            return std::make_shared<ValueNode>(Value(token.value.toDouble()));
-        default:
-            throw std::runtime_error("Invalid number format");
+    const Token token = advance();
+
+    QString normalized = token.value;
+    normalized.remove('_');
+
+    const std::string str = normalized.toStdString();
+
+    try {
+        if (normalized.contains('.') || normalized.contains('e') || normalized.contains('E')) {
+            return std::make_shared<ValueNode>(
+                Value(Value::BigFloat(str))
+            );
+        } else {
+            return std::make_shared<ValueNode>(
+                Value(Value::BigInt(str))
+            );
+        }
+    } catch (const std::exception&) {
+        throw std::runtime_error("Invalid number format: " + token.value.toStdString());
     }
 }
 

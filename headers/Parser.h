@@ -61,22 +61,32 @@ public:
     [[nodiscard]] QString toString() const override {
         const auto& data = value.data;
 
-        if (std::holds_alternative<double>(data)) {
-            return QString::number(std::get<double>(data));
+        if (std::holds_alternative<Value::BigFloat>(data)) {
+            return QString::fromStdString(
+                std::get<Value::BigFloat>(data).convert_to<std::string>()
+                );
         }
-        if (std::holds_alternative<int>(data)) {
-            return QString::number(std::get<int>(data));
+
+        if (std::holds_alternative<Value::BigInt>(data)) {
+            return QString::fromStdString(
+                std::get<Value::BigInt>(data).convert_to<std::string>()
+                );
         }
+
         if (std::holds_alternative<QString>(data)) {
             return "\'" + std::get<QString>(data) + "\'";
         }
+
         if (std::holds_alternative<bool>(data)) {
             return std::get<bool>(data) ? "True" : "False";
         }
+
         return "<Unknown type of value>";
     }
 
-    [[nodiscard]] Value eval(EnvPtr env) const override { return {value}; }
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+        return value;
+    }
 };
 
 /**
@@ -98,6 +108,8 @@ public:
  */
 class BinOpNode final : public ASTNode {
 public:
+    using Num = std::variant<Value::BigInt, Value::BigFloat>;
+
     BinOpNode(std::shared_ptr<ASTNode> left, QString  op, std::shared_ptr<ASTNode> right)
         : left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
 
@@ -123,24 +135,24 @@ public:
         const Value r = right->eval(env);
 
         if (
-            (std::holds_alternative<double>(l.data) || std::holds_alternative<int>(l.data))
+            (std::holds_alternative<Value::BigFloat>(l.data) || std::holds_alternative<Value::BigInt>(l.data))
             &&
-            (std::holds_alternative<double>(r.data) || std::holds_alternative<int>(r.data))
+            (std::holds_alternative<Value::BigFloat>(r.data) || std::holds_alternative<Value::BigInt>(r.data))
         ) { return evalTwoNumbers(l, r); }
 
         if (std::holds_alternative<QString>(l.data) && std::holds_alternative<QString>(r.data))
             { return evalTwoStrings(l, r); }
 
         if (
-            (std::holds_alternative<QString>(l.data) && std::holds_alternative<int>(r.data))
+            (std::holds_alternative<QString>(l.data) && std::holds_alternative<Value::BigInt>(r.data))
             ||
-            (std::holds_alternative<QString>(r.data) && std::holds_alternative<int>(l.data))
+            (std::holds_alternative<QString>(r.data) && std::holds_alternative<Value::BigInt>(l.data))
         ) { return evalNumAndString(l, r); }
 
         if (
-            (std::holds_alternative<bool>(l.data) && (std::holds_alternative<int>(r.data) || std::holds_alternative<double>(r.data)))
+            (std::holds_alternative<bool>(l.data) && (std::holds_alternative<Value::BigInt>(r.data) || std::holds_alternative<Value::BigFloat>(r.data)))
             ||
-            (std::holds_alternative<bool>(r.data) && (std::holds_alternative<int>(l.data) || std::holds_alternative<double>(l.data)))
+            (std::holds_alternative<bool>(r.data) && (std::holds_alternative<Value::BigInt>(l.data) || std::holds_alternative<Value::BigFloat>(l.data)))
         ) { return evalNumAndBool(l, r); }
 
         if (std::holds_alternative<bool>(l.data) && std::holds_alternative<bool>(r.data))
@@ -166,9 +178,27 @@ public:
      * дополнительную проверку на деление на ноль или другие ошибки выполнения.
      */
     enum class Operation {
-        Add, Subtract, Multiply, Power, Divide, Modulo, IntDivide,
-        Equal, NotEqual, Greater, GreaterEqual, Less, LessEqual
+        Add,
+        Subtract,
+        Multiply,
+        Power,
+        Divide,
+        Modulo,
+        IntDivide,
+        Equal,
+        NotEqual,
+        Greater,
+        GreaterEqual,
+        Less,
+        LessEqual
     };
+
+    template<typename Op>
+    static Value applyBinaryOp(const Value& l, const Value& r, const bool isFloat, Op operation) {
+        return isFloat
+        ? Value(operation(l.toBigFloat(), r.toBigFloat()))
+        : Value(operation(l.toBigInt(), r.toBigInt()));
+    }
 
     /**
      * @brief Вычисляет бинарную операцию между двумя числовыми значениями.
@@ -187,90 +217,77 @@ public:
      *                           такая как деление на ноль.
      */
     [[nodiscard]] Value evalTwoNumbers(const Value &l, const Value &r) const {
-        const double lv = getNumericValue(l);
-        const double rv = getNumericValue(r);
-
-        const bool l_is_double = std::holds_alternative<double>(l.data);
-        const bool r_is_double = std::holds_alternative<double>(r.data);
+        const bool isFloat =
+            std::holds_alternative<Value::BigFloat>(l.data) ||
+            std::holds_alternative<Value::BigFloat>(r.data);
 
         switch (parseOperation(op)) {
-            case Operation::Add:
-                if (!l_is_double && !r_is_double) {
-                    return Value(std::get<int>(l.data) + std::get<int>(r.data));
-                }
-                return Value(lv + rv);
+            case Operation::Add:      return applyBinaryOp(l, r, isFloat, std::plus<>());
+            case Operation::Subtract: return applyBinaryOp(l, r, isFloat, std::minus<>());
+            case Operation::Multiply: return applyBinaryOp(l, r, isFloat, std::multiplies<>());
 
-            case Operation::Subtract:
-                if (!l_is_double && !r_is_double) {
-                    return Value(std::get<int>(l.data) - std::get<int>(r.data));
+            case Operation::Power: {
+                if (isFloat) {
+                    return Value(pow(l.toBigFloat(), r.toBigFloat()));
                 }
-                return Value(lv - rv);
 
-            case Operation::Multiply:
-                if (!l_is_double && !r_is_double) {
-                    return Value(std::get<int>(l.data) * std::get<int>(r.data));
+                const auto base = l.toBigInt();
+                const auto exp  = r.toBigInt();
+
+                if (exp < 0) {
+                    return Value(pow(l.toBigFloat(), r.toBigFloat()));
                 }
-                return Value(lv * rv);
 
-            case Operation::Power:
-                if (!l_is_double && !r_is_double && std::get<int>(r.data) >= 0) {
-                    const int li = std::get<int>(l.data);
-                    const int ri = std::get<int>(r.data);
-                    return Value(static_cast<int>(std::pow(li, ri)));
-                }
-                return Value(pow(lv, rv));
+                Value::BigInt result = 1;
+                for (Value::BigInt i = 0; i < exp; ++i)
+                    result *= base;
 
-            case Operation::Divide:
-                checkDivisionByZero(rv);
-                return Value(lv / rv);
+                return Value(result);
+            }
+
+            case Operation::Divide: {
+                const auto lf = l.toBigFloat();
+                const auto rf = r.toBigFloat();
+                checkDivisionByZero(rf);
+                return Value(lf / rf);
+            }
 
             case Operation::Modulo: {
-                checkDivisionByZero(rv);
-                if (!l_is_double && !r_is_double) {
-                    return Value(std::get<int>(l.data) % std::get<int>(r.data));
+                auto rf = r.toBigFloat();
+                checkDivisionByZero(rf);
+
+                if (!isFloat) {
+                    return Value(l.toBigInt() % r.toBigInt());
                 }
-                const double div = std::floor(lv / rv);
-                const double rem = lv - rv * div;
-                return Value(rem);
+
+                auto lf = l.toBigFloat();
+
+                auto quotient = floor(lf / rf);
+                auto remainder = lf - rf * quotient;
+
+                return Value(remainder);
             }
 
             case Operation::IntDivide: {
-                checkDivisionByZero(rv);
-                if (!l_is_double && !r_is_double) {
-                    return Value(std::get<int>(l.data) / std::get<int>(r.data));
-                }
-                return Value(static_cast<double>(static_cast<int>(lv / rv)));
+                auto lf = l.toBigFloat();
+                auto rf = r.toBigFloat();
+                checkDivisionByZero(rf);
+
+                auto result = floor(lf / rf);
+
+                return isFloat
+                ? Value(result)
+                : Value(Value::BigInt(result));
             }
 
-            case Operation::Equal:        return Value(lv == rv);
-            case Operation::NotEqual:     return Value(lv != rv);
-            case Operation::Greater:      return Value(lv > rv);
-            case Operation::GreaterEqual: return Value(lv >= rv);
-            case Operation::Less:         return Value(lv < rv);
-            case Operation::LessEqual:    return Value(lv <= rv);
+            case Operation::Equal:        return applyBinaryOp(l, r, isFloat, std::equal_to<>());
+            case Operation::NotEqual:     return applyBinaryOp(l, r, isFloat, std::not_equal_to<>());
+            case Operation::Greater:      return applyBinaryOp(l, r, isFloat, std::greater<>());
+            case Operation::GreaterEqual: return applyBinaryOp(l, r, isFloat, std::greater_equal<>());
+            case Operation::Less:         return applyBinaryOp(l, r, isFloat, std::less<>());
+            case Operation::LessEqual:    return applyBinaryOp(l, r, isFloat, std::less_equal<>());
             default:                      throw std::runtime_error("Unsupported operation: " + op.toStdString() + " in evalTwoNumbers");
         }
-    }
-
-    /**
-     * @brief Извлекает числовое значение из объекта `Value`.
-     *
-     * Этот метод проверяет внутренние данные объекта `Value`. Если они содержат значение типа `double`,
-     * оно возвращается непосредственно. Если данные имеют тип `int`, метод преобразует их в `double`
-     * и возвращает результаты. Это удобно для унификации работы с числовыми значениями, особенно
-     * при выполнении операций, требующих поддержки плавающей точки.
-     *
-     * @param v Объект класса `Value`, содержащий данные, из которых нужно извлечь числовое значение.
-     * @return Значение типа `double`, извлеченное из объекта `Value`. Если данные имеют тип `int`,
-     *         оно будет преобразовано в `double`.
-     * @throws std::bad_variant_access Если данные объекта `Value` не содержат значения допустимого типа
-     *                                 (`int` или `double`).
-     */
-private:
-    [[nodiscard]] static double getNumericValue(const Value &v) {
-        return std::holds_alternative<double>(v.data)
-        ? std::get<double>(v.data)
-        : std::get<int>(v.data);
     }
 
     /**
@@ -283,7 +300,7 @@ private:
      * @param denominator Делитель, который проверяется на равенство нулю.
      * @throws std::invalid_argument Если делитель равен нулю.
      */
-    static void checkDivisionByZero(const double denominator) {
+    static void checkDivisionByZero(const Value::BigFloat &denominator) {
         if (denominator == 0) {
             throw std::runtime_error("Division by zero");
         }
@@ -302,12 +319,18 @@ private:
      */
     static Operation parseOperation(const QString &op) {
         static const std::unordered_map<QString, Operation> opMap = {
-            {"+", Operation::Add}, {"-", Operation::Subtract},
-            {"*", Operation::Multiply}, {"**", Operation::Power},
-            {"/", Operation::Divide}, {"%", Operation::Modulo},
-            {"//", Operation::IntDivide}, {"==", Operation::Equal},
-            {"!=", Operation::NotEqual}, {">", Operation::Greater},
-            {">=", Operation::GreaterEqual}, {"<", Operation::Less},
+            {"+", Operation::Add},
+            {"-", Operation::Subtract},
+            {"*", Operation::Multiply},
+            {"**", Operation::Power},
+            {"/", Operation::Divide},
+            {"%", Operation::Modulo},
+            {"//", Operation::IntDivide},
+            {"==", Operation::Equal},
+            {"!=", Operation::NotEqual},
+            {">", Operation::Greater},
+            {">=", Operation::GreaterEqual},
+            {"<", Operation::Less},
             {"<=", Operation::LessEqual}
         };
 
@@ -360,25 +383,34 @@ private:
      * @throw std::runtime_error Если тип операции (`op`) не поддерживается.
      */
     [[nodiscard]] Value evalNumAndString(const Value &l, const Value &r) const {
-        const bool swap = std::holds_alternative<int>(l.data) && std::holds_alternative<QString>(r.data);
+        const bool swap = std::holds_alternative<Value::BigInt>(l.data) && std::holds_alternative<QString>(r.data);
         auto [numVal, strVal] = swap
-        ? std::pair{ std::get<int>(l.data), std::get<QString>(r.data) }
-        : std::pair{ std::get<int>(r.data), std::get<QString>(l.data) };
+        ? std::pair{ std::get<Value::BigInt>(l.data), std::get<QString>(r.data) }
+        : std::pair{ std::get<Value::BigInt>(r.data), std::get<QString>(l.data) };
 
         switch (parseOperation(op)) {
-            case Operation::Multiply: return numVal > 0 ? Value(strVal.repeated(numVal)) : Value("");
+            case Operation::Multiply: {
+                if (numVal <= 0)
+                    return Value("");
+
+                if (numVal > std::numeric_limits<qsizetype>::max()) {
+                    throw std::runtime_error("String repetition too large");
+                }
+
+                return Value(strVal.repeated(static_cast<qsizetype>(numVal)));
+            }
             default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
         }
     }
 
     [[nodiscard]] Value evalNumAndBool(const Value& l, const Value& r) const {
         return std::holds_alternative<bool>(l.data)
-        ? evalTwoNumbers(Value(l.toBool() ? 1 : 0), r)
-        : evalTwoNumbers(l, Value(r.toBool() ? 1 : 0));
+        ? evalTwoNumbers(Value(l.toBigInt()), r)
+        : evalTwoNumbers(l, Value(r.toBigInt()));
     }
 
     [[nodiscard]] Value evalTwoBools(const Value& l, const Value& r) const {
-        return evalTwoNumbers(Value(l.toBool() ? 1 : 0), Value(r.toBool() ? 1 : 0));
+        return evalTwoNumbers(Value(l.toBigInt()), Value(r.toBigInt()));
     }
 
     std::shared_ptr<ASTNode> left;
@@ -506,9 +538,9 @@ public:
             result += "    " + stmt->toString() + "\n";
         }
 
-        for (const auto& elif : elifs) {
-            result += "elif " + elif.first->toString() + ":\n";
-            for (const auto& stmt : elif.second) {
+        for (const auto&[fst, snd] : elifs) {
+            result += "elif " + fst->toString() + ":\n";
+            for (const auto& stmt : snd) {
                 result += "    " + stmt->toString() + "\n";
             }
         }
@@ -749,8 +781,8 @@ public:
                 else if (ops[i] == "!=")  res = cmp != 0;
             }
             else {
-                const double da = a.toDouble();
-                const double db = b.toDouble();
+                const auto da = a.toBigFloat();
+                const auto db = b.toBigFloat();
 
                 if      (ops[i] == "<" )  res = da <  db;
                 else if (ops[i] == "<=")  res = da <= db;
@@ -1086,6 +1118,7 @@ private:
     std::shared_ptr<ASTNode> parsePass();
 
     std::shared_ptr<ASTNode> parseGlobalStatement();
+
     std::shared_ptr<ASTNode> parseNonlocalStatement();
 
     QVector<Token> tokens;
