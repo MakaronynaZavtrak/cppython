@@ -17,41 +17,46 @@
  *
  * @return Строковое представление экземпляра `Value`.
  */
-QString Value::toString() const
-{
-    if (std::holds_alternative<int>(data))
-    {
-        return QString::number(std::get<int>(data));
+QString Value::toString() const {
+    if (std::holds_alternative<BigInt>(data)) {
+        return QString::fromStdString(std::get<BigInt>(data).convert_to<std::string>());
     }
-    if (std::holds_alternative<double>(data))
-    {
-        double d = std::get<double>(data);
-        QString s = QString::number(d, 'g', 15);
-        if (!s.contains('.') && !s.contains('e') && !s.contains('E')) {
+
+    if (std::holds_alternative<BigFloat>(data)) {
+        const auto& num = std::get<BigFloat>(data);
+
+        std::string s = num.str(15);
+
+        if (s.find('.') == std::string::npos &&
+            s.find('e') == std::string::npos &&
+            s.find('E') == std::string::npos)
+        {
             s += ".0";
         }
-        return s;
+
+        return QString::fromStdString(s);
     }
-    if (std::holds_alternative<bool>(data))
-    {
+
+    if (std::holds_alternative<bool>(data)) {
         return std::get<bool>(data) ? "True" : "False";
     }
-    if (std::holds_alternative<QString>(data))
-    {
+
+    if (std::holds_alternative<QString>(data)) {
         return QString("\'" + std::get<QString>(data) + "\'");
     }
-    if (std::holds_alternative<ListPtr>(data))
-    {
+
+    if (std::holds_alternative<ListPtr>(data)) {
         return "[...]";
     }
-    if (std::holds_alternative<DictPtr>(data))
-    {
+
+    if (std::holds_alternative<DictPtr>(data)) {
         return "{...}";
     }
-    if (std::holds_alternative<FunctionPtr>(data))
-    {
+
+    if (std::holds_alternative<FunctionPtr>(data)) {
         return "<function>";
     }
+
     if (std::holds_alternative<std::monostate>(data)) {
         return "None";
     }
@@ -77,32 +82,31 @@ QString Value::toString() const
  * @throws std::runtime_error Если тип данных не поддерживается.
  */
 bool Value::toBool() const {
-    if (std::holds_alternative<int>(data))
-    {
-        return std::get<int>(data) != 0;
+    if (std::holds_alternative<BigInt>(data)) {
+        return std::get<BigInt>(data) != 0;
     }
-    if (std::holds_alternative<double>(data))
-    {
-        return std::get<double>(data) != 0.0;
+
+    if (std::holds_alternative<BigFloat>(data)) {
+        return std::get<BigFloat>(data) != 0.0;
     }
-    if (std::holds_alternative<bool>(data))
-    {
+
+    if (std::holds_alternative<bool>(data)) {
         return std::get<bool>(data);
     }
-    if (std::holds_alternative<QString>(data))
-    {
+
+    if (std::holds_alternative<QString>(data)) {
         return !std::get<QString>(data).isEmpty();
     }
-    if (std::holds_alternative<ListPtr>(data))
-    {
+
+    if (std::holds_alternative<ListPtr>(data)) {
         return std::get<ListPtr>(data) != nullptr;
     }
-    if (std::holds_alternative<DictPtr>(data))
-    {
+
+    if (std::holds_alternative<DictPtr>(data)) {
         return std::get<DictPtr>(data) != nullptr;
     }
-    if (std::holds_alternative<FunctionPtr>(data))
-    {
+
+    if (std::holds_alternative<FunctionPtr>(data)) {
         return std::get<FunctionPtr>(data) != nullptr;
     }
 
@@ -122,17 +126,31 @@ bool Value::toBool() const {
  * @return Числовое значение типа `double`.
  * @throws std::runtime_error если преобразование невозможно.
  */
-double Value::toDouble() const {
-    if (std::holds_alternative<int>(data)) {
-        return std::get<int>(data);
+Value::BigFloat Value::toBigFloat() const {
+    if (std::holds_alternative<BigInt>(data)) {
+        return BigFloat(std::get<BigInt>(data));
     }
-    if (std::holds_alternative<double>(data)) {
-        return std::get<double>(data);
+
+    if (std::holds_alternative<BigFloat>(data)) {
+        return std::get<BigFloat>(data);
     }
+
     if (std::holds_alternative<bool>(data)) {
-        return std::get<bool>(data) ? 1.0 : 0.0;
+        return std::get<bool>(data) ? BigFloat(1.0) : BigFloat(0.0);
     }
+
     throw std::runtime_error("Cannot convert to double");
+}
+
+Value::BigInt Value::toBigInt() const {
+    if (std::holds_alternative<BigInt>(data))
+        return std::get<BigInt>(data);
+
+    if (std::holds_alternative<bool>(data))
+        return std::get<bool>(data) ? BigInt(1) : BigInt(0);
+
+    // сюда лучше не попадать, но на всякий:
+    return BigInt(std::get<BigFloat>(data));
 }
 
 bool Value::isNone() const {

@@ -74,8 +74,15 @@ QVector<Token> Lexer::tokenize(const QString& code) {
  *         Если достигнут конец кода, возвращается токен типа TOKEN_EOF.
  */
 Token Lexer::nextToken(const QString& code) {
-    skipWhitespace(code);
-    skipComment(code);
+    while (true) {
+        const int oldPos = pos;
+
+        skipWhitespace(code);
+        skipComment(code);
+
+        if (pos == oldPos)
+            break;
+    }
 
     if (pos >= code.length()) {
         return {TOKEN_EOF, "", line};
@@ -107,10 +114,39 @@ Token Lexer::nextToken(const QString& code) {
 Token Lexer::readNumber(const QString& code)
 {
     const int start = pos;
-    while (pos < code.length() && (code[pos].isDigit() || code[pos] == '.')) {
-        pos++;
+    bool hasDot = false;
+    bool hasExp = false;
+
+    while (pos < code.length()) {
+        QChar ch = code[pos];
+
+        if (ch.isDigit() || ch == '_') {
+            pos++;
+        }
+        else if (ch == '.' && !hasDot && !hasExp) {
+            hasDot = true;
+            pos++;
+        }
+        else if ((ch == 'e' || ch == 'E') && !hasExp) {
+            hasExp = true;
+            pos++;
+
+            // после e может быть + или -
+            if (pos < code.length() && (code[pos] == '+' || code[pos] == '-')) {
+                pos++;
+            }
+        }
+        else {
+            break;
+        }
     }
+
     QString num = code.mid(start, pos - start);
+
+    if (num.endsWith('e') || num.endsWith('E')) {
+        throw std::runtime_error("Invalid number format");
+    }
+
     return {TOKEN_NUMBER, num, line};
 }
 
