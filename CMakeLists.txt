@@ -26,7 +26,10 @@ add_executable(cppython main.cpp
         sources/Environment.cpp
         sources/Value.cpp
         headers/FunctionValue.h
-        headers/Param.h)
+        headers/Param.h
+        headers/ClassValue.h
+        headers/InstanceValue.h
+        headers/BoundMethod.h)
 
 target_include_directories(cppython PRIVATE headers)
 

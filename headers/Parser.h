@@ -878,8 +878,25 @@ public:
         : callee(std::move(callee)), args(std::move(args)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
-        const Value funcVal = callee->eval(env);
-        const auto func = std::get<std::shared_ptr<FunctionValue>>(funcVal.data);
+        const Value calleeVal = callee->eval(env);
+
+        if (std::holds_alternative<Value::FunctionPtr>(calleeVal.data)) {
+            return evalFunc(env, calleeVal);
+        }
+
+        if (std::holds_alternative<Value::ClassPtr>(calleeVal.data)) {
+            return evalClass(env, calleeVal);
+        }
+
+        if (std::holds_alternative<Value::BoundMethodPtr>(calleeVal.data)) {
+            return evalBoundMethod(env, calleeVal);
+        }
+
+        throw std::runtime_error("Object is not callable");
+    }
+
+    [[nodiscard]] Value evalFunc(const EnvPtr &env, const Value& value) const {
+        const auto func = std::get<std::shared_ptr<FunctionValue>>(value.data);
 
         if (args.size() != func->params.size()) {
             throw std::runtime_error("Argument count mismatch");
@@ -901,6 +918,71 @@ public:
             return e.getValue();
         }
         return result;
+    }
+
+    [[nodiscard]] Value evalClass(const EnvPtr &env, const Value& value) const {
+        const auto cls = std::get<Value::ClassPtr>(value.data);
+
+        const auto instance = std::make_shared<InstanceValue>(cls);
+
+        //задел на будущее: __init__
+        if (cls->attributes.contains("__init__")) {
+            if (const auto initVal = cls->attributes["__init__"];
+                std::holds_alternative<Value::FunctionPtr>(initVal.data)) {
+                const auto initFunc = std::get<Value::FunctionPtr>(initVal.data);
+
+                const auto local = std::make_shared<Environment>(initFunc->closure);
+
+                // self
+                local->set(initFunc->params[0].name, Value(instance));
+
+                // остальные аргументы
+                for (size_t i = 1; i < initFunc->params.size(); ++i) {
+                    local->set(initFunc->params[i].name, args[i - 1]->eval(env));
+                }
+
+                try {
+                    for (const auto& stmt : initFunc->body) {
+                        [[maybe_unused]] const auto _ = stmt->eval(local);
+                    }
+                } catch (ReturnException&) {
+                    // __init__ ничего не возвращает
+                }
+            }
+        }
+
+        return Value(instance);
+    }
+
+    [[nodiscard]] Value evalBoundMethod(const EnvPtr & env, Value::List::const_reference value) const {
+        const auto bm = std::get<Value::BoundMethodPtr>(value.data);
+
+        const auto& func = bm->function;
+        const auto& instance = bm->instance;
+
+        if (args.size() != func->params.size() - 1) {
+            throw std::runtime_error("Argument count mismatch");
+        }
+
+        const auto local = std::make_shared<Environment>(func->closure);
+
+        // self
+        local->set(func->params[0].name, Value(instance));
+
+        // остальные аргументы
+        for (size_t i = 1; i < func->params.size(); ++i) {
+            local->set(func->params[i].name, args[i - 1]->eval(env));
+        }
+
+        try {
+            for (const auto& stmt : func->body) {
+                [[maybe_unused]] const auto _ = stmt->eval(local);
+            }
+        } catch (ReturnException& e) {
+            return e.getValue();
+        }
+
+        return {}; // None
     }
 
     [[nodiscard]] QString toString() const override {
@@ -963,6 +1045,123 @@ public:
             env->nonlocalVars.insert(name);
         }
         return {};
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class ClassDefNode final : public ASTNode {
+public:
+    QString name;
+    QVector<std::shared_ptr<ASTNode>> body;
+
+    ClassDefNode(QString name,
+                 QVector<std::shared_ptr<ASTNode>> body)
+        : name(std::move(name)), body(std::move(body)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+        const auto cls = std::make_shared<ClassValue>(name);
+
+        // создаём временное окружение
+        const auto classEnv = std::make_shared<Environment>(env);
+
+        // выполняем тело класса
+        for (const auto& stmt : body) {
+            [[maybe_unused]] const auto _ = stmt->eval(classEnv);
+        }
+
+        // копируем всё из classEnv → attributes
+        for (const auto& [key, val] : classEnv->variables) {
+            cls->attributes.insert(key, val);
+        }
+
+        env->set(name, Value(cls));
+
+        return Value(cls);
+    }
+
+    [[nodiscard]] QString toString() const override { return "class " + name; }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class AttributeAccessNode : public ASTNode {
+public:
+    std::shared_ptr<ASTNode> object;
+    QString attr;
+
+    AttributeAccessNode(std::shared_ptr<ASTNode> object, QString attr)
+        : object(std::move(object)), attr(std::move(attr)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+        Value objVal = object->eval(env);
+
+        if (!std::holds_alternative<Value::InstancePtr>(objVal.data)) {
+            throw std::runtime_error("Attribute access on non-instance");
+        }
+
+        auto instance = std::get<Value::InstancePtr>(objVal.data);
+
+        // 1. сначала ищем в полях объекта
+        if (instance->fields.contains(attr)) {
+            return instance->fields[attr];
+        }
+
+        // 2. потом в классе
+        if (auto cls = instance->klass; cls->attributes.contains(attr)) {
+            auto val = cls->attributes[attr];
+
+            //  если это функция → делаем bound method
+            if (std::holds_alternative<Value::FunctionPtr>(val.data)) {
+                auto func = std::get<Value::FunctionPtr>(val.data);
+
+                return Value(std::make_shared<BoundMethod>(func, instance));
+            }
+
+            return val;
+        }
+
+        throw std::runtime_error("Attribute not found: " + attr.toStdString());
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return object->toString() + "." + attr;
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class AttributeAssignNode final : public ASTNode {
+public:
+    std::shared_ptr<ASTNode> object;
+    QString attr;
+    std::shared_ptr<ASTNode> valueExpr;
+
+    AttributeAssignNode(std::shared_ptr<ASTNode> object,
+                        QString attr,
+                        std::shared_ptr<ASTNode> valueExpr)
+        : object(std::move(object)),
+          attr(std::move(attr)),
+          valueExpr(std::move(valueExpr)) {}
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        Value objVal = object->eval(env);
+        Value val = valueExpr->eval(env);
+
+        if (!std::holds_alternative<Value::InstancePtr>(objVal.data)) {
+            throw std::runtime_error("Attribute assignment on non-instance");
+        }
+
+        auto instance = std::get<Value::InstancePtr>(objVal.data);
+
+        // ВАЖНО: записываем в fields объекта
+        instance->fields[attr] = val;
+
+        return val;
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return object->toString() + "." + attr + " = " + valueExpr->toString();
     }
 
     [[nodiscard]] bool shouldPrint() const override { return false; }
@@ -1120,6 +1319,10 @@ private:
     std::shared_ptr<ASTNode> parseGlobalStatement();
 
     std::shared_ptr<ASTNode> parseNonlocalStatement();
+
+    std::shared_ptr<ASTNode> parseClassDef();
+
+    std::shared_ptr<ASTNode> parsePostfix(std::shared_ptr<ASTNode>);
 
     QVector<Token> tokens;
     int current = 0;

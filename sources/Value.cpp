@@ -57,6 +57,18 @@ QString Value::toString() const {
         return "<function>";
     }
 
+    if (std::holds_alternative<ClassPtr>(data)) {
+        return "<class>";
+    }
+
+    if (std::holds_alternative<InstancePtr>(data)) {
+        return "<instance>";
+    }
+
+    if (std::holds_alternative<BoundMethodPtr>(data)) {
+        return "<bound method>";
+    }
+
     if (std::holds_alternative<std::monostate>(data)) {
         return "None";
     }

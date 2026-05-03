@@ -9,6 +9,10 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
+#include "BoundMethod.h"
+#include "ClassValue.h"
+#include "InstanceValue.h"
+
 class ASTNode;
 
 /**
@@ -36,6 +40,10 @@ public:
     using BigInt = boost::multiprecision::cpp_int;
     using BigFloat = boost::multiprecision::cpp_dec_float_50;
 
+    using ClassPtr = std::shared_ptr<ClassValue>;
+    using InstancePtr = std::shared_ptr<InstanceValue>;
+    using BoundMethodPtr = std::shared_ptr<BoundMethod>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -44,6 +52,9 @@ public:
         ListPtr,
         DictPtr,
         FunctionPtr,
+        ClassPtr,
+        InstancePtr,
+        BoundMethodPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -63,6 +74,10 @@ public:
     explicit Value(Dict&& dict) : data(std::make_shared<Dict>(std::move(dict))) {}
 
     explicit Value(FunctionPtr& func) : data(std::move(func)) {}
+
+    explicit Value(const ClassPtr& cls) : data(cls) {}
+    explicit Value(const InstancePtr& cls) : data(cls) {}
+    explicit Value(const BoundMethodPtr& cls) : data(cls) {}
 
     [[nodiscard]] QString toString() const;
     [[nodiscard]] bool toBool() const;
