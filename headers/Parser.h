@@ -925,36 +925,37 @@ public:
 
         const auto instance = std::make_shared<InstanceValue>(cls);
 
-        //задел на будущее: __init__
+        // если есть __init__
         if (cls->attributes.contains("__init__")) {
-            if (const auto initVal = cls->attributes["__init__"];
-                std::holds_alternative<Value::FunctionPtr>(initVal.data)) {
-                const auto initFunc = std::get<Value::FunctionPtr>(initVal.data);
+            const auto initVal = cls->attributes["__init__"];
 
-                const auto local = std::make_shared<Environment>(initFunc->closure);
+            if (!std::holds_alternative<Value::FunctionPtr>(initVal.data)) {
+                throw std::runtime_error("__init__ is not callable");
+            }
 
-                // self
-                local->set(initFunc->params[0].name, Value(instance));
+            const auto func = std::get<Value::FunctionPtr>(initVal.data);
 
-                // остальные аргументы
-                for (size_t i = 1; i < initFunc->params.size(); ++i) {
-                    local->set(initFunc->params[i].name, args[i - 1]->eval(env));
-                }
+            // создаём bound method
+            auto bound = std::make_shared<BoundMethod>(func, instance);
 
-                try {
-                    for (const auto& stmt : initFunc->body) {
-                        [[maybe_unused]] const auto _ = stmt->eval(local);
-                    }
-                } catch (ReturnException&) {
-                    // __init__ ничего не возвращает
-                }
+            // вызываем через существующую механику
+            Value result = evalBoundMethod(env, Value(bound));
+
+            // В Python __init__ должен возвращать None
+            if (!result.isNone()) {
+                throw std::runtime_error("__init__ must return None");
+            }
+        } else {
+            // если __init__ нет, но аргументы передали, то кидаем ошибку
+            if (!args.empty()) {
+                throw std::runtime_error("Class takes no arguments");
             }
         }
 
         return Value(instance);
     }
 
-    [[nodiscard]] Value evalBoundMethod(const EnvPtr & env, Value::List::const_reference value) const {
+    [[nodiscard]] Value evalBoundMethod(const EnvPtr & env, const Value& value) const {
         const auto bm = std::get<Value::BoundMethodPtr>(value.data);
 
         const auto& func = bm->function;
