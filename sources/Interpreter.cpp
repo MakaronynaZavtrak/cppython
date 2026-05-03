@@ -56,7 +56,7 @@ void Interpreter::executeCode(const std::string& code, Lexer& lexer, const std::
             std::cout << result.toString().toStdString() << "\n";
         }
     } catch (const std::runtime_error& e) {
-        std::cout << "Error: " << e.what() << "\n";
+        std::cout << e.what() << "\n";
     }
 }
 

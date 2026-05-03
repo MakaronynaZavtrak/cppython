@@ -1,5 +1,8 @@
 #include "Value.h"
 
+#include "BoundMethod.h"
+#include "FunctionValue.h"
+
 /**
  * Преобразует экземпляр `Value` в его строковое представление в зависимости от его типа.
  *
@@ -54,7 +57,7 @@ QString Value::toString() const {
     }
 
     if (std::holds_alternative<FunctionPtr>(data)) {
-        return "<function>";
+        return std::get<FunctionPtr>(data)->toString();
     }
 
     if (std::holds_alternative<ClassPtr>(data)) {
@@ -62,11 +65,11 @@ QString Value::toString() const {
     }
 
     if (std::holds_alternative<InstancePtr>(data)) {
-        return "<instance>";
+        return std::get<InstancePtr>(data)->toString();
     }
 
     if (std::holds_alternative<BoundMethodPtr>(data)) {
-        return "<bound method>";
+        return std::get<BoundMethodPtr>(data)->toString();
     }
 
     if (std::holds_alternative<std::monostate>(data)) {

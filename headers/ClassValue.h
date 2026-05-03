@@ -7,7 +7,7 @@
 #include <qmap.h>
 #include <QString>
 
-class Value;
+#include "Value.h"
 
 class ClassValue {
 public:
@@ -16,5 +16,10 @@ public:
 
     explicit ClassValue(QString name)
        : name(std::move(name)) {}
+
+    QString toString() const {
+        return QString("<class '%1.%2'>")
+            .arg("__main__", name);
+    }
 };
 #endif //CPPYTHON_CLASSVALUE_H

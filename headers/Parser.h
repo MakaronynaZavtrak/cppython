@@ -8,6 +8,11 @@
 #include <cmath>
 #include <utility>
 
+#include "BoundMethod.h"
+#include "CallRuntime.h"
+#include "DescriptorUtils.h"
+#include "InstanceValue.h"
+
 /**
  * @class ASTNode
  * @brief Представляет узел абстрактного синтаксического дерева (AST) в интерпретаторе языка программирования.
@@ -831,11 +836,12 @@ public:
     : name(std::move(name)), params(std::move(params)), body(std::move(body)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
-        auto func = std::make_shared<FunctionValue>();
+        const auto func = std::make_shared<FunctionValue>();
 
         func->params = params;
         func->body = body;
         func->closure = env;
+        func->name = name;
 
 
         Value v(func);
@@ -880,110 +886,13 @@ public:
     [[nodiscard]] Value eval(const EnvPtr env) const override {
         const Value calleeVal = callee->eval(env);
 
-        if (std::holds_alternative<Value::FunctionPtr>(calleeVal.data)) {
-            return evalFunc(env, calleeVal);
-        }
+        std::vector<Value> evaluatedArgs;
+        evaluatedArgs.reserve(args.size());
 
-        if (std::holds_alternative<Value::ClassPtr>(calleeVal.data)) {
-            return evalClass(env, calleeVal);
-        }
+        for (auto& a : args)
+            evaluatedArgs.push_back(a->eval(env));
 
-        if (std::holds_alternative<Value::BoundMethodPtr>(calleeVal.data)) {
-            return evalBoundMethod(env, calleeVal);
-        }
-
-        throw std::runtime_error("Object is not callable");
-    }
-
-    [[nodiscard]] Value evalFunc(const EnvPtr &env, const Value& value) const {
-        const auto func = std::get<std::shared_ptr<FunctionValue>>(value.data);
-
-        if (args.size() != func->params.size()) {
-            throw std::runtime_error("Argument count mismatch");
-        }
-
-        const auto local = std::make_shared<Environment>(func->closure);
-
-
-        for (size_t i = 0; i < func->params.size(); ++i) {
-            local->set(func->params[i].name, args[i]->eval(env));
-        }
-
-        Value result;
-        try {
-            for (const auto& stmt : func->body) {
-                result = stmt->eval(local);
-            }
-        } catch (ReturnException& e) {
-            return e.getValue();
-        }
-        return result;
-    }
-
-    [[nodiscard]] Value evalClass(const EnvPtr &env, const Value& value) const {
-        const auto cls = std::get<Value::ClassPtr>(value.data);
-
-        const auto instance = std::make_shared<InstanceValue>(cls);
-
-        // если есть __init__
-        if (cls->attributes.contains("__init__")) {
-            const auto initVal = cls->attributes["__init__"];
-
-            if (!std::holds_alternative<Value::FunctionPtr>(initVal.data)) {
-                throw std::runtime_error("__init__ is not callable");
-            }
-
-            const auto func = std::get<Value::FunctionPtr>(initVal.data);
-
-            // создаём bound method
-            auto bound = std::make_shared<BoundMethod>(func, instance);
-
-            // вызываем через существующую механику
-            Value result = evalBoundMethod(env, Value(bound));
-
-            // В Python __init__ должен возвращать None
-            if (!result.isNone()) {
-                throw std::runtime_error("__init__ must return None");
-            }
-        } else {
-            // если __init__ нет, но аргументы передали, то кидаем ошибку
-            if (!args.empty()) {
-                throw std::runtime_error("Class takes no arguments");
-            }
-        }
-
-        return Value(instance);
-    }
-
-    [[nodiscard]] Value evalBoundMethod(const EnvPtr & env, const Value& value) const {
-        const auto bm = std::get<Value::BoundMethodPtr>(value.data);
-
-        const auto& func = bm->function;
-        const auto& instance = bm->instance;
-
-        if (args.size() != func->params.size() - 1) {
-            throw std::runtime_error("Argument count mismatch");
-        }
-
-        const auto local = std::make_shared<Environment>(func->closure);
-
-        // self
-        local->set(func->params[0].name, Value(instance));
-
-        // остальные аргументы
-        for (size_t i = 1; i < func->params.size(); ++i) {
-            local->set(func->params[i].name, args[i - 1]->eval(env));
-        }
-
-        try {
-            for (const auto& stmt : func->body) {
-                [[maybe_unused]] const auto _ = stmt->eval(local);
-            }
-        } catch (ReturnException& e) {
-            return e.getValue();
-        }
-
-        return {}; // None
+        return call(calleeVal, evaluatedArgs, env);
     }
 
     [[nodiscard]] QString toString() const override {
@@ -1071,8 +980,14 @@ public:
             [[maybe_unused]] const auto _ = stmt->eval(classEnv);
         }
 
-        // копируем всё из classEnv → attributes
+        // копируем всё из classEnv в attributes
         for (const auto& [key, val] : classEnv->variables) {
+
+            if (Value newVal = val; std::holds_alternative<Value::FunctionPtr>(newVal.data)) {
+                auto func = std::get<Value::FunctionPtr>(newVal.data);
+                func->ownerClassName = cls.get()->name;
+            }
+
             cls->attributes.insert(key, val);
         }
 
@@ -1097,39 +1012,42 @@ public:
     [[nodiscard]] Value eval(EnvPtr env) const override {
         Value objVal = object->eval(env);
 
-        if (!std::holds_alternative<Value::InstancePtr>(objVal.data)) {
-            throw std::runtime_error("Attribute access on non-instance");
+        Value::InstancePtr instance = nullptr;
+        Value::ClassPtr cls = nullptr;
+
+        if (std::holds_alternative<Value::InstancePtr>(objVal.data)) {
+            instance = std::get<Value::InstancePtr>(objVal.data);
+            cls = instance->klass;
+        }
+        else if (std::holds_alternative<Value::ClassPtr>(objVal.data)) {
+            cls = std::get<Value::ClassPtr>(objVal.data);
+        }
+        else {
+            throw std::runtime_error("AttributeError: object has no attribute '" +
+                attr.toStdString() + "'");
         }
 
-        auto instance = std::get<Value::InstancePtr>(objVal.data);
+        Value val;
 
         // 1. сначала ищем в полях объекта
-        if (instance->fields.contains(attr)) {
+        if (instance && instance->fields.contains(attr)) {
             return instance->fields[attr];
         }
 
+
         // 2. потом в классе
-        if (auto cls = instance->klass; cls->attributes.contains(attr)) {
-            auto val = cls->attributes[attr];
-
-            //  если это функция → делаем bound method
-            if (std::holds_alternative<Value::FunctionPtr>(val.data)) {
-                auto func = std::get<Value::FunctionPtr>(val.data);
-
-                return Value(std::make_shared<BoundMethod>(func, instance));
-            }
-
-            return val;
+        if (cls && cls->attributes.contains(attr)) {
+            val = cls->attributes[attr];
+        } else {
+            throw std::runtime_error("Attribute not found: " + attr.toStdString());
         }
 
-        throw std::runtime_error("Attribute not found: " + attr.toStdString());
+        return applyDescriptor(val, instance, cls);
     }
 
     [[nodiscard]] QString toString() const override {
         return object->toString() + "." + attr;
     }
-
-    [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
 class AttributeAssignNode final : public ASTNode {

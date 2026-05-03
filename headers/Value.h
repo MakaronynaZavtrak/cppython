@@ -1,19 +1,13 @@
-#ifndef VALUE_H
+    #ifndef VALUE_H
 #define VALUE_H
 
 #include <QHash>
 #include <QString>
 
-#include "FunctionValue.h"
-
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
-#include "BoundMethod.h"
-#include "ClassValue.h"
-#include "InstanceValue.h"
-
-class ASTNode;
+#include "ObjectFwd.h"
 
 /**
  * @class Value
@@ -73,7 +67,8 @@ public:
     explicit Value(const Dict& dict) : data(std::make_shared<Dict>(dict)) {}
     explicit Value(Dict&& dict) : data(std::make_shared<Dict>(std::move(dict))) {}
 
-    explicit Value(FunctionPtr& func) : data(std::move(func)) {}
+    explicit Value(const FunctionPtr& func) : data(func) {}
+    explicit Value(FunctionPtr&& func) : data(std::move(func)) {}
 
     explicit Value(const ClassPtr& cls) : data(cls) {}
     explicit Value(const InstancePtr& cls) : data(cls) {}

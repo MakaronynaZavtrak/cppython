@@ -15,5 +15,7 @@ public:
     BoundMethod(std::shared_ptr<FunctionValue> func,
                 std::shared_ptr<InstanceValue> inst)
         : function(std::move(func)), instance(std::move(inst)) {}
+
+    QString toString() const;
 };
 #endif //CPPYTHON_BOUNDMETHOD_H

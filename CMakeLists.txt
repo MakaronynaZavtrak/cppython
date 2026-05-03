@@ -29,7 +29,14 @@ add_executable(cppython main.cpp
         headers/Param.h
         headers/ClassValue.h
         headers/InstanceValue.h
-        headers/BoundMethod.h)
+        headers/BoundMethod.h
+        sources/FunctionValue.cpp
+        headers/DescriptorUtils.h
+        sources/DescriptorUtils.cpp
+        sources/BoundMethod.cpp
+        headers/ObjectFwd.h
+        headers/CallRuntime.h
+        sources/CallRuntime.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 
