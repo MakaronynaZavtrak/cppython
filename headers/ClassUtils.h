@@ -1,0 +1,12 @@
+//
+// Created by semyo on 03.05.2026.
+//
+
+#ifndef CPPYTHON_CLASSUTILS_H
+#define CPPYTHON_CLASSUTILS_H
+#include "Value.h"
+
+Value findAttr(const Value::ClassPtr&, const QString&);
+
+bool hasAttr(const Value::ClassPtr&, const QString&);
+#endif //CPPYTHON_CLASSUTILS_H

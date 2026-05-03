@@ -627,19 +627,48 @@ std::shared_ptr<ASTNode> Parser::parseClassDef() {
 
     QString name = advance().value;
 
+    std::vector<std::shared_ptr<ASTNode>> bases;
+
+    // проверяем, есть ли наследование
+    if (peek().type == TOKEN_OP && peek().value == "(") {
+        advance(); // (
+
+        // если не пусто
+        if (!(peek().type == TOKEN_OP && peek().value == ")")) {
+
+            while (true) {
+                // парсим выражение базового класса
+                bases.push_back(parseAssignment());
+
+                if (peek().type == TOKEN_OP && peek().value == ",") {
+                    advance(); // ,
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        if (peek().type != TOKEN_OP || peek().value != ")") {
+            throw std::runtime_error("Expected ')'");
+        }
+
+        advance(); // )
+    }
+
     if (peek().type != TOKEN_OP || peek().value != ":") {
-        throw std::runtime_error("Expected ':' after class name");
+        throw std::runtime_error("Expected ':' after class definition");
     }
     advance();
 
-    auto body = parseBlock();
+    const auto body = parseBlock();
 
     QVector<std::shared_ptr<ASTNode>> qBody;
     for (auto& stmt : body) {
         qBody.push_back(stmt);
     }
 
-    return std::make_shared<ClassDefNode>(name, qBody);
+    return std::make_shared<ClassDefNode>(name, bases, qBody);
 }
 
 std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {

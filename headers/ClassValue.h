@@ -13,6 +13,7 @@ class ClassValue {
 public:
     QString name;
     QMap<QString, Value> attributes;
+    std::vector<std::shared_ptr<ClassValue>> bases;
 
     explicit ClassValue(QString name)
        : name(std::move(name)) {}

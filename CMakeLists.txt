@@ -36,7 +36,9 @@ add_executable(cppython main.cpp
         sources/BoundMethod.cpp
         headers/ObjectFwd.h
         headers/CallRuntime.h
-        sources/CallRuntime.cpp)
+        sources/CallRuntime.cpp
+        headers/ClassUtils.h
+        sources/ClassUtils.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

@@ -10,6 +10,7 @@
 
 #include "BoundMethod.h"
 #include "CallRuntime.h"
+#include "ClassUtils.h"
 #include "DescriptorUtils.h"
 #include "InstanceValue.h"
 
@@ -963,13 +964,27 @@ public:
 class ClassDefNode final : public ASTNode {
 public:
     QString name;
+    std::vector<std::shared_ptr<ASTNode>> baseExprs;
     QVector<std::shared_ptr<ASTNode>> body;
 
     ClassDefNode(QString name,
+                 std::vector<std::shared_ptr<ASTNode>> bases,
                  QVector<std::shared_ptr<ASTNode>> body)
-        : name(std::move(name)), body(std::move(body)) {}
+        : name(std::move(name)), baseExprs(std::move(bases)), body(std::move(body)) {}
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
+        std::vector<Value::ClassPtr> bases;
+
+        for (auto& baseExpr : baseExprs) {
+            Value baseVal = baseExpr->eval(env);
+
+            if (!std::holds_alternative<Value::ClassPtr>(baseVal.data)) {
+                throw std::runtime_error("Base must be a class");
+            }
+
+            bases.push_back(std::get<Value::ClassPtr>(baseVal.data));
+        }
+
         const auto cls = std::make_shared<ClassValue>(name);
 
         // создаём временное окружение
@@ -991,6 +1006,7 @@ public:
             cls->attributes.insert(key, val);
         }
 
+        cls->bases = bases;
         env->set(name, Value(cls));
 
         return Value(cls);
@@ -1035,9 +1051,9 @@ public:
         }
 
 
-        // 2. потом в классе
-        if (cls && cls->attributes.contains(attr)) {
-            val = cls->attributes[attr];
+        // 2. потом в классе и супер-классах
+        if (cls) {
+            val = findAttr(cls, attr);
         } else {
             throw std::runtime_error("Attribute not found: " + attr.toStdString());
         }
