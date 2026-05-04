@@ -17,7 +17,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
         auto origin   = std::get<Value::ClassPtr>(clsVal.data);
 
         return Value(std::make_shared<SuperValue>(
-            origin,    // currentClass (стартуем с него)
+            origin,    // currentClass
             instance,
             origin     // originClass
         ));
@@ -25,44 +25,57 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
 )));
 
     env->set("hasattr", Value(std::make_shared<BuiltinFunction>(
-"hasattr",
-[](const std::vector<Value>& args, const std::shared_ptr<Environment>&) -> Value {
+    "hasattr",
+    [](const std::vector<Value>& args,
+       const std::shared_ptr<Environment>&) -> Value {
 
-    if (args.size() != 2)
-        throw std::runtime_error("hasattr expects 2 arguments");
+        if (args.size() != 2)
+            throw std::runtime_error("hasattr expects 2 arguments");
 
-    const auto& obj = args[0];
-    QString attr;
+        const Value& obj = args[0];
+        const Value& attrVal = args[1];
 
-    if (std::holds_alternative<QString>(args[1].data)) {
-        attr = std::get<QString>(args[1].data);
-    } else {
-        throw std::runtime_error("hasattr: attribute name must be string");
-    }
-
-    try {
-        // instance
-        if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
-            const auto instance = std::get<Value::InstancePtr>(obj.data);
-            // 1. поля объекта
-            if (instance->fields.contains(attr))
-                return Value(true);
-
-            // 2. класс + наследование
-            return Value(hasAttr(instance->klass, attr));
+        if (!std::holds_alternative<QString>(attrVal.data)) {
+            throw std::runtime_error("Attribute name must be string");
         }
 
-        // class
-        if (std::holds_alternative<Value::ClassPtr>(obj.data)) {
-            return Value(hasAttr(std::get<Value::ClassPtr>(obj.data), attr));
+        const QString attr = std::get<QString>(attrVal.data);
+
+        try {
+            getAttrValue(obj, attr);
+            return Value(true);
+        } catch (...) {
+            return Value(false);
+        }
+    }
+)));
+
+    env->set("getattr", Value(std::make_shared<BuiltinFunction>(
+    "getattr",
+    [](const std::vector<Value>& args,
+       const std::shared_ptr<Environment>&) -> Value {
+
+        if (args.size() < 2 || args.size() > 3)
+            throw std::runtime_error("getattr expects 2 or 3 arguments");
+
+        const Value& obj = args[0];
+        const Value& attrVal = args[1];
+
+        if (!std::holds_alternative<QString>(attrVal.data)) {
+            throw std::runtime_error("Attribute name must be string");
         }
 
-        return Value(false);
+        const QString attr = std::get<QString>(attrVal.data);
+
+        try {
+            return getAttrValue(obj, attr);
+        } catch (...) {
+            if (args.size() == 3) {
+                return args[2]; // default
+            }
+            throw; // AttributeError
+        }
     }
-    catch (...) {
-        return Value(false);
-    }
-}
 )));
 
 }

@@ -6,7 +6,11 @@
 #define CPPYTHON_CLASSUTILS_H
 #include "Value.h"
 
-Value findAttr(const Value::ClassPtr&, const QString&);
-
 bool hasAttr(const Value::ClassPtr&, const QString&);
+
+Value getAttrValue(const Value&, const QString&);
+
+Value getAttrFromSuper(const Value::SuperPtr&, const QString&);
+
+Value findAttrInHierarchy(const Value::ClassPtr&, const QString&);
 #endif //CPPYTHON_CLASSUTILS_H

@@ -11,7 +11,6 @@
 #include "BoundMethod.h"
 #include "CallRuntime.h"
 #include "ClassUtils.h"
-#include "DescriptorUtils.h"
 #include "InstanceValue.h"
 
 /**
@@ -1025,53 +1024,15 @@ public:
     AttributeAccessNode(std::shared_ptr<ASTNode> object, QString attr)
         : object(std::move(object)), attr(std::move(attr)) {}
 
-    [[nodiscard]] Value eval(EnvPtr env) const override {
-        Value objVal = object->eval(env);
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        const Value objVal = object->eval(env);
 
-        Value::InstancePtr instance = nullptr;
-        Value::ClassPtr cls = nullptr;
-
-        if (std::holds_alternative<Value::InstancePtr>(objVal.data)) {
-            instance = std::get<Value::InstancePtr>(objVal.data);
-            cls = instance->klass;
-        }
-        else if (std::holds_alternative<Value::ClassPtr>(objVal.data)) {
-            cls = std::get<Value::ClassPtr>(objVal.data);
-        } else if (std::holds_alternative<Value::SuperPtr>(objVal.data)) {
-            auto super = std::get<Value::SuperPtr>(objVal.data);
-
-            // ищем в базовых классах
-            for (const auto& base : super->currentClass->bases) {
-                if (hasAttr(base, attr)) {
-                    auto val = findAttr(base, attr);
-
-                    return applyDescriptor(val, super->instance, base);
-                }
-            }
-
-            throw std::runtime_error("Attribute not found in super");
-        }
-        else {
-            throw std::runtime_error("AttributeError: object has no attribute '" +
-                attr.toStdString() + "'");
+        if (std::holds_alternative<Value::SuperPtr>(objVal.data)) {
+            const auto super = std::get<Value::SuperPtr>(objVal.data);
+            return getAttrFromSuper(super, attr);
         }
 
-        Value val;
-
-        // 1. сначала ищем в полях объекта
-        if (instance && instance->fields.contains(attr)) {
-            return instance->fields[attr];
-        }
-
-
-        // 2. потом в классе и супер-классах
-        if (cls) {
-            val = findAttr(cls, attr);
-        } else {
-            throw std::runtime_error("Attribute not found: " + attr.toStdString());
-        }
-
-        return applyDescriptor(val, instance, cls);
+        return getAttrValue(objVal, attr);
     }
 
     [[nodiscard]] QString toString() const override {

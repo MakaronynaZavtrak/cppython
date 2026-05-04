@@ -198,7 +198,9 @@ Token Lexer::readString(const QString& code) {
  */
 Token Lexer::readIdentifierOrBool(const QString& code) {
     const int start = pos;
-    while (pos < code.length() && (code[pos].isLetter() || code[pos] == '_')) {
+    pos++;
+
+    while (pos < code.length() && (code[pos].isLetterOrNumber() || code[pos] == '_')) {
         pos++;
     }
     QString id = code.mid(start, pos - start);
