@@ -2,8 +2,10 @@
 #include "Interpreter.h"
 #include "Lexer.h"
 #include "Parser.h"
+#include "BuiltinFunction.h"
 #include <iostream>
 #include <sstream>
+
 
 /**
  * Проверяет, является ли введенная команда одной из предопределенных команд выхода.
@@ -74,7 +76,9 @@ void Interpreter::run(int argc, char* argv[]) {
     std::cout << "Hello and welcome to my minimal Python interpreter!\n"
                  "Made by Semenov Oleg, with care from MathMech. Let's code!\n";
 
-    const auto env = std::make_shared<Environment>();
+    const auto globalEnv = std::make_shared<Environment>();
+    BuiltinFunction::registerBuiltins(globalEnv);
+
     Lexer lexer;
     std::vector<std::string> buffer;
     bool isInBlock = false;
@@ -106,7 +110,7 @@ void Interpreter::run(int argc, char* argv[]) {
         }
 
         std::string code = assembleCode(buffer);
-        executeCode(code, lexer, env);
+        executeCode(code, lexer, globalEnv);
         buffer.clear();
     }
 }

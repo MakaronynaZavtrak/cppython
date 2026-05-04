@@ -1,4 +1,4 @@
-    #ifndef VALUE_H
+#ifndef VALUE_H
 #define VALUE_H
 
 #include <QHash>
@@ -7,9 +7,11 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
+#include "BuiltinFunction.h"
 #include "ObjectFwd.h"
+#include "SuperValue.h"
 
-/**
+    /**
  * @class Value
  * @brief Представляет полиморфный контейнер данных, способный хранить различные типы данных, включая примитивные
  * типы, сложные структуры и указатели на функции или другие типы.
@@ -38,6 +40,9 @@ public:
     using InstancePtr = std::shared_ptr<InstanceValue>;
     using BoundMethodPtr = std::shared_ptr<BoundMethod>;
 
+    using SuperPtr = std::shared_ptr<SuperValue>;
+    using BuiltinFunctionPtr = std::shared_ptr<BuiltinFunction>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -49,6 +54,8 @@ public:
         ClassPtr,
         InstancePtr,
         BoundMethodPtr,
+        SuperPtr,
+        BuiltinFunctionPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -73,6 +80,9 @@ public:
     explicit Value(const ClassPtr& cls) : data(cls) {}
     explicit Value(const InstancePtr& cls) : data(cls) {}
     explicit Value(const BoundMethodPtr& cls) : data(cls) {}
+
+    explicit Value(const BuiltinFunctionPtr& func) : data(func) {}
+    explicit Value(const std::shared_ptr<SuperValue>& superValue) : data(superValue) {}
 
     [[nodiscard]] QString toString() const;
     [[nodiscard]] bool toBool() const;

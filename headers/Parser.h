@@ -1000,7 +1000,7 @@ public:
 
             if (Value newVal = val; std::holds_alternative<Value::FunctionPtr>(newVal.data)) {
                 auto func = std::get<Value::FunctionPtr>(newVal.data);
-                func->ownerClassName = cls.get()->name;
+                func->ownerClass = cls;
             }
 
             cls->attributes.insert(key, val);
@@ -1037,6 +1037,19 @@ public:
         }
         else if (std::holds_alternative<Value::ClassPtr>(objVal.data)) {
             cls = std::get<Value::ClassPtr>(objVal.data);
+        } else if (std::holds_alternative<Value::SuperPtr>(objVal.data)) {
+            auto super = std::get<Value::SuperPtr>(objVal.data);
+
+            // ищем в базовых классах
+            for (const auto& base : super->currentClass->bases) {
+                if (hasAttr(base, attr)) {
+                    auto val = findAttr(base, attr);
+
+                    return applyDescriptor(val, super->instance, base);
+                }
+            }
+
+            throw std::runtime_error("Attribute not found in super");
         }
         else {
             throw std::runtime_error("AttributeError: object has no attribute '" +
@@ -1089,7 +1102,7 @@ public:
 
         auto instance = std::get<Value::InstancePtr>(objVal.data);
 
-        // ВАЖНО: записываем в fields объекта
+        // записываем в fields объекта
         instance->fields[attr] = val;
 
         return val;

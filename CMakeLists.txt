@@ -38,7 +38,10 @@ add_executable(cppython main.cpp
         headers/CallRuntime.h
         sources/CallRuntime.cpp
         headers/ClassUtils.h
-        sources/ClassUtils.cpp)
+        sources/ClassUtils.cpp
+        headers/SuperValue.h
+        headers/BuiltinFunction.h
+        sources/BuiltinFunction.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

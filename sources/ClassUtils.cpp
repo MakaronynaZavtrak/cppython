@@ -15,7 +15,6 @@ Value findAttr(const Value::ClassPtr& cls, const QString& attr) {
         try {
             return findAttr(base, attr);
         } catch (...) {
-            // просто идём дальше
         }
     }
 
@@ -29,11 +28,11 @@ bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
     }
 
     // 2. проверяем базовые классы
-    for (const auto& base : cls->bases) {
-        if (hasAttr(base, attr)) {
-            return true;
-        }
+    return std::any_of(
+    cls->bases.begin(),
+    cls->bases.end(),
+    [&](const auto& base) {
+        return hasAttr(base, attr);
     }
-
-    return false;
+);
 }

@@ -11,6 +11,12 @@ Value call(const Value& callee,
            const std::vector<Value>& args,
            const std::shared_ptr<Environment>& env)
 {
+
+    if (std::holds_alternative<Value::BuiltinFunctionPtr>(callee.data)) {
+        const auto fn = std::get<Value::BuiltinFunctionPtr>(callee.data);
+        return fn->func(args, env);
+    }
+
     if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data))
         return callFunction(*f, args, env);
 
@@ -113,6 +119,8 @@ Value callBoundMethod(const Value::BoundMethodPtr& bm,
 
     // self
     local->set(func->params[0].name, Value(instance));
+
+    local->set("__class__", Value(func->ownerClass));
 
     // args
     for (size_t i = 1; i < func->params.size(); ++i) {

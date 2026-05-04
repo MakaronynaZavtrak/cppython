@@ -4,7 +4,7 @@
 //
 QString BoundMethod::toString() const {
     QString funcName = function->name;
-    QString className = function->ownerClassName;
+    QString className = function->ownerClass.get()->name;
 
     return QString("<bound method %1.%2 of %3>")
         .arg(className, funcName, instance->toString());

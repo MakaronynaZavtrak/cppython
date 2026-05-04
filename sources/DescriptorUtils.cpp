@@ -1,7 +1,7 @@
 //
 // Created by semyo on 03.05.2026.
 #include "DescriptorUtils.h"
-#include "FunctionValue.h"
+#include "BoundMethod.h"
 
 Value applyDescriptor(const Value& val,
                       const Value::InstancePtr &instance,
@@ -9,7 +9,12 @@ Value applyDescriptor(const Value& val,
 
     if (std::holds_alternative<Value::FunctionPtr>(val.data)) {
         const auto func = std::get<Value::FunctionPtr>(val.data);
-        return func->get(instance, owner);
+        // если доступ через экземпляр, то bound method
+        if (instance) {
+            return Value(std::make_shared<BoundMethod>(func, instance, owner));
+        }
+        // если доступ через класс, то просто функция
+        return val;
     }
 
     return val;
