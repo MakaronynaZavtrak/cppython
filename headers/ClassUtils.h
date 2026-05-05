@@ -10,6 +10,8 @@ bool hasAttr(const Value::ClassPtr&, const QString&);
 
 Value getAttrValue(const Value&, const QString&);
 
+void setAttrValue(const Value& obj, const QString&, const Value&);
+
 Value getAttrFromSuper(const Value::SuperPtr&, const QString&);
 
 Value findAttrInHierarchy(const Value::ClassPtr&, const QString&);

@@ -79,6 +79,12 @@ QString Value::toString() const {
     return "Unknown unsupported type";
 }
 
+QString Value::asString() const {
+    if (!std::holds_alternative<QString>(data))
+        throw std::runtime_error("Not a string");
+
+    return std::get<QString>(data);
+}
 /**
  * Преобразует экземпляр `Value` в булево значение в зависимости от его типа.
  *

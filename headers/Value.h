@@ -9,6 +9,7 @@
 
 #include "BuiltinFunction.h"
 #include "ObjectFwd.h"
+#include "ReprMixin.h"
 #include "SuperValue.h"
 
     /**
@@ -24,7 +25,7 @@
  * Класс предоставляет конструкторы для инициализации экземпляра `Value` различными типами,
  * автоматически управляя выделением памяти для сложных типов с использованием умных указателей.
  */
-class Value {
+class Value : public ReprMixin {
 public:
     using List = std::vector<Value>;
     using Dict = QHash<QString, Value>;
@@ -84,7 +85,8 @@ public:
     explicit Value(const BuiltinFunctionPtr& func) : data(func) {}
     explicit Value(const std::shared_ptr<SuperValue>& superValue) : data(superValue) {}
 
-    [[nodiscard]] QString toString() const;
+    [[nodiscard]] QString toString() const override;
+    [[nodiscard]] QString asString() const;
     [[nodiscard]] bool toBool() const;
     [[nodiscard]] bool isNone() const;
     [[nodiscard]] BigFloat toBigFloat() const;

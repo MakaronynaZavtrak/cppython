@@ -7,9 +7,10 @@
 #include <qmap.h>
 #include <QString>
 
+#include "ReprMixin.h"
 #include "Value.h"
 
-class ClassValue {
+class ClassValue : public ReprMixin {
 public:
     QString name;
     QMap<QString, Value> attributes;
@@ -18,9 +19,6 @@ public:
     explicit ClassValue(QString name)
        : name(std::move(name)) {}
 
-    QString toString() const {
-        return QString("<class '%1.%2'>")
-            .arg("__main__", name);
-    }
+    QString toString() const override;
 };
 #endif //CPPYTHON_CLASSVALUE_H

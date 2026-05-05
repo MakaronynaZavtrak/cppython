@@ -33,13 +33,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
             throw std::runtime_error("hasattr expects 2 arguments");
 
         const Value& obj = args[0];
-        const Value& attrVal = args[1];
-
-        if (!std::holds_alternative<QString>(attrVal.data)) {
-            throw std::runtime_error("Attribute name must be string");
-        }
-
-        const QString attr = std::get<QString>(attrVal.data);
+        const QString attr = args[1].asString();
 
         try {
             getAttrValue(obj, attr);
@@ -59,13 +53,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
             throw std::runtime_error("getattr expects 2 or 3 arguments");
 
         const Value& obj = args[0];
-        const Value& attrVal = args[1];
-
-        if (!std::holds_alternative<QString>(attrVal.data)) {
-            throw std::runtime_error("Attribute name must be string");
-        }
-
-        const QString attr = std::get<QString>(attrVal.data);
+        const QString& attr = args[1].asString();
 
         try {
             return getAttrValue(obj, attr);
@@ -76,6 +64,23 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
             throw; // AttributeError
         }
     }
+)));
+
+    env->set("setattr", Value(std::make_shared<BuiltinFunction>(
+"setattr",
+[](const std::vector<Value>& args,
+   const std::shared_ptr<Environment>&) -> Value {
+
+    if (args.size() != 3)
+        throw std::runtime_error("setattr expects 3 arguments");
+
+    const Value& obj = args[0];
+    const QString attr = args[1].asString();
+    const Value& value = args[2];
+
+    setAttrValue(obj, attr, value);
+    return Value();
+}
 )));
 
 }

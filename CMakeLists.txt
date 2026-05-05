@@ -41,7 +41,10 @@ add_executable(cppython main.cpp
         sources/ClassUtils.cpp
         headers/SuperValue.h
         headers/BuiltinFunction.h
-        sources/BuiltinFunction.cpp)
+        sources/BuiltinFunction.cpp
+        sources/ClassValue.cpp
+        sources/InstanceValue.cpp
+        headers/ReprMixin.h)
 
 target_include_directories(cppython PRIVATE headers)
 

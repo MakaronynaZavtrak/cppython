@@ -6,8 +6,9 @@
 #define CPPYTHON_BOUNDMETHOD_H
 #include "FunctionValue.h"
 #include "InstanceValue.h"
+#include "ReprMixin.h"
 
-class BoundMethod {
+class BoundMethod : public ReprMixin {
 public:
     std::shared_ptr<FunctionValue> function;
     std::shared_ptr<InstanceValue> instance;
@@ -18,6 +19,6 @@ public:
                 std::shared_ptr<ClassValue> ownerClass)
         : function(std::move(func)), instance(std::move(inst)), ownerClass(std::move(ownerClass)) {}
 
-    [[nodiscard]] QString toString() const;
+    [[nodiscard]] QString toString() const override;
 };
 #endif //CPPYTHON_BOUNDMETHOD_H

@@ -75,3 +75,19 @@ Value findAttrInHierarchy(const Value::ClassPtr& cls, const QString& attr) {
 
     throw std::runtime_error("Attribute not found: " + attr.toStdString());
 }
+
+void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
+    if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
+        const auto instance = std::get<Value::InstancePtr>(obj.data);
+        instance->fields[attr] = value;
+        return;
+    }
+
+    if (std::holds_alternative<Value::ClassPtr>(obj.data)) {
+        const auto cls = std::get<Value::ClassPtr>(obj.data);
+        cls->attributes[attr] = value;
+        return;
+    }
+
+    throw std::runtime_error("setattr: object has no attributes");
+}
