@@ -61,44 +61,15 @@ Value constructClass(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
                      const std::shared_ptr<Environment>& env)
 {
-    auto instance = std::make_shared<InstanceValue>(cls);
+    const auto instance = std::make_shared<InstanceValue>(cls);
 
-    if (!cls->attributes.contains("__init__")) {
+    try {
+        const Value init = getAttrValue(Value(instance), "__init__");
+        call(init, args, env);
+    } catch (...) {
         if (!args.empty()) {
             throw std::runtime_error("Class takes no arguments");
         }
-        return Value(instance);
-    }
-
-    const Value initVal = cls->attributes["__init__"];
-
-    if (!std::holds_alternative<Value::FunctionPtr>(initVal.data)) {
-        throw std::runtime_error("__init__ is not callable");
-    }
-
-    auto initFunc = std::get<Value::FunctionPtr>(initVal.data);
-
-    if (args.size() != initFunc->params.size() - 1) {
-        throw std::runtime_error("__init__ argument mismatch");
-    }
-
-    auto local = std::make_shared<Environment>(initFunc->closure);
-
-    // self
-    local->set(initFunc->params[0].name, Value(instance));
-
-    // args
-    for (size_t i = 1; i < initFunc->params.size(); ++i) {
-        local->set(initFunc->params[i].name, args[i - 1]);
-    }
-
-    try {
-        for (const auto& stmt : initFunc->body) {
-            [[maybe_unused]] const auto _ = stmt->eval(local);
-        }
-    }
-    catch (ReturnException&) {
-        // ignore
     }
 
     return Value(instance);
