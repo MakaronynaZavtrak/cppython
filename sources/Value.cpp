@@ -177,3 +177,18 @@ Value::BigInt Value::toBigInt() const {
 bool Value::isNone() const {
     return std::holds_alternative<std::monostate>(data);;
 }
+
+bool Value::hasGet() const {
+    // пока только FunctionValue
+    return std::holds_alternative<FunctionPtr>(data);
+}
+
+Value Value::callGet(const InstancePtr& instance,
+                    const ClassPtr& owner) const {
+
+    if (const auto f = std::get_if<FunctionPtr>(&data)) {
+        return (*f)->get(instance, owner);
+    }
+
+    return *this;
+}

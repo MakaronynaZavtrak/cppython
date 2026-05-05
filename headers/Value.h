@@ -91,5 +91,7 @@ public:
     [[nodiscard]] bool isNone() const;
     [[nodiscard]] BigFloat toBigFloat() const;
     [[nodiscard]] BigInt toBigInt() const;
+    [[nodiscard]] bool hasGet() const;
+    Value callGet(const InstancePtr& instance, const ClassPtr& owner) const;
 };
 #endif //VALUE_H

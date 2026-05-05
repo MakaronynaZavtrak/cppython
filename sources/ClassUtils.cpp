@@ -3,7 +3,6 @@
 //
 #include "ClassUtils.h"
 #include "ClassValue.h"
-#include "DescriptorUtils.h"
 #include "InstanceValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
@@ -16,6 +15,7 @@ bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
 }
 
 Value getAttrValue(const Value& obj, const QString& attr) {
+
     // instance
     if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
         auto instance = std::get<Value::InstancePtr>(obj.data);
@@ -26,11 +26,14 @@ Value getAttrValue(const Value& obj, const QString& attr) {
             return instance->fields[attr];
         }
 
-        // 2. класс + наследование
-        if (hasAttr(cls, attr)) {
-            Value val = findAttrInHierarchy(cls, attr);
-            return applyDescriptor(val, instance, cls);
+        // 2. класс + MRO
+        Value val = findAttrInHierarchy(cls, attr);
+
+        if (val.hasGet()) {
+            return val.callGet(instance, cls);
         }
+
+        return val;
     }
 
     // super
@@ -42,8 +45,14 @@ Value getAttrValue(const Value& obj, const QString& attr) {
     // class
     if (std::holds_alternative<Value::ClassPtr>(obj.data)) {
         auto cls = std::get<Value::ClassPtr>(obj.data);
+
         Value val = findAttrInHierarchy(cls, attr);
-        return applyDescriptor(val, nullptr, cls);
+
+        if (val.hasGet()) {
+            return val.callGet(nullptr, cls);
+        }
+
+        return val;
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +
@@ -54,7 +63,13 @@ Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
     for (const auto& base : super->currentClass->bases) {
         try {
             Value val = findAttrInHierarchy(base, attr);
-            return applyDescriptor(val, super->instance, base);
+
+            if (val.hasGet()) {
+                return val.callGet(super->instance, base);
+            }
+
+            return val;
+
         } catch (...) {}
     }
 
