@@ -4,6 +4,10 @@
 
 #ifndef CPPYTHON_SUPERVALUE_H
 #define CPPYTHON_SUPERVALUE_H
+
+class ClassValue;
+class InstanceValue;
+
 class SuperValue {
 public:
     std::shared_ptr<ClassValue> currentClass;

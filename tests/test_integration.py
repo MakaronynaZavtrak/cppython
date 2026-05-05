@@ -1005,6 +1005,17 @@ def test_single_line_expressions(expr, expected):
       "b = B()",
       "b.x"], "1"),
 
+    # property
+    (["class A:",
+      "    def __init__(self):",
+      "        self._x = 10",
+      "    def get_x(self):",
+      "        return self._x",
+      "    x = property(get_x)",
+      "",
+      "a = A()",
+      "a.x"], "10"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

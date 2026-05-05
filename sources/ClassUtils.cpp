@@ -4,6 +4,7 @@
 #include "ClassUtils.h"
 #include "ClassValue.h"
 #include "InstanceValue.h"
+#include "SuperValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
     try {

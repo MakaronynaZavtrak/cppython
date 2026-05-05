@@ -1,6 +1,7 @@
 #include "ClassUtils.h"
 #include "Environment.h"
-#include "InstanceValue.h"
+#include "PropertyValue.h"
+#include "SuperValue.h"
 #include "Value.h"
 //
 // Created by semyo on 04.05.2026.
@@ -81,6 +82,29 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
     setAttrValue(obj, attr, value);
     return Value();
 }
+)));
+
+    env->set("property", Value(std::make_shared<BuiltinFunction>(
+    "property",
+    [](const std::vector<Value>& args,
+       const std::shared_ptr<Environment>&) -> Value {
+
+        if (args.empty())
+            throw std::runtime_error("property needs at least fget");
+
+        auto fget = std::get<Value::FunctionPtr>(args[0].data);
+
+        Value::FunctionPtr fset = nullptr;
+        Value::FunctionPtr fdel = nullptr;
+
+        if (args.size() > 1 && !args[1].isNone())
+            fset = std::get<Value::FunctionPtr>(args[1].data);
+
+        if (args.size() > 2 && !args[2].isNone())
+            fdel = std::get<Value::FunctionPtr>(args[2].data);
+
+        return Value(std::make_shared<PropertyValue>(fget, fset, fdel));
+    }
 )));
 
 }

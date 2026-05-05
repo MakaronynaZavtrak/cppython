@@ -19,7 +19,7 @@ public:
     std::vector<std::shared_ptr<ASTNode>> body;
     std::shared_ptr<Environment> closure;
     QString name;
-    Value::ClassPtr ownerClass;
+    std::shared_ptr<ClassValue> ownerClass;
 };
 
 #endif //CPPYTHON_FUNCTIONVALUE_H

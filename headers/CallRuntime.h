@@ -21,7 +21,6 @@ Value constructClass(const Value::ClassPtr&,
                      const std::vector<Value>&,
                      const std::shared_ptr<Environment>&);
 
-Value callBoundMethod(const Value::BoundMethodPtr&,
-                      const std::vector<Value>&,
-                      const std::shared_ptr<Environment>&);
+Value callBoundMethod(const Value::BoundMethodPtr &,
+                      const std::vector<Value> &);
 #endif //CPPYTHON_CALLRUNTIME_H

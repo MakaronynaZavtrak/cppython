@@ -31,8 +31,6 @@ add_executable(cppython main.cpp
         headers/InstanceValue.h
         headers/BoundMethod.h
         sources/FunctionValue.cpp
-        headers/DescriptorUtils.h
-        sources/DescriptorUtils.cpp
         sources/BoundMethod.cpp
         headers/ObjectFwd.h
         headers/CallRuntime.h
@@ -44,7 +42,9 @@ add_executable(cppython main.cpp
         sources/BuiltinFunction.cpp
         sources/ClassValue.cpp
         sources/InstanceValue.cpp
-        headers/ReprMixin.h)
+        headers/ReprMixin.h
+        headers/PropertyValue.h
+        sources/PropertyValue.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

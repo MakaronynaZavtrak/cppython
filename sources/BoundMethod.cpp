@@ -1,4 +1,5 @@
 #include "BoundMethod.h"
+#include "FunctionValue.h"
 //
 // Created by semyo on 03.05.2026.
 //

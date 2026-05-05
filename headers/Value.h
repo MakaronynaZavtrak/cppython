@@ -8,10 +8,14 @@
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
 #include "BuiltinFunction.h"
-#include "ObjectFwd.h"
 #include "ReprMixin.h"
-#include "SuperValue.h"
 
+class SuperValue;
+class InstanceValue;
+class ClassValue;
+class PropertyValue;
+class BoundMethod;
+class FunctionValue;
     /**
  * @class Value
  * @brief Представляет полиморфный контейнер данных, способный хранить различные типы данных, включая примитивные
@@ -44,6 +48,8 @@ public:
     using SuperPtr = std::shared_ptr<SuperValue>;
     using BuiltinFunctionPtr = std::shared_ptr<BuiltinFunction>;
 
+    using PropertyPtr = std::shared_ptr<PropertyValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -57,6 +63,7 @@ public:
         BoundMethodPtr,
         SuperPtr,
         BuiltinFunctionPtr,
+        PropertyPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -83,7 +90,9 @@ public:
     explicit Value(const BoundMethodPtr& cls) : data(cls) {}
 
     explicit Value(const BuiltinFunctionPtr& func) : data(func) {}
-    explicit Value(const std::shared_ptr<SuperValue>& superValue) : data(superValue) {}
+    explicit Value(const SuperPtr& superValue) : data(superValue) {}
+
+    explicit Value(const PropertyPtr& propertyValue) : data(propertyValue) {}
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString asString() const;

@@ -1,5 +1,6 @@
 #include "CallRuntime.h"
 
+#include "BoundMethod.h"
 #include "Environment.h"
 #include "FunctionValue.h"
 #include "Parser.h"
@@ -24,7 +25,7 @@ Value call(const Value& callee,
         return constructClass(*c, args, env);
 
     if (const auto b = std::get_if<Value::BoundMethodPtr>(&callee.data))
-        return callBoundMethod(*b, args, env);
+        return callBoundMethod(*b, args);
 
     throw std::runtime_error("Object is not callable");
 }
@@ -75,9 +76,8 @@ Value constructClass(const Value::ClassPtr& cls,
     return Value(instance);
 }
 
-Value callBoundMethod(const Value::BoundMethodPtr& bm,
-                      const std::vector<Value>& args,
-                      const std::shared_ptr<Environment>& env)
+Value callBoundMethod(const Value::BoundMethodPtr &bm,
+                      const std::vector<Value> &args)
 {
     const auto& func = bm->function;
     const auto& instance = bm->instance;

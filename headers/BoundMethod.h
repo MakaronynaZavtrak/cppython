@@ -4,9 +4,11 @@
 
 #ifndef CPPYTHON_BOUNDMETHOD_H
 #define CPPYTHON_BOUNDMETHOD_H
-#include "FunctionValue.h"
-#include "InstanceValue.h"
 #include "ReprMixin.h"
+
+class FunctionValue;
+class InstanceValue;
+class ClassValue;
 
 class BoundMethod : public ReprMixin {
 public:

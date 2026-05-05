@@ -2,6 +2,7 @@
 
 #include "BoundMethod.h"
 #include "FunctionValue.h"
+#include "PropertyValue.h"
 
 /**
  * Преобразует экземпляр `Value` в его строковое представление в зависимости от его типа.
@@ -179,8 +180,8 @@ bool Value::isNone() const {
 }
 
 bool Value::hasGet() const {
-    // пока только FunctionValue
-    return std::holds_alternative<FunctionPtr>(data);
+    return std::holds_alternative<FunctionPtr>(data) ||
+           std::holds_alternative<PropertyPtr>(data);;
 }
 
 Value Value::callGet(const InstancePtr& instance,
@@ -189,6 +190,12 @@ Value Value::callGet(const InstancePtr& instance,
     if (const auto f = std::get_if<FunctionPtr>(&data)) {
         return (*f)->get(instance, owner);
     }
+
+    // property
+    if (const auto p = std::get_if<PropertyPtr>(&data)) {
+        return (*p)->get(instance, owner);
+    }
+
 
     return *this;
 }

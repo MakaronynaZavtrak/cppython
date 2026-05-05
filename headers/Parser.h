@@ -8,10 +8,11 @@
 #include <cmath>
 #include <utility>
 
-#include "BoundMethod.h"
 #include "CallRuntime.h"
 #include "ClassUtils.h"
+#include "FunctionValue.h"
 #include "InstanceValue.h"
+#include "Param.h"
 
 /**
  * @class ASTNode
