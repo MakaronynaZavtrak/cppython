@@ -117,8 +117,11 @@ void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
                 descr.callSet(instance, cls, value);
                 return;
             }
-        } catch (...) {
-            // ignore
+        } catch (const std::runtime_error& e) {
+            const std::string msg = e.what();
+            if (msg.find("Attribute not found") == std::string::npos) {
+                throw;
+            }
         }
 
         // 2. обычная запись в поля

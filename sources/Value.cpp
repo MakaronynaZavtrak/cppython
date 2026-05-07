@@ -2,6 +2,7 @@
 
 #include "BoundMethod.h"
 #include "CallRuntime.h"
+#include "ClassUtils.h"
 #include "FunctionValue.h"
 #include "PropertyValue.h"
 
@@ -181,8 +182,19 @@ bool Value::isNone() const {
 }
 
 bool Value::hasGet() const {
-    return std::holds_alternative<FunctionPtr>(data) ||
-           std::holds_alternative<PropertyPtr>(data);;
+    if (std::holds_alternative<FunctionPtr>(data))
+        return true;
+
+    if (std::holds_alternative<PropertyPtr>(data))
+        return true;
+
+    // user-defined descriptors
+    try {
+        getAttrValue(*this, "__get__");
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 Value Value::callGet(const InstancePtr& instance,
@@ -197,22 +209,42 @@ Value Value::callGet(const InstancePtr& instance,
         return (*p)->get(instance, owner);
     }
 
+    // user-defined
+    const Value getter = getAttrValue(*this, "__get__");
 
-    return *this;
+    std::vector<Value> args;
+
+    if (instance)
+        args.emplace_back(instance);
+    else
+        args.emplace_back(); // None
+
+    args.emplace_back(owner);
+
+    return call(getter, args, nullptr);
 }
 
 bool Value::hasSet() const {
     if (std::holds_alternative<PropertyPtr>(data)) {
-        const auto& prop = std::get<PropertyPtr>(data);
-        return prop->fset != nullptr;
+        if (const auto& prop = std::get<PropertyPtr>(data); !prop->fset) {
+            throw std::runtime_error(
+                "AttributeError: property has no setter"
+            );
+        }
+        return true;
     }
-    return false;
+
+    try {
+        getAttrValue(*this, "__set__");
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 void Value::callSet(const InstancePtr& instance,
                     const ClassPtr& owner,
-                    const Value& value) const
-{
+                    const Value& value) const {
     if (std::holds_alternative<PropertyPtr>(data)) {
         const auto& prop = std::get<PropertyPtr>(data);
 
@@ -230,5 +262,7 @@ void Value::callSet(const InstancePtr& instance,
         return;
     }
 
-    throw std::runtime_error("__set__ not supported");
+    const Value setter = getAttrValue(*this, "__set__");
+
+    call(setter, {Value(instance), value},nullptr);
 }
