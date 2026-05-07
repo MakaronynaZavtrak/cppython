@@ -80,7 +80,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
     const Value& value = args[2];
 
     setAttrValue(obj, attr, value);
-    return Value();
+    return {};
 }
 )));
 

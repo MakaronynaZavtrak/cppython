@@ -1,6 +1,7 @@
 #include "Value.h"
 
 #include "BoundMethod.h"
+#include "CallRuntime.h"
 #include "FunctionValue.h"
 #include "PropertyValue.h"
 
@@ -198,4 +199,36 @@ Value Value::callGet(const InstancePtr& instance,
 
 
     return *this;
+}
+
+bool Value::hasSet() const {
+    if (std::holds_alternative<PropertyPtr>(data)) {
+        const auto& prop = std::get<PropertyPtr>(data);
+        return prop->fset != nullptr;
+    }
+    return false;
+}
+
+void Value::callSet(const InstancePtr& instance,
+                    const ClassPtr& owner,
+                    const Value& value) const
+{
+    if (std::holds_alternative<PropertyPtr>(data)) {
+        const auto& prop = std::get<PropertyPtr>(data);
+
+        if (!prop->fset) {
+            throw std::runtime_error("AttributeError: can't set attribute");
+        }
+
+        const auto bound = std::make_shared<BoundMethod>(
+            prop->fset,
+            instance,
+            owner
+        );
+
+        call(Value(bound), {value}, nullptr);
+        return;
+    }
+
+    throw std::runtime_error("__set__ not supported");
 }

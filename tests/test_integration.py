@@ -1016,6 +1016,32 @@ def test_single_line_expressions(expr, expected):
       "a = A()",
       "a.x"], "10"),
 
+    # property set
+    (["class A:",
+      "    def __init__(self):",
+      "        self._x = 0",
+      "    def get_x(self):",
+      "        return self._x",
+      "    def set_x(self, v):",
+      "        self._x = v",
+      "    x = property(get_x, set_x)",
+      "",
+      "a = A()",
+      "a.x = 42",
+      "a.x"], "42"),
+
+    # data descriptor priority
+    (["class A:",
+      "    def get_x(self):",
+      "        return 999",
+      "    def set_x(self, v):",
+      "        pass",
+      "    x = property(get_x, set_x)",
+      "",
+      "a = A()",
+      "a.x = 10",
+      "a.x"], "999"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

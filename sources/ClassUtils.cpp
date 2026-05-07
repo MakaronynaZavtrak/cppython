@@ -22,19 +22,30 @@ Value getAttrValue(const Value& obj, const QString& attr) {
         auto instance = std::get<Value::InstancePtr>(obj.data);
         auto cls = instance->klass;
 
-        // 1. поля объекта
+        //  1. data descriptor (hasSet)
+        try {
+            Value val = findAttrInHierarchy(cls, attr);
+
+            if (val.hasGet() && val.hasSet()) {
+                return val.callGet(instance, cls);
+            }
+        } catch (...) {}
+
+        // 2. instance fields
         if (instance->fields.contains(attr)) {
             return instance->fields[attr];
         }
 
-        // 2. класс + MRO
-        Value val = findAttrInHierarchy(cls, attr);
+        // 3. non-data descriptor
+        try {
+            Value val = findAttrInHierarchy(cls, attr);
 
-        if (val.hasGet()) {
-            return val.callGet(instance, cls);
-        }
+            if (val.hasGet()) {
+                return val.callGet(instance, cls);
+            }
 
-        return val;
+            return val;
+        } catch (...) {}
     }
 
     // super
@@ -93,12 +104,29 @@ Value findAttrInHierarchy(const Value::ClassPtr& cls, const QString& attr) {
 }
 
 void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
+    // instance
     if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
         const auto instance = std::get<Value::InstancePtr>(obj.data);
+        const auto cls = instance->klass;
+
+        // 1. проверяем descriptor в классе
+        try {
+            const Value descr = findAttrInHierarchy(cls, attr);
+
+            if (descr.hasSet()) {
+                descr.callSet(instance, cls, value);
+                return;
+            }
+        } catch (...) {
+            // ignore
+        }
+
+        // 2. обычная запись в поля
         instance->fields[attr] = value;
         return;
     }
 
+    // class
     if (std::holds_alternative<Value::ClassPtr>(obj.data)) {
         const auto cls = std::get<Value::ClassPtr>(obj.data);
         cls->attributes[attr] = value;

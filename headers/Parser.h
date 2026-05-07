@@ -1058,14 +1058,7 @@ public:
         Value objVal = object->eval(env);
         Value val = valueExpr->eval(env);
 
-        if (!std::holds_alternative<Value::InstancePtr>(objVal.data)) {
-            throw std::runtime_error("Attribute assignment on non-instance");
-        }
-
-        auto instance = std::get<Value::InstancePtr>(objVal.data);
-
-        // записываем в fields объекта
-        instance->fields[attr] = val;
+        setAttrValue(objVal, attr, val);
 
         return val;
     }
