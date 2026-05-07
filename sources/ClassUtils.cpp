@@ -29,14 +29,21 @@ Value getAttrValue(const Value& obj, const QString& attr) {
             if (val.hasGet() && val.hasSet()) {
                 return val.callGet(instance, cls);
             }
-        } catch (...) {}
+        } catch (const std::runtime_error& e) {
+
+            const std::string msg = e.what();
+
+            if (msg.find("Attribute not found") == std::string::npos) {
+                throw;
+            }
+        }
 
         // 2. instance fields
         if (instance->fields.contains(attr)) {
             return instance->fields[attr];
         }
 
-        // 3. non-data descriptor
+        // 3. non-data descriptor | class attribute
         try {
             Value val = findAttrInHierarchy(cls, attr);
 
@@ -45,7 +52,14 @@ Value getAttrValue(const Value& obj, const QString& attr) {
             }
 
             return val;
-        } catch (...) {}
+        } catch (const std::runtime_error& e) {
+
+            const std::string msg = e.what();
+
+            if (msg.find("Attribute not found") == std::string::npos) {
+                throw;
+            }
+        }
     }
 
     // super

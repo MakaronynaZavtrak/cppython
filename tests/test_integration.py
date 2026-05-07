@@ -1136,6 +1136,56 @@ def test_single_line_expressions(expr, expected):
       "b = B()",
       "b.x"], "2"),
 
+    # приоритеты дескрипторов
+    # data descriptor > instance field
+    (["class D:",
+      "    def __get__(self, obj, owner):",
+      "        return 123",
+      "    def __set__(self, obj, value):",
+      "        obj.real = value",
+      "",
+      "class A:",
+      "    x = D()",
+      "",
+      "a = A()",
+      "a.x = 999",
+      "a.real"], "999"),
+
+    (["class D:",
+      "    def __get__(self, obj, owner):",
+      "        return 123",
+      "    def __set__(self, obj, value):",
+      "        obj.real = value",
+      "",
+      "class A:",
+      "    x = D()",
+      "",
+      "a = A()",
+      "a.x = 999",
+      "a.x"], "123"),
+
+    # instance field > non-data descriptor
+    (["class D:",
+      "    def __get__(self, obj, owner):",
+      "        return 555",
+      "",
+      "class A:",
+      "    x = D()",
+      "",
+      "a = A()",
+      "a.x = 999",
+      "a.x"], "999"),
+
+    # descriptor на классе
+    (["class D:",
+      "    def __get__(self, obj, owner):",
+      "        return 777",
+      "",
+      "class A:",
+      "    x = D()",
+      "",
+      "A.x"], "777"),
+
 ])
 
 def test_multiline_expressions(commands, expected):
