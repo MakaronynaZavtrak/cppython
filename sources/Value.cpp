@@ -226,12 +226,8 @@ Value Value::callGet(const InstancePtr& instance,
 
 bool Value::hasSet() const {
     if (std::holds_alternative<PropertyPtr>(data)) {
-        if (const auto& prop = std::get<PropertyPtr>(data); !prop->fset) {
-            throw std::runtime_error(
-                "AttributeError: property has no setter"
-            );
-        }
-        return true;
+        const auto& prop = std::get<PropertyPtr>(data);
+        return prop->fset != nullptr;
     }
 
     try {

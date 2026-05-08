@@ -37,7 +37,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
         const QString attr = args[1].asString();
 
         try {
-            getAttrValue(obj, attr);
+            genericGetAttr(obj, attr);
             return Value(true);
         } catch (...) {
             return Value(false);
@@ -57,7 +57,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
         const QString& attr = args[1].asString();
 
         try {
-            return getAttrValue(obj, attr);
+            return genericGetAttr(obj, attr);
         } catch (...) {
             if (args.size() == 3) {
                 return args[2]; // default
@@ -104,6 +104,21 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
             fdel = std::get<Value::FunctionPtr>(args[2].data);
 
         return Value(std::make_shared<PropertyValue>(fget, fset, fdel));
+    }
+)));
+
+    env->set("__object_getattribute__", Value(std::make_shared<BuiltinFunction>(
+        "__object_getattribute__",
+        [](const std::vector<Value>& args,
+           const std::shared_ptr<Environment>&) -> Value {
+
+            if (args.size() != 2) {
+                throw std::runtime_error(
+                    "__object_getattribute__ expects 2 arguments"
+                );
+            }
+
+            return genericGetAttr(args[0], args[1].asString());
     }
 )));
 

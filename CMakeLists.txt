@@ -44,7 +44,9 @@ add_executable(cppython main.cpp
         sources/InstanceValue.cpp
         headers/ReprMixin.h
         headers/PropertyValue.h
-        sources/PropertyValue.cpp)
+        sources/PropertyValue.cpp
+        headers/Runtime.h
+        sources/Runtime.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

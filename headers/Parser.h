@@ -13,6 +13,7 @@
 #include "FunctionValue.h"
 #include "InstanceValue.h"
 #include "Param.h"
+#include "Runtime.h"
 
 /**
  * @class ASTNode
@@ -983,6 +984,11 @@ public:
             }
 
             bases.push_back(std::get<Value::ClassPtr>(baseVal.data));
+        }
+
+        // наследование по умолчанию
+        if (bases.empty()) {
+            bases.push_back(Runtime::objectClass);
         }
 
         const auto cls = std::make_shared<ClassValue>(name);

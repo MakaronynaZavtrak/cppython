@@ -2,6 +2,8 @@
 // Created by semyo on 03.05.2026.
 //
 #include "ClassUtils.h"
+
+#include "CallRuntime.h"
 #include "ClassValue.h"
 #include "InstanceValue.h"
 #include "SuperValue.h"
@@ -15,7 +17,7 @@ bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
     }
 }
 
-Value getAttrValue(const Value& obj, const QString& attr) {
+Value genericGetAttr(const Value& obj, const QString& attr) {
 
     // instance
     if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
@@ -85,6 +87,83 @@ Value getAttrValue(const Value& obj, const QString& attr) {
                             attr.toStdString() + "'");
 }
 
+Value getAttrValue(const Value& obj, const QString& attr) {
+
+    // super bypasses __getattribute__
+    if (std::holds_alternative<Value::SuperPtr>(obj.data)) {
+        return genericGetAttr(obj, attr);
+    }
+
+    // instance/class custom __getattribute__
+    try {
+
+        Value getattribute = genericGetAttr(obj, "__getattribute__");
+
+        // builtin object.__getattribute__
+
+        bool isDefault = false;
+
+        if (std::holds_alternative<Value::BuiltinFunctionPtr>(getattribute.data)) {
+
+            const auto builtin =
+                std::get<Value::BuiltinFunctionPtr>(getattribute.data);
+
+            isDefault = (builtin->name == "__object_getattribute__");
+        }
+
+        if (!isDefault) {
+            return call(
+                getattribute,
+                { Value(attr) },
+                nullptr
+            );
+        }
+
+    } catch (const std::runtime_error& e) {
+
+        const std::string msg = e.what();
+
+        if (msg.find("AttributeError") == std::string::npos) {
+            throw;
+        }
+    }
+
+    // default lookup
+    try {
+        return genericGetAttr(obj, attr);
+    }
+    catch (const std::runtime_error& e) {
+
+        const std::string msg = e.what();
+
+        // только если attr реально не найден
+        if (msg.find("AttributeError") == std::string::npos) {
+            throw;
+        }
+    }
+
+    // __getattr__
+    try {
+
+        Value getattr = genericGetAttr(obj, "__getattr__");
+
+        return call(getattr, { Value(attr) }, nullptr);
+
+    } catch (const std::runtime_error& e) {
+
+        const std::string msg = e.what();
+
+        if (msg.find("AttributeError") == std::string::npos) {
+            throw;
+        }
+    }
+
+    throw std::runtime_error(
+        "AttributeError: object has no attribute '" +
+        attr.toStdString() + "'"
+    );
+}
+
 Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
     for (const auto& base : super->currentClass->bases) {
         try {
@@ -111,7 +190,15 @@ Value findAttrInHierarchy(const Value::ClassPtr& cls, const QString& attr) {
     for (const auto& base : cls->bases) {
         try {
             return findAttrInHierarchy(base, attr);
-        } catch (...) {}
+
+        } catch (const std::runtime_error& e) {
+
+            const std::string msg = e.what();
+
+            if (msg.find("Attribute not found") == std::string::npos) {
+                throw;
+            }
+        }
     }
 
     throw std::runtime_error("Attribute not found: " + attr.toStdString());

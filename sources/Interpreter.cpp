@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "Runtime.h"
+
 
 /**
  * Проверяет, является ли введенная команда одной из предопределенных команд выхода.
@@ -78,6 +80,15 @@ void Interpreter::run(int argc, char* argv[]) {
 
     const auto globalEnv = std::make_shared<Environment>();
     BuiltinFunction::registerBuiltins(globalEnv);
+
+    Runtime::objectClass = std::make_shared<ClassValue>(* new ClassValue("object"));
+
+    Runtime::objectClass->name = "object";
+
+    globalEnv->set("object", Value(Runtime::objectClass));
+
+    Runtime::objectClass->attributes["__getattribute__"] =
+    globalEnv->get("__object_getattribute__");
 
     Lexer lexer;
     std::vector<std::string> buffer;
