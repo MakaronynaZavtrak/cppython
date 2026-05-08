@@ -32,13 +32,15 @@ Value call(const Value& callee,
 
 Value callFunction(const Value::FunctionPtr& func,
                    const std::vector<Value>& args,
-                   const std::shared_ptr<Environment>& env)
+                   const std::shared_ptr<Environment>& envOverride = nullptr)
 {
     if (args.size() != func->params.size()) {
         throw std::runtime_error("Argument count mismatch");
     }
 
-    const auto local = std::make_shared<Environment>(func->closure);
+    const auto local = envOverride
+        ? envOverride
+        : std::make_shared<Environment>(func->closure);
 
     for (size_t i = 0; i < args.size(); ++i) {
         local->set(func->params[i].name, args[i]);
@@ -76,38 +78,29 @@ Value constructClass(const Value::ClassPtr& cls,
     return Value(instance);
 }
 
-Value callBoundMethod(const Value::BoundMethodPtr &bm,
-                      const std::vector<Value> &args)
-{
-    const auto& func = bm->function;
-    const auto& instance = bm->instance;
-
-    if (args.size() != func->params.size() - 1) {
-        throw std::runtime_error("Argument count mismatch");
-    }
-
-    const auto local = std::make_shared<Environment>(func->closure);
+Value callBoundMethod(const Value::BoundMethodPtr &bm, const std::vector<Value> &args) {
+    std::vector<Value> newArgs;
 
     // self
-    local->set(func->params[0].name, Value(instance));
+    newArgs.emplace_back(bm->instance);
 
-    local->set("__class__", Value(func->ownerClass));
+    // остальные аргументы
+    newArgs.insert(newArgs.end(), args.begin(), args.end());
 
-    // args
-    for (size_t i = 1; i < func->params.size(); ++i) {
-        local->set(func->params[i].name, args[i - 1]);
+    if (const auto f =
+        std::get_if<Value::FunctionPtr>(&bm->callable.data)) {
+        const auto local = std::make_shared<Environment>((*f)->closure);
+
+        local->set("__class__", Value(bm->ownerClass));
+
+        return callFunction(*f, newArgs, local);
     }
 
-    try {
-        Value result;
 
-        for (const auto& stmt : func->body) {
-            result = stmt->eval(local);
-        }
+    if (const auto b =
+       std::get_if<Value::BuiltinFunctionPtr>(&bm->callable.data)) {
+        return (*b)->func(newArgs, nullptr);
+    }
 
-        return result;
-    }
-    catch (ReturnException& e) {
-        return e.getValue();
-    }
+    throw std::runtime_error("Invalid bound method callable");
 }

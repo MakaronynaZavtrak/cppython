@@ -8,12 +8,12 @@
 // Created by semyo on 05.05.2026.
 //
 Value PropertyValue::get(const std::shared_ptr<InstanceValue>& instance,
-                         const std::shared_ptr<ClassValue>& owner) {
+                         const std::shared_ptr<ClassValue>& owner) const {
     if (!fget) {
         throw std::runtime_error("unreadable attribute");
     }
 
     // вызываем fget как bound method
-    const auto bound = std::make_shared<BoundMethod>(fget, instance, owner);
+    const auto bound = std::make_shared<BoundMethod>(Value(fget), instance, owner);
     return callBoundMethod(bound, {});
 }

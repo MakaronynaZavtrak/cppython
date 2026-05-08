@@ -1,3 +1,4 @@
+#include "BoundMethod.h"
 #include "ClassUtils.h"
 #include "Environment.h"
 #include "PropertyValue.h"
@@ -122,4 +123,37 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
     }
 )));
 
+    env->set("__object_setattr__",
+    Value(std::make_shared<BuiltinFunction>(
+        "__object_setattr__",
+        [](const std::vector<Value>& args,
+           const std::shared_ptr<Environment>&)
+           -> Value {
+
+            if (args.size() != 3) {
+                throw std::runtime_error(
+                    "__object_setattr__ expects 3 args"
+                );
+            }
+
+            genericSetAttr(args[0], args[1].asString(), args[2]);
+
+            return {};
+        }
+)));
+
+}
+
+Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner)
+{
+
+    if (!instance) {
+        return Value(shared_from_this());
+    }
+
+    return Value(std::make_shared<BoundMethod>(
+        Value(shared_from_this()),
+        instance,
+        owner
+    ));
 }

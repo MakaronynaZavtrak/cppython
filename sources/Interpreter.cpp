@@ -90,6 +90,9 @@ void Interpreter::run(int argc, char* argv[]) {
     Runtime::objectClass->attributes["__getattribute__"] =
     globalEnv->get("__object_getattribute__");
 
+    Runtime::objectClass->attributes["__setattr__"] =
+    globalEnv->get("__object_setattr__");
+
     Lexer lexer;
     std::vector<std::string> buffer;
     bool isInBlock = false;

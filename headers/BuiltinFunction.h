@@ -6,10 +6,12 @@
 #define CPPYTHON_BUILTINFUNCTION_H
 #include <functional>
 
+class InstanceValue;
+class ClassValue;
 class Value;
 class Environment;
 
-class BuiltinFunction {
+class BuiltinFunction : std::enable_shared_from_this<BuiltinFunction> {
 public:
     using FuncType = std::function<Value(const std::vector<Value>&, const std::shared_ptr<Environment>&)>;
 
@@ -20,5 +22,7 @@ public:
         : func(std::move(func)), name(std::move(name)) {}
 
     static void registerBuiltins(const std::shared_ptr<Environment>&);
+
+    Value get(const std::shared_ptr<InstanceValue>&,const std::shared_ptr<ClassValue>&);
 };
 #endif //CPPYTHON_BUILTINFUNCTION_H

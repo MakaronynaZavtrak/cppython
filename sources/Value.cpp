@@ -249,7 +249,7 @@ void Value::callSet(const InstancePtr& instance,
         }
 
         const auto bound = std::make_shared<BoundMethod>(
-            prop->fset,
+            Value(prop->fset),
             instance,
             owner
         );

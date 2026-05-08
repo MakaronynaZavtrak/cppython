@@ -204,7 +204,7 @@ Value findAttrInHierarchy(const Value::ClassPtr& cls, const QString& attr) {
     throw std::runtime_error("Attribute not found: " + attr.toStdString());
 }
 
-void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
+void genericSetAttr(const Value& obj, const QString& attr, const Value& value) {
     // instance
     if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
         const auto instance = std::get<Value::InstancePtr>(obj.data);
@@ -238,4 +238,57 @@ void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
     }
 
     throw std::runtime_error("setattr: object has no attributes");
+}
+
+void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
+
+    // super bypass
+    if (std::holds_alternative<Value::SuperPtr>(obj.data)) {
+        genericSetAttr(obj, attr, value);
+        return;
+    }
+
+    try {
+
+        Value setattr =
+            genericGetAttr(obj, "__setattr__");
+
+        bool isDefault = false;
+
+        if (std::holds_alternative<Value::BuiltinFunctionPtr>(
+                setattr.data)) {
+
+            const auto builtin =
+                std::get<Value::BuiltinFunctionPtr>(
+                    setattr.data);
+
+            isDefault =
+                (builtin->name == "__object_setattr__");
+                }
+
+        if (!isDefault) {
+
+            call(
+                setattr,
+                {
+                    Value(attr),
+                    value
+                },
+                nullptr
+            );
+
+            return;
+        }
+
+    } catch (const std::runtime_error& e) {
+
+        const std::string msg = e.what();
+
+        if (msg.find("AttributeError")
+            == std::string::npos) {
+            throw;
+            }
+    }
+
+    genericSetAttr(obj, attr, value);
 }

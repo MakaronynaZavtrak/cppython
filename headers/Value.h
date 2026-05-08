@@ -88,6 +88,7 @@ public:
     explicit Value(const ClassPtr& cls) : data(cls) {}
     explicit Value(const InstancePtr& cls) : data(cls) {}
     explicit Value(const BoundMethodPtr& cls) : data(cls) {}
+    explicit Value(const BoundMethodPtr&& cls) : data(cls) {}
 
     explicit Value(const BuiltinFunctionPtr& func) : data(func) {}
     explicit Value(const SuperPtr& superValue) : data(superValue) {}

@@ -12,7 +12,9 @@ Value genericGetAttr(const Value&, const QString&);
 
 Value getAttrValue(const Value&, const QString&);
 
-void setAttrValue(const Value& obj, const QString&, const Value&);
+void genericSetAttr(const Value&, const QString&, const Value&);
+
+void setAttrValue(const Value&, const QString&, const Value&);
 
 Value getAttrFromSuper(const Value::SuperPtr&, const QString&);
 

@@ -6,10 +6,19 @@
 // Created by semyo on 03.05.2026.
 //
 Value FunctionValue::get(const std::shared_ptr<InstanceValue>& instance, const std::shared_ptr<ClassValue>& owner) {
-    if (instance) {
-        return Value(std::make_shared<BoundMethod>(shared_from_this(), instance, owner));
+
+    // доступ через класс
+    if (!instance) {
+        return Value(shared_from_this());
     }
-    return Value(shared_from_this());
+
+
+    // доступ через instance
+    return Value(std::make_shared<BoundMethod>(
+       Value(shared_from_this()),
+       instance,
+       owner
+   ));
 }
 
 QString FunctionValue::toString() const {
