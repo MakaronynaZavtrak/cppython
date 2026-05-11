@@ -831,11 +831,13 @@ public:
     QString name;
     std::vector<Param> params;
     std::vector<std::shared_ptr<ASTNode>> body;
+    std::vector<std::shared_ptr<ASTNode>> decorators;
 
     FunctionDefNode(QString name,
                     std::vector<Param> params,
-                    std::vector<std::shared_ptr<ASTNode>> body)
-    : name(std::move(name)), params(std::move(params)), body(std::move(body)) {}
+                    std::vector<std::shared_ptr<ASTNode>> body,
+                    std::vector<std::shared_ptr<ASTNode>> decorators = {})
+    : name(std::move(name)), params(std::move(params)), body(std::move(body)), decorators(std::move(decorators)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
         const auto func = std::make_shared<FunctionValue>();
@@ -847,7 +849,14 @@ public:
 
 
         Value v(func);
-        env.get()->set(name, v);
+
+        // применяем декораторы снизу вверх
+        for (auto it = decorators.rbegin(); it != decorators.rend(); ++it) {
+            Value decorator = (*it)->eval(env);
+            v = call(decorator, { v }, env);
+        }
+
+        env->set(name, v);
 
         return v;
     }
@@ -967,11 +976,16 @@ public:
     QString name;
     std::vector<std::shared_ptr<ASTNode>> baseExprs;
     QVector<std::shared_ptr<ASTNode>> body;
+    std::vector<std::shared_ptr<ASTNode>> decorators;
 
     ClassDefNode(QString name,
                  std::vector<std::shared_ptr<ASTNode>> bases,
-                 QVector<std::shared_ptr<ASTNode>> body)
-        : name(std::move(name)), baseExprs(std::move(bases)), body(std::move(body)) {}
+                 QVector<std::shared_ptr<ASTNode>> body,
+                 std::vector<std::shared_ptr<ASTNode>> decorators = {})
+        : name(std::move(name)),
+        baseExprs(std::move(bases)),
+        body(std::move(body)),
+        decorators(std::move(decorators)) {}
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
         std::vector<Value::ClassPtr> bases;
@@ -992,6 +1006,7 @@ public:
         }
 
         const auto cls = std::make_shared<ClassValue>(name);
+        cls->bases = bases;
 
         // создаём временное окружение
         const auto classEnv = std::make_shared<Environment>(env);
@@ -1004,6 +1019,7 @@ public:
         // копируем всё из classEnv в attributes
         for (const auto& [key, val] : classEnv->variables) {
 
+            // если это функция — проставляем ownerClass
             if (Value newVal = val; std::holds_alternative<Value::FunctionPtr>(newVal.data)) {
                 auto func = std::get<Value::FunctionPtr>(newVal.data);
                 func->ownerClass = cls;
@@ -1012,10 +1028,18 @@ public:
             cls->attributes.insert(key, val);
         }
 
-        cls->bases = bases;
+        Value classValue(cls);
+
+        // применяем декораторы снизу вверх
+        for (auto it = decorators.rbegin(); it != decorators.rend(); ++it) {
+            Value decorator = (*it)->eval(env);
+
+            classValue = call(decorator, { classValue }, env);
+        }
+
         env->set(name, Value(cls));
 
-        return Value(cls);
+        return classValue;
     }
 
     [[nodiscard]] QString toString() const override { return "class " + name; }
@@ -1219,7 +1243,7 @@ private:
      */
     std::shared_ptr<ASTNode> parseContinueStatement();
 
-    std::shared_ptr<ASTNode> parseFunctionDef();
+    std::shared_ptr<ASTNode> parseFunctionDef(const std::vector<std::shared_ptr<ASTNode>>& decorators = {});
 
     std::shared_ptr<ASTNode> parseReturn();
 
@@ -1229,9 +1253,11 @@ private:
 
     std::shared_ptr<ASTNode> parseNonlocalStatement();
 
-    std::shared_ptr<ASTNode> parseClassDef();
+    std::shared_ptr<ASTNode> parseClassDef(const std::vector<std::shared_ptr<ASTNode>>& decorators = {});
 
     std::shared_ptr<ASTNode> parsePostfix(std::shared_ptr<ASTNode>);
+
+    std::shared_ptr<ASTNode> parseDecorated();
 
     QVector<Token> tokens;
     int current = 0;

@@ -165,21 +165,46 @@ Value getAttrValue(const Value& obj, const QString& attr) {
 }
 
 Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
-    for (const auto& base : super->currentClass->bases) {
-        try {
-            Value val = findAttrInHierarchy(base, attr);
+    std::vector<Value::ClassPtr> mro;
+    buildMRO(super->instance->klass, mro);
+
+    bool foundOrigin = false;
+
+    for (const auto& cls : mro) {
+
+        if (!foundOrigin) {
+            if (cls == super->originClass) {
+                foundOrigin = true;
+            }
+
+            continue;
+        }
+
+        if (cls->attributes.contains(attr)) {
+
+            Value val = cls->attributes[attr];
 
             if (val.hasGet()) {
-                return val.callGet(super->instance, base);
+                return val.callGet(
+                    super->instance,
+                    cls
+                );
             }
 
             return val;
-
-        } catch (...) {}
+        }
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +
                             attr.toStdString() + "'");
+}
+
+void buildMRO(const Value::ClassPtr& cls, std::vector<Value::ClassPtr>& out) {
+    out.push_back(cls);
+
+    for (const auto& base : cls->bases) {
+        buildMRO(base, out);
+    }
 }
 
 Value findAttrInHierarchy(const Value::ClassPtr& cls, const QString& attr) {

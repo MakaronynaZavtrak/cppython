@@ -38,9 +38,15 @@ Value callFunction(const Value::FunctionPtr& func,
         throw std::runtime_error("Argument count mismatch");
     }
 
-    const auto local = envOverride
-        ? envOverride
-        : std::make_shared<Environment>(func->closure);
+    const auto local = std::make_shared<Environment>(func->closure);
+
+    // копируем override-переменные
+    if (envOverride) {
+        for (const auto& [k, v] : envOverride->variables) {
+            local->set(k, v);
+        }
+    }
+
 
     for (size_t i = 0; i < args.size(); ++i) {
         local->set(func->params[i].name, args[i]);

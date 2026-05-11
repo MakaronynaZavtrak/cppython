@@ -229,6 +229,12 @@ Token Lexer::readIdentifierOrBool(const QString& code) {
 Token Lexer::readOperator(const QString& code) {
     const QChar op = code[pos++];
 
+    // Декораторы
+    if (op == '@') {
+        return {TOKEN_AT, "@", line};
+    }
+
+    // Двухсимвольные операторы
     if (pos < code.length()) {
         const QChar next = code[pos];
         if (QString combined = QString(op) + next; combined == "==" || combined == "+=" || combined == "!=" ||
@@ -239,6 +245,7 @@ Token Lexer::readOperator(const QString& code) {
         }
     }
 
+    // Обычный оператор
     return {TOKEN_OP, QString(op), line};
 }
 

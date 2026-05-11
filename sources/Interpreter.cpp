@@ -121,6 +121,16 @@ void Interpreter::run(int argc, char* argv[]) {
                 isInBlock = true;
                 continue;
             }
+
+            // если предыдущая строка была декоратором
+            if (!buffer.empty()) {
+                const std::string& prev = buffer.back();
+
+                if (!prev.empty() && prev[0] == '@') {
+                    isInBlock = true;
+                    continue;
+                }
+            }
         }
 
         std::string code = assembleCode(buffer);

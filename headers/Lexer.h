@@ -49,6 +49,7 @@ enum TokenType {
     TOKEN_BOOL,
     TOKEN_KEYWORD,
     TOKEN_OP,
+    TOKEN_AT,
     TOKEN_NEWLINE,
     TOKEN_INDENT,
     TOKEN_DEDENT,

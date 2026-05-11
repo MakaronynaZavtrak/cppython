@@ -18,5 +18,7 @@ void setAttrValue(const Value&, const QString&, const Value&);
 
 Value getAttrFromSuper(const Value::SuperPtr&, const QString&);
 
+void buildMRO(const Value::ClassPtr&, std::vector<Value::ClassPtr>&);
+
 Value findAttrInHierarchy(const Value::ClassPtr&, const QString&);
 #endif //CPPYTHON_CLASSUTILS_H

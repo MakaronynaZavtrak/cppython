@@ -35,6 +35,9 @@ std::shared_ptr<ASTNode> Parser::parse() {
             default:                break;
         }
     }
+    if (peek().type == TOKEN_AT) {
+        return parseDecorated();
+    }
     return parseAssignment();
 }
 
@@ -534,7 +537,7 @@ std::shared_ptr<ASTNode> Parser::parseContinueStatement() {
     return std::make_shared<ContinueNode>();
 }
 
-std::shared_ptr<ASTNode> Parser::parseFunctionDef() {
+std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_ptr<ASTNode>>& decorators) {
     advance();
 
     if (peek().type != TOKEN_ID) {
@@ -596,7 +599,7 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef() {
 
     auto body = parseBlock();
 
-    return std::make_shared<FunctionDefNode>(name, params, body);
+    return std::make_shared<FunctionDefNode>(name, params, body, decorators);
 }
 
 std::shared_ptr<ASTNode> Parser::parseReturn() {
@@ -617,7 +620,7 @@ std::shared_ptr<ASTNode> Parser::parsePass() {
     return std::make_shared<PassNode>();
 }
 
-std::shared_ptr<ASTNode> Parser::parseClassDef() {
+std::shared_ptr<ASTNode> Parser::parseClassDef(const std::vector<std::shared_ptr<ASTNode>>& decorators) {
     advance(); // class
 
     if (peek().type != TOKEN_ID) {
@@ -667,7 +670,7 @@ std::shared_ptr<ASTNode> Parser::parseClassDef() {
         qBody.push_back(stmt);
     }
 
-    return std::make_shared<ClassDefNode>(name, bases, qBody);
+    return std::make_shared<ClassDefNode>(name, bases, qBody, decorators);
 }
 
 std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
@@ -715,6 +718,41 @@ std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
     }
 
     return node;
+}
+
+std::shared_ptr<ASTNode> Parser::parseDecorated() {
+    std::vector<std::shared_ptr<ASTNode>> decorators;
+
+    while (peek().type == TOKEN_AT) {
+
+        advance(); // @
+
+        decorators.push_back(parseAssignment());
+
+        if (peek().type == TOKEN_NEWLINE) {
+            advance();
+        }
+    }
+
+    if (peek().type != TOKEN_KEYWORD) {
+        throw std::runtime_error(
+            "Expected def or class after decorator"
+        );
+    }
+
+    auto kw = peek().keyword.value();
+
+    if (kw == Keyword::DEF) {
+        return parseFunctionDef(decorators);
+    }
+
+    if (kw == Keyword::CLASS) {
+        return parseClassDef(decorators);
+    }
+
+    throw std::runtime_error(
+        "Decorator can only be applied to def/class"
+    );
 }
 
 /**
