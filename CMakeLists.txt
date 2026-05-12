@@ -52,7 +52,9 @@ add_executable(cppython main.cpp
         sources/StaticMethodValue.cpp
         sources/ClassMethodValue.cpp
         headers/DescriptorUtils.h
-        sources/DescriptorUtils.cpp)
+        sources/DescriptorUtils.cpp
+        headers/ListValue.h
+        sources/ListValue.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

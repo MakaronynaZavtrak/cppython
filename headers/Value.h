@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class ListValue;
 class ClassMethodValue;
 class StaticMethodValue;
 class SuperValue;
@@ -33,10 +34,9 @@ class FunctionValue;
  */
 class Value : public ReprMixin {
 public:
-    using List = std::vector<Value>;
     using Dict = QHash<QString, Value>;
 
-    using ListPtr = std::shared_ptr<List>;
+    using ListPtr = std::shared_ptr<ListValue>;
     using DictPtr = std::shared_ptr<Dict>;
     using FunctionPtr = std::shared_ptr<FunctionValue>;
 
@@ -82,8 +82,7 @@ public:
     explicit Value(const QString& str) : data(str) {}
     explicit Value(const char* str) : data(QString(str)) {}
 
-    explicit Value(const List& list) : data(std::make_shared<List>(list)) {}
-    explicit Value(List&& list) : data(std::make_shared<List>(std::move(list))) {}
+    explicit Value(const std::shared_ptr<ListValue> & list) : data(list) {};
 
     explicit Value(const Dict& dict) : data(std::make_shared<Dict>(dict)) {}
     explicit Value(Dict&& dict) : data(std::make_shared<Dict>(std::move(dict))) {}

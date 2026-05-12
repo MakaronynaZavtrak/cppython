@@ -3,6 +3,7 @@
 #include "BoundMethod.h"
 #include "ClassMethodValue.h"
 #include "FunctionValue.h"
+#include "ListValue.h"
 #include "PropertyValue.h"
 #include "StaticMethodValue.h"
 
@@ -53,7 +54,7 @@ QString Value::toString() const {
     }
 
     if (std::holds_alternative<ListPtr>(data)) {
-        return "[...]";
+        return std::get<ListPtr>(data)->toString();
     }
 
     if (std::holds_alternative<DictPtr>(data)) {

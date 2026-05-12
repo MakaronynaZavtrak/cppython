@@ -13,6 +13,7 @@
 #include "ClassUtils.h"
 #include "FunctionValue.h"
 #include "InstanceValue.h"
+#include "ListValue.h"
 #include "Param.h"
 #include "Runtime.h"
 #include "StaticMethodValue.h"
@@ -1119,6 +1120,35 @@ public:
     [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
+class ListNode : public ASTNode {
+public:
+    std::vector<std::shared_ptr<ASTNode>> elements;
+
+    explicit ListNode(std::vector<std::shared_ptr<ASTNode>> elems)
+        : elements(std::move(elems)) {}
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+
+        std::vector<Value> values;
+
+        for (const auto& el : elements) {
+            values.push_back(el->eval(env));
+        }
+
+        return Value(std::make_shared<ListValue>(std::move(values)));
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QStringList parts;
+
+        for (const auto& el : elements) {
+            parts << el->toString();
+        }
+
+        return "[" + parts.join(", ") + "]";
+    }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -1277,6 +1307,10 @@ private:
     std::shared_ptr<ASTNode> parsePostfix(std::shared_ptr<ASTNode>);
 
     std::shared_ptr<ASTNode> parseDecorated();
+
+    std::shared_ptr<ASTNode> parseList();
+
+    void consume(const TokenType type, const QString &value);
 
     QVector<Token> tokens;
     int current = 0;

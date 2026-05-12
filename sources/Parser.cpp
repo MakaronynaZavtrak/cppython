@@ -232,12 +232,16 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
         case TOKEN_STRING: node = parseStringToken(); break;
         case TOKEN_BOOL:   node = parseBoolToken(); break;
         case TOKEN_ID:     node = parseIdentifierToken(); break;
+
         case TOKEN_OP:
             if (token.value == "(")
                 node = parseParenthesizedExpression();
+            else if (token.value == "[")
+                node = parseList();
             else
                 throwUnexpectedTokenError(token);
             break;
+
         case TOKEN_EOF: return nullptr;
         default: throwUnexpectedTokenError(token);
     }
@@ -753,6 +757,46 @@ std::shared_ptr<ASTNode> Parser::parseDecorated() {
     throw std::runtime_error(
         "Decorator can only be applied to def/class"
     );
+}
+
+std::shared_ptr<ASTNode> Parser::parseList() {
+    std::vector<std::shared_ptr<ASTNode>> elements;
+    advance(); // [
+
+    // пустой список: []
+    if (peek().type == TOKEN_OP && peek().value == "]") {
+        advance(); // ]
+        return std::make_shared<ListNode>(std::move(elements));
+    }
+
+    while (true) {
+
+        elements.push_back(parseAssignment());
+
+        // конец списка, например [1, 2, 3]
+        if  (peek().type == TOKEN_OP && peek().value == "]") {
+            advance();
+            break;
+        }
+
+        consume(TOKEN_OP, ",");
+
+        // запятая в конце ([1, 2,])
+        if (peek().type == TOKEN_OP && peek().value == "]") {
+            advance(); // ]
+            break;
+        }
+    }
+
+    return std::make_shared<ListNode>(std::move(elements));
+}
+
+void Parser::consume(const TokenType type, const QString& value) {
+    if (peek().type != type || peek().value != value) {
+        throw std::runtime_error("Expected token: " + value.toStdString());
+    }
+
+    advance();
 }
 
 /**
