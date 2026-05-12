@@ -8,6 +8,15 @@
 #include <cmath>
 #include <utility>
 
+#include "CallRuntime.h"
+#include "ClassMethodValue.h"
+#include "ClassUtils.h"
+#include "FunctionValue.h"
+#include "InstanceValue.h"
+#include "Param.h"
+#include "Runtime.h"
+#include "StaticMethodValue.h"
+
 /**
  * @class ASTNode
  * @brief Представляет узел абстрактного синтаксического дерева (AST) в интерпретаторе языка программирования.
@@ -824,22 +833,32 @@ public:
     QString name;
     std::vector<Param> params;
     std::vector<std::shared_ptr<ASTNode>> body;
+    std::vector<std::shared_ptr<ASTNode>> decorators;
 
     FunctionDefNode(QString name,
                     std::vector<Param> params,
-                    std::vector<std::shared_ptr<ASTNode>> body)
-    : name(std::move(name)), params(std::move(params)), body(std::move(body)) {}
+                    std::vector<std::shared_ptr<ASTNode>> body,
+                    std::vector<std::shared_ptr<ASTNode>> decorators = {})
+    : name(std::move(name)), params(std::move(params)), body(std::move(body)), decorators(std::move(decorators)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
-        auto func = std::make_shared<FunctionValue>();
+        const auto func = std::make_shared<FunctionValue>();
 
         func->params = params;
         func->body = body;
         func->closure = env;
+        func->name = name;
 
 
         Value v(func);
-        env.get()->set(name, v);
+
+        // применяем декораторы снизу вверх
+        for (auto it = decorators.rbegin(); it != decorators.rend(); ++it) {
+            Value decorator = (*it)->eval(env);
+            v = call(decorator, { v }, env);
+        }
+
+        env->set(name, v);
 
         return v;
     }
@@ -878,29 +897,15 @@ public:
         : callee(std::move(callee)), args(std::move(args)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
-        const Value funcVal = callee->eval(env);
-        const auto func = std::get<std::shared_ptr<FunctionValue>>(funcVal.data);
+        const Value calleeVal = callee->eval(env);
 
-        if (args.size() != func->params.size()) {
-            throw std::runtime_error("Argument count mismatch");
-        }
+        std::vector<Value> evaluatedArgs;
+        evaluatedArgs.reserve(args.size());
 
-        const auto local = std::make_shared<Environment>(func->closure);
+        for (auto& a : args)
+            evaluatedArgs.push_back(a->eval(env));
 
-
-        for (size_t i = 0; i < func->params.size(); ++i) {
-            local->set(func->params[i].name, args[i]->eval(env));
-        }
-
-        Value result;
-        try {
-            for (const auto& stmt : func->body) {
-                result = stmt->eval(local);
-            }
-        } catch (ReturnException& e) {
-            return e.getValue();
-        }
-        return result;
+        return call(calleeVal, evaluatedArgs, env);
     }
 
     [[nodiscard]] QString toString() const override {
@@ -963,6 +968,152 @@ public:
             env->nonlocalVars.insert(name);
         }
         return {};
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class ClassDefNode final : public ASTNode {
+public:
+    QString name;
+    std::vector<std::shared_ptr<ASTNode>> baseExprs;
+    QVector<std::shared_ptr<ASTNode>> body;
+    std::vector<std::shared_ptr<ASTNode>> decorators;
+
+    ClassDefNode(QString name,
+                 std::vector<std::shared_ptr<ASTNode>> bases,
+                 QVector<std::shared_ptr<ASTNode>> body,
+                 std::vector<std::shared_ptr<ASTNode>> decorators = {})
+        : name(std::move(name)),
+        baseExprs(std::move(bases)),
+        body(std::move(body)),
+        decorators(std::move(decorators)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+        std::vector<Value::ClassPtr> bases;
+
+        for (auto& baseExpr : baseExprs) {
+            Value baseVal = baseExpr->eval(env);
+
+            if (!std::holds_alternative<Value::ClassPtr>(baseVal.data)) {
+                throw std::runtime_error("Base must be a class");
+            }
+
+            bases.push_back(std::get<Value::ClassPtr>(baseVal.data));
+        }
+
+        // наследование по умолчанию
+        if (bases.empty()) {
+            bases.push_back(Runtime::objectClass);
+        }
+
+        const auto cls = std::make_shared<ClassValue>(name);
+        cls->bases = bases;
+
+        // создаём временное окружение
+        const auto classEnv = std::make_shared<Environment>(env);
+
+        // выполняем тело класса
+        for (const auto& stmt : body) {
+            [[maybe_unused]] const auto _ = stmt->eval(classEnv);
+        }
+
+        // копируем всё из classEnv в attributes
+        for (const auto& [key, val] : classEnv->variables) {
+
+            Value newVal = val;
+
+            // обычная функция
+            if (std::holds_alternative<Value::FunctionPtr>(newVal.data)) {
+
+                auto func = std::get<Value::FunctionPtr>(newVal.data);
+                func->ownerClass = cls;
+            }
+
+            // staticmethod
+            else if (std::holds_alternative<Value::StaticMethodPtr>(newVal.data)) {
+
+                auto sm = std::get<Value::StaticMethodPtr>(newVal.data);
+                sm->func->ownerClass = cls;
+            }
+
+            // classmethod
+            else if (std::holds_alternative<Value::ClassMethodPtr>(newVal.data)) {
+
+                auto cm = std::get<Value::ClassMethodPtr>(newVal.data);
+                cm->func->ownerClass = cls;
+            }
+
+            cls->attributes.insert(key, val);
+        }
+
+        Value classValue(cls);
+
+        // применяем декораторы снизу вверх
+        for (auto it = decorators.rbegin(); it != decorators.rend(); ++it) {
+            Value decorator = (*it)->eval(env);
+
+            classValue = call(decorator, { classValue }, env);
+        }
+
+        env->set(name, classValue);
+
+        return classValue;
+    }
+
+    [[nodiscard]] QString toString() const override { return "class " + name; }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class AttributeAccessNode : public ASTNode {
+public:
+    std::shared_ptr<ASTNode> object;
+    QString attr;
+
+    AttributeAccessNode(std::shared_ptr<ASTNode> object, QString attr)
+        : object(std::move(object)), attr(std::move(attr)) {}
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        const Value objVal = object->eval(env);
+
+        if (std::holds_alternative<Value::SuperPtr>(objVal.data)) {
+            const auto super = std::get<Value::SuperPtr>(objVal.data);
+            return getAttrFromSuper(super, attr);
+        }
+
+        return getAttrValue(objVal, attr);
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return object->toString() + "." + attr;
+    }
+};
+
+class AttributeAssignNode final : public ASTNode {
+public:
+    std::shared_ptr<ASTNode> object;
+    QString attr;
+    std::shared_ptr<ASTNode> valueExpr;
+
+    AttributeAssignNode(std::shared_ptr<ASTNode> object,
+                        QString attr,
+                        std::shared_ptr<ASTNode> valueExpr)
+        : object(std::move(object)),
+          attr(std::move(attr)),
+          valueExpr(std::move(valueExpr)) {}
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+        Value objVal = object->eval(env);
+        Value val = valueExpr->eval(env);
+
+        setAttrValue(objVal, attr, val);
+
+        return val;
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return object->toString() + "." + attr + " = " + valueExpr->toString();
     }
 
     [[nodiscard]] bool shouldPrint() const override { return false; }
@@ -1111,7 +1262,7 @@ private:
      */
     std::shared_ptr<ASTNode> parseContinueStatement();
 
-    std::shared_ptr<ASTNode> parseFunctionDef();
+    std::shared_ptr<ASTNode> parseFunctionDef(const std::vector<std::shared_ptr<ASTNode>>& decorators = {});
 
     std::shared_ptr<ASTNode> parseReturn();
 
@@ -1120,6 +1271,12 @@ private:
     std::shared_ptr<ASTNode> parseGlobalStatement();
 
     std::shared_ptr<ASTNode> parseNonlocalStatement();
+
+    std::shared_ptr<ASTNode> parseClassDef(const std::vector<std::shared_ptr<ASTNode>>& decorators = {});
+
+    std::shared_ptr<ASTNode> parsePostfix(std::shared_ptr<ASTNode>);
+
+    std::shared_ptr<ASTNode> parseDecorated();
 
     QVector<Token> tokens;
     int current = 0;

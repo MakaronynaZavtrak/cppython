@@ -31,8 +31,12 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::DEF:      return parseFunctionDef();
             case Keyword::RETURN:   return parseReturn();
             case Keyword::PASS:     return parsePass();
+            case Keyword::CLASS:    return parseClassDef();
             default:                break;
         }
+    }
+    if (peek().type == TOKEN_AT) {
+        return parseDecorated();
     }
     return parseAssignment();
 }
@@ -57,10 +61,16 @@ std::shared_ptr<ASTNode> Parser::parseAssignment() {
     std::shared_ptr<ASTNode> left = parseComparison();
     if (peek().type == TOKEN_OP && peek().value == "=") {
         advance();
-        std::shared_ptr<ASTNode> right = parseAssignment();
-        const std::shared_ptr<VarNode> var = std::dynamic_pointer_cast<VarNode>(left);
-        if (!var) throw std::runtime_error("Invalid assignment target");
-        return std::make_shared<AssignNode>(var->name, right);
+        auto right = parseAssignment();
+
+        if (const auto var = std::dynamic_pointer_cast<VarNode>(left)) {
+            return std::make_shared<AssignNode>(var->name, right);
+        }
+
+        if (const auto attr = std::dynamic_pointer_cast<AttributeAccessNode>(left)) {
+            return std::make_shared<AttributeAssignNode>(attr->object, attr->attr, right);
+        }
+        throw std::runtime_error("Invalid assignment target");
     }
     return left;
 }
@@ -215,16 +225,24 @@ std::shared_ptr<ASTNode> Parser::parsePower()
  *         или при обнаружении неожиданного токена.
  */
 std::shared_ptr<ASTNode> Parser::parsePrimary() {
+    std::shared_ptr<ASTNode> node;
+
     switch (const Token token = peek(); token.type) {
-        case TOKEN_NUMBER: return parseNumberToken();
-        case TOKEN_STRING: return parseStringToken();
-        case TOKEN_BOOL:   return parseBoolToken();
-        case TOKEN_ID:     return parseIdentifierToken();
-        case TOKEN_OP:     return token.value == "(" ? parseParenthesizedExpression() : nullptr;
-        case TOKEN_EOF:    return nullptr;
-        default:           throwUnexpectedTokenError(token);
+        case TOKEN_NUMBER: node = parseNumberToken(); break;
+        case TOKEN_STRING: node = parseStringToken(); break;
+        case TOKEN_BOOL:   node = parseBoolToken(); break;
+        case TOKEN_ID:     node = parseIdentifierToken(); break;
+        case TOKEN_OP:
+            if (token.value == "(")
+                node = parseParenthesizedExpression();
+            else
+                throwUnexpectedTokenError(token);
+            break;
+        case TOKEN_EOF: return nullptr;
+        default: throwUnexpectedTokenError(token);
     }
-    return nullptr;
+
+    return parsePostfix(node);
 }
 
 /**
@@ -519,7 +537,7 @@ std::shared_ptr<ASTNode> Parser::parseContinueStatement() {
     return std::make_shared<ContinueNode>();
 }
 
-std::shared_ptr<ASTNode> Parser::parseFunctionDef() {
+std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_ptr<ASTNode>>& decorators) {
     advance();
 
     if (peek().type != TOKEN_ID) {
@@ -581,7 +599,7 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef() {
 
     auto body = parseBlock();
 
-    return std::make_shared<FunctionDefNode>(name, params, body);
+    return std::make_shared<FunctionDefNode>(name, params, body, decorators);
 }
 
 std::shared_ptr<ASTNode> Parser::parseReturn() {
@@ -600,6 +618,141 @@ std::shared_ptr<ASTNode> Parser::parseReturn() {
 std::shared_ptr<ASTNode> Parser::parsePass() {
     advance();
     return std::make_shared<PassNode>();
+}
+
+std::shared_ptr<ASTNode> Parser::parseClassDef(const std::vector<std::shared_ptr<ASTNode>>& decorators) {
+    advance(); // class
+
+    if (peek().type != TOKEN_ID) {
+        throw std::runtime_error("Expected class name");
+    }
+
+    QString name = advance().value;
+
+    std::vector<std::shared_ptr<ASTNode>> bases;
+
+    // проверяем, есть ли наследование
+    if (peek().type == TOKEN_OP && peek().value == "(") {
+        advance(); // (
+
+        // если не пусто
+        if (!(peek().type == TOKEN_OP && peek().value == ")")) {
+
+            while (true) {
+                // парсим выражение базового класса
+                bases.push_back(parseAssignment());
+
+                if (peek().type == TOKEN_OP && peek().value == ",") {
+                    advance(); // ,
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        if (peek().type != TOKEN_OP || peek().value != ")") {
+            throw std::runtime_error("Expected ')'");
+        }
+
+        advance(); // )
+    }
+
+    if (peek().type != TOKEN_OP || peek().value != ":") {
+        throw std::runtime_error("Expected ':' after class definition");
+    }
+    advance();
+
+    const auto body = parseBlock();
+
+    QVector<std::shared_ptr<ASTNode>> qBody;
+    for (auto& stmt : body) {
+        qBody.push_back(stmt);
+    }
+
+    return std::make_shared<ClassDefNode>(name, bases, qBody, decorators);
+}
+
+std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
+    while (peek().type != TOKEN_EOF) {
+        // a.b
+        if (peek().type == TOKEN_OP && peek().value == ".") {
+            advance();
+
+            if (peek().type != TOKEN_ID)
+                throw std::runtime_error("Expected attribute name after '.'");
+
+            QString attr = advance().value;
+            node = std::make_shared<AttributeAccessNode>(node, attr);
+            continue;
+        }
+
+        // вызов: obj(...)
+        if (peek().type == TOKEN_OP && peek().value == "(") {
+            advance();
+
+            std::vector<std::shared_ptr<ASTNode>> args;
+
+            if (!(peek().type == TOKEN_OP && peek().value == ")")) {
+                while (true) {
+                    args.push_back(parseAssignment());
+
+                    if (peek().value == ",") {
+                        advance();
+                        continue;
+                    }
+                    break;
+                }
+            }
+
+            if (peek().value != ")")
+                throw std::runtime_error("Expected ')'");
+
+            advance();
+
+            node = std::make_shared<CallNode>(node, args);
+            continue;
+        }
+
+        break;
+    }
+
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::parseDecorated() {
+    std::vector<std::shared_ptr<ASTNode>> decorators;
+
+    while (peek().type == TOKEN_AT) {
+
+        advance(); // @
+
+        decorators.push_back(parseAssignment());
+
+        if (peek().type == TOKEN_NEWLINE) {
+            advance();
+        }
+    }
+
+    if (peek().type != TOKEN_KEYWORD) {
+        throw std::runtime_error(
+            "Expected def or class after decorator"
+        );
+    }
+
+    auto kw = peek().keyword.value();
+
+    if (kw == Keyword::DEF) {
+        return parseFunctionDef(decorators);
+    }
+
+    if (kw == Keyword::CLASS) {
+        return parseClassDef(decorators);
+    }
+
+    throw std::runtime_error(
+        "Decorator can only be applied to def/class"
+    );
 }
 
 /**

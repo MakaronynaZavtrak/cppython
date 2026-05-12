@@ -1,5 +1,11 @@
 #include "Value.h"
 
+#include "BoundMethod.h"
+#include "ClassMethodValue.h"
+#include "FunctionValue.h"
+#include "PropertyValue.h"
+#include "StaticMethodValue.h"
+
 /**
  * Преобразует экземпляр `Value` в его строковое представление в зависимости от его типа.
  *
@@ -18,6 +24,7 @@
  * @return Строковое представление экземпляра `Value`.
  */
 QString Value::toString() const {
+
     if (std::holds_alternative<BigInt>(data)) {
         return QString::fromStdString(std::get<BigInt>(data).convert_to<std::string>());
     }
@@ -54,7 +61,30 @@ QString Value::toString() const {
     }
 
     if (std::holds_alternative<FunctionPtr>(data)) {
-        return "<function>";
+        return std::get<FunctionPtr>(data)->toString();
+    }
+
+    if (std::holds_alternative<ClassPtr>(data)) {
+        return std::get<ClassPtr>(data)->toString();
+    }
+
+    if (std::holds_alternative<InstancePtr>(data)) {
+        return std::get<InstancePtr>(data)->toString();
+    }
+
+    if (std::holds_alternative<BoundMethodPtr>(data)) {
+        return std::get<BoundMethodPtr>(data)->toString();
+    }
+
+    if (std::holds_alternative<StaticMethodPtr>(data)) {
+        if (std::holds_alternative<StaticMethodPtr>(data)) {
+            return "<staticmethod>";
+        }
+        return std::get<StaticMethodPtr>(data)->toString();
+    }
+
+    if (std::holds_alternative<ClassMethodPtr>(data)) {
+        return std::get<ClassMethodPtr>(data)->toString();
     }
 
     if (std::holds_alternative<std::monostate>(data)) {
@@ -64,6 +94,12 @@ QString Value::toString() const {
     return "Unknown unsupported type";
 }
 
+QString Value::asString() const {
+    if (!std::holds_alternative<QString>(data))
+        throw std::runtime_error("Not a string");
+
+    return std::get<QString>(data);
+}
 /**
  * Преобразует экземпляр `Value` в булево значение в зависимости от его типа.
  *
@@ -108,6 +144,38 @@ bool Value::toBool() const {
 
     if (std::holds_alternative<FunctionPtr>(data)) {
         return std::get<FunctionPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<ClassPtr>(data)) {
+        return std::get<ClassPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<InstancePtr>(data)) {
+        return std::get<InstancePtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<BoundMethodPtr>(data)) {
+        return std::get<BoundMethodPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<SuperPtr>(data)) {
+        return std::get<SuperPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<BuiltinFunctionPtr>(data)) {
+        return std::get<BuiltinFunctionPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<PropertyPtr>(data)) {
+        return std::get<PropertyPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<StaticMethodPtr>(data)) {
+        return std::get<StaticMethodPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<ClassMethodPtr>(data)) {
+        return std::get<ClassMethodPtr>(data) != nullptr;
     }
 
     throw std::runtime_error("Unsupported type");

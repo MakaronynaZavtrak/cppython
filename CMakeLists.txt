@@ -26,7 +26,33 @@ add_executable(cppython main.cpp
         sources/Environment.cpp
         sources/Value.cpp
         headers/FunctionValue.h
-        headers/Param.h)
+        headers/Param.h
+        headers/ClassValue.h
+        headers/InstanceValue.h
+        headers/BoundMethod.h
+        sources/FunctionValue.cpp
+        sources/BoundMethod.cpp
+        headers/ObjectFwd.h
+        headers/CallRuntime.h
+        sources/CallRuntime.cpp
+        headers/ClassUtils.h
+        sources/ClassUtils.cpp
+        headers/SuperValue.h
+        headers/BuiltinFunction.h
+        sources/BuiltinFunction.cpp
+        sources/ClassValue.cpp
+        sources/InstanceValue.cpp
+        headers/ReprMixin.h
+        headers/PropertyValue.h
+        sources/PropertyValue.cpp
+        headers/Runtime.h
+        sources/Runtime.cpp
+        headers/StaticMethodValue.h
+        headers/ClassMethodValue.h
+        sources/StaticMethodValue.cpp
+        sources/ClassMethodValue.cpp
+        headers/DescriptorUtils.h
+        sources/DescriptorUtils.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

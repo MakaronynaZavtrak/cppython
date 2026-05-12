@@ -2,8 +2,12 @@
 #include "Interpreter.h"
 #include "Lexer.h"
 #include "Parser.h"
+#include "BuiltinFunction.h"
 #include <iostream>
 #include <sstream>
+
+#include "Runtime.h"
+
 
 /**
  * Проверяет, является ли введенная команда одной из предопределенных команд выхода.
@@ -56,7 +60,7 @@ void Interpreter::executeCode(const std::string& code, Lexer& lexer, const std::
             std::cout << result.toString().toStdString() << "\n";
         }
     } catch (const std::runtime_error& e) {
-        std::cout << "Error: " << e.what() << "\n";
+        std::cout << e.what() << "\n";
     }
 }
 
@@ -74,7 +78,21 @@ void Interpreter::run(int argc, char* argv[]) {
     std::cout << "Hello and welcome to my minimal Python interpreter!\n"
                  "Made by Semenov Oleg, with care from MathMech. Let's code!\n";
 
-    const auto env = std::make_shared<Environment>();
+    const auto globalEnv = std::make_shared<Environment>();
+    BuiltinFunction::registerBuiltins(globalEnv);
+
+    Runtime::objectClass = std::make_shared<ClassValue>(* new ClassValue("object"));
+
+    Runtime::objectClass->name = "object";
+
+    globalEnv->set("object", Value(Runtime::objectClass));
+
+    Runtime::objectClass->attributes["__getattribute__"] =
+    globalEnv->get("__object_getattribute__");
+
+    Runtime::objectClass->attributes["__setattr__"] =
+    globalEnv->get("__object_setattr__");
+
     Lexer lexer;
     std::vector<std::string> buffer;
     bool isInBlock = false;
@@ -103,10 +121,20 @@ void Interpreter::run(int argc, char* argv[]) {
                 isInBlock = true;
                 continue;
             }
+
+            // если предыдущая строка была декоратором
+            if (!buffer.empty()) {
+                const std::string& prev = buffer.back();
+
+                if (!prev.empty() && prev[0] == '@') {
+                    isInBlock = true;
+                    continue;
+                }
+            }
         }
 
         std::string code = assembleCode(buffer);
-        executeCode(code, lexer, env);
+        executeCode(code, lexer, globalEnv);
         buffer.clear();
     }
 }

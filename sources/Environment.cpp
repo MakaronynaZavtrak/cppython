@@ -41,8 +41,9 @@ void Environment::set(const QString& name, const Value& value) {
  * @throws std::runtime_error Если переменная с указанным именем не найдена.
  */
 Value& Environment::get(const QString& name) {
-    if (const auto it = variables.find(name); it != variables.end())
-        return it->second;
+    if (variables.count(name)) {
+        return variables[name];
+    }
 
     if (parent)
         return parent->get(name);

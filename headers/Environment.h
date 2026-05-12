@@ -17,14 +17,13 @@ class Environment : public std::enable_shared_from_this<Environment> {
 public:
     std::unordered_set<QString> globalVars;
     std::unordered_set<QString> nonlocalVars;
+    std::unordered_map<QString, Value> variables;
+    std::shared_ptr<Environment> parent;
 
     void set(const QString& name, const Value& value);
     Value& get(const QString& name);
 
     explicit Environment(std::shared_ptr<Environment> parent = nullptr)
        : parent(std::move(std::move(parent))) {}
-private:
-    std::unordered_map<QString, Value> variables;
-    std::shared_ptr<Environment> parent;
 };
 #endif //ENVIRONMENT_H

@@ -198,7 +198,9 @@ Token Lexer::readString(const QString& code) {
  */
 Token Lexer::readIdentifierOrBool(const QString& code) {
     const int start = pos;
-    while (pos < code.length() && (code[pos].isLetter() || code[pos] == '_')) {
+    pos++;
+
+    while (pos < code.length() && (code[pos].isLetterOrNumber() || code[pos] == '_')) {
         pos++;
     }
     QString id = code.mid(start, pos - start);
@@ -227,6 +229,12 @@ Token Lexer::readIdentifierOrBool(const QString& code) {
 Token Lexer::readOperator(const QString& code) {
     const QChar op = code[pos++];
 
+    // Декораторы
+    if (op == '@') {
+        return {TOKEN_AT, "@", line};
+    }
+
+    // Двухсимвольные операторы
     if (pos < code.length()) {
         const QChar next = code[pos];
         if (QString combined = QString(op) + next; combined == "==" || combined == "+=" || combined == "!=" ||
@@ -237,6 +245,7 @@ Token Lexer::readOperator(const QString& code) {
         }
     }
 
+    // Обычный оператор
     return {TOKEN_OP, QString(op), line};
 }
 

@@ -4,14 +4,21 @@
 #include <QHash>
 #include <QString>
 
-#include "FunctionValue.h"
-
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
-class ASTNode;
+#include "BuiltinFunction.h"
+#include "ReprMixin.h"
 
-/**
+class ClassMethodValue;
+class StaticMethodValue;
+class SuperValue;
+class InstanceValue;
+class ClassValue;
+class PropertyValue;
+class BoundMethod;
+class FunctionValue;
+    /**
  * @class Value
  * @brief Представляет полиморфный контейнер данных, способный хранить различные типы данных, включая примитивные
  * типы, сложные структуры и указатели на функции или другие типы.
@@ -24,7 +31,7 @@ class ASTNode;
  * Класс предоставляет конструкторы для инициализации экземпляра `Value` различными типами,
  * автоматически управляя выделением памяти для сложных типов с использованием умных указателей.
  */
-class Value {
+class Value : public ReprMixin {
 public:
     using List = std::vector<Value>;
     using Dict = QHash<QString, Value>;
@@ -36,6 +43,17 @@ public:
     using BigInt = boost::multiprecision::cpp_int;
     using BigFloat = boost::multiprecision::cpp_dec_float_50;
 
+    using ClassPtr = std::shared_ptr<ClassValue>;
+    using InstancePtr = std::shared_ptr<InstanceValue>;
+    using BoundMethodPtr = std::shared_ptr<BoundMethod>;
+
+    using SuperPtr = std::shared_ptr<SuperValue>;
+    using BuiltinFunctionPtr = std::shared_ptr<BuiltinFunction>;
+
+    using PropertyPtr = std::shared_ptr<PropertyValue>;
+    using StaticMethodPtr = std::shared_ptr<StaticMethodValue>;
+    using ClassMethodPtr = std::shared_ptr<ClassMethodValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -44,6 +62,14 @@ public:
         ListPtr,
         DictPtr,
         FunctionPtr,
+        ClassPtr,
+        InstancePtr,
+        BoundMethodPtr,
+        SuperPtr,
+        BuiltinFunctionPtr,
+        PropertyPtr,
+        StaticMethodPtr,
+        ClassMethodPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -62,9 +88,23 @@ public:
     explicit Value(const Dict& dict) : data(std::make_shared<Dict>(dict)) {}
     explicit Value(Dict&& dict) : data(std::make_shared<Dict>(std::move(dict))) {}
 
-    explicit Value(FunctionPtr& func) : data(std::move(func)) {}
+    explicit Value(const FunctionPtr& func) : data(func) {}
+    explicit Value(FunctionPtr&& func) : data(std::move(func)) {}
 
-    [[nodiscard]] QString toString() const;
+    explicit Value(const ClassPtr& cls) : data(cls) {}
+    explicit Value(const InstancePtr& cls) : data(cls) {}
+    explicit Value(const BoundMethodPtr& cls) : data(cls) {}
+    explicit Value(const BoundMethodPtr&& cls) : data(cls) {}
+
+    explicit Value(const BuiltinFunctionPtr& func) : data(func) {}
+    explicit Value(const SuperPtr& superValue) : data(superValue) {}
+
+    explicit Value(const PropertyPtr& propertyValue) : data(propertyValue) {}
+    explicit Value(const StaticMethodPtr& staticMethodValue) : data(staticMethodValue) {}
+    explicit Value(const ClassMethodPtr& classMethodValue) : data(classMethodValue) {}
+
+    [[nodiscard]] QString toString() const override;
+    [[nodiscard]] QString asString() const;
     [[nodiscard]] bool toBool() const;
     [[nodiscard]] bool isNone() const;
     [[nodiscard]] BigFloat toBigFloat() const;

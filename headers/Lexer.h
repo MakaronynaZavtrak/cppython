@@ -49,6 +49,7 @@ enum TokenType {
     TOKEN_BOOL,
     TOKEN_KEYWORD,
     TOKEN_OP,
+    TOKEN_AT,
     TOKEN_NEWLINE,
     TOKEN_INDENT,
     TOKEN_DEDENT,
@@ -66,7 +67,8 @@ enum class Keyword {
     RETURN,
     PASS,
     GLOBAL,
-    NONLOCAL
+    NONLOCAL,
+    CLASS
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -80,7 +82,8 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"return", Keyword::RETURN},
     {"pass", Keyword::PASS},
     {"global", Keyword::GLOBAL},
-    {"nonlocal", Keyword::NONLOCAL}
+    {"nonlocal", Keyword::NONLOCAL},
+    {"class", Keyword::CLASS}
 };
 
 /**
