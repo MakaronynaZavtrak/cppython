@@ -1173,6 +1173,39 @@ public:
     }
 };
 
+class IndexAssignNode : public ASTNode {
+public:
+    std::shared_ptr<ASTNode> object;
+    std::shared_ptr<ASTNode> index;
+    std::shared_ptr<ASTNode> value;
+
+    IndexAssignNode(std::shared_ptr<ASTNode> object,
+                    std::shared_ptr<ASTNode> index,
+                    std::shared_ptr<ASTNode> value)
+        : object(std::move(object)),
+          index(std::move(index)),
+          value(std::move(value)) {}
+
+    Value eval(std::shared_ptr<Environment> env) const override {
+
+        Value obj = object->eval(env);
+        Value idx = index->eval(env);
+        Value val = value->eval(env);
+
+        Value setitem = getAttrValue(obj, "__setitem__");
+
+        call(setitem, {idx, val}, env);
+
+        return val;
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return object->toString() + "[" + index->toString() + "] = " + value->toString();
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).

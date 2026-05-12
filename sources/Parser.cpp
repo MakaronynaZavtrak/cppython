@@ -70,6 +70,16 @@ std::shared_ptr<ASTNode> Parser::parseAssignment() {
         if (const auto attr = std::dynamic_pointer_cast<AttributeAccessNode>(left)) {
             return std::make_shared<AttributeAssignNode>(attr->object, attr->attr, right);
         }
+
+        if (const auto idx = std::dynamic_pointer_cast<IndexNode>(left)) {
+
+            return std::make_shared<IndexAssignNode>(
+                idx->object,
+                idx->index,
+                right
+            );
+        }
+
         throw std::runtime_error("Invalid assignment target");
     }
     return left;

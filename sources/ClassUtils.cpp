@@ -110,6 +110,30 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 )
             );
         }
+
+        if (attr == "__setitem__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__setitem__",
+
+                    [ptr](const std::vector<Value>& args,
+                          const std::shared_ptr<Environment>&)
+                          -> Value {
+
+                        if (args.size() != 2) {
+                            throw std::runtime_error(
+                                "__setitem__ expects 2 args"
+                            );
+                        }
+
+                        ptr->setItem(args[0], args[1]);
+
+                        return {};
+                    }
+                )
+            );
+        }
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

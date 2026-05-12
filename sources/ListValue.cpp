@@ -32,3 +32,19 @@ Value ListValue::getItem(const Value& index) {
     const auto idx = i.convert_to<size_t>();
     return elements[idx];
 }
+
+void ListValue::setItem(const Value &index, const Value &value) {
+    auto i = index.toBigInt();
+
+    if (i < 0) {
+        i += static_cast<long long>(elements.size());
+    }
+
+    if (i < 0 || i >= elements.size()) {
+        throw std::runtime_error(
+            "IndexError: list assignment index out of range"
+        );
+    }
+
+    elements[i.convert_to<size_t>()] = value;
+}
