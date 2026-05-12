@@ -5,6 +5,7 @@
 
 #include "CallRuntime.h"
 #include "ClassValue.h"
+#include "DescriptorUtils.h"
 #include "InstanceValue.h"
 #include "SuperValue.h"
 
@@ -28,8 +29,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         try {
             Value val = findAttrInHierarchy(cls, attr);
 
-            if (val.hasGet() && val.hasSet()) {
-                return val.callGet(Value(instance), cls);
+            if (DescriptorUtils::hasGet(val) && DescriptorUtils::hasSet(val)) {
+                return DescriptorUtils::callGet(val, Value(instance), cls);
             }
         } catch (const std::runtime_error& e) {
 
@@ -49,8 +50,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         try {
             Value val = findAttrInHierarchy(cls, attr);
 
-            if (val.hasGet()) {
-                return val.callGet(Value(instance), cls);
+            if (DescriptorUtils::hasGet(val)) {
+                return DescriptorUtils::callGet(val, Value(instance), cls);
             }
 
             return val;
@@ -76,8 +77,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
         Value val = findAttrInHierarchy(cls, attr);
 
-        if (val.hasGet()) {
-            return val.callGet(Value(), cls);
+        if (DescriptorUtils::hasGet(val)) {
+            return DescriptorUtils::callGet(val, Value(), cls);
         }
 
         return val;
@@ -184,11 +185,8 @@ Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
 
             Value val = cls->attributes[attr];
 
-            if (val.hasGet()) {
-                return val.callGet(
-                    Value(super->receiver),
-                    cls
-                );
+            if (DescriptorUtils::hasGet(val)) {
+                return DescriptorUtils::callGet(val, Value(super->receiver), cls);
             }
 
             return val;
@@ -252,8 +250,8 @@ void genericSetAttr(const Value& obj, const QString& attr, const Value& value) {
         try {
             const Value descr = findAttrInHierarchy(cls, attr);
 
-            if (descr.hasSet()) {
-                descr.callSet(Value(instance), cls, value);
+            if (DescriptorUtils::hasSet(descr)) {
+                DescriptorUtils::callSet(descr, Value(instance), cls, value);
                 return;
             }
         } catch (const std::runtime_error& e) {

@@ -109,9 +109,5 @@ public:
     [[nodiscard]] bool isNone() const;
     [[nodiscard]] BigFloat toBigFloat() const;
     [[nodiscard]] BigInt toBigInt() const;
-    [[nodiscard]] bool hasGet() const;
-    [[nodiscard]] bool hasSet() const;
-    [[nodiscard]] Value callGet(const Value &instance, const ClassPtr &owner) const;
-    void callSet(const Value &instance, const ClassPtr &owner, const Value &value) const;
 };
 #endif //VALUE_H

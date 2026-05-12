@@ -1,9 +1,7 @@
 #include "Value.h"
 
 #include "BoundMethod.h"
-#include "CallRuntime.h"
 #include "ClassMethodValue.h"
-#include "ClassUtils.h"
 #include "FunctionValue.h"
 #include "PropertyValue.h"
 #include "StaticMethodValue.h"
@@ -225,104 +223,4 @@ Value::BigInt Value::toBigInt() const {
 
 bool Value::isNone() const {
     return std::holds_alternative<std::monostate>(data);;
-}
-
-bool Value::hasGet() const {
-    if (std::holds_alternative<FunctionPtr>(data))
-        return true;
-
-    if (std::holds_alternative<PropertyPtr>(data))
-        return true;
-
-    if (std::holds_alternative<StaticMethodPtr>(data)) {
-        return true;
-    }
-
-    if (std::holds_alternative<ClassMethodPtr>(data)) {
-        return true;
-    }
-
-    // user-defined descriptors
-    try {
-        getAttrValue(*this, "__get__");
-        return true;
-    } catch (...) {
-        return false;
-    }
-}
-
-Value Value::callGet(const Value &instance,
-                     const ClassPtr &owner) const {
-
-    if (const auto f = std::get_if<FunctionPtr>(&data)) {
-        return (*f)->get(instance, owner);
-    }
-
-    // property
-    if (const auto p = std::get_if<PropertyPtr>(&data)) {
-        return (*p)->get(instance, owner);
-    }
-
-    // static method
-    if (const auto sm = std::get_if<StaticMethodPtr>(&data)) {
-        return (*sm)->get(instance, owner);
-    }
-
-    // class method
-    if (const auto cm = std::get_if<ClassMethodPtr>(&data)) {
-        return (*cm)->get(instance, owner);
-    }
-
-    // user-defined
-    const Value getter = getAttrValue(*this, "__get__");
-
-    std::vector<Value> args;
-
-    if (instance.isNone())
-        args.emplace_back(instance);
-    else
-        args.emplace_back(); // None
-
-    args.emplace_back(owner);
-
-    return call(getter, args, nullptr);
-}
-
-bool Value::hasSet() const {
-    if (std::holds_alternative<PropertyPtr>(data)) {
-        const auto& prop = std::get<PropertyPtr>(data);
-        return prop->fset != nullptr;
-    }
-
-    try {
-        getAttrValue(*this, "__set__");
-        return true;
-    } catch (...) {
-        return false;
-    }
-}
-
-void Value::callSet(const Value& instance,
-                    const ClassPtr& owner,
-                    const Value& value) const {
-    if (std::holds_alternative<PropertyPtr>(data)) {
-        const auto& prop = std::get<PropertyPtr>(data);
-
-        if (!prop->fset) {
-            throw std::runtime_error("AttributeError: can't set attribute");
-        }
-
-        const auto bound = std::make_shared<BoundMethod>(
-            Value(prop->fset),
-            instance,
-            owner
-        );
-
-        call(Value(bound), {value}, nullptr);
-        return;
-    }
-
-    const Value setter = getAttrValue(*this, "__set__");
-
-    call(setter, {Value(instance), value},nullptr);
 }

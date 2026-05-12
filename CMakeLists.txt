@@ -50,7 +50,9 @@ add_executable(cppython main.cpp
         headers/StaticMethodValue.h
         headers/ClassMethodValue.h
         sources/StaticMethodValue.cpp
-        sources/ClassMethodValue.cpp)
+        sources/ClassMethodValue.cpp
+        headers/DescriptorUtils.h
+        sources/DescriptorUtils.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 
