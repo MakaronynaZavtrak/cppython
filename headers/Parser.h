@@ -1149,6 +1149,30 @@ public:
     }
 };
 
+class IndexNode : public ASTNode {
+public:
+    std::shared_ptr<ASTNode> object;
+    std::shared_ptr<ASTNode> index;
+
+    IndexNode(std::shared_ptr<ASTNode> object,
+              std::shared_ptr<ASTNode> index)
+        : object(std::move(object)),
+          index(std::move(index)) {}
+
+    Value eval(std::shared_ptr<Environment> env) const override {
+        Value obj = object->eval(env);
+        Value idx = index->eval(env);
+
+        Value getter = genericGetAttr(obj, "__getitem__");
+
+        return call(getter, {idx}, env);
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return object->toString() + "[" + index->toString() + "]";
+    }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -1310,7 +1334,7 @@ private:
 
     std::shared_ptr<ASTNode> parseList();
 
-    void consume(const TokenType type, const QString &value);
+    void consume(TokenType type, const QString &value);
 
     QVector<Token> tokens;
     int current = 0;

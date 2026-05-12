@@ -7,6 +7,7 @@
 #include "ClassValue.h"
 #include "DescriptorUtils.h"
 #include "InstanceValue.h"
+#include "ListValue.h"
 #include "SuperValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
@@ -82,6 +83,33 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
         return val;
+    }
+
+    if (auto list = std::get_if<Value::ListPtr>(&obj.data)) {
+
+        auto ptr = *list;
+
+        if (attr == "__getitem__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__getitem__",
+
+                    [ptr](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (args.size() != 1) {
+                            throw std::runtime_error(
+                                "__getitem__ expects 1 arg"
+                            );
+                        }
+
+                        return ptr->getItem(args[0]);
+                    }
+                )
+            );
+        }
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

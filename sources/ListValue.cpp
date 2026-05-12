@@ -16,3 +16,19 @@ QString ListValue::toString() const {
 
     return "[" + parts.join(", ") + "]";
 }
+
+Value ListValue::getItem(const Value& index) {
+
+    auto i = index.toBigInt();
+
+    if (i < 0) {
+        i += static_cast<int>(elements.size());
+    }
+
+    if (i < 0 || i >= elements.size()) {
+        throw std::runtime_error("IndexError: list index out of range");
+    }
+
+    const auto idx = i.convert_to<size_t>();
+    return elements[idx];
+}

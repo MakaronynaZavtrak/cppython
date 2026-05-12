@@ -136,7 +136,7 @@ bool Value::toBool() const {
     }
 
     if (std::holds_alternative<ListPtr>(data)) {
-        return std::get<ListPtr>(data) != nullptr;
+        return !std::get<ListPtr>(data)->elements.empty();
     }
 
     if (std::holds_alternative<DictPtr>(data)) {

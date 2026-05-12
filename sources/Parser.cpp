@@ -718,6 +718,20 @@ std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
             continue;
         }
 
+        // obj[index]
+        if (peek().type == TOKEN_OP && peek().value == "[") {
+
+            advance(); // [
+
+            auto index = parseAssignment();
+
+            consume(TOKEN_OP, "]");
+
+            node = std::make_shared<IndexNode>(node, index);
+
+            continue;
+        }
+
         break;
     }
 

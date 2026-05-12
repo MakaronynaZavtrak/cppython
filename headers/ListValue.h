@@ -19,5 +19,7 @@ public:
         : elements(std::move(elems)) {}
 
     [[nodiscard]] QString toString() const override;
+
+    Value getItem(const Value& index);
 };
 #endif //CPPYTHON_LISTVALUE_H
