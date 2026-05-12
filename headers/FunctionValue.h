@@ -12,8 +12,8 @@ class Environment;
 
 class FunctionValue : public std::enable_shared_from_this<FunctionValue>, public ReprMixin {
 public:
-    Value get(const std::shared_ptr<InstanceValue>&, const std::shared_ptr<ClassValue>&);
-    QString toString() const override;
+    Value get(const Value&, const std::shared_ptr<ClassValue>&);
+    [[nodiscard]] QString toString() const override;
 
     std::vector<Param> params;
     std::vector<std::shared_ptr<ASTNode>> body;

@@ -7,7 +7,7 @@
 //
 // Created by semyo on 05.05.2026.
 //
-Value PropertyValue::get(const std::shared_ptr<InstanceValue>& instance,
+Value PropertyValue::get(const Value& instance,
                          const std::shared_ptr<ClassValue>& owner) const {
     if (!fget) {
         throw std::runtime_error("unreadable attribute");

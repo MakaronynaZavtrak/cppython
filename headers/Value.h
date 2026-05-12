@@ -10,6 +10,8 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class ClassMethodValue;
+class StaticMethodValue;
 class SuperValue;
 class InstanceValue;
 class ClassValue;
@@ -49,6 +51,8 @@ public:
     using BuiltinFunctionPtr = std::shared_ptr<BuiltinFunction>;
 
     using PropertyPtr = std::shared_ptr<PropertyValue>;
+    using StaticMethodPtr = std::shared_ptr<StaticMethodValue>;
+    using ClassMethodPtr = std::shared_ptr<ClassMethodValue>;
 
     std::variant<
         BigInt,
@@ -64,6 +68,8 @@ public:
         SuperPtr,
         BuiltinFunctionPtr,
         PropertyPtr,
+        StaticMethodPtr,
+        ClassMethodPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -94,6 +100,8 @@ public:
     explicit Value(const SuperPtr& superValue) : data(superValue) {}
 
     explicit Value(const PropertyPtr& propertyValue) : data(propertyValue) {}
+    explicit Value(const StaticMethodPtr& staticMethodValue) : data(staticMethodValue) {}
+    explicit Value(const ClassMethodPtr& classMethodValue) : data(classMethodValue) {}
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString asString() const;
@@ -103,7 +111,7 @@ public:
     [[nodiscard]] BigInt toBigInt() const;
     [[nodiscard]] bool hasGet() const;
     [[nodiscard]] bool hasSet() const;
-    [[nodiscard]] Value callGet(const InstancePtr& instance, const ClassPtr& owner) const;
-    void callSet(const InstancePtr &instance, const ClassPtr &owner, const Value &value) const;
+    [[nodiscard]] Value callGet(const Value &instance, const ClassPtr &owner) const;
+    void callSet(const Value &instance, const ClassPtr &owner, const Value &value) const;
 };
 #endif //VALUE_H

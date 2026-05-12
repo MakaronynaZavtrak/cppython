@@ -1,7 +1,9 @@
 #include "BoundMethod.h"
+#include "ClassMethodValue.h"
 #include "ClassUtils.h"
 #include "Environment.h"
 #include "PropertyValue.h"
+#include "StaticMethodValue.h"
 #include "SuperValue.h"
 #include "Value.h"
 //
@@ -12,15 +14,23 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
     "super",
     [](const std::vector<Value>&, const std::shared_ptr<Environment>& local_env) -> Value {
 
-        auto selfVal = local_env->get("self");
-        auto clsVal  = local_env->get("__class__");
+        Value receiver;
 
-        auto instance = std::get<Value::InstancePtr>(selfVal.data);
+        // instance method
+       try {
+           receiver = local_env->get("self");
+       }
+       catch (...) {
+           // classmethod
+           receiver = local_env->get("cls");
+       }
+
+        auto clsVal  = local_env->get("__class__");
         auto origin   = std::get<Value::ClassPtr>(clsVal.data);
 
         return Value(std::make_shared<SuperValue>(
             origin,    // currentClass
-            instance,
+            receiver,
             origin     // originClass
         ));
     }
@@ -142,10 +152,62 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
         }
 )));
 
+    env->set("staticmethod",
+    Value(std::make_shared<BuiltinFunction>(
+        "staticmethod",
+        [](const std::vector<Value>& args,
+           const std::shared_ptr<Environment>&)
+           -> Value {
+
+            if (args.size() != 1) {
+                throw std::runtime_error("staticmethod expects 1 argument");
+            }
+
+            if (!std::holds_alternative<Value::FunctionPtr>(
+                    args[0].data)) {
+
+                throw std::runtime_error("staticmethod expects function");
+            }
+
+            return Value(std::make_shared<StaticMethodValue>(std::get<Value::FunctionPtr>(args[0].data)));
+        }
+)));
+
+    env->set("classmethod",
+    Value(std::make_shared<BuiltinFunction>(
+        "classmethod",
+
+        [](const std::vector<Value>& args,
+           const std::shared_ptr<Environment>&)
+           -> Value {
+
+            if (args.size() != 1) {
+                throw std::runtime_error(
+                    "classmethod expects 1 argument"
+                );
+            }
+
+            if (!std::holds_alternative<Value::FunctionPtr>(
+                    args[0].data)) {
+
+                throw std::runtime_error(
+                    "classmethod expects function"
+                );
+            }
+
+            return Value(
+                std::make_shared<ClassMethodValue>(
+                    std::get<Value::FunctionPtr>(
+                        args[0].data
+                    )
+                )
+            );
+        }
+)));
+
 }
 
-Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner)
-{
+Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {
 
     if (!instance) {
         return Value(shared_from_this());
@@ -153,7 +215,7 @@ Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::Clas
 
     return Value(std::make_shared<BoundMethod>(
         Value(shared_from_this()),
-        instance,
+        Value(instance),
         owner
     ));
 }

@@ -19,6 +19,6 @@ public:
     explicit ClassValue(QString name)
        : name(std::move(name)) {}
 
-    QString toString() const override;
+    [[nodiscard]] QString toString() const override;
 };
 #endif //CPPYTHON_CLASSVALUE_H

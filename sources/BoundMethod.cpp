@@ -8,7 +8,7 @@
 QString BoundMethod::toString() const {
     QString className = ownerClass ? ownerClass->name : getCallableOwner(callable);
     QString funcName = getCallableName(callable);
-    QString instanceStr = instance ? instance->toString() : "<unknown instance>";
+    QString instanceStr = !self.isNone() ? self.toString() : "<unknown instance>";
 
     return QString("<bound method %1.%2 of %3>")
         .arg(className, funcName, instanceStr);

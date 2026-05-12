@@ -4,6 +4,7 @@
 
 #ifndef CPPYTHON_SUPERVALUE_H
 #define CPPYTHON_SUPERVALUE_H
+#include <utility>
 
 class ClassValue;
 class InstanceValue;
@@ -11,10 +12,10 @@ class InstanceValue;
 class SuperValue {
 public:
     std::shared_ptr<ClassValue> currentClass;
-    std::shared_ptr<InstanceValue> instance; // self
+    Value receiver; // self или cls
     std::shared_ptr<ClassValue> originClass; // где super вызван
 
-    SuperValue(std::shared_ptr<ClassValue> cls, std::shared_ptr<InstanceValue> inst, std::shared_ptr<ClassValue>orig)
-        : currentClass(std::move(cls)), instance(std::move(inst)), originClass(std::move(orig)) {}
+    SuperValue(std::shared_ptr<ClassValue> cls, Value receiver, std::shared_ptr<ClassValue>orig)
+        : currentClass(std::move(cls)), receiver(std::move(receiver)), originClass(std::move(orig)) {}
 };
 #endif //CPPYTHON_SUPERVALUE_H

@@ -46,7 +46,11 @@ add_executable(cppython main.cpp
         headers/PropertyValue.h
         sources/PropertyValue.cpp
         headers/Runtime.h
-        sources/Runtime.cpp)
+        sources/Runtime.cpp
+        headers/StaticMethodValue.h
+        headers/ClassMethodValue.h
+        sources/StaticMethodValue.cpp
+        sources/ClassMethodValue.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

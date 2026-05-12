@@ -29,7 +29,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             Value val = findAttrInHierarchy(cls, attr);
 
             if (val.hasGet() && val.hasSet()) {
-                return val.callGet(instance, cls);
+                return val.callGet(Value(instance), cls);
             }
         } catch (const std::runtime_error& e) {
 
@@ -50,7 +50,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             Value val = findAttrInHierarchy(cls, attr);
 
             if (val.hasGet()) {
-                return val.callGet(instance, cls);
+                return val.callGet(Value(instance), cls);
             }
 
             return val;
@@ -77,7 +77,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         Value val = findAttrInHierarchy(cls, attr);
 
         if (val.hasGet()) {
-            return val.callGet(nullptr, cls);
+            return val.callGet(Value(), cls);
         }
 
         return val;
@@ -166,7 +166,7 @@ Value getAttrValue(const Value& obj, const QString& attr) {
 
 Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
     std::vector<Value::ClassPtr> mro;
-    buildMRO(super->instance->klass, mro);
+    buildMRO(getObjectClass(super->receiver), mro);
 
     bool foundOrigin = false;
 
@@ -186,7 +186,7 @@ Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
 
             if (val.hasGet()) {
                 return val.callGet(
-                    super->instance,
+                    Value(super->receiver),
                     cls
                 );
             }
@@ -205,6 +205,19 @@ void buildMRO(const Value::ClassPtr& cls, std::vector<Value::ClassPtr>& out) {
     for (const auto& base : cls->bases) {
         buildMRO(base, out);
     }
+}
+
+Value::ClassPtr getObjectClass(const Value& obj)
+{
+    if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
+        return std::get<Value::InstancePtr>(obj.data)->klass;
+    }
+
+    if (std::holds_alternative<Value::ClassPtr>(obj.data)) {
+        return std::get<Value::ClassPtr>(obj.data);
+    }
+
+    throw std::runtime_error("super(): invalid receiver");
 }
 
 Value findAttrInHierarchy(const Value::ClassPtr& cls, const QString& attr) {
@@ -240,7 +253,7 @@ void genericSetAttr(const Value& obj, const QString& attr, const Value& value) {
             const Value descr = findAttrInHierarchy(cls, attr);
 
             if (descr.hasSet()) {
-                descr.callSet(instance, cls, value);
+                descr.callSet(Value(instance), cls, value);
                 return;
             }
         } catch (const std::runtime_error& e) {

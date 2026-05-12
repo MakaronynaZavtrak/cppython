@@ -2,9 +2,11 @@
 
 #include "BoundMethod.h"
 #include "CallRuntime.h"
+#include "ClassMethodValue.h"
 #include "ClassUtils.h"
 #include "FunctionValue.h"
 #include "PropertyValue.h"
+#include "StaticMethodValue.h"
 
 /**
  * Преобразует экземпляр `Value` в его строковое представление в зависимости от его типа.
@@ -24,6 +26,7 @@
  * @return Строковое представление экземпляра `Value`.
  */
 QString Value::toString() const {
+
     if (std::holds_alternative<BigInt>(data)) {
         return QString::fromStdString(std::get<BigInt>(data).convert_to<std::string>());
     }
@@ -64,7 +67,7 @@ QString Value::toString() const {
     }
 
     if (std::holds_alternative<ClassPtr>(data)) {
-        return "<class>";
+        return std::get<ClassPtr>(data)->toString();
     }
 
     if (std::holds_alternative<InstancePtr>(data)) {
@@ -73,6 +76,17 @@ QString Value::toString() const {
 
     if (std::holds_alternative<BoundMethodPtr>(data)) {
         return std::get<BoundMethodPtr>(data)->toString();
+    }
+
+    if (std::holds_alternative<StaticMethodPtr>(data)) {
+        if (std::holds_alternative<StaticMethodPtr>(data)) {
+            return "<staticmethod>";
+        }
+        return std::get<StaticMethodPtr>(data)->toString();
+    }
+
+    if (std::holds_alternative<ClassMethodPtr>(data)) {
+        return std::get<ClassMethodPtr>(data)->toString();
     }
 
     if (std::holds_alternative<std::monostate>(data)) {
@@ -134,6 +148,38 @@ bool Value::toBool() const {
         return std::get<FunctionPtr>(data) != nullptr;
     }
 
+    if (std::holds_alternative<ClassPtr>(data)) {
+        return std::get<ClassPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<InstancePtr>(data)) {
+        return std::get<InstancePtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<BoundMethodPtr>(data)) {
+        return std::get<BoundMethodPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<SuperPtr>(data)) {
+        return std::get<SuperPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<BuiltinFunctionPtr>(data)) {
+        return std::get<BuiltinFunctionPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<PropertyPtr>(data)) {
+        return std::get<PropertyPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<StaticMethodPtr>(data)) {
+        return std::get<StaticMethodPtr>(data) != nullptr;
+    }
+
+    if (std::holds_alternative<ClassMethodPtr>(data)) {
+        return std::get<ClassMethodPtr>(data) != nullptr;
+    }
+
     throw std::runtime_error("Unsupported type");
 }
 
@@ -188,6 +234,14 @@ bool Value::hasGet() const {
     if (std::holds_alternative<PropertyPtr>(data))
         return true;
 
+    if (std::holds_alternative<StaticMethodPtr>(data)) {
+        return true;
+    }
+
+    if (std::holds_alternative<ClassMethodPtr>(data)) {
+        return true;
+    }
+
     // user-defined descriptors
     try {
         getAttrValue(*this, "__get__");
@@ -197,8 +251,8 @@ bool Value::hasGet() const {
     }
 }
 
-Value Value::callGet(const InstancePtr& instance,
-                    const ClassPtr& owner) const {
+Value Value::callGet(const Value &instance,
+                     const ClassPtr &owner) const {
 
     if (const auto f = std::get_if<FunctionPtr>(&data)) {
         return (*f)->get(instance, owner);
@@ -209,12 +263,22 @@ Value Value::callGet(const InstancePtr& instance,
         return (*p)->get(instance, owner);
     }
 
+    // static method
+    if (const auto sm = std::get_if<StaticMethodPtr>(&data)) {
+        return (*sm)->get(instance, owner);
+    }
+
+    // class method
+    if (const auto cm = std::get_if<ClassMethodPtr>(&data)) {
+        return (*cm)->get(instance, owner);
+    }
+
     // user-defined
     const Value getter = getAttrValue(*this, "__get__");
 
     std::vector<Value> args;
 
-    if (instance)
+    if (instance.isNone())
         args.emplace_back(instance);
     else
         args.emplace_back(); // None
@@ -238,7 +302,7 @@ bool Value::hasSet() const {
     }
 }
 
-void Value::callSet(const InstancePtr& instance,
+void Value::callSet(const Value& instance,
                     const ClassPtr& owner,
                     const Value& value) const {
     if (std::holds_alternative<PropertyPtr>(data)) {

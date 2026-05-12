@@ -4,6 +4,8 @@
 
 #ifndef CPPYTHON_BOUNDMETHOD_H
 #define CPPYTHON_BOUNDMETHOD_H
+#include <utility>
+
 #include "ReprMixin.h"
 #include "Value.h"
 
@@ -14,13 +16,13 @@ class ClassValue;
 class BoundMethod : public ReprMixin {
 public:
     Value callable;
-    std::shared_ptr<InstanceValue> instance;
+    Value self;
     std::shared_ptr<ClassValue> ownerClass;
 
     BoundMethod(Value callable,
-                std::shared_ptr<InstanceValue> inst,
+                Value self,
                 std::shared_ptr<ClassValue> ownerClass)
-        : callable(std::move(callable)), instance(std::move(inst)), ownerClass(std::move(ownerClass)) {}
+        : callable(std::move(callable)), self(std::move(self)), ownerClass(std::move(ownerClass)) {}
 
 
 

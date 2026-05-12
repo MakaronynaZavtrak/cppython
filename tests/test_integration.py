@@ -1421,6 +1421,85 @@ def test_single_line_expressions(expr, expected):
       "",
       "x()"], "6"),
 
+    # staticmethod через класс
+    (["class A:",
+      "    @staticmethod",
+      "    def f():",
+      "        return 42",
+      "",
+      "A.f()"], "42"),
+
+    # staticmethod через instance
+    (["class A:",
+      "    @staticmethod",
+      "    def f():",
+      "        return 42",
+      "",
+      "a = A()",
+      "a.f()"], "42"),
+
+    # staticmethod НЕ получает self
+    (["class A:",
+      "    @staticmethod",
+      "    def f(x):",
+      "        return x",
+      "",
+      "A.f(123)"], "123"),
+
+    # classmethod через класс
+    (["class A:",
+      "    x = 10",
+      "    @classmethod",
+      "    def f(cls):",
+      "        return cls.x",
+      "",
+      "A.f()"], "10"),
+
+    # classmethod через instance
+    (["class A:",
+      "    x = 10",
+      "    @classmethod",
+      "    def f(cls):",
+      "        return cls.x",
+      "",
+      "a = A()",
+      "a.f()"], "10"),
+
+    # наследование + classmethod
+    (["class A:",
+      "    x = 1",
+      "    @classmethod",
+      "    def f(cls):",
+      "        return cls.x",
+      "",
+      "class B(A):",
+      "    x = 2",
+      "",
+      "B.f()"], "2"),
+
+    # super + classmethod
+    (["class A:",
+      "    @classmethod",
+      "    def f(cls):",
+      "        return 1",
+      "",
+      "class B(A):",
+      "    @classmethod",
+      "    def f(cls):",
+      "        return super().f() + 1",
+      "",
+      "B.f()"], "2"),
+
+    # смешанное наследование
+    (["class A:",
+      "    @staticmethod",
+      "    def f():",
+      "        return 1",
+      "",
+      "class B(A):",
+      "    pass",
+      "",
+      "B.f()"], "1"),
 ])
 
 def test_multiline_expressions(commands, expected):

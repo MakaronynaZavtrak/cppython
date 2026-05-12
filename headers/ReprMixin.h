@@ -8,9 +8,9 @@
 
 class ReprMixin {
 public:
-    virtual QString toString() const = 0;
+    [[nodiscard]] virtual QString toString() const = 0;
 
-    virtual QString repr() const {
+    [[nodiscard]] virtual QString repr() const {
         return "'" + toString() + "'";
     }
 

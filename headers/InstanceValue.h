@@ -14,6 +14,6 @@ public:
     explicit InstanceValue(std::shared_ptr<ClassValue> cls)
     : klass(std::move(cls)) {}
 
-    QString toString() const override;
+    [[nodiscard]] QString toString() const override;
 };
 #endif //CPPYTHON_INSTANCEVALUE_H

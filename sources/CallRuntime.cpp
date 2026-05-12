@@ -1,9 +1,11 @@
 #include "CallRuntime.h"
 
 #include "BoundMethod.h"
+#include "ClassMethodValue.h"
 #include "Environment.h"
 #include "FunctionValue.h"
 #include "Parser.h"
+#include "StaticMethodValue.h"
 #include "Value.h"
 //
 // Created by semyo on 03.05.2026.
@@ -18,14 +20,25 @@ Value call(const Value& callee,
         return fn->func(args, env);
     }
 
-    if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data))
+    if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data)) {
         return callFunction(*f, args, env);
+    }
 
-    if (const auto c = std::get_if<Value::ClassPtr>(&callee.data))
+    if (const auto c = std::get_if<Value::ClassPtr>(&callee.data)) {
         return constructClass(*c, args, env);
+    }
 
-    if (const auto b = std::get_if<Value::BoundMethodPtr>(&callee.data))
+    if (const auto b = std::get_if<Value::BoundMethodPtr>(&callee.data)) {
         return callBoundMethod(*b, args);
+    }
+
+    if (const auto sm = std::get_if<Value::StaticMethodPtr>(&callee.data)) {
+        return call(Value((*sm)->func), args, env);
+    }
+
+    if (const auto cm = std::get_if<Value::ClassMethodPtr>(&callee.data)) {
+        return call(Value((*cm)->func), args, env);
+    }
 
     throw std::runtime_error("Object is not callable");
 }
@@ -68,8 +81,7 @@ Value callFunction(const Value::FunctionPtr& func,
 
 Value constructClass(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
-                     const std::shared_ptr<Environment>& env)
-{
+                     const std::shared_ptr<Environment>& env) {
     const auto instance = std::make_shared<InstanceValue>(cls);
 
     try {
@@ -88,7 +100,7 @@ Value callBoundMethod(const Value::BoundMethodPtr &bm, const std::vector<Value> 
     std::vector<Value> newArgs;
 
     // self
-    newArgs.emplace_back(bm->instance);
+    newArgs.emplace_back(bm->self);
 
     // остальные аргументы
     newArgs.insert(newArgs.end(), args.begin(), args.end());

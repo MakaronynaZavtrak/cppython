@@ -9,11 +9,13 @@
 #include <utility>
 
 #include "CallRuntime.h"
+#include "ClassMethodValue.h"
 #include "ClassUtils.h"
 #include "FunctionValue.h"
 #include "InstanceValue.h"
 #include "Param.h"
 #include "Runtime.h"
+#include "StaticMethodValue.h"
 
 /**
  * @class ASTNode
@@ -1019,10 +1021,27 @@ public:
         // копируем всё из classEnv в attributes
         for (const auto& [key, val] : classEnv->variables) {
 
-            // если это функция — проставляем ownerClass
-            if (Value newVal = val; std::holds_alternative<Value::FunctionPtr>(newVal.data)) {
+            Value newVal = val;
+
+            // обычная функция
+            if (std::holds_alternative<Value::FunctionPtr>(newVal.data)) {
+
                 auto func = std::get<Value::FunctionPtr>(newVal.data);
                 func->ownerClass = cls;
+            }
+
+            // staticmethod
+            else if (std::holds_alternative<Value::StaticMethodPtr>(newVal.data)) {
+
+                auto sm = std::get<Value::StaticMethodPtr>(newVal.data);
+                sm->func->ownerClass = cls;
+            }
+
+            // classmethod
+            else if (std::holds_alternative<Value::ClassMethodPtr>(newVal.data)) {
+
+                auto cm = std::get<Value::ClassMethodPtr>(newVal.data);
+                cm->func->ownerClass = cls;
             }
 
             cls->attributes.insert(key, val);
@@ -1037,7 +1056,7 @@ public:
             classValue = call(decorator, { classValue }, env);
         }
 
-        env->set(name, Value(cls));
+        env->set(name, classValue);
 
         return classValue;
     }

@@ -23,6 +23,6 @@ public:
                            std::shared_ptr<FunctionValue> del = nullptr)
         : fget(std::move(get)), fset(std::move(set)), fdel(std::move(del)) {}
 
-    Value get(const std::shared_ptr<InstanceValue>&, const std::shared_ptr<ClassValue>&) const;
+    [[nodiscard]] Value get(const Value&, const std::shared_ptr<ClassValue>&) const;
 };
 #endif //CPPYTHON_PROPERTYVALUE_H
