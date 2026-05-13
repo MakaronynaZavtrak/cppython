@@ -305,6 +305,41 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "index") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "index",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (args.empty() || args.size() > 3) {
+                            throw std::runtime_error("index expects 1-3 args");
+                        }
+
+                        if (args.size() == 1) {
+                            return list->index(args[0]);
+                        }
+
+                        if (args.size() == 2) {
+                            return list->index(
+                                args[0],
+                                args[1]
+                            );
+                        }
+
+                        return list->index(
+                            args[0],
+                            args[1],
+                            args[2]
+                        );
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

@@ -39,5 +39,9 @@ public:
     void clear();
 
     Value count(const Value& value) const;
+
+    Value index(const Value& value,
+                const std::optional<Value>& start = std::nullopt,
+                const std::optional<Value>& end = std::nullopt) const;
 };
 #endif //CPPYTHON_LISTVALUE_H

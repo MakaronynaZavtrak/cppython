@@ -154,9 +154,7 @@ void ListValue::remove(const Value& value) {
     );
 
     if (it == elements.end()) {
-        throw std::runtime_error(
-            "ValueError: list.remove(x): x not in list"
-        );
+        throw std::runtime_error("ValueError: list.remove(x): x not in list");
     }
 
     elements.erase(it);
@@ -177,4 +175,69 @@ Value ListValue::count(const Value& value) const {
     }
 
     return Value(Value::BigInt(c));
+}
+
+Value ListValue::index(
+    const Value& value,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end
+) const {
+
+    std::ptrdiff_t s = 0;
+    std::ptrdiff_t e = static_cast<std::ptrdiff_t>(elements.size());
+
+    // start
+    if (start.has_value()) {
+
+        s = start->toBigInt().convert_to<long long>();
+
+        if (s < 0) {
+            s += static_cast<std::ptrdiff_t>(
+                elements.size()
+            );
+        }
+
+        if (s < 0) {
+            s = 0;
+        }
+
+        if (s > static_cast<std::ptrdiff_t>(elements.size())) {
+            s = static_cast<std::ptrdiff_t>(
+                elements.size()
+            );
+        }
+    }
+
+    // end
+    if (end.has_value()) {
+
+        e = end->toBigInt().convert_to<long long>();
+
+        if (e < 0) {
+            e += static_cast<std::ptrdiff_t>(
+                elements.size()
+            );
+        }
+
+        if (e < 0) {
+            e = 0;
+        }
+
+        if (e > static_cast<std::ptrdiff_t>(elements.size())) {
+            e = static_cast<std::ptrdiff_t>(
+                elements.size()
+            );
+        }
+    }
+
+    for (std::ptrdiff_t i = s; i < e; ++i) {
+
+        if (elements[i] == value) {
+            return Value(
+                Value::BigInt(i)
+            );
+        }
+    }
+
+    throw std::runtime_error("ValueError: value is not in list");
 }

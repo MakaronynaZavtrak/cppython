@@ -1826,6 +1826,22 @@ def test_single_line_expressions(expr, expected):
     (["a = []",
       "a.count(1)"], "0"),
 
+    # index
+    (["a = [1, 2, 1, 1]",
+      "a.index(1, 1)"], "2"),
+
+    (["a = [1, 2, 1, 1]",
+      "a.index(1, 0, 2)"], "0"),
+
+    (["a = [1, 2, 1, 1]",
+      "a.index(1, -2)"], "2"),
+
+    (["a = [1, 2, 1, 1]",
+      "a.index(1, 0, -1)"], "0"),
+
+    (["a = [1, 1.0, True]",
+      "a.index(True, 1)"], "1")
+
 ])
 
 def test_multiline_expressions(commands, expected):
