@@ -205,6 +205,28 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "extend") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "extend",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (args.size() != 1) {
+                            throw std::runtime_error("extend expects 1 arg");
+                        }
+
+                        list->extend(args[0]);
+
+                        return {};
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

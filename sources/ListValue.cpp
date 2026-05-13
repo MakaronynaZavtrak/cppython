@@ -56,9 +56,7 @@ void ListValue::append(const Value &value) {
 Value ListValue::pop(const std::optional<Value>& index) {
 
     if (elements.empty()) {
-        throw std::runtime_error(
-            "IndexError: pop from empty list"
-        );
+        throw std::runtime_error("IndexError: pop from empty list");
     }
 
     std::ptrdiff_t i;
@@ -86,8 +84,7 @@ Value ListValue::pop(const std::optional<Value>& index) {
         i >= static_cast<std::ptrdiff_t>(elements.size())) {
 
         throw std::runtime_error(
-            "IndexError: pop index out of range"
-        );
+            "IndexError: pop index out of range");
         }
 
     Value result = elements[i];
@@ -99,4 +96,25 @@ Value ListValue::pop(const std::optional<Value>& index) {
 
 std::size_t ListValue::len() const {
     return elements.size();
+}
+
+void ListValue::extend(const Value& other) {
+
+    /* TODO: В настоящее время метод extend принимает только списки.
+         После реализации протокола итераторов
+         перейти к поддержке универсальных итерируемых объектов
+    */
+    if (!std::holds_alternative<Value::ListPtr>(other.data)) {
+        throw std::runtime_error(
+            "extend expects list"
+        );
+    }
+
+    const auto otherList = std::get<Value::ListPtr>(other.data);
+
+    elements.insert(
+        elements.end(),
+        otherList->elements.begin(),
+        otherList->elements.end()
+    );
 }
