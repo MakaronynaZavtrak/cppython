@@ -362,6 +362,26 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "copy") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "copy",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("copy expects 0 args");
+                        }
+
+                        return list->copy();
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

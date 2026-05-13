@@ -1860,6 +1860,32 @@ def test_single_line_expressions(expr, expected):
       "a.reverse()",
       "a"], "[42]"),
 
+    # copy
+    (["a = [1, 2]",
+      "b = a.copy()",
+      "b.append(3)",
+      "a"], "[1, 2]"),
+
+    (["a = [1, 2]",
+      "b = a.copy()",
+      "b.append(3)",
+      "b"], "[1, 2, 3]"),
+
+    (["a = [[1]]",
+      "b = a.copy()",
+      "b[0].append(999)",
+      "b"], "[[1, 999]]"),
+
+    (["a = []",
+      "b = a.copy()",
+      "b"], "[]"),
+
+    # независимость от внешнего контейнера
+    (["a = [1, 2]",
+      "b = a.copy()",
+      "a.append(999)",
+      "b"], "[1, 2]"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

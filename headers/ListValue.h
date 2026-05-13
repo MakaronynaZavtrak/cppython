@@ -45,5 +45,7 @@ public:
                 const std::optional<Value>& end = std::nullopt) const;
 
     void reverse();
+
+    Value copy() const;
 };
 #endif //CPPYTHON_LISTVALUE_H

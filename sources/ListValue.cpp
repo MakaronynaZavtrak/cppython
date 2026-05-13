@@ -245,3 +245,7 @@ Value ListValue::index(
 void ListValue::reverse() {
     std::reverse(elements.begin(),elements.end());
 }
+
+Value ListValue::copy() const {
+    return Value(std::make_shared<ListValue>(elements));
+}
