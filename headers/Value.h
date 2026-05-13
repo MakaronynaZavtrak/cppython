@@ -108,6 +108,7 @@ public:
     [[nodiscard]] bool isNone() const;
     [[nodiscard]] BigFloat toBigFloat() const;
     [[nodiscard]] BigInt toBigInt() const;
+    [[nodiscard]] bool isNumeric() const;
 
     bool operator==(const Value&) const;
 };

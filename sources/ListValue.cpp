@@ -165,3 +165,16 @@ void ListValue::remove(const Value& value) {
 void ListValue::clear() {
     elements.clear();
 }
+
+Value ListValue::count(const Value& value) const {
+
+    std::size_t c = 0;
+
+    for (const auto& e : elements) {
+        if (e == value) {
+            c++;
+        }
+    }
+
+    return Value(Value::BigInt(c));
+}

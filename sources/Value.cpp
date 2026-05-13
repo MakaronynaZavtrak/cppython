@@ -228,26 +228,9 @@ bool Value::isNone() const {
 
 bool Value::operator==(const Value& other) const {
 
-    if (data.index() != other.data.index()) {
-        return false;
-    }
-
-    // int
-    if (std::holds_alternative<BigInt>(data)) {
-        return std::get<BigInt>(data) ==
-               std::get<BigInt>(other.data);
-    }
-
-    // float
-    if (std::holds_alternative<BigFloat>(data)) {
-        return std::get<BigFloat>(data) ==
-               std::get<BigFloat>(other.data);
-    }
-
-    // bool
-    if (std::holds_alternative<bool>(data)) {
-        return std::get<bool>(data) ==
-               std::get<bool>(other.data);
+    // числовое сравнение
+    if (isNumeric() && other.isNumeric()) {
+        return toBigFloat() == other.toBigFloat();
     }
 
     // string
@@ -263,4 +246,10 @@ bool Value::operator==(const Value& other) const {
     }
 
     return false;
+}
+
+bool Value::isNumeric() const {
+    return std::holds_alternative<BigInt>(data) ||
+           std::holds_alternative<BigFloat>(data) ||
+           std::holds_alternative<bool>(data);
 }

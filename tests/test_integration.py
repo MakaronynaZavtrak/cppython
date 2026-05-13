@@ -1778,6 +1778,10 @@ def test_single_line_expressions(expr, expected):
       "b.remove(2)",
       "a"], "[1, 3]"),
 
+    (["a = [1, 1.0, True]",
+      "a.remove(True)",
+      "a"], "[1.0, True]"),
+
     # clear
     (["a = [1, 2, 3]",
       "a.clear()",
@@ -1799,7 +1803,28 @@ def test_single_line_expressions(expr, expected):
 
     (["a = [1, 2, 3]",
       "a.clear()",
-      "len(a)"], "0")
+      "len(a)"], "0"),
+
+    # count
+    (["a = [1, 2, 1]",
+      "a.count(1)"], "2"),
+
+    (["a = [1, 1.0, True]",
+      "a.count(1)"], "3"),
+
+    (["a = [False, 0, 0.0]",
+      "a.count(False)"], "3"),
+
+    (["a = ['x', 'y', 'x']",
+      "a.count('x')"], "2"),
+
+    # not found
+    (["a = [1, 2, 3]",
+      "a.count(404)"], "0"),
+
+    # пустой список
+    (["a = []",
+      "a.count(1)"], "0"),
 
 ])
 

@@ -37,5 +37,7 @@ public:
     void remove(const Value& value);
 
     void clear();
+
+    Value count(const Value& value) const;
 };
 #endif //CPPYTHON_LISTVALUE_H
