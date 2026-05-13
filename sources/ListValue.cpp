@@ -52,3 +52,47 @@ void ListValue::setItem(const Value &index, const Value &value) {
 void ListValue::append(const Value &value) {
     elements.push_back(value);
 }
+
+Value ListValue::pop(const std::optional<Value>& index) {
+
+    if (elements.empty()) {
+        throw std::runtime_error(
+            "IndexError: pop from empty list"
+        );
+    }
+
+    std::ptrdiff_t i;
+
+    // pop()
+    if (!index.has_value()) {
+
+        i = static_cast<std::ptrdiff_t>(
+            elements.size() - 1
+        );
+
+    } else {
+
+        i = index->toBigInt().convert_to<long long>();
+
+        // отрицательные индексы
+        if (i < 0) {
+            i += static_cast<std::ptrdiff_t>(
+                elements.size()
+            );
+        }
+    }
+
+    if (i < 0 ||
+        i >= static_cast<std::ptrdiff_t>(elements.size())) {
+
+        throw std::runtime_error(
+            "IndexError: pop index out of range"
+        );
+        }
+
+    Value result = elements[i];
+
+    elements.erase(elements.begin() + i);
+
+    return result;
+}

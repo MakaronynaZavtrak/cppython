@@ -85,9 +85,9 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         return val;
     }
 
-    if (auto list = std::get_if<Value::ListPtr>(&obj.data)) {
+    if (std::holds_alternative<Value::ListPtr>(obj.data)) {
 
-        auto ptr = *list;
+        auto list = std::get<Value::ListPtr>(obj.data);
 
         if (attr == "__getitem__") {
 
@@ -95,7 +95,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 std::make_shared<BuiltinFunction>(
                     "__getitem__",
 
-                    [ptr](const std::vector<Value>& args,
+                    [list](const std::vector<Value>& args,
                            const std::shared_ptr<Environment>&)
                            -> Value {
 
@@ -105,7 +105,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             );
                         }
 
-                        return ptr->getItem(args[0]);
+                        return list->getItem(args[0]);
                     }
                 )
             );
@@ -117,7 +117,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 std::make_shared<BuiltinFunction>(
                     "__setitem__",
 
-                    [ptr](const std::vector<Value>& args,
+                    [list](const std::vector<Value>& args,
                           const std::shared_ptr<Environment>&)
                           -> Value {
 
@@ -127,7 +127,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             );
                         }
 
-                        ptr->setItem(args[0], args[1]);
+                        list->setItem(args[0], args[1]);
 
                         return {};
                     }
@@ -141,7 +141,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 std::make_shared<BuiltinFunction>(
                     "append",
 
-                    [ptr](const std::vector<Value>& args,
+                    [list](const std::vector<Value>& args,
                           const std::shared_ptr<Environment>&)
                           -> Value {
 
@@ -151,9 +151,35 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             );
                         }
 
-                        ptr->append(args[0]);
+                        list->append(args[0]);
 
                         return {};
+                    }
+                )
+            );
+        }
+
+        if (attr == "pop") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "pop",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (args.empty()) {
+                            return list->pop();
+                        }
+
+                        if (args.size() == 1) {
+                            return list->pop(args[0]);
+                        }
+
+                        throw std::runtime_error(
+                            "pop expects at most 1 arg"
+                        );
                     }
                 )
             );

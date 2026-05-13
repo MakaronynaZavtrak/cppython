@@ -25,5 +25,7 @@ public:
     void setItem(const Value& index, const Value& value);
 
     void append(const Value& value);
+
+    Value pop(const std::optional<Value>& index = std::nullopt);
 };
 #endif //CPPYTHON_LISTVALUE_H
