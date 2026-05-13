@@ -1750,7 +1750,33 @@ def test_single_line_expressions(expr, expected):
     (["a = [1, 2]",
       "b = a",
       "b.insert(1, 999)",
-      "a"], "[1, 999, 2]")
+      "a"], "[1, 999, 2]"),
+
+    # remove
+    (["a = [1, 2, 3]",
+      "a.remove(2)",
+      "a"], "[1, 3]"),
+
+    (["a = [1, 2, 2, 3]",
+      "a.remove(2)",
+      "a"], "[1, 2, 3]"),
+
+    (["a = ['a', 'b', 'c']",
+      "a.remove('b')",
+      "a"], "['a', 'c']"),
+
+    (["a = [True, False]",
+      "a.remove(True)",
+      "a"], "[False]"),
+
+    (["a = [True, False, True]",
+      "a.remove(True)",
+      "a"], "[False, True]"),
+
+    (["a = [1, 2, 3]",
+      "b = a",
+      "b.remove(2)",
+      "a"], "[1, 3]")
 
 ])
 

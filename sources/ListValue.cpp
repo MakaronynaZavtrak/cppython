@@ -144,3 +144,20 @@ void ListValue::insert(const Value& index,
 
     elements.insert(elements.begin() + i, value);
 }
+
+void ListValue::remove(const Value& value) {
+
+    const auto it = std::find(
+        elements.begin(),
+        elements.end(),
+        value
+    );
+
+    if (it == elements.end()) {
+        throw std::runtime_error(
+            "ValueError: list.remove(x): x not in list"
+        );
+    }
+
+    elements.erase(it);
+}

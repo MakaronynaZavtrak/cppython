@@ -251,6 +251,28 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "remove") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "remove",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (args.size() != 1) {
+                            throw std::runtime_error("remove expects 1 arg");
+                        }
+
+                        list->remove(args[0]);
+
+                        return Value();
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

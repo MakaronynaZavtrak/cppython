@@ -108,5 +108,7 @@ public:
     [[nodiscard]] bool isNone() const;
     [[nodiscard]] BigFloat toBigFloat() const;
     [[nodiscard]] BigInt toBigInt() const;
+
+    bool operator==(const Value&) const;
 };
 #endif //VALUE_H
