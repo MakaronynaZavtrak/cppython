@@ -96,3 +96,7 @@ Value ListValue::pop(const std::optional<Value>& index) {
 
     return result;
 }
+
+std::size_t ListValue::len() const {
+    return elements.size();
+}

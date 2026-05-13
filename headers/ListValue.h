@@ -27,5 +27,7 @@ public:
     void append(const Value& value);
 
     Value pop(const std::optional<Value>& index = std::nullopt);
+
+    std::size_t len() const;
 };
 #endif //CPPYTHON_LISTVALUE_H

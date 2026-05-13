@@ -1,4 +1,5 @@
 #include "BoundMethod.h"
+#include "CallRuntime.h"
 #include "ClassMethodValue.h"
 #include "ClassUtils.h"
 #include "Environment.h"
@@ -204,6 +205,25 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
             );
         }
 )));
+
+    env->set("len",
+    Value(std::make_shared<BuiltinFunction>(
+            "len",
+            [](const std::vector<Value>& args,
+               const std::shared_ptr<Environment>&)
+               -> Value {
+
+                if (args.size() != 1) {
+                    throw std::runtime_error("len expects 1 arg");
+                }
+
+                const Value lenMethod = getAttrValue(args[0], "__len__");
+
+                return call(lenMethod, {}, nullptr);
+            }
+        )
+    )
+);
 
 }
 

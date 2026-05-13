@@ -184,6 +184,27 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 )
             );
         }
+
+        if (attr == "__len__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__len__",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__len__ expects 0 args");
+                        }
+
+                        return Value(Value::BigInt(list->len()));
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

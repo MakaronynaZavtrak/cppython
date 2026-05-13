@@ -1658,6 +1658,33 @@ def test_single_line_expressions(expr, expected):
       "c = b.pop()",
       "b"], "[1, 2]" ),
 
+    # len
+    (["a = []",
+      "len(a)"], "0"),
+
+    (["a = [1, 2, 3]",
+      "len(a)"], "3"),
+
+    (["a = [1, 2, 3]",
+      "a.__len__()"], "3"),
+
+    (["a = [[1], [2], [3]]",
+      "len(a)"], "3"),
+
+    (["a = [1, 2]",
+      "a.append(3)",
+      "len(a)"], "3"),
+
+    (["a = [1, 2, 3]",
+      "a.pop()",
+      "len(a)"], "2"),
+
+    # len от alias
+    (["a = [1, 2, 3, 4, 5]",
+      "b = a",
+      "c = b.pop()",
+      "len(b)"], "4"),
+
 ])
 
 def test_multiline_expressions(commands, expected):
