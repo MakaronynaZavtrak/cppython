@@ -100,9 +100,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                            -> Value {
 
                         if (args.size() != 1) {
-                            throw std::runtime_error(
-                                "__getitem__ expects 1 arg"
-                            );
+                            throw std::runtime_error("__getitem__ expects 1 arg");
                         }
 
                         return list->getItem(args[0]);
@@ -122,9 +120,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                           -> Value {
 
                         if (args.size() != 2) {
-                            throw std::runtime_error(
-                                "__setitem__ expects 2 args"
-                            );
+                            throw std::runtime_error("__setitem__ expects 2 args");
                         }
 
                         list->setItem(args[0], args[1]);
@@ -146,9 +142,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                           -> Value {
 
                         if (args.size() != 1) {
-                            throw std::runtime_error(
-                                "append expects 1 argument"
-                            );
+                            throw std::runtime_error("append expects 1 argument");
                         }
 
                         list->append(args[0]);
@@ -177,9 +171,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             return list->pop(args[0]);
                         }
 
-                        throw std::runtime_error(
-                            "pop expects at most 1 arg"
-                        );
+                        throw std::runtime_error("pop expects at most 1 arg");
                     }
                 )
             );
@@ -238,14 +230,12 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                            -> Value {
 
                         if (args.size() != 2) {
-                            throw std::runtime_error(
-                                "insert expects 2 args"
-                            );
+                            throw std::runtime_error("insert expects 2 args");
                         }
 
                         list->insert(args[0], args[1]);
 
-                        return Value();
+                        return {};
                     }
                 )
             );
@@ -267,7 +257,29 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
                         list->remove(args[0]);
 
-                        return Value();
+                        return {};
+                    }
+                )
+            );
+        }
+
+        if (attr == "clear") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "clear",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("clear expects 0 args");
+                        }
+
+                        list->clear();
+
+                        return {};
                     }
                 )
             );

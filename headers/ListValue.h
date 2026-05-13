@@ -35,5 +35,7 @@ public:
     void insert(const Value& index, const Value& value);
 
     void remove(const Value& value);
+
+    void clear();
 };
 #endif //CPPYTHON_LISTVALUE_H

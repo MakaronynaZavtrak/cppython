@@ -161,3 +161,7 @@ void ListValue::remove(const Value& value) {
 
     elements.erase(it);
 }
+
+void ListValue::clear() {
+    elements.clear();
+}
