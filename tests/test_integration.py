@@ -1608,6 +1608,24 @@ def test_single_line_expressions(expr, expected):
       "a[-1] = [2, 4, 6]",
       "a"], "[1, 2, [2, 4, 6]]"),
 
+    (["a = [1, 2, 3]",
+      "b = a",
+      "b[0] = 505",
+      "a"], "[505, 2, 3]"),
+
+    # метод append
+    (["a = [1, 2]",
+      "a.append(3)",
+      "a"], "[1, 2, 3]"),
+
+    (["a = []",
+      "a.append([1, 2])",
+      "a[0][1]"], "2"),
+
+    (["a = [1, 2, 3]",
+      "a.append(True)",
+      "a"], "[1, 2, 3, True]"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

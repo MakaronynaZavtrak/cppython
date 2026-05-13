@@ -48,3 +48,7 @@ void ListValue::setItem(const Value &index, const Value &value) {
 
     elements[i.convert_to<size_t>()] = value;
 }
+
+void ListValue::append(const Value &value) {
+    elements.push_back(value);
+}

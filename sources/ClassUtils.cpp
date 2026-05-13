@@ -134,6 +134,30 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 )
             );
         }
+
+        if (attr == "append") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "append",
+
+                    [ptr](const std::vector<Value>& args,
+                          const std::shared_ptr<Environment>&)
+                          -> Value {
+
+                        if (args.size() != 1) {
+                            throw std::runtime_error(
+                                "append expects 1 argument"
+                            );
+                        }
+
+                        ptr->append(args[0]);
+
+                        return {};
+                    }
+                )
+            );
+        }
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

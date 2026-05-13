@@ -23,5 +23,7 @@ public:
     Value getItem(const Value& index);
 
     void setItem(const Value& index, const Value& value);
+
+    void append(const Value& value);
 };
 #endif //CPPYTHON_LISTVALUE_H
