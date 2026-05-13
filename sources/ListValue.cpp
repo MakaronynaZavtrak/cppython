@@ -118,3 +118,29 @@ void ListValue::extend(const Value& other) {
         otherList->elements.end()
     );
 }
+
+void ListValue::insert(const Value& index,
+                       const Value& value) {
+
+    std::ptrdiff_t i =
+        index.toBigInt().convert_to<long long>();
+
+    // отрицательный индекс
+    if (i < 0) {
+        i += static_cast<std::ptrdiff_t>(
+            elements.size()
+        );
+    }
+
+    // зажим слева
+    if (i < 0) {
+        i = 0;
+    }
+
+    // зажим справа
+    if (i > static_cast<std::ptrdiff_t>(elements.size())) {
+        i = static_cast<std::ptrdiff_t>(elements.size());
+    }
+
+    elements.insert(elements.begin() + i, value);
+}

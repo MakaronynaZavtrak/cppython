@@ -31,5 +31,7 @@ public:
     std::size_t len() const;
 
     void extend(const Value& other);
+
+    void insert(const Value& index, const Value& value);
 };
 #endif //CPPYTHON_LISTVALUE_H
