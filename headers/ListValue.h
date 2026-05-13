@@ -43,5 +43,7 @@ public:
     Value index(const Value& value,
                 const std::optional<Value>& start = std::nullopt,
                 const std::optional<Value>& end = std::nullopt) const;
+
+    void reverse();
 };
 #endif //CPPYTHON_LISTVALUE_H

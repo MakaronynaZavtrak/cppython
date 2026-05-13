@@ -1,7 +1,7 @@
 #include "ListValue.h"
 
 #include <qlist.h>
-
+#include <algorithm>
 #include "Value.h"
 //
 // Created by semyo on 12.05.2026.
@@ -240,4 +240,8 @@ Value ListValue::index(
     }
 
     throw std::runtime_error("ValueError: value is not in list");
+}
+
+void ListValue::reverse() {
+    std::reverse(elements.begin(),elements.end());
 }

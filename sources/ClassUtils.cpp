@@ -340,6 +340,28 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "reverse") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "reverse",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("reverse expects 0 args");
+                        }
+
+                        list->reverse();
+
+                        return Value();
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

@@ -1840,7 +1840,25 @@ def test_single_line_expressions(expr, expected):
       "a.index(1, 0, -1)"], "0"),
 
     (["a = [1, 1.0, True]",
-      "a.index(True, 1)"], "1")
+      "a.index(True, 1)"], "1"),
+
+    # reverse
+    (["a = [1, 2, 3]",
+      "a.reverse()",
+      "a"], "[3, 2, 1]"),
+
+    (["a = [1, 2, 3]",
+      "b = a",
+      "b.reverse()",
+      "a"], "[3, 2, 1]"),
+
+    (["a = []",
+      "a.reverse()",
+      "a"], "[]"),
+
+    (["a = [42]",
+      "a.reverse()",
+      "a"], "[42]"),
 
 ])
 
