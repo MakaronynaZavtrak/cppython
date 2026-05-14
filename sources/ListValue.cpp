@@ -278,7 +278,7 @@ void ListValue::sort(
 
     for (const auto& elem : elements) {
 
-        Value k = call(key.value(),{ elem }, env);
+        Value k = call(key.value(),{ elem }, {}, env);
 
         decorated.emplace_back(k, elem);
     }

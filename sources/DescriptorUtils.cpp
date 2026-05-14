@@ -79,7 +79,7 @@ Value DescriptorUtils::callGet(const Value& descriptor,
 
     args.emplace_back(owner);
 
-    return call(getter, args, nullptr);
+    return call(getter, args, {}, nullptr);
 }
 
 bool DescriptorUtils::hasSet(const Value& descriptor) {
@@ -125,7 +125,7 @@ void DescriptorUtils::callSet(const Value& descriptor,
                 owner
             );
 
-        call(Value(bound), { value }, nullptr);
+        call(Value(bound), { value }, {}, nullptr);
 
         return;
             }
@@ -133,12 +133,5 @@ void DescriptorUtils::callSet(const Value& descriptor,
     const Value setter =
         getAttrValue(descriptor, "__set__");
 
-    call(
-        setter,
-        {
-            instance,
-            value
-        },
-        nullptr
-    );
+    call(setter, { instance, value }, {}, nullptr);
 }

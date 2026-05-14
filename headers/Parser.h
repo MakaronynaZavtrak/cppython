@@ -856,7 +856,7 @@ public:
         // применяем декораторы снизу вверх
         for (auto it = decorators.rbegin(); it != decorators.rend(); ++it) {
             Value decorator = (*it)->eval(env);
-            v = call(decorator, { v }, env);
+            v = call(decorator, { v }, {}, env);
         }
 
         env->set(name, v);
@@ -889,24 +889,52 @@ public:
     [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
+struct KeywordArg {
+    QString name;
+    std::shared_ptr<ASTNode> value;
+};
+
+struct ParsedCallArgs {
+    std::vector<std::shared_ptr<ASTNode>> positional;
+    std::vector<KeywordArg> keyword;
+};
+
 class CallNode final : public ASTNode {
 public:
     std::shared_ptr<ASTNode> callee;
     std::vector<std::shared_ptr<ASTNode>> args;
+    std::vector<KeywordArg> kwargs;
 
-    CallNode(std::shared_ptr<ASTNode> callee, std::vector<std::shared_ptr<ASTNode>> args)
-        : callee(std::move(callee)), args(std::move(args)) {}
+    CallNode(std::shared_ptr<ASTNode> callee,
+        std::vector<std::shared_ptr<ASTNode>> args,
+        std::vector<KeywordArg> kwargs)
+        : callee(std::move(callee)),
+        args(std::move(args)),
+        kwargs(std::move(kwargs)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
         const Value calleeVal = callee->eval(env);
 
+        // positional
         std::vector<Value> evaluatedArgs;
         evaluatedArgs.reserve(args.size());
 
-        for (auto& a : args)
-            evaluatedArgs.push_back(a->eval(env));
+        for (const auto& arg : args)
+            evaluatedArgs.push_back(arg->eval(env));
 
-        return call(calleeVal, evaluatedArgs, env);
+        // keyword
+        std::vector<std::pair<QString, Value>> evaluatedKwargs;
+        evaluatedKwargs.reserve(kwargs.size());
+
+        for (const auto&[name, value] : kwargs) {
+
+            evaluatedKwargs.emplace_back(
+                name,
+                value->eval(env)
+            );
+        }
+
+        return call(calleeVal, evaluatedArgs, evaluatedKwargs, env);
     }
 
     [[nodiscard]] QString toString() const override {
@@ -1054,7 +1082,7 @@ public:
         for (auto it = decorators.rbegin(); it != decorators.rend(); ++it) {
             Value decorator = (*it)->eval(env);
 
-            classValue = call(decorator, { classValue }, env);
+            classValue = call(decorator, { classValue }, {}, env);
         }
 
         env->set(name, classValue);
@@ -1165,7 +1193,7 @@ public:
 
         Value getter = genericGetAttr(obj, "__getitem__");
 
-        return call(getter, {idx}, env);
+        return call(getter, {idx}, {}, env);
     }
 
     [[nodiscard]] QString toString() const override {
@@ -1194,7 +1222,7 @@ public:
 
         Value setitem = getAttrValue(obj, "__setitem__");
 
-        call(setitem, {idx, val}, env);
+        call(setitem, {idx, val}, {}, env);
 
         return val;
     }
@@ -1366,6 +1394,8 @@ private:
     std::shared_ptr<ASTNode> parseDecorated();
 
     std::shared_ptr<ASTNode> parseList();
+
+    ParsedCallArgs parseCallArguments();
 
     void consume(TokenType type, const QString &value);
 

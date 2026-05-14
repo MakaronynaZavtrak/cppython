@@ -96,7 +96,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "__getitem__",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (args.size() != 1) {
@@ -116,7 +117,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "__setitem__",
 
                     [list](const std::vector<Value>& args,
-                          const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                           -> Value {
 
                         if (args.size() != 2) {
@@ -138,7 +140,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "append",
 
                     [list](const std::vector<Value>& args,
-                          const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                           -> Value {
 
                         if (args.size() != 1) {
@@ -160,7 +163,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "pop",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (args.empty()) {
@@ -184,7 +188,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "__len__",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (!args.empty()) {
@@ -204,7 +209,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "extend",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (args.size() != 1) {
@@ -226,7 +232,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "insert",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (args.size() != 2) {
@@ -248,7 +255,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "remove",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (args.size() != 1) {
@@ -270,7 +278,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "clear",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (!args.empty()) {
@@ -292,7 +301,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "count",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (args.size() != 1) {
@@ -312,7 +322,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "index",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (args.empty() || args.size() > 3) {
@@ -347,7 +358,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "reverse",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (!args.empty()) {
@@ -369,7 +381,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "copy",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>&)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
                            -> Value {
 
                         if (!args.empty()) {
@@ -389,7 +402,8 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "sort",
 
                     [list](const std::vector<Value>& args,
-                           const std::shared_ptr<Environment>& env)
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>& env)
                            -> Value {
 
                         std::optional<Value> key = std::nullopt;
@@ -460,11 +474,7 @@ Value getAttrValue(const Value& obj, const QString& attr) {
         }
 
         if (!isDefault) {
-            return call(
-                getattribute,
-                { Value(attr) },
-                nullptr
-            );
+            return call(getattribute, { Value(attr) }, {}, nullptr);
         }
 
     } catch (const std::runtime_error& e) {
@@ -495,7 +505,7 @@ Value getAttrValue(const Value& obj, const QString& attr) {
 
         Value getattr = genericGetAttr(obj, "__getattr__");
 
-        return call(getattr, { Value(attr) }, nullptr);
+        return call(getattr, { Value(attr) }, {}, nullptr);
 
     } catch (const std::runtime_error& e) {
 
@@ -651,14 +661,7 @@ void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
 
         if (!isDefault) {
 
-            call(
-                setattr,
-                {
-                    Value(attr),
-                    value
-                },
-                nullptr
-            );
+            call(setattr, { Value(attr), value }, {}, nullptr);
 
             return;
         }
@@ -667,10 +670,9 @@ void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
 
         const std::string msg = e.what();
 
-        if (msg.find("AttributeError")
-            == std::string::npos) {
+        if (msg.find("AttributeError") == std::string::npos) {
             throw;
-            }
+        }
     }
 
     genericSetAttr(obj, attr, value);

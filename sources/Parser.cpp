@@ -334,11 +334,10 @@ std::shared_ptr<ASTNode> Parser::parseIdentifierToken() {
     if (peek().type == TOKEN_OP && peek().value == "(") {
         advance();
 
-        std::vector<std::shared_ptr<ASTNode>> args;
+        auto parsedArgs = parseCallArguments();
 
         if (!(peek().type == TOKEN_OP && peek().value == ")")) {
             while (true) {
-                args.push_back(parseAssignment());
 
                 if (peek().type == TOKEN_OP && peek().value == ",") {
                     advance();
@@ -353,7 +352,9 @@ std::shared_ptr<ASTNode> Parser::parseIdentifierToken() {
 
         advance();
 
-        return std::make_shared<CallNode>(std::make_shared<VarNode>(name), args);
+        return std::make_shared<CallNode>(
+            std::make_shared<VarNode>(name),
+            parsedArgs.positional, parsedArgs.keyword);
     }
 
     return std::make_shared<VarNode>(name);
@@ -705,11 +706,10 @@ std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
         if (peek().type == TOKEN_OP && peek().value == "(") {
             advance();
 
-            std::vector<std::shared_ptr<ASTNode>> args;
+            auto parsedArgs = parseCallArguments();
 
             if (!(peek().type == TOKEN_OP && peek().value == ")")) {
                 while (true) {
-                    args.push_back(parseAssignment());
 
                     if (peek().value == ",") {
                         advance();
@@ -724,7 +724,7 @@ std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
 
             advance();
 
-            node = std::make_shared<CallNode>(node, args);
+            node = std::make_shared<CallNode>(node, parsedArgs.positional, parsedArgs.keyword);
             continue;
         }
 
@@ -768,7 +768,7 @@ std::shared_ptr<ASTNode> Parser::parseDecorated() {
         );
     }
 
-    auto kw = peek().keyword.value();
+    const auto kw = peek().keyword.value();
 
     if (kw == Keyword::DEF) {
         return parseFunctionDef(decorators);
@@ -778,9 +778,7 @@ std::shared_ptr<ASTNode> Parser::parseDecorated() {
         return parseClassDef(decorators);
     }
 
-    throw std::runtime_error(
-        "Decorator can only be applied to def/class"
-    );
+    throw std::runtime_error("Decorator can only be applied to def/class");
 }
 
 std::shared_ptr<ASTNode> Parser::parseList() {
@@ -821,6 +819,43 @@ void Parser::consume(const TokenType type, const QString& value) {
     }
 
     advance();
+}
+
+ParsedCallArgs Parser::parseCallArguments() {
+
+    ParsedCallArgs result;
+
+    if (peek().type == TOKEN_OP && peek().value == ")") {
+        return result;
+    }
+
+    while (true) {
+
+        if (peek().type == TOKEN_ID &&
+            tokens[current + 1].type == TOKEN_OP &&
+            tokens[current + 1].value == "=") {
+
+            const QString name = advance().value;
+
+            advance(); // =
+
+            const auto value = parseAssignment();
+
+            result.keyword.push_back({name, value});
+            }
+        else {
+            result.positional.push_back(parseAssignment());
+        }
+
+        if (peek().type == TOKEN_OP && peek().value == ",") {
+            advance();
+            continue;
+        }
+
+        break;
+    }
+
+    return result;
 }
 
 /**

@@ -12,32 +12,33 @@
 //
 Value call(const Value& callee,
            const std::vector<Value>& args,
+           const Kwargs& kwargs,
            const std::shared_ptr<Environment>& env)
 {
 
     if (std::holds_alternative<Value::BuiltinFunctionPtr>(callee.data)) {
         const auto fn = std::get<Value::BuiltinFunctionPtr>(callee.data);
-        return fn->func(args, env);
+        return fn->func(args, kwargs, env);
     }
 
     if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data)) {
-        return callFunction(*f, args, env);
+        return callFunction(*f, args, kwargs, env);
     }
 
     if (const auto c = std::get_if<Value::ClassPtr>(&callee.data)) {
-        return constructClass(*c, args, env);
+        return constructClass(*c, args, kwargs, env);
     }
 
     if (const auto b = std::get_if<Value::BoundMethodPtr>(&callee.data)) {
-        return callBoundMethod(*b, args);
+        return callBoundMethod(*b, args, kwargs);
     }
 
     if (const auto sm = std::get_if<Value::StaticMethodPtr>(&callee.data)) {
-        return call(Value((*sm)->func), args, env);
+        return call(Value((*sm)->func), args, kwargs, env);
     }
 
     if (const auto cm = std::get_if<Value::ClassMethodPtr>(&callee.data)) {
-        return call(Value((*cm)->func), args, env);
+        return call(Value((*cm)->func), args, kwargs, env);
     }
 
     throw std::runtime_error("Object is not callable");
@@ -45,24 +46,68 @@ Value call(const Value& callee,
 
 Value callFunction(const Value::FunctionPtr& func,
                    const std::vector<Value>& args,
+                   const Kwargs& kwargs,
                    const std::shared_ptr<Environment>& envOverride = nullptr)
 {
-    if (args.size() != func->params.size()) {
-        throw std::runtime_error("Argument count mismatch");
-    }
 
     const auto local = std::make_shared<Environment>(func->closure);
 
-    // копируем override-переменные
     if (envOverride) {
         for (const auto& [k, v] : envOverride->variables) {
             local->set(k, v);
         }
     }
 
+    std::unordered_set<QString> assigned;
 
+    // позиционные аргументы
     for (size_t i = 0; i < args.size(); ++i) {
-        local->set(func->params[i].name, args[i]);
+
+        if (i >= func->params.size()) {
+            throw std::runtime_error("Too many positional arguments");
+        }
+
+        const QString& paramName = func->params[i].name;
+
+        local->set(paramName, args[i]);
+        assigned.insert(paramName);
+    }
+
+    // именованные аргументы
+    for (const auto& [name, value] : kwargs) {
+
+        bool found = false;
+
+        for (const auto& param : func->params) {
+
+            if (param.name == name) {
+
+                if (assigned.count(name)) {
+                    throw std::runtime_error(
+                    "Multiple values for argument: "+ name.toStdString()
+                    );
+                }
+
+                local->set(name, value);
+
+                assigned.insert(name);
+
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            throw std::runtime_error("Unknown keyword argument: " + name.toStdString());
+        }
+    }
+
+    // отсутствие аргументов
+    for (const auto& param : func->params) {
+
+        if (!assigned.count(param.name)) {
+            throw std::runtime_error("Missing argument: " + param.name.toStdString());
+        }
     }
 
     try {
@@ -81,12 +126,13 @@ Value callFunction(const Value::FunctionPtr& func,
 
 Value constructClass(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
+                     const Kwargs& kwargs,
                      const std::shared_ptr<Environment>& env) {
     const auto instance = std::make_shared<InstanceValue>(cls);
 
     try {
         const Value init = getAttrValue(Value(instance), "__init__");
-        call(init, args, env);
+        call(init, args, kwargs, env);
     } catch (...) {
         if (!args.empty()) {
             throw std::runtime_error("Class takes no arguments");
@@ -96,7 +142,9 @@ Value constructClass(const Value::ClassPtr& cls,
     return Value(instance);
 }
 
-Value callBoundMethod(const Value::BoundMethodPtr &bm, const std::vector<Value> &args) {
+Value callBoundMethod(const Value::BoundMethodPtr &bm,
+                      const std::vector<Value> &args,
+                      const Kwargs& kwargs) {
     std::vector<Value> newArgs;
 
     // self
@@ -111,13 +159,13 @@ Value callBoundMethod(const Value::BoundMethodPtr &bm, const std::vector<Value> 
 
         local->set("__class__", Value(bm->ownerClass));
 
-        return callFunction(*f, newArgs, local);
+        return callFunction(*f, newArgs, kwargs, local);
     }
 
 
     if (const auto b =
        std::get_if<Value::BuiltinFunctionPtr>(&bm->callable.data)) {
-        return (*b)->func(newArgs, nullptr);
+        return (*b)->func(newArgs, kwargs, nullptr);
     }
 
     throw std::runtime_error("Invalid bound method callable");
