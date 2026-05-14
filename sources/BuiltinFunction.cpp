@@ -3,6 +3,7 @@
 #include "ClassMethodValue.h"
 #include "ClassUtils.h"
 #include "Environment.h"
+#include "ListValue.h"
 #include "PropertyValue.h"
 #include "StaticMethodValue.h"
 #include "SuperValue.h"
@@ -218,9 +219,28 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
                     throw std::runtime_error("len expects 1 arg");
                 }
 
-                const Value lenMethod = getAttrValue(args[0], "__len__");
+                const Value& obj = args[0];
 
-                return call(lenMethod, {}, {}, nullptr);
+                // string
+                if (const auto s = std::get_if<QString>(&obj.data)) {
+                    return Value(Value::BigInt(s->size()));
+                }
+
+                // list
+                if (const auto l = std::get_if<Value::ListPtr>(&obj.data)) {
+                    return Value(Value::BigInt((*l)->len()));
+                }
+
+                try {
+                    const Value lenMethod =
+                    getAttrValue(obj, "__len__");
+
+                    return call(lenMethod, {}, {}, nullptr);
+
+                } catch (...) {}
+
+                throw std::runtime_error("Object has no len()");
+
             }
         )
     )

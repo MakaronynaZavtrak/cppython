@@ -258,10 +258,12 @@ bool Value::operator<(const Value& other) const {
     if (std::holds_alternative<QString>(data) &&
         std::holds_alternative<QString>(other.data)) {
 
-        return std::get<QString>(data) <std::get<QString>(other.data);
-        }
+        return std::get<QString>(data) < std::get<QString>(other.data);
+    }
 
-    throw std::runtime_error("TypeError: unsupported comparison");
+
+
+    throw std::runtime_error("TypeError: unsupported comparison: " + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
 
 bool Value::isNumeric() const {

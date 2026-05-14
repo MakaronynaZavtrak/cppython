@@ -32,6 +32,7 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::RETURN:   return parseReturn();
             case Keyword::PASS:     return parsePass();
             case Keyword::CLASS:    return parseClassDef();
+            case Keyword::LAMBDA:   return parseLambda();
             default:                break;
         }
     }
@@ -242,6 +243,10 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
         case TOKEN_STRING: node = parseStringToken(); break;
         case TOKEN_BOOL:   node = parseBoolToken(); break;
         case TOKEN_ID:     node = parseIdentifierToken(); break;
+
+        case TOKEN_KEYWORD:
+            if (token.keyword.value() == Keyword::LAMBDA)
+                return parseLambda();
 
         case TOKEN_OP:
             if (token.value == "(")
@@ -811,6 +816,39 @@ std::shared_ptr<ASTNode> Parser::parseList() {
     }
 
     return std::make_shared<ListNode>(std::move(elements));
+}
+
+std::shared_ptr<ASTNode> Parser::parseLambda() {
+
+    advance(); // lambda
+
+    std::vector<Param> params;
+
+    if (!(peek().type == TOKEN_OP && peek().value == ":")) {
+
+        while (true) {
+
+            if (peek().type != TOKEN_ID) {
+                throw std::runtime_error("Expected parameter name in lambda");
+            }
+
+            params.push_back(Param{advance().value, ""});
+
+            if (peek().type == TOKEN_OP && peek().value == ",") {
+
+                advance();
+                continue;
+                }
+
+            break;
+        }
+    }
+
+    consume(TOKEN_OP, ":");
+
+    auto expr = parseAssignment();
+
+    return std::make_shared<LambdaNode>(std::move(params), expr);
 }
 
 void Parser::consume(const TokenType type, const QString& value) {

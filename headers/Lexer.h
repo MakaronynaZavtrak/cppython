@@ -68,7 +68,8 @@ enum class Keyword {
     PASS,
     GLOBAL,
     NONLOCAL,
-    CLASS
+    CLASS,
+    LAMBDA
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -83,7 +84,8 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"pass", Keyword::PASS},
     {"global", Keyword::GLOBAL},
     {"nonlocal", Keyword::NONLOCAL},
-    {"class", Keyword::CLASS}
+    {"class", Keyword::CLASS},
+    {"lambda", Keyword::LAMBDA}
 };
 
 /**

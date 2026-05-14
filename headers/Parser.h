@@ -843,13 +843,7 @@ public:
     : name(std::move(name)), params(std::move(params)), body(std::move(body)), decorators(std::move(decorators)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
-        const auto func = std::make_shared<FunctionValue>();
-
-        func->params = params;
-        func->body = body;
-        func->closure = env;
-        func->name = name;
-
+        const auto func = std::make_shared<FunctionValue>(params, body, env, name);
 
         Value v(func);
 
@@ -1234,6 +1228,38 @@ public:
     [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
+class LambdaNode final : public ASTNode {
+public:
+
+    std::vector<Param> params;
+    std::shared_ptr<ASTNode> body;
+
+    LambdaNode(std::vector<Param> params,
+        std::shared_ptr<ASTNode> body)
+        : params(std::move(params)),
+          body(std::move(body)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+
+        std::vector<std::shared_ptr<ASTNode>> functionBody;
+
+        functionBody.push_back(std::make_shared<ReturnNode>(body));
+
+        const auto fn = std::make_shared<FunctionValue>(params, functionBody, env, "<lambda>");
+
+        return Value(fn);
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return "<lambda>";
+    }
+
+    [[nodiscard]] bool shouldPrint() const override {
+        return false;
+    }
+
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -1394,6 +1420,8 @@ private:
     std::shared_ptr<ASTNode> parseDecorated();
 
     std::shared_ptr<ASTNode> parseList();
+
+    std::shared_ptr<ASTNode> parseLambda();
 
     ParsedCallArgs parseCallArguments();
 

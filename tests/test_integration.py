@@ -1905,21 +1905,20 @@ def test_single_line_expressions(expr, expected):
       "a.sort()",
       "a"], "[0.5, True, 1]"),
 
-    # Временно тест не поддерживается
-    # (["a = [True, 2, 3.0]",
-    #   "a.sort(reverse = True)",
-    #   "a"], "[3.0, 2, True]"),
+    # сортировка в обратном порядке
+    (["a = [True, 2, 3.0]",
+      "a.sort(reverse = True)",
+      "a"], "[3.0, 2, True]"),
 
-    # Этот тест тоже не поддерживается пока что
-    # (["a = ['abc', 'abab', 'a', '']",
-    #   "a.sort(key = lambda x: len(x))",
-    #   "a"], "['', 'a', 'abc', 'abab']"),
-    #
-    # (["a = ['abc', 'abab', 'a', '']",
-    #   "a.sort(key = lambda x: len(x), reverse = True)",
-    #   "a"], "['abab', 'abc', 'a', '']"),
+    # сортировка через лямбду
+    (["a = ['abc', 'abab', 'a', '']",
+      "a.sort(key = lambda x: len(x))",
+      "a"], "['', 'a', 'abc', 'abab']"),
 
-
+    # сортировка через лямбду + в обратном порядке
+    (["a = ['abc', 'abab', 'a', '']",
+      "a.sort(key = lambda x: len(x), reverse = True)",
+      "a"], "['abab', 'abc', 'a', '']"),
 
 ])
 

@@ -402,17 +402,28 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                     "sort",
 
                     [list](const std::vector<Value>& args,
-                                const Kwargs&,
+                                const Kwargs& kwargs,
                                 const std::shared_ptr<Environment>& env)
                            -> Value {
 
                         std::optional<Value> key = std::nullopt;
                         bool reverse = false;
 
+                        for (const auto& [name, value] : kwargs) {
+
+                            if (name == "key") {
+                                key = value;
+                            }
+                            else if (name == "reverse") {
+                                reverse = value.toBool();
+                            }
+                            else {
+                                throw std::runtime_error("Unknown keyword argument: "+ name.toStdString());
+                            }
+                        }
+
                         if (args.size() > 2) {
-                            throw std::runtime_error(
-                                "sort expects at most 2 args"
-                            );
+                            throw std::runtime_error("sort expects at most 2 args");
                         }
 
                         // sort(key)
