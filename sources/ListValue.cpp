@@ -2,6 +2,8 @@
 
 #include <qlist.h>
 #include <algorithm>
+
+#include "CallRuntime.h"
 #include "Value.h"
 //
 // Created by semyo on 12.05.2026.
@@ -105,9 +107,7 @@ void ListValue::extend(const Value& other) {
          перейти к поддержке универсальных итерируемых объектов
     */
     if (!std::holds_alternative<Value::ListPtr>(other.data)) {
-        throw std::runtime_error(
-            "extend expects list"
-        );
+        throw std::runtime_error("extend expects list");
     }
 
     const auto otherList = std::get<Value::ListPtr>(other.data);
@@ -248,4 +248,57 @@ void ListValue::reverse() {
 
 Value ListValue::copy() const {
     return Value(std::make_shared<ListValue>(elements));
+}
+
+/* TODO: пооддержка kwargs пока отсутсвует
+    для вызова reverse = True || False делать просто sort([key, ]True || False)
+*/
+void ListValue::sort(
+    const std::optional<Value>& key,
+    bool reverse,
+    const std::shared_ptr<Environment>& env) {
+
+    // обычный sort
+    if (!key.has_value()) {
+
+        std::sort(
+            elements.begin(),
+            elements.end(),
+
+            [reverse](const Value& a, const Value& b) {
+                return reverse ? b < a : a < b;
+            }
+        );
+
+        return;
+    }
+
+    // decorate
+    std::vector<std::pair<Value, Value>> decorated;
+
+    for (const auto& elem : elements) {
+
+        Value k = call(key.value(),{ elem }, env);
+
+        decorated.emplace_back(k, elem);
+    }
+
+    // sort by key
+    std::sort(
+        decorated.begin(),
+        decorated.end(),
+
+        [reverse](const auto& a, const auto& b) {
+            return reverse
+                ? b.first < a.first
+                : a.first < b.first;
+        }
+    );
+
+    // undecorate
+    elements.clear();
+
+    for (const auto& [k, v] : decorated) {
+        elements.push_back(v);
+    }
 }

@@ -382,6 +382,53 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "sort") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "sort",
+
+                    [list](const std::vector<Value>& args,
+                           const std::shared_ptr<Environment>& env)
+                           -> Value {
+
+                        std::optional<Value> key = std::nullopt;
+                        bool reverse = false;
+
+                        if (args.size() > 2) {
+                            throw std::runtime_error(
+                                "sort expects at most 2 args"
+                            );
+                        }
+
+                        // sort(key)
+                        // sort(reverse)
+                        if (args.size() >= 1) {
+
+                            // если callable, то это key
+                            if (args[0].isCallable()) {
+                                key = args[0];
+                            }
+                            else {
+                                reverse = args[0].toBool();
+                            }
+                        }
+
+                        // sort(key, reverse)
+                        if (args.size() == 2) {
+
+                            key = args[0];
+                            reverse = args[1].toBool();
+                        }
+
+                        list->sort(key, reverse, env);
+
+                        return Value();
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

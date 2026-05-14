@@ -109,7 +109,9 @@ public:
     [[nodiscard]] BigFloat toBigFloat() const;
     [[nodiscard]] BigInt toBigInt() const;
     [[nodiscard]] bool isNumeric() const;
+    [[nodiscard]] bool isCallable() const;
 
-    bool operator==(const Value&) const;
+    [[nodiscard]] bool operator==(const Value&) const;
+    [[nodiscard]] bool operator<(const Value&) const;
 };
 #endif //VALUE_H

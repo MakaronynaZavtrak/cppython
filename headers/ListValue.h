@@ -47,5 +47,7 @@ public:
     void reverse();
 
     Value copy() const;
+
+    void sort(const std::optional<Value>& key, bool reverse, const std::shared_ptr<Environment>& env);
 };
 #endif //CPPYTHON_LISTVALUE_H

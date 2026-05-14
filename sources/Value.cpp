@@ -248,8 +248,35 @@ bool Value::operator==(const Value& other) const {
     return false;
 }
 
+bool Value::operator<(const Value& other) const {
+    // numeric comparison
+    if (isNumeric() && other.isNumeric()) {
+        return toBigFloat() < other.toBigFloat();
+    }
+
+    // string
+    if (std::holds_alternative<QString>(data) &&
+        std::holds_alternative<QString>(other.data)) {
+
+        return std::get<QString>(data) <std::get<QString>(other.data);
+        }
+
+    throw std::runtime_error("TypeError: unsupported comparison");
+}
+
 bool Value::isNumeric() const {
     return std::holds_alternative<BigInt>(data) ||
            std::holds_alternative<BigFloat>(data) ||
            std::holds_alternative<bool>(data);
+}
+
+bool Value::isCallable() const {
+
+    return
+        std::holds_alternative<FunctionPtr>(data) ||
+        std::holds_alternative<BuiltinFunctionPtr>(data) ||
+        std::holds_alternative<ClassPtr>(data) ||
+        std::holds_alternative<BoundMethodPtr>(data) ||
+        std::holds_alternative<StaticMethodPtr>(data) ||
+        std::holds_alternative<ClassMethodPtr>(data);
 }

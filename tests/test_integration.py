@@ -1886,6 +1886,41 @@ def test_single_line_expressions(expr, expected):
       "a.append(999)",
       "b"], "[1, 2]"),
 
+    # копирование поверхностно
+    (["a = [1, [2, 3]]",
+      "b = a.copy()",
+      "b[1][0] = 4",
+      "a"], "[1, [4, 3]]"),
+
+    # сортировка
+    (["a = [2, 1, 3]",
+     "a.sort()",
+     "a"], "[1, 2, 3]"),
+
+    (["a = ['xyz', 'abc', 'aaa']",
+      "a.sort()",
+      "a"], "['aaa', 'abc', 'xyz']"),
+
+    (["a = [True, 1, 0.5]",
+      "a.sort()",
+      "a"], "[0.5, True, 1]"),
+
+    # Временно тест не поддерживается
+    # (["a = [True, 2, 3.0]",
+    #   "a.sort(reverse = True)",
+    #   "a"], "[3.0, 2, True]"),
+
+    # Этот тест тоже не поддерживается пока что
+    # (["a = ['abc', 'abab', 'a', '']",
+    #   "a.sort(key = lambda x: len(x))",
+    #   "a"], "['', 'a', 'abc', 'abab']"),
+    #
+    # (["a = ['abc', 'abab', 'a', '']",
+    #   "a.sort(key = lambda x: len(x), reverse = True)",
+    #   "a"], "['abab', 'abc', 'a', '']"),
+
+
+
 ])
 
 def test_multiline_expressions(commands, expected):
