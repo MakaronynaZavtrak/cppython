@@ -776,31 +776,14 @@ public:
             Value b = rights[i]->eval(env);
             bool res = false;
 
-            if (std::holds_alternative<QString>(a.data) &&
-                std::holds_alternative<QString>(b.data))
-            {
-                auto sa = a.toString();
-                auto sb = b.toString();
-                const int cmp = QString::compare(sa, sb, Qt::CaseSensitive);
-
-                if      (ops[i] == "<" )  res = cmp <  0;
-                else if (ops[i] == "<=")  res = cmp <= 0;
-                else if (ops[i] == ">" )  res = cmp >  0;
-                else if (ops[i] == ">=")  res = cmp >= 0;
-                else if (ops[i] == "==")  res = cmp == 0;
-                else if (ops[i] == "!=")  res = cmp != 0;
-            }
-            else {
-                const auto da = a.toBigFloat();
-                const auto db = b.toBigFloat();
-
-                if      (ops[i] == "<" )  res = da <  db;
-                else if (ops[i] == "<=")  res = da <= db;
-                else if (ops[i] == ">" )  res = da >  db;
-                else if (ops[i] == ">=")  res = da >= db;
-                else if (ops[i] == "==")  res = da == db;
-                else if (ops[i] == "!=")  res = da != db;
-            }
+            if      (ops[i] == "==") res = a == b;
+            else if (ops[i] == "!=") res = !(a == b);
+            else if (ops[i] == "<")  res = a < b;
+            else if (ops[i] == "<=") res = a < b || a == b;
+            else if (ops[i] == ">")  res = !(a < b) && !(a == b);
+            else if (ops[i] == ">=") res = !(a < b);
+            else throw std::runtime_error(
+                "Unknown comparison operator: " + ops[i].toStdString());
 
             if (!res) return Value(false);
             a = std::move(b);
@@ -1181,7 +1164,7 @@ public:
         : object(std::move(object)),
           index(std::move(index)) {}
 
-    Value eval(std::shared_ptr<Environment> env) const override {
+    [[nodiscard]] Value eval(EnvPtr env) const override {
         Value obj = object->eval(env);
         Value idx = index->eval(env);
 
@@ -1208,7 +1191,7 @@ public:
           index(std::move(index)),
           value(std::move(value)) {}
 
-    Value eval(std::shared_ptr<Environment> env) const override {
+    [[nodiscard]] Value eval(EnvPtr env) const override {
 
         Value obj = object->eval(env);
         Value idx = index->eval(env);

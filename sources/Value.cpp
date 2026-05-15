@@ -239,10 +239,24 @@ bool Value::operator==(const Value& other) const {
                std::get<QString>(other.data);
     }
 
-    // пока что только list identity
-    if (std::holds_alternative<ListPtr>(data)) {
-        return std::get<ListPtr>(data) ==
-               std::get<ListPtr>(other.data);
+    // list
+    if (std::holds_alternative<ListPtr>(data) &&
+    std::holds_alternative<ListPtr>(other.data))
+    {
+        const auto& a = std::get<ListPtr>(data)->elements;
+        const auto& b = std::get<ListPtr>(other.data)->elements;
+
+        if (a.size() != b.size()) {
+            return false;
+        }
+
+        for (size_t i = 0; i < a.size(); ++i) {
+            if (!(a[i] == b[i])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     return false;
@@ -261,6 +275,26 @@ bool Value::operator<(const Value& other) const {
         return std::get<QString>(data) < std::get<QString>(other.data);
     }
 
+    // list
+    if (std::holds_alternative<ListPtr>(data) &&
+        std::holds_alternative<ListPtr>(other.data))
+    {
+        const auto& a = std::get<ListPtr>(data)->elements;
+        const auto& b = std::get<ListPtr>(other.data)->elements;
+
+        const size_t minSize = std::min(a.size(), b.size());
+
+        for (size_t i = 0; i < minSize; ++i) {
+
+            if (a[i] == b[i]) {
+                continue;
+            }
+
+            return a[i] < b[i];
+        }
+
+        return a.size() < b.size();
+    }
 
 
     throw std::runtime_error("TypeError: unsupported comparison: " + toString().toStdString() + " " + " " + other.toString().toStdString());
