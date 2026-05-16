@@ -549,6 +549,29 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "clear") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "clear",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                    -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("clear expects 0 args");
+                        }
+
+                        dict->clear();
+
+                        return {};
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

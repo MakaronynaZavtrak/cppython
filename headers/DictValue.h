@@ -29,5 +29,7 @@ public:
     [[nodiscard]] Value get(const Value&, const Value& defaultValue = Value()) const;
 
     [[nodiscard]] std::size_t len() const;
+
+    void clear();
 };
 #endif //CPPYTHON_DICTVALUE_H

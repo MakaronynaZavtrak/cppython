@@ -2044,7 +2044,16 @@ def test_single_line_expressions(expr, expected):
       "len(a)"], "0"),
 
     (["a = {'x': 1, 'y': True}",
-     "len(a)"], "2")
+     "len(a)"], "2"),
+
+    # clear
+    (["a = {'x': 222, 'y': 238}",
+      "a.clear()",
+      "a"], "{}"),
+
+    (["a = {}",
+      "a.clear()",
+      "a"], "{}" ),
 
 ])
 

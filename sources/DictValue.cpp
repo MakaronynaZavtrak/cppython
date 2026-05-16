@@ -83,3 +83,8 @@ Value DictValue::get(const Value &key, const Value &defaultValue) const {
 std::size_t DictValue::len() const {
       return items.size();
 }
+
+void DictValue::clear() {
+      items.clear();
+      order.clear();
+}
