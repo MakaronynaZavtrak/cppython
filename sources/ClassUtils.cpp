@@ -503,6 +503,31 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "get") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "get",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                    -> Value {
+
+                        if (args.empty() || args.size() > 2) {
+                            throw std::runtime_error("get expects 1 or 2 args");
+                        }
+
+                        if (args.size() == 1) {
+                            return dict->get(args[0]);
+                        }
+
+                        return dict->get(args[0], args[1]);
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

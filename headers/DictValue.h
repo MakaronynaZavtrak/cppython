@@ -4,11 +4,9 @@
 
 #ifndef CPPYTHON_DICTVALUE_H
 #define CPPYTHON_DICTVALUE_H
-#include <QHash>
 
 #include "ReprMixin.h"
-
-class Value;
+#include "Value.h"
 
 class DictValue : public ReprMixin {
     QHash<QString, Value> items;
@@ -27,5 +25,7 @@ public:
     [[nodiscard]] Value getItem(const Value& key) const;
 
     void setItem(const Value& key, const Value& value);
+
+    [[nodiscard]] Value get(const Value&, const Value& defaultValue = Value()) const;
 };
 #endif //CPPYTHON_DICTVALUE_H

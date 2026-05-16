@@ -64,3 +64,18 @@ void DictValue::setItem(const Value &key, const Value &value) {
 
       items[strKey] = value;
 }
+
+Value DictValue::get(const Value &key, const Value &defaultValue) const {
+      //TODO: пока только строки
+      if (!std::holds_alternative<QString>(key.data)) {
+            throw std::runtime_error("Dict key must be string");
+      }
+
+      const QString strKey = std::get<QString>(key.data);
+
+      if (!items.contains(strKey)) {
+            return defaultValue;
+      }
+
+      return items[strKey];
+}

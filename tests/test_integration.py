@@ -68,26 +68,48 @@ def run_cpython(cmds: str | list[str]) -> str:
         lines = cmds.splitlines()
     else:
         lines = list(cmds)
-        print(lines)
 
     if len(lines) == 1:
         expr = lines[0]
-        code = f"import sys; sys.stdout.write(repr({expr}))"
+
+        code = f"""
+import sys
+
+_result = eval({expr!r})
+
+if _result is not None:
+    sys.stdout.write(repr(_result))
+"""
     else:
         code_to_exec = "\n".join(lines[:-1])
         last_expr = lines[-1].strip()
 
         code = f"""
 import sys
-exec('''{code_to_exec}''')
-sys.stdout.write(repr({last_expr}))
+
+_ns = {{"__builtins__": __builtins__}}
+
+exec({code_to_exec!r}, _ns)
+
+_result = eval({last_expr!r}, _ns)
+
+if _result is not None:
+    sys.stdout.write(repr(_result))
 """
 
     p = subprocess.run([PYTHON, "-c", code],
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
                        timeout=5)
+
+    err = p.stderr.decode("utf-8", "ignore")
+
+    if err:
+        print("STDERR:")
+        print(err)
+
     out = p.stdout.decode("utf-8", "ignore").splitlines()
+
     return out[0].strip() if out else ""
 
 @pytest.mark.parametrize("expr,expected", [
@@ -1974,6 +1996,43 @@ def test_single_line_expressions(expr, expected):
       "a['y'] = 999",
       "a['c'] = 1",
       "a"], "{'x': 101, 'y': 999, 'z': 303, 'c': 1}"),
+
+    (["a = {'x': 10}",
+      "a['x']"], "10"),
+
+    # метод get
+    (["a = {'x': 10}",
+      "a.get('x')"], "10"),
+
+    (["a = {'x': 10}",
+      "a.get('y')"], ""),
+
+    (["a = {'x': 10}",
+      "a.get('y', 404)"], "404"),
+
+    (["a = {'x': 10}",
+      "a.get('x', 404)"], "10"),
+
+    (["a = {'x': 10, 'y': 20}",
+      "a['x'] + a['y']"], "30"),
+
+    (["a = {}",
+      "b = 100",
+      "a.get('x', b + 5)"], "105"),
+
+    (["a = {'x': 1}",
+      "k = 'x'",
+      "a[k]"], "1"),
+
+    (["a = {'x': 1}",
+      "k = 'x'",
+      "a.get(k)"], "1"),
+
+    # alias
+    (["a = {'x': 123}",
+      "b = a",
+      "b['x'] = 456",
+      "a"], "{'x': 456}"),
 
 ])
 
