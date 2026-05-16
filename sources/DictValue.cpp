@@ -79,3 +79,7 @@ Value DictValue::get(const Value &key, const Value &defaultValue) const {
 
       return items[strKey];
 }
+
+std::size_t DictValue::len() const {
+      return items.size();
+}

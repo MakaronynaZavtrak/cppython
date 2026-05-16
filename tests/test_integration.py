@@ -335,6 +335,11 @@ if _result is not None:
     ("[1, True] == [1, 1]", "True"),
     ("[1] == [True] == [1.0]", "True"),
 
+    # dict len
+    ("len({})", "0"),
+    ("len({'a': 1})", "1"),
+    ("len({'a': 1, 'b': 2})", "2")
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -2033,6 +2038,13 @@ def test_single_line_expressions(expr, expected):
       "b = a",
       "b['x'] = 456",
       "a"], "{'x': 456}"),
+
+    # len
+    (["a = {}",
+      "len(a)"], "0"),
+
+    (["a = {'x': 1, 'y': True}",
+     "len(a)"], "2")
 
 ])
 

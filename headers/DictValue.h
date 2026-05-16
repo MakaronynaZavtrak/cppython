@@ -27,5 +27,7 @@ public:
     void setItem(const Value& key, const Value& value);
 
     [[nodiscard]] Value get(const Value&, const Value& defaultValue = Value()) const;
+
+    [[nodiscard]] std::size_t len() const;
 };
 #endif //CPPYTHON_DICTVALUE_H
