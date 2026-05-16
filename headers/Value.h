@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class DictValue;
 class ListValue;
 class ClassMethodValue;
 class StaticMethodValue;
@@ -34,10 +35,10 @@ class FunctionValue;
  */
 class Value : public ReprMixin {
 public:
-    using Dict = QHash<QString, Value>;
 
     using ListPtr = std::shared_ptr<ListValue>;
-    using DictPtr = std::shared_ptr<Dict>;
+    using DictPtr = std::shared_ptr<DictValue>;
+
     using FunctionPtr = std::shared_ptr<FunctionValue>;
 
     using BigInt = boost::multiprecision::cpp_int;
@@ -82,10 +83,8 @@ public:
     explicit Value(const QString& str) : data(str) {}
     explicit Value(const char* str) : data(QString(str)) {}
 
-    explicit Value(const std::shared_ptr<ListValue> & list) : data(list) {};
-
-    explicit Value(const Dict& dict) : data(std::make_shared<Dict>(dict)) {}
-    explicit Value(Dict&& dict) : data(std::make_shared<Dict>(std::move(dict))) {}
+    explicit Value(const ListPtr& list) : data(list) {};
+    explicit Value(const DictPtr& dict) : data(dict) {}
 
     explicit Value(const FunctionPtr& func) : data(func) {}
     explicit Value(FunctionPtr&& func) : data(std::move(func)) {}

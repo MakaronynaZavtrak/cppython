@@ -6,6 +6,7 @@
 #include "CallRuntime.h"
 #include "ClassValue.h"
 #include "DescriptorUtils.h"
+#include "DictValue.h"
 #include "InstanceValue.h"
 #include "ListValue.h"
 #include "SuperValue.h"
@@ -447,6 +448,54 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                         }
 
                         list->sort(key, reverse, env);
+
+                        return Value();
+                    }
+                )
+            );
+        }
+    }
+
+    if (std::holds_alternative<Value::DictPtr>(obj.data)) {
+
+        auto dict = std::get<Value::DictPtr>(obj.data);
+
+        if (attr == "__getitem__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__getitem__",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                    -> Value {
+
+                        if (args.size() != 1) {
+                            throw std::runtime_error("__getitem__ expects 1 arg");
+                        }
+
+                        return dict->getItem(args[0]);
+                    }
+                )
+            );
+        }
+
+        if (attr == "__setitem__") {
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__setitem__",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                    -> Value {
+
+                        if (args.size() != 2) {
+                            throw std::runtime_error("__setitem__ expects 2 args");
+                        }
+
+                        dict->setItem(args[0], args[1]);
 
                         return Value();
                     }

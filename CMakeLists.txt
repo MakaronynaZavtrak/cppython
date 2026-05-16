@@ -54,7 +54,9 @@ add_executable(cppython main.cpp
         headers/DescriptorUtils.h
         sources/DescriptorUtils.cpp
         headers/ListValue.h
-        sources/ListValue.cpp)
+        sources/ListValue.cpp
+        headers/DictValue.h
+        sources/DictValue.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

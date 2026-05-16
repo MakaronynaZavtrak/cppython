@@ -2,6 +2,7 @@
 
 #include "BoundMethod.h"
 #include "ClassMethodValue.h"
+#include "DictValue.h"
 #include "FunctionValue.h"
 #include "ListValue.h"
 #include "PropertyValue.h"
@@ -58,7 +59,7 @@ QString Value::toString() const {
     }
 
     if (std::holds_alternative<DictPtr>(data)) {
-        return "{...}";
+        return std::get<DictPtr>(data)->toString();
     }
 
     if (std::holds_alternative<FunctionPtr>(data)) {
@@ -277,8 +278,7 @@ bool Value::operator<(const Value& other) const {
 
     // list
     if (std::holds_alternative<ListPtr>(data) &&
-        std::holds_alternative<ListPtr>(other.data))
-    {
+        std::holds_alternative<ListPtr>(other.data)) {
         const auto& a = std::get<ListPtr>(data)->elements;
         const auto& b = std::get<ListPtr>(other.data)->elements;
 

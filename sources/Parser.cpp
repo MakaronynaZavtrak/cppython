@@ -253,6 +253,8 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
                 node = parseParenthesizedExpression();
             else if (token.value == "[")
                 node = parseList();
+            else if (token.value == "{")
+                node = parseDict();
             else
                 throwUnexpectedTokenError(token);
             break;
@@ -894,6 +896,48 @@ ParsedCallArgs Parser::parseCallArguments() {
     }
 
     return result;
+}
+
+std::shared_ptr<ASTNode> Parser::parseDict() {
+
+    std::vector<
+        std::pair<
+            std::shared_ptr<ASTNode>,
+            std::shared_ptr<ASTNode>
+        >
+    > items;
+
+    advance(); // {
+
+    if (peek().type == TOKEN_OP && peek().value == "}") {
+        advance();
+        return std::make_shared<DictNode>(std::move(items));
+    }
+
+    while (true) {
+
+        auto key = parseAssignment();
+
+        consume(TOKEN_OP, ":");
+
+        auto value = parseAssignment();
+
+        items.emplace_back(key, value);
+
+        if (peek().type == TOKEN_OP && peek().value == "}") {
+            advance();
+            break;
+        }
+
+        consume(TOKEN_OP, ",");
+
+        if (peek().type == TOKEN_OP && peek().value == "}") {
+            advance();
+            break;
+        }
+    }
+
+    return std::make_shared<DictNode>(std::move(items));
 }
 
 /**

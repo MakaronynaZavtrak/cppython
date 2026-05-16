@@ -11,6 +11,7 @@
 #include "CallRuntime.h"
 #include "ClassMethodValue.h"
 #include "ClassUtils.h"
+#include "DictValue.h"
 #include "FunctionValue.h"
 #include "InstanceValue.h"
 #include "ListValue.h"
@@ -1243,6 +1244,43 @@ public:
 
 };
 
+class DictNode final : public ASTNode {
+    std::vector<
+        std::pair<
+            std::shared_ptr<ASTNode>,
+            std::shared_ptr<ASTNode>
+        >
+    > items;
+
+public:
+    explicit DictNode(std::vector<std::pair<
+                std::shared_ptr<ASTNode>,
+                std::shared_ptr<ASTNode>>> elems) : items(std::move(elems)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+        auto dict = std::make_shared<DictValue>();
+
+        for (const auto& [kExpr, vExpr] : items) {
+
+            Value k = kExpr->eval(env);
+            Value v = vExpr->eval(env);
+
+            dict->setItem(k, v);
+        }
+
+        return Value(dict);
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QStringList parts;
+
+        for (const auto& [kExpr, vExpr] : items) {
+            parts << kExpr->toString() + ": " + vExpr->toString();
+        }
+        return "{" + parts.join(", ") + "}";
+    }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -1407,6 +1445,8 @@ private:
     std::shared_ptr<ASTNode> parseLambda();
 
     ParsedCallArgs parseCallArguments();
+
+    std::shared_ptr<ASTNode> parseDict();
 
     void consume(TokenType type, const QString &value);
 
