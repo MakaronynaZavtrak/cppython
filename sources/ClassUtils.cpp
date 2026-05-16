@@ -593,6 +593,33 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "pop") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "pop",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (args.size() < 1 || args.size() > 2) {
+                            throw std::runtime_error("pop expects 1 or 2 args");
+                        }
+
+                        const QString key = args[0].asString();
+
+                        if (args.size() == 2) {
+                            return dict->pop(key, &args[1]);
+                        }
+
+                        return dict->pop(key);
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

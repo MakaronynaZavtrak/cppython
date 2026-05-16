@@ -94,3 +94,23 @@ void DictValue::clear() {
 Value DictValue::copy() const {
       return Value(std::make_shared<DictValue>(items, order));
 }
+
+Value DictValue::pop(const QString& key, const Value* defaultValue) {
+      if (items.contains(key)) {
+            Value result = items[key];
+            items.remove(key);
+            order.removeAll(key);
+
+            return result;
+      }
+
+      if (defaultValue) {
+            return *defaultValue;
+      }
+
+      throw std::runtime_error(
+          QString("KeyError: '%1'")
+              .arg(key)
+              .toStdString()
+      );
+}

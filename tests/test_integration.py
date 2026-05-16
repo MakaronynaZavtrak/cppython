@@ -2093,6 +2093,25 @@ def test_single_line_expressions(expr, expected):
       "b['x'].append(2)",
       "a"], "{'x': [1, 2]}"),
 
+    # pop
+    (["a = {'x': 1}",
+      "a.pop('x')"], "1"),
+
+    (["a = {'x': 1}",
+      "a.pop('x')",
+      "a"], "{}"),
+
+    # default
+    (["a = {}",
+      "a.pop('x', 404)"], "404"),
+
+    (["a = {'x': 1}",
+      "a.pop('x', 404)"], "1"),
+
+    (["a = {'x': 1, 'y': 2, 'z': 3}",
+      "a.pop('y')",
+      "a"], "{'x': 1, 'z': 3}"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

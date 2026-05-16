@@ -26,12 +26,14 @@ public:
 
     void setItem(const Value& key, const Value& value);
 
-    [[nodiscard]] Value get(const Value&, const Value& defaultValue = Value()) const;
+    [[nodiscard]] Value get(const Value&, const Value& = Value()) const;
 
     [[nodiscard]] std::size_t len() const;
 
     void clear();
 
     [[nodiscard]] Value copy() const;
+
+    Value pop(const QString&, const Value* = nullptr);
 };
 #endif //CPPYTHON_DICTVALUE_H
