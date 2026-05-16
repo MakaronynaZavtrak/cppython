@@ -2055,6 +2055,44 @@ def test_single_line_expressions(expr, expected):
       "a.clear()",
       "a"], "{}" ),
 
+    # копирование спика
+    (["a = {}",
+      "a.copy()"], "{}"),
+
+    (["a = {'x': 1}",
+      "b = a.copy()",
+      "b"], "{'x': 1}"),
+
+    (["a = {'x': 1}",
+      "b = a.copy()",
+      "b['x'] = 2",
+      "a"], "{'x': 1}"),
+
+    (["a = {'x': 1}",
+      "b = a.copy()",
+      "b['x'] = 2",
+      "b"], "{'x': 2}"),
+
+    (["a = {'x': 1}",
+      "b = a.copy()",
+      "b['x'] = 2",
+      "b['z'] = 4",
+      "b['y'] = 3",
+      "a"], "{'x': 1}"),
+
+    (["a = {'x': 1}",
+      "b = a.copy()",
+      "b['x'] = 2",
+      "b['z'] = 4",
+      "b['y'] = 3",
+      "b"], "{'x': 2, 'z': 4, 'y': 3}"),
+
+    # проверка shallow copy
+    (["a = {'x': [1]}",
+      "b = a.copy()",
+      "b['x'].append(2)",
+      "a"], "{'x': [1, 2]}"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

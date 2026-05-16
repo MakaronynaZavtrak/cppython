@@ -4,8 +4,10 @@
 #include "DictValue.h"
 #include <Value.h>
 
-DictValue::DictValue(QHash<QString, Value> values)
-      : items(std::move(values)) {}
+DictValue:: DictValue(const QHash<QString, Value>& items,
+                      const QVector<QString>& order)
+        : items(items),
+          order(order) {}
 
 QString DictValue::toString() const {
 
@@ -87,4 +89,8 @@ std::size_t DictValue::len() const {
 void DictValue::clear() {
       items.clear();
       order.clear();
+}
+
+Value DictValue::copy() const {
+      return Value(std::make_shared<DictValue>(items, order));
 }

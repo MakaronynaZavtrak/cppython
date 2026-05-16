@@ -16,7 +16,7 @@ public:
 
     DictValue() = default;
 
-    explicit DictValue(QHash<QString, Value> values);
+    explicit DictValue(const QHash<QString, Value>&, const QVector<QString>&);
 
     [[nodiscard]] QString toString() const override;
 
@@ -31,5 +31,7 @@ public:
     [[nodiscard]] std::size_t len() const;
 
     void clear();
+
+    [[nodiscard]] Value copy() const;
 };
 #endif //CPPYTHON_DICTVALUE_H
