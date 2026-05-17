@@ -620,6 +620,34 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "update") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "update",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (args.size() != 1) {
+                            throw std::runtime_error("update expects 1 arg");
+                        }
+
+                        if (!args[0].isDict()) {
+                            throw std::runtime_error("update expects dict");
+                        }
+
+                        dict->update(args[0].asDict());
+
+                        return {};
+                    }
+                )
+            );
+        }
+
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

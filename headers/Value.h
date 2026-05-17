@@ -110,6 +110,9 @@ public:
     [[nodiscard]] bool isNumeric() const;
     [[nodiscard]] bool isCallable() const;
 
+    [[nodiscard]] bool isDict() const;
+    [[nodiscard]] DictPtr asDict() const;
+
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;
 };

@@ -316,3 +316,17 @@ bool Value::isCallable() const {
         std::holds_alternative<StaticMethodPtr>(data) ||
         std::holds_alternative<ClassMethodPtr>(data);
 }
+
+bool Value::isDict() const {
+    return std::holds_alternative<DictPtr>(data);
+}
+
+
+Value::DictPtr Value::asDict() const {
+
+    if (!isDict()) {
+        throw std::runtime_error("Value is not a dict");
+    }
+
+    return std::get<DictPtr>(data);
+}

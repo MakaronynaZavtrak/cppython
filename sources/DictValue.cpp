@@ -114,3 +114,14 @@ Value DictValue::pop(const QString& key, const Value* defaultValue) {
               .toStdString()
       );
 }
+
+void DictValue::update(const std::shared_ptr<DictValue>& other) {
+      for (const auto& key : other->order) {
+
+            if (!items.contains(key)) {
+                  order.push_back(key);
+            }
+
+            items[key] = other->items[key];
+      }
+}

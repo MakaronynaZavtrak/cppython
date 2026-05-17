@@ -35,5 +35,8 @@ public:
     [[nodiscard]] Value copy() const;
 
     Value pop(const QString&, const Value* = nullptr);
+
+    void update(const std::shared_ptr<DictValue>&);
+
 };
 #endif //CPPYTHON_DICTVALUE_H
