@@ -18,11 +18,13 @@ public:
 
     explicit TupleValue(const std::vector<Value>& items);
 
-    QString toString() const override;
+    [[nodiscard]] QString toString() const override;
 
-    QString repr() const override;
+    [[nodiscard]] QString repr() const override;
 
-    Value getItem(const Value& index) const;
+    [[nodiscard]] Value getItem(const Value& index) const;
+
+    [[nodiscard]] Value count(const Value& value) const;
 };
 
 #endif //CPPYTHON_TUPLEVALUE_H

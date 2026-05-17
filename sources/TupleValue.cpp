@@ -51,3 +51,17 @@ Value TupleValue::getItem(const Value& index) const {
     const auto idx = i.convert_to<size_t>();
     return items[idx];
 }
+
+Value TupleValue::count(const Value& value) const {
+
+    int count = 0;
+
+    for (const auto& item : items) {
+
+        if (item == value) {
+            ++count;
+        }
+    }
+
+    return Value(Value::BigInt(count));
+}

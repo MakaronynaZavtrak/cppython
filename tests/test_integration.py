@@ -2280,6 +2280,28 @@ def test_single_line_expressions(expr, expected):
     (["a = (42,)",
       "a[0]"], "42"),
 
+    # count
+    (["a = (1, 2, 3, 1)",
+      "a.count(1)"], "2"),
+
+    (["a = (1, 2, 3)",
+      "a.count(4)"], "0"),
+
+    (["a = ('x', 'y', 'x')",
+      "a.count('x')"], "2"),
+
+    (["a = (True, False, True)",
+      "a.count(True)"], "2"),
+
+    (["a = ()",
+      "a.count(1)"], "0"),
+
+    (["a = (1, 1.0, True)",
+      "a.count(1)"], "3"),
+
+    (["a = ((1, 2), (1, 2))",
+      "a.count((1, 2))"], "2"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

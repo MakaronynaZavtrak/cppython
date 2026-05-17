@@ -240,17 +240,34 @@ bool Value::operator==(const Value& other) const {
     }
 
     // string
-    if (std::holds_alternative<QString>(data)) {
-        return std::get<QString>(data) ==
-               std::get<QString>(other.data);
+    if (isString() && other.isString()) {
+        return std::get<QString>(data) == std::get<QString>(other.data);
     }
 
     // list
-    if (std::holds_alternative<ListPtr>(data) &&
-    std::holds_alternative<ListPtr>(other.data))
-    {
+    if (isList() && other.isList()) {
+
         const auto& a = std::get<ListPtr>(data)->elements;
         const auto& b = std::get<ListPtr>(other.data)->elements;
+
+        if (a.size() != b.size()) {
+            return false;
+        }
+
+        for (size_t i = 0; i < a.size(); ++i) {
+            if (!(a[i] == b[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // tuple
+    if (isTuple() && other.isTuple()) {
+
+        const auto& a = std::get<TuplePtr>(data)->items;
+        const auto& b = std::get<TuplePtr>(other.data)->items;
 
         if (a.size() != b.size()) {
             return false;
@@ -275,15 +292,13 @@ bool Value::operator<(const Value& other) const {
     }
 
     // string
-    if (std::holds_alternative<QString>(data) &&
-        std::holds_alternative<QString>(other.data)) {
-
+    if (isString() && other.isString()) {
         return std::get<QString>(data) < std::get<QString>(other.data);
     }
 
     // list
-    if (std::holds_alternative<ListPtr>(data) &&
-        std::holds_alternative<ListPtr>(other.data)) {
+    if (isList() && other.isList()) {
+
         const auto& a = std::get<ListPtr>(data)->elements;
         const auto& b = std::get<ListPtr>(other.data)->elements;
 
@@ -301,6 +316,25 @@ bool Value::operator<(const Value& other) const {
         return a.size() < b.size();
     }
 
+    //tuple
+    if (isTuple() && other.isTuple()) {
+
+        const auto& a = std::get<TuplePtr>(data)->items;
+        const auto& b = std::get<TuplePtr>(other.data)->items;
+
+        const size_t minSize = std::min(a.size(), b.size());
+
+        for (size_t i = 0; i < minSize; ++i) {
+
+            if (a[i] == b[i]) {
+                continue;
+            }
+
+            return a[i] < b[i];
+        }
+
+        return a.size() < b.size();
+        }
 
     throw std::runtime_error("TypeError: unsupported comparison: " + toString().toStdString() + " " + " " + other.toString().toStdString());
 }

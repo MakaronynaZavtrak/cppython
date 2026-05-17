@@ -979,9 +979,6 @@ std::shared_ptr<ASTNode> Parser::parseDict() {
     return std::make_shared<DictNode>(std::move(items));
 }
 
-std::shared_ptr<ASTNode> Parser::parseTuple() {
-}
-
 /**
  * @brief Получает текущий токен в потоке токенов, не сдвигая позицию.
  *

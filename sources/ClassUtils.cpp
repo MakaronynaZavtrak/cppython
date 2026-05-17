@@ -709,6 +709,34 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 )
             );
         }
+
+        if (attr == "__setitem__") {
+            throw std::runtime_error(
+                "TypeError: 'tuple' object does not support item assignment"
+            );
+        }
+
+        if (attr == "count") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "count",
+
+                    [tuple](const std::vector<Value>& args,
+                            const Kwargs&,
+                            const std::shared_ptr<Environment>&)
+                            -> Value {
+
+                        if (args.size() != 1) {
+                            throw std::runtime_error("count expects 1 arg");
+                        }
+
+                        return tuple->count(args[0]);
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +
