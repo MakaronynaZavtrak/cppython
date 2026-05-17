@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class TupleValue;
 class DictValue;
 class ListValue;
 class ClassMethodValue;
@@ -38,6 +39,7 @@ public:
 
     using ListPtr = std::shared_ptr<ListValue>;
     using DictPtr = std::shared_ptr<DictValue>;
+    using TuplePtr = std::shared_ptr<TupleValue>;
 
     using FunctionPtr = std::shared_ptr<FunctionValue>;
 
@@ -62,6 +64,7 @@ public:
         QString,
         ListPtr,
         DictPtr,
+        TuplePtr,
         FunctionPtr,
         ClassPtr,
         InstancePtr,
@@ -83,8 +86,10 @@ public:
     explicit Value(const QString& str) : data(str) {}
     explicit Value(const char* str) : data(QString(str)) {}
 
-    explicit Value(const ListPtr& list) : data(list) {};
+    explicit Value(const ListPtr& list) : data(list) {}
     explicit Value(const DictPtr& dict) : data(dict) {}
+    explicit Value(const TuplePtr& tuple) : data(tuple) {}
+
 
     explicit Value(const FunctionPtr& func) : data(func) {}
     explicit Value(FunctionPtr&& func) : data(std::move(func)) {}
@@ -110,8 +115,14 @@ public:
     [[nodiscard]] bool isNumeric() const;
     [[nodiscard]] bool isCallable() const;
 
+    [[nodiscard]] bool isList() const;
+    [[nodiscard]] ListPtr asList() const;
+
     [[nodiscard]] bool isDict() const;
     [[nodiscard]] DictPtr asDict() const;
+
+    [[nodiscard]] bool isTuple() const;
+    [[nodiscard]] TuplePtr asTuple() const;
 
     [[nodiscard]] bool isString() const;
 

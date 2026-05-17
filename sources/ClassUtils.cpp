@@ -10,6 +10,7 @@
 #include "InstanceValue.h"
 #include "ListValue.h"
 #include "SuperValue.h"
+#include "TupleValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
     try {
@@ -682,7 +683,32 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 )
             );
         }
+    }
 
+    if (std::holds_alternative<Value::TuplePtr>(obj.data)) {
+
+        auto tuple = std::get<Value::TuplePtr>(obj.data);
+
+        if (attr == "__getitem__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__getitem__",
+
+                    [tuple](const std::vector<Value>& args,
+                            const Kwargs&,
+                            const std::shared_ptr<Environment>&)
+                            -> Value {
+
+                        if (args.size() != 1) {
+                            throw std::runtime_error("__getitem__ expects 1 arg");
+                        }
+
+                        return tuple->getItem(args[0]);
+                    }
+                )
+            );
+        }
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

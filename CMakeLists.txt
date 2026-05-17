@@ -56,7 +56,9 @@ add_executable(cppython main.cpp
         headers/ListValue.h
         sources/ListValue.cpp
         headers/DictValue.h
-        sources/DictValue.cpp)
+        sources/DictValue.cpp
+        sources/TupleValue.cpp
+        headers/TupleValue.h)
 
 target_include_directories(cppython PRIVATE headers)
 

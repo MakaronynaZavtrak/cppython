@@ -18,6 +18,7 @@
 #include "Param.h"
 #include "Runtime.h"
 #include "StaticMethodValue.h"
+#include "TupleValue.h"
 
 /**
  * @class ASTNode
@@ -1278,6 +1279,34 @@ public:
             parts << kExpr->toString() + ": " + vExpr->toString();
         }
         return "{" + parts.join(", ") + "}";
+    }
+};
+
+class TupleNode : public ASTNode {
+public:
+    std::vector<std::shared_ptr<ASTNode>> elements;
+
+    explicit TupleNode(std::vector<std::shared_ptr<ASTNode>> elements)
+        : elements(std::move(elements)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+
+        std::vector<Value> values;
+
+        for (const auto& element : elements) {
+            values.push_back(element->eval(env));
+        }
+
+        return Value(std::make_shared<TupleValue>(values));
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QStringList parts;
+
+        for (const auto& element : elements) {
+            parts << element->toString();
+        }
+        return "(" + parts.join(", ") + ")";
     }
 };
 

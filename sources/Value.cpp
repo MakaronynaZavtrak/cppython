@@ -7,6 +7,7 @@
 #include "ListValue.h"
 #include "PropertyValue.h"
 #include "StaticMethodValue.h"
+#include "TupleValue.h"
 
 /**
  * Преобразует экземпляр `Value` в его строковое представление в зависимости от его типа.
@@ -50,16 +51,20 @@ QString Value::toString() const {
         return std::get<bool>(data) ? "True" : "False";
     }
 
-    if (std::holds_alternative<QString>(data)) {
+    if (isString()) {
         return QString("\'" + std::get<QString>(data) + "\'");
     }
 
-    if (std::holds_alternative<ListPtr>(data)) {
+    if (isList()) {
         return std::get<ListPtr>(data)->toString();
     }
 
-    if (std::holds_alternative<DictPtr>(data)) {
+    if (isDict()) {
         return std::get<DictPtr>(data)->toString();
+    }
+
+    if (isTuple()) {
+        return std::get<TuplePtr>(data)->toString();
     }
 
     if (std::holds_alternative<FunctionPtr>(data)) {
@@ -317,10 +322,21 @@ bool Value::isCallable() const {
         std::holds_alternative<ClassMethodPtr>(data);
 }
 
+bool Value::isList() const {
+    return std::holds_alternative<ListPtr>(data);
+}
+
+Value::ListPtr Value::asList() const {
+    if (!isList()) {
+        throw std::runtime_error("Value is not a list");
+    }
+
+    return std::get<ListPtr>(data);
+}
+
 bool Value::isDict() const {
     return std::holds_alternative<DictPtr>(data);
 }
-
 
 Value::DictPtr Value::asDict() const {
 
@@ -329,6 +345,18 @@ Value::DictPtr Value::asDict() const {
     }
 
     return std::get<DictPtr>(data);
+}
+
+bool Value::isTuple() const {
+    return std::holds_alternative<TuplePtr>(data);
+}
+
+Value::TuplePtr Value::asTuple() const {
+    if (!isTuple()) {
+        throw std::runtime_error("Value is not a tuple");
+    }
+
+    return std::get<TuplePtr>(data);
 }
 
 bool Value::isString() const {

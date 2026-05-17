@@ -387,14 +387,47 @@ std::shared_ptr<ASTNode> Parser::parseIdentifierToken() {
  * @throws std::runtime_error Если ожидаемая закрывающая скобка ')' не найдена.
  */
 std::shared_ptr<ASTNode> Parser::parseParenthesizedExpression() {
-    advance();
-    std::shared_ptr<ASTNode> expr = parseAssignment();
 
+    advance(); // (
+
+    // ()
     if (peek().type == TOKEN_OP && peek().value == ")") {
         advance();
-        return expr;
+        return std::make_shared<TupleNode>(
+            std::vector<std::shared_ptr<ASTNode>>{}
+        );
     }
-    throw std::runtime_error("Expected ')'");
+
+    auto first = parseAssignment();
+
+    // tuple?
+    if (peek().type == TOKEN_OP && peek().value == ",") {
+
+        std::vector<std::shared_ptr<ASTNode>> elements;
+        elements.push_back(first);
+
+        while (peek().type == TOKEN_OP && peek().value == ",") {
+
+            advance();
+
+            // trailing comma: (1,)
+            if (peek().type == TOKEN_OP && peek().value == ")") {
+                break;
+            }
+
+            elements.push_back(parseAssignment());
+        }
+
+        consume(TOKEN_OP, ")");
+
+        return std::make_shared<TupleNode>(
+            std::move(elements)
+        );
+    }
+
+    consume(TOKEN_OP, ")");
+
+    return first;
 }
 
 /**
@@ -944,6 +977,9 @@ std::shared_ptr<ASTNode> Parser::parseDict() {
     }
 
     return std::make_shared<DictNode>(std::move(items));
+}
+
+std::shared_ptr<ASTNode> Parser::parseTuple() {
 }
 
 /**
