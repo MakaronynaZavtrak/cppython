@@ -1363,6 +1363,8 @@ private:
      */
     std::shared_ptr<ASTNode> parseBoolToken();
 
+    std::shared_ptr<ASTNode> parseNoneToken();
+
     /**
      * @brief Разбирает токен идентификатора
      * @return Узел переменной

@@ -38,5 +38,7 @@ public:
 
     void update(const std::shared_ptr<DictValue>&);
 
+    Value setdefault(const QString&, const Value& = Value());
+
 };
 #endif //CPPYTHON_DICTVALUE_H

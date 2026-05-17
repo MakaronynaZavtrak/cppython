@@ -125,3 +125,16 @@ void DictValue::update(const std::shared_ptr<DictValue>& other) {
             items[key] = other->items[key];
       }
 }
+
+Value DictValue::setdefault(const QString& key, const Value& defaultValue) {
+
+      if (items.contains(key)) {
+            return items[key];
+      }
+
+      items[key] = defaultValue;
+      order.push_back(key);
+
+      return defaultValue;
+}
+

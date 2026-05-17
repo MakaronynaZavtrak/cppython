@@ -218,6 +218,11 @@ std::shared_ptr<ASTNode> Parser::parsePower()
     return left;
 }
 
+std::shared_ptr<ASTNode> Parser::parseNoneToken() {
+    advance();
+    return std::make_shared<ValueNode>(Value());
+}
+
 /**
  * Разбирает следующее первичное выражение из потока токенов.
  * Первичные выражения включают литералы (числа, строки, логические значения),
@@ -242,6 +247,7 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
         case TOKEN_NUMBER: node = parseNumberToken(); break;
         case TOKEN_STRING: node = parseStringToken(); break;
         case TOKEN_BOOL:   node = parseBoolToken(); break;
+        case TOKEN_NONE:   node = parseNoneToken(); break;
         case TOKEN_ID:     node = parseIdentifierToken(); break;
 
         case TOKEN_KEYWORD:

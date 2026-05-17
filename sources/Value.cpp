@@ -330,3 +330,7 @@ Value::DictPtr Value::asDict() const {
 
     return std::get<DictPtr>(data);
 }
+
+bool Value::isString() const {
+    return std::holds_alternative<QString>(data);
+}

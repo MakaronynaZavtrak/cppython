@@ -113,6 +113,8 @@ public:
     [[nodiscard]] bool isDict() const;
     [[nodiscard]] DictPtr asDict() const;
 
+    [[nodiscard]] bool isString() const;
+
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;
 };

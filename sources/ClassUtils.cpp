@@ -647,6 +647,41 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "setdefault") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "setdefault",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (args.size() != 1 && args.size() != 2) {
+                            throw std::runtime_error(
+                                "setdefault expects 1 or 2 args"
+                            );
+                        }
+
+                        //TODO: временно только string
+                        if (!args[0].isString()) {
+                            throw std::runtime_error("dict keys must be strings");
+                        }
+
+                        const QString key = args[0].asString();
+
+                        Value defaultValue;
+
+                        if (args.size() == 2) {
+                            defaultValue = args[1];
+                        }
+
+                        return dict->setdefault(key, defaultValue);
+                    }
+                )
+            );
+        }
 
     }
 

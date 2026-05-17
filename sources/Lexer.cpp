@@ -213,6 +213,10 @@ Token Lexer::readIdentifierOrBool(const QString& code) {
         return {TOKEN_BOOL, id, line};
     }
 
+    if (id == "None") {
+        return {TOKEN_NONE, id, line};
+    }
+
     return {TOKEN_ID, id, line};
 }
 
