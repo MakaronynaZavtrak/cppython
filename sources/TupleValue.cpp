@@ -2,7 +2,6 @@
 // Created by semyo on 17.05.2026.
 //
 #include "TupleValue.h"
-#include "Value.h"
 
 TupleValue::TupleValue(const std::vector<Value>& items)
     : items(items) {}
@@ -64,4 +63,68 @@ Value TupleValue::count(const Value& value) const {
     }
 
     return Value(Value::BigInt(count));
+}
+
+Value TupleValue::index(
+    const Value& value,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    std::ptrdiff_t s = 0;
+    std::ptrdiff_t e = static_cast<std::ptrdiff_t>(items.size());
+
+    // start
+    if (start.has_value()) {
+
+        s = start->toBigInt().convert_to<long long>();
+
+        if (s < 0) {
+            s += static_cast<std::ptrdiff_t>(
+                items.size()
+            );
+        }
+
+        if (s < 0) {
+            s = 0;
+        }
+
+        if (s > static_cast<std::ptrdiff_t>(items.size())) {
+            s = static_cast<std::ptrdiff_t>(
+                items.size()
+            );
+        }
+    }
+
+    // end
+    if (end.has_value()) {
+
+        e = end->toBigInt().convert_to<long long>();
+
+        if (e < 0) {
+            e += static_cast<std::ptrdiff_t>(
+                items.size()
+            );
+        }
+
+        if (e < 0) {
+            e = 0;
+        }
+
+        if (e > static_cast<std::ptrdiff_t>(items.size())) {
+            e = static_cast<std::ptrdiff_t>(
+                items.size()
+            );
+        }
+    }
+
+    for (std::ptrdiff_t i = s; i < e; ++i) {
+
+        if (items[i] == value) {
+            return Value(
+                Value::BigInt(i)
+            );
+        }
+    }
+
+    throw std::runtime_error("ValueError: tuple.index(x): x not in tuple");
 }

@@ -370,7 +370,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
                         list->reverse();
 
-                        return Value();
+                        return {};
                     }
                 )
             );
@@ -430,7 +430,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
                         // sort(key)
                         // sort(reverse)
-                        if (args.size() >= 1) {
+                        if (!args.empty()) {
 
                             // если callable, то это key
                             if (args[0].isCallable()) {
@@ -450,7 +450,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
                         list->sort(key, reverse, env);
 
-                        return Value();
+                        return {};
                     }
                 )
             );
@@ -498,7 +498,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
                         dict->setItem(args[0], args[1]);
 
-                        return Value();
+                        return {};
                     }
                 )
             );
@@ -605,7 +605,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                            const std::shared_ptr<Environment>&)
                            -> Value {
 
-                        if (args.size() < 1 || args.size() > 2) {
+                        if (args.empty() || args.size() > 2) {
                             throw std::runtime_error("pop expects 1 or 2 args");
                         }
 
@@ -732,6 +732,42 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                         }
 
                         return tuple->count(args[0]);
+                    }
+                )
+            );
+        }
+
+        if (attr == "index") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "index",
+
+                    [tuple](const std::vector<Value>& args,
+                            const Kwargs&,
+                            const std::shared_ptr<Environment>&)
+                            -> Value {
+
+                        if (args.empty() || args.size() > 3) {
+                            throw std::runtime_error("index expects 1-3 args");
+                        }
+
+                        std::optional<Value> start;
+                        std::optional<Value> end;
+
+                        if (args.size() >= 2) {
+                            start = args[1];
+                        }
+
+                        if (args.size() >= 3) {
+                            end = args[2];
+                        }
+
+                        return tuple->index(
+                            args[0],
+                            start,
+                            end
+                        );
                     }
                 )
             );

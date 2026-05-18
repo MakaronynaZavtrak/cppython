@@ -2302,6 +2302,25 @@ def test_single_line_expressions(expr, expected):
     (["a = ((1, 2), (1, 2))",
       "a.count((1, 2))"], "2"),
 
+    # index
+    (["a = (10, 20, 30)",
+      "a.index(20)"], "1"),
+
+    (["a = (10, 20, 30, 20)",
+      "a.index(20, 2)"], "3"),
+
+    (["a = (10, 20, 30, 20)",
+      "a.index(20, 2, 4)"], "3"),
+
+    (["a = (10, 20, 30)",
+      "a.index(30)"], "2"),
+
+    (["a = ('a', 'b', 'c')",
+      "a.index('b')"], "1"),
+
+    (["a = (1, 2, 3)",
+      "a.index(1, -3)"], "0"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

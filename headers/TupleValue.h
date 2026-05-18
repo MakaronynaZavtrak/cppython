@@ -7,8 +7,7 @@
 #include <vector>
 
 #include "ReprMixin.h"
-
-class Value;
+#include "Value.h"
 
 class TupleValue : public ReprMixin {
 public:
@@ -25,6 +24,12 @@ public:
     [[nodiscard]] Value getItem(const Value& index) const;
 
     [[nodiscard]] Value count(const Value& value) const;
+
+    [[nodiscard]] Value index(
+    const Value& value,
+    const std::optional<Value>& start = std::nullopt,
+    const std::optional<Value>& end = std::nullopt) const;
+
 };
 
 #endif //CPPYTHON_TUPLEVALUE_H
