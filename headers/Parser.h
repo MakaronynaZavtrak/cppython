@@ -14,10 +14,12 @@
 #include "DictValue.h"
 #include "FunctionValue.h"
 #include "InstanceValue.h"
+#include "Interpreter.h"
 #include "ListValue.h"
 #include "Param.h"
 #include "Runtime.h"
 #include "StaticMethodValue.h"
+#include "StopIterationException.h"
 #include "TupleValue.h"
 
 /**
@@ -518,7 +520,7 @@ public:
         if (condition->eval(env).toBool()) {
             Value lastValue;
             for (const auto& stmt : body) {
-                lastValue = stmt->eval(env);
+                lastValue = Interpreter::executeNode(stmt, env);
             }
             return lastValue;
         }
@@ -527,7 +529,7 @@ public:
             if (elif.first->eval(env).toBool()) {
                 Value lastValue;
                 for (const auto& stmt : elif.second) {
-                    lastValue = stmt->eval(env);
+                    lastValue = Interpreter::executeNode(stmt, env);
                 }
                 return lastValue;
             }
@@ -536,7 +538,7 @@ public:
         if (!elseBody.empty()) {
             Value lastValue;
             for (const auto& stmt : elseBody) {
-                lastValue = stmt->eval(env);
+                lastValue = Interpreter::executeNode(stmt, env);
             }
             return lastValue;
         }
@@ -702,7 +704,7 @@ public:
         while (condition->eval(env).toBool()) {
             try {
                 for (auto& stmt : body) {
-                    last = stmt->eval(env);
+                    last = Interpreter::executeNode(stmt, env);
                 }
             }
             catch ([[maybe_unused]] const ContinueException& e) {}
@@ -714,7 +716,7 @@ public:
 
         if (!broken) {
             for (auto& stmt : elseBody) {
-                last = stmt->eval(env);
+                last = Interpreter::executeNode(stmt, env);
             }
         }
         return last;
@@ -1310,6 +1312,72 @@ public:
     }
 };
 
+class ForNode : public ASTNode {
+public:
+
+    QString varName;
+
+    std::shared_ptr<ASTNode> iterable;
+
+    std::vector<std::shared_ptr<ASTNode>> body;
+
+    ForNode(QString varName,
+            std::shared_ptr<ASTNode> iterable,
+            std::vector<std::shared_ptr<ASTNode>> body)
+        : varName(std::move(varName)),
+          iterable(std::move(iterable)),
+          body(std::move(body)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+
+        Value iterableValue = iterable->eval(env);
+
+        Value iterMethod = getAttrValue(iterableValue, "__iter__");
+
+        Value iterator = call(iterMethod, {}, {}, env);
+
+        Value last;
+
+        while (true) {
+
+            try {
+
+                Value nextMethod = getAttrValue(iterator, "__next__");
+                Value value = call(nextMethod, {}, {}, env);
+
+                env->set(varName, value);
+
+                try {
+
+                    for (const auto& stmt : body) {
+                        last = Interpreter::executeNode(stmt, env);
+                    }
+
+                }
+
+                catch ([[maybe_unused]] const ContinueException& e) {}
+                catch ([[maybe_unused]] const BreakException& e) {
+                    break;
+                }
+
+            }
+            catch (const StopIterationException&) {
+                break;
+            }
+        }
+
+        return last;
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return "for " + varName + " in " + iterable->toString() + ": ...";
+    }
+
+    [[nodiscard]] bool shouldPrint() const override {
+        return false;
+    }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -1478,6 +1546,8 @@ private:
     ParsedCallArgs parseCallArguments();
 
     std::shared_ptr<ASTNode> parseDict();
+
+    std::shared_ptr<ASTNode> parseForStatement();
 
     void consume(TokenType type, const QString &value);
 

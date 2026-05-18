@@ -60,7 +60,8 @@ add_executable(cppython main.cpp
         sources/TupleValue.cpp
         headers/TupleValue.h
         headers/ListIteratorValue.h
-        headers/TupleIteratorValue.h)
+        headers/TupleIteratorValue.h
+        headers/StopIterationException.h)
 
 target_include_directories(cppython PRIVATE headers)
 

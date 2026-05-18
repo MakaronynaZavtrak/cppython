@@ -70,7 +70,9 @@ enum class Keyword {
     GLOBAL,
     NONLOCAL,
     CLASS,
-    LAMBDA
+    LAMBDA,
+    FOR,
+    IN
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -86,7 +88,9 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"global", Keyword::GLOBAL},
     {"nonlocal", Keyword::NONLOCAL},
     {"class", Keyword::CLASS},
-    {"lambda", Keyword::LAMBDA}
+    {"lambda", Keyword::LAMBDA},
+    {"for", Keyword::FOR},
+    {"in", Keyword::IN}
 };
 
 /**

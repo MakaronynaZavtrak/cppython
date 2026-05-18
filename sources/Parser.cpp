@@ -33,6 +33,7 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::PASS:     return parsePass();
             case Keyword::CLASS:    return parseClassDef();
             case Keyword::LAMBDA:   return parseLambda();
+            case Keyword::FOR:      return parseForStatement();
             default:                break;
         }
     }
@@ -977,6 +978,42 @@ std::shared_ptr<ASTNode> Parser::parseDict() {
     }
 
     return std::make_shared<DictNode>(std::move(items));
+}
+
+std::shared_ptr<ASTNode> Parser::parseForStatement() {
+
+    advance(); // for
+
+    if (peek().type != TOKEN_ID) {
+        throw std::runtime_error("Expected variable name after 'for'");
+    }
+
+    QString varName = advance().value;
+
+    if (peek().type != TOKEN_KEYWORD ||
+        peek().keyword.value() != Keyword::IN) {
+
+        throw std::runtime_error("Expected 'in' after for variable");
+    }
+
+    advance(); // in
+
+    auto iterable = parseAssignment();
+
+    if (peek().type != TOKEN_OP ||
+        peek().value != ":") {
+        throw std::runtime_error("Expected ':' after for iterable");
+    }
+
+    advance(); // :
+
+    auto body = parseBlock();
+
+    return std::make_shared<ForNode>(
+        varName,
+        iterable,
+        body
+    );
 }
 
 /**

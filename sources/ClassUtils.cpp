@@ -10,6 +10,7 @@
 #include "InstanceValue.h"
 #include "ListIteratorValue.h"
 #include "ListValue.h"
+#include "StopIterationException.h"
 #include "SuperValue.h"
 #include "TupleIteratorValue.h"
 #include "TupleValue.h"
@@ -902,7 +903,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                         }
 
                         if (iter->index >= iter->list->elements.size()) {
-                            throw std::runtime_error("StopIteration");
+                            throw StopIterationException();
                         }
 
                         return iter->list->elements[iter->index++];
@@ -953,7 +954,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                         }
 
                         if (iter->index >= iter->tuple->items.size()) {
-                            throw std::runtime_error("StopIteration");
+                            throw StopIterationException();
                         }
 
                         return iter->tuple->items[iter->index++];

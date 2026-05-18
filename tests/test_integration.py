@@ -2395,6 +2395,69 @@ def test_single_line_expressions(expr, expected):
       "next(i1)",
       "next(i2)"], "1"),
 
+    # базовый for
+    (["res = 0",
+      "for x in [1, 2, 3]:",
+      "    res = res + x",
+      "",
+      "res"], "6"),
+
+    # tuple iteration
+    (["res = 0",
+      "for x in (1, 2, 3):",
+      "    res = res + x",
+      "",
+      "res"], "6"),
+
+    # пустой iterable
+    (["res = 100",
+      "for x in []:",
+      "    res = 0",
+      "",
+      "res"], "100"),
+
+    # break
+    (["res = 0",
+      "for x in [1, 2, 3, 4]:",
+      "    if x == 3:",
+      "        break",
+      "    res = res + x",
+      "",
+      "res"], "3"),
+
+    # continue
+    (["res = 0",
+      "for x in [1, 2, 3, 4]:",
+      "    if x == 2:",
+      "        continue",
+      "    res = res + x",
+      "",
+      "res"], "8"),
+
+    # nested for
+    (["res = 0",
+      "for x in [1, 2]:",
+      "    for y in [10, 20]:",
+      "        res = res + y",
+      "",
+      "res"], "60"),
+
+    # iter(list)
+    (["it = iter([1, 2, 3])",
+      "res = 0",
+      "for x in it:",
+      "    res = res + x",
+      "",
+      "res"], "6"),
+
+    # iter(tuple)
+    (["it = iter((1, 2, 3))",
+      "res = 0",
+      "for x in it:",
+      "    res = res + x",
+      "",
+      "res"], "6"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

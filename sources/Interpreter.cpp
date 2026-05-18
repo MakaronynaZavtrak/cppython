@@ -39,6 +39,19 @@ std::string Interpreter::assembleCode(const std::vector<std::string>& lines) {
     return oss.str();
 }
 
+Value Interpreter::executeNode(
+    const std::shared_ptr<ASTNode>& node,
+    const std::shared_ptr<Environment>& env) {
+
+    const Value result = node->eval(env);
+
+    if (node->shouldPrint() && !result.isNone()) {
+        std::cout << result.toString().toStdString() << "\n";
+    }
+
+    return result;
+}
+
 /**
  * Выполняет интерпретацию кода, переданного в виде строки. Разбивает код на токены
  * с помощью лексера, создает абстрактное синтаксическое дерево (AST) с помощью парсера
@@ -56,9 +69,8 @@ void Interpreter::executeCode(const std::string& code, Lexer& lexer, const std::
         Parser parser(tokens);
         const std::shared_ptr<ASTNode> ast = parser.parse();
 
-        if (const auto result = ast->eval(env); ast->shouldPrint() && !result.isNone()) {
-            std::cout << result.toString().toStdString() << "\n";
-        }
+        executeNode(ast, env);
+
     } catch (const std::runtime_error& e) {
         std::cout << e.what() << "\n";
     }
