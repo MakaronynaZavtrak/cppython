@@ -128,3 +128,7 @@ Value TupleValue::index(
 
     throw std::runtime_error("ValueError: tuple.index(x): x not in tuple");
 }
+
+std::size_t TupleValue::len() const {
+    return items.size();
+}

@@ -2321,6 +2321,17 @@ def test_single_line_expressions(expr, expected):
     (["a = (1, 2, 3)",
       "a.index(1, -3)"], "0"),
 
+    # len
+    ("len((1, 2, 3))", "3"),
+
+    ("len(())", "0"),
+
+    (["a = (10, 20)",
+      "len(a)"], "2"),
+
+    (["a = ('x', 'y', 'z')",
+      "len(a)"], "3"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

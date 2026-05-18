@@ -30,6 +30,7 @@ public:
     const std::optional<Value>& start = std::nullopt,
     const std::optional<Value>& end = std::nullopt) const;
 
+    [[nodiscard]] std::size_t len() const;
 };
 
 #endif //CPPYTHON_TUPLEVALUE_H
