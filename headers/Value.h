@@ -10,6 +10,8 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class TupleIteratorValue;
+class ListIteratorValue;
 class TupleValue;
 class DictValue;
 class ListValue;
@@ -57,6 +59,9 @@ public:
     using StaticMethodPtr = std::shared_ptr<StaticMethodValue>;
     using ClassMethodPtr = std::shared_ptr<ClassMethodValue>;
 
+    using ListIteratorPtr = std::shared_ptr<ListIteratorValue>;
+    using TupleIteratorPtr = std::shared_ptr<TupleIteratorValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -74,6 +79,8 @@ public:
         PropertyPtr,
         StaticMethodPtr,
         ClassMethodPtr,
+        ListIteratorPtr,
+        TupleIteratorPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -106,6 +113,9 @@ public:
     explicit Value(const StaticMethodPtr& staticMethodValue) : data(staticMethodValue) {}
     explicit Value(const ClassMethodPtr& classMethodValue) : data(classMethodValue) {}
 
+    explicit Value(const ListIteratorPtr& listIter) : data(listIter) {}
+    explicit Value(const TupleIteratorPtr& tupleIter) : data(tupleIter) {}
+
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString asString() const;
     [[nodiscard]] bool toBool() const;
@@ -125,6 +135,9 @@ public:
     [[nodiscard]] TuplePtr asTuple() const;
 
     [[nodiscard]] bool isString() const;
+
+    [[nodiscard]] bool isListIterator() const;
+    [[nodiscard]] bool isTupleIterator() const;
 
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;

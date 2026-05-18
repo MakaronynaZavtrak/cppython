@@ -209,42 +209,83 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
 
     env->set("len",
     Value(std::make_shared<BuiltinFunction>(
-            "len",
-            [](const std::vector<Value>& args,
-                    const Kwargs&,
-                    const std::shared_ptr<Environment>&)
-               -> Value {
+        "len",
 
-                if (args.size() != 1) {
-                    throw std::runtime_error("len expects 1 arg");
-                }
+        [](const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+           -> Value {
 
-                const Value& obj = args[0];
-
-                // string
-                if (const auto s = std::get_if<QString>(&obj.data)) {
-                    return Value(Value::BigInt(s->size()));
-                }
-
-                // list
-                if (const auto l = std::get_if<Value::ListPtr>(&obj.data)) {
-                    return Value(Value::BigInt((*l)->len()));
-                }
-
-                try {
-                    const Value lenMethod =
-                    getAttrValue(obj, "__len__");
-
-                    return call(lenMethod, {}, {}, nullptr);
-
-                } catch (...) {}
-
-                throw std::runtime_error("Object has no len()");
-
+            if (args.size() != 1) {
+                throw std::runtime_error("len expects 1 arg");
             }
-        )
-    )
-);
+
+            const Value& obj = args[0];
+
+            // string
+            if (const auto s = std::get_if<QString>(&obj.data)) {
+                return Value(Value::BigInt(s->size()));
+            }
+
+            // list
+            if (const auto l = std::get_if<Value::ListPtr>(&obj.data)) {
+                return Value(Value::BigInt((*l)->len()));
+            }
+
+            try {
+                const Value lenMethod =
+                getAttrValue(obj, "__len__");
+
+                return call(lenMethod, {}, {}, nullptr);
+
+            } catch (...) {}
+
+            throw std::runtime_error("Object has no len()");
+
+        }
+)));
+
+    env->set(
+    "iter",
+    Value(std::make_shared<BuiltinFunction>(
+        "iter",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>& env)
+           -> Value {
+
+            if (args.size() != 1) {
+                throw std::runtime_error("iter expects 1 arg");
+            }
+
+            const Value method = getAttrValue(args[0], "__iter__");
+
+            return call(method, {}, {}, env);
+        }
+)));
+
+    env->set(
+    "next",
+
+    Value(
+        std::make_shared<BuiltinFunction>(
+        "next",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>& env)
+           -> Value {
+
+            if (args.size() != 1) {
+                throw std::runtime_error("next expects 1 arg");
+            }
+
+            const Value method = getAttrValue(args[0], "__next__");
+
+            return call(method, {}, {}, env);
+        }
+)));
 
 }
 

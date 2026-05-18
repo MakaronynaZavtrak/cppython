@@ -2349,6 +2349,52 @@ def test_single_line_expressions(expr, expected):
     (["a = ('x', 'y', 'z')",
       "len(a)"], "3"),
 
+    # list iterator
+    (["a = [1, 2, 3]",
+      "i = iter(a)",
+      "next(i)"], "1"),
+
+    (["a = [1, 2, 3]",
+      "i = iter(a)",
+      "next(i)",
+      "next(i)"], "2"),
+
+    (["a = [1, 2, 3]",
+      "i = iter(a)",
+      "next(i)",
+      "next(i)",
+      "next(i)"], "3"),
+
+    # независимость итераторов
+    (["a = [1, 2]",
+      "i1 = iter(a)",
+      "i2 = iter(a)",
+      "next(i1)",
+      "next(i2)"], "1"),
+
+    # iterator тоже iterable
+    (["a = [1, 2]",
+      "i = iter(a)",
+      "j = iter(i)",
+      "next(j)"], "1"),
+
+    # tuple iterator
+    (["a = (10, 20)",
+      "i = iter(a)",
+      "next(i)"], "10"),
+
+    (["a = (10, 20)",
+      "i = iter(a)",
+      "next(i)",
+      "next(i)"], "20"),
+
+    # независимость итераторов
+    (["a = (1, 2)",
+      "i1 = iter(a)",
+      "i2 = iter(a)",
+      "next(i1)",
+      "next(i2)"], "1"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

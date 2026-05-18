@@ -8,8 +8,10 @@
 #include "DescriptorUtils.h"
 #include "DictValue.h"
 #include "InstanceValue.h"
+#include "ListIteratorValue.h"
 #include "ListValue.h"
 #include "SuperValue.h"
+#include "TupleIteratorValue.h"
 #include "TupleValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
@@ -130,6 +132,27 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                         list->setItem(args[0], args[1]);
 
                         return {};
+                    }
+                )
+            );
+        }
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [list](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(std::make_shared<ListIteratorValue>(list));
                     }
                 )
             );
@@ -732,8 +755,27 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
         if (attr == "__setitem__") {
-            throw std::runtime_error(
-                "TypeError: 'tuple' object does not support item assignment"
+            throw std::runtime_error("TypeError: 'tuple' object does not support item assignment");
+        }
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [tuple](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(std::make_shared<TupleIteratorValue>(tuple));
+                    }
+                )
             );
         }
 
@@ -817,6 +859,108 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+    }
+
+    if (std::holds_alternative<Value::ListIteratorPtr>(obj.data)) {
+
+        auto iter = std::get<Value::ListIteratorPtr>(obj.data);
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [iter](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(iter);
+                    }
+                )
+            );
+        }
+
+        if (attr == "__next__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__next__",
+
+                    [iter](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__next__ expects 0 args");
+                        }
+
+                        if (iter->index >= iter->list->elements.size()) {
+                            throw std::runtime_error("StopIteration");
+                        }
+
+                        return iter->list->elements[iter->index++];
+                    }
+                )
+            );
+        }
+    }
+
+    if (std::holds_alternative<Value::TupleIteratorPtr>(obj.data)) {
+
+        auto iter = std::get<Value::TupleIteratorPtr>(obj.data);
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [iter](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(iter);
+                    }
+                )
+            );
+        }
+
+        if (attr == "__next__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__next__",
+
+                    [iter](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__next__ expects 0 args");
+                        }
+
+                        if (iter->index >= iter->tuple->items.size()) {
+                            throw std::runtime_error("StopIteration");
+                        }
+
+                        return iter->tuple->items[iter->index++];
+                    }
+                )
+            );
+        }
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

@@ -396,3 +396,11 @@ Value::TuplePtr Value::asTuple() const {
 bool Value::isString() const {
     return std::holds_alternative<QString>(data);
 }
+
+bool Value::isListIterator() const {
+    return std::holds_alternative<ListIteratorPtr>(data);
+}
+
+bool Value::isTupleIterator() const {
+    return std::holds_alternative<TupleIteratorPtr>(data);
+}
