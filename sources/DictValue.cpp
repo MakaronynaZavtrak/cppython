@@ -4,6 +4,8 @@
 #include "DictValue.h"
 #include <Value.h>
 
+#include "TupleValue.h"
+
 DictValue:: DictValue(const QHash<QString, Value>& items,
                       const QVector<QString>& order)
         : items(items),
@@ -136,5 +138,26 @@ Value DictValue::setdefault(const QString& key, const Value& defaultValue) {
       order.push_back(key);
 
       return defaultValue;
+}
+
+Value DictValue::popitem() {
+
+      if (order.empty()) {
+            throw std::runtime_error("KeyError: 'popitem(): dictionary is empty'");
+      }
+
+      const QString key = order.back();
+      order.pop_back();
+
+      const Value value = items[key];
+
+      items.remove(key);
+
+      std::vector tupleItems = {
+            Value(key),
+            value
+        };
+
+      return Value(std::make_shared<TupleValue>(tupleItems));
 }
 

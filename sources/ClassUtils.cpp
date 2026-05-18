@@ -683,6 +683,27 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 )
             );
         }
+
+        if (attr == "popitem") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "popitem",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("popitem expects 0 args");
+                        }
+
+                        return dict->popitem();
+                    }
+                )
+            );
+        }
     }
 
     if (std::holds_alternative<Value::TuplePtr>(obj.data)) {

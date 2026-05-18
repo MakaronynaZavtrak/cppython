@@ -40,5 +40,7 @@ public:
 
     Value setdefault(const QString&, const Value& = Value());
 
+    [[nodiscard]] Value popitem();
+
 };
 #endif //CPPYTHON_DICTVALUE_H

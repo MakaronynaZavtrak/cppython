@@ -2215,6 +2215,23 @@ def test_single_line_expressions(expr, expected):
       "a.setdefault('x', 999)",
       "a"], "{'x': None}"),
 
+    # popitem
+    (["a = {'x': 1}",
+      "a.popitem()"], "('x', 1)"),
+
+    # lifo
+    (["a = {'x': 1, 'y': 2}",
+      "a.popitem()"], "('y', 2)"),
+
+    # проверка удаления
+    (["a = {'x': 1, 'y': 2}",
+      "a.popitem()",
+      "a"], "{'x': 1}"),
+
+    (["a = {'x': 1}",
+      "a.popitem()",
+      "a"], "{}"),
+
     # пустой tuple
     (["a = ()",
       "a"], "()"),
