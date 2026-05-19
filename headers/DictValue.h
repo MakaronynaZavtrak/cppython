@@ -48,5 +48,7 @@ public:
 
     [[nodiscard]] static Value keys(const std::shared_ptr<DictValue>& self);
 
+    [[nodiscard]] static Value values(const std::shared_ptr<DictValue>& self);
+
 };
 #endif //CPPYTHON_DICTVALUE_H

@@ -750,6 +750,27 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "values") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "values",
+
+                    [dict](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("values expects 0 args");
+                        }
+
+                        return dict->values(dict);
+                    }
+                )
+            );
+        }
+
     }
 
     if (std::holds_alternative<Value::TuplePtr>(obj.data)) {

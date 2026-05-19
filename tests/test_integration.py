@@ -2256,6 +2256,30 @@ def test_single_line_expressions(expr, expected):
       "k"],
      "dict_keys(['y'])"),
 
+    # базовый values()
+    (["a = {'x': 1, 'y': 2}",
+      "a.values()"],
+     "dict_values([1, 2])"),
+
+    # пустой dict
+    (["a = {}",
+      "a.values()"],
+     "dict_values([])"),
+
+    # dynamic view semantics
+    (["a = {'x': 1}",
+      "v = a.values()",
+      "a['y'] = 2",
+      "v"],
+     "dict_values([1, 2])"),
+
+    # после удаления
+    (["a = {'x': 1, 'y': 2}",
+      "v = a.values()",
+      "a.pop('x')",
+      "v"],
+     "dict_values([2])"),
+
     # пустой tuple
     (["a = ()",
       "a"], "()"),

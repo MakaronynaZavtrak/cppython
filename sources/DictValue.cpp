@@ -5,6 +5,7 @@
 #include <Value.h>
 
 #include "DictKeysView.h"
+#include "DictValuesView.h"
 #include "TupleValue.h"
 
 DictValue:: DictValue(const QHash<QString, Value>& items,
@@ -172,4 +173,8 @@ QHash<QString, Value> DictValue::getItems() const {
 
 Value DictValue::keys(const std::shared_ptr<DictValue>& self) {
       return Value(std::make_shared<DictKeysView>(self));
+}
+
+Value DictValue::values(const std::shared_ptr<DictValue>& self) {
+      return Value(std::make_shared<DictValuesView>(self));
 }
