@@ -10,6 +10,9 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class DictItemsView;
+class DictValuesView;
+class DictKeysView;
 class TupleIteratorValue;
 class ListIteratorValue;
 class TupleValue;
@@ -62,6 +65,10 @@ public:
     using ListIteratorPtr = std::shared_ptr<ListIteratorValue>;
     using TupleIteratorPtr = std::shared_ptr<TupleIteratorValue>;
 
+    using DictKeysViewPtr = std::shared_ptr<DictKeysView>;
+    using DictValuesViewPtr = std::shared_ptr<DictValuesView>;
+    using DictItemsViewPtr = std::shared_ptr<DictItemsView>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -81,6 +88,9 @@ public:
         ClassMethodPtr,
         ListIteratorPtr,
         TupleIteratorPtr,
+        DictKeysViewPtr,
+        DictValuesViewPtr,
+        DictItemsViewPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -138,6 +148,15 @@ public:
 
     [[nodiscard]] bool isListIterator() const;
     [[nodiscard]] bool isTupleIterator() const;
+
+    [[nodiscard]] bool isDictKeysView() const;
+    [[nodiscard]] DictKeysViewPtr asDictKeysView() const;
+
+    [[nodiscard]] bool isDictValuesView() const;
+    [[nodiscard]] DictValuesViewPtr asDictValuesView() const;
+
+    [[nodiscard]] bool isDictItemsView() const;
+    [[nodiscard]] DictItemsViewPtr asDictItemsView() const;
 
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;

@@ -161,3 +161,11 @@ Value DictValue::popitem() {
       return Value(std::make_shared<TupleValue>(tupleItems));
 }
 
+QVector<QString> DictValue::getOrder() const {
+      return order;
+}
+
+QHash<QString, Value> DictValue::getItems() const {
+      return items;
+}
+

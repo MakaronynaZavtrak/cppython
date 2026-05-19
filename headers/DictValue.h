@@ -42,5 +42,9 @@ public:
 
     [[nodiscard]] Value popitem();
 
+    [[nodiscard]] QVector<QString> getOrder() const;
+
+    [[nodiscard]] QHash<QString, Value> getItems() const;
+
 };
 #endif //CPPYTHON_DICTVALUE_H

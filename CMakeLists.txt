@@ -61,7 +61,13 @@ add_executable(cppython main.cpp
         headers/TupleValue.h
         headers/ListIteratorValue.h
         headers/TupleIteratorValue.h
-        headers/StopIterationException.h)
+        headers/StopIterationException.h
+        headers/DictKeysView.h
+        sources/DictKeysView.cpp
+        headers/DictValuesView.h
+        headers/DictItemsView.h
+        sources/DictValueView.cpp
+        sources/DictItemsView.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

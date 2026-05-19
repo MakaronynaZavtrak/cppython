@@ -2,7 +2,10 @@
 
 #include "BoundMethod.h"
 #include "ClassMethodValue.h"
+#include "DictItemsView.h"
+#include "DictKeysView.h"
 #include "DictValue.h"
+#include "DictValuesView.h"
 #include "FunctionValue.h"
 #include "ListValue.h"
 #include "PropertyValue.h"
@@ -92,6 +95,18 @@ QString Value::toString() const {
 
     if (std::holds_alternative<ClassMethodPtr>(data)) {
         return std::get<ClassMethodPtr>(data)->toString();
+    }
+
+    if (isDictKeysView()) {
+        return std::get<DictKeysViewPtr>(data)->toString();
+    }
+
+    if (isDictValuesView()) {
+        return std::get<DictValuesViewPtr>(data)->toString();
+    }
+
+    if (isDictItemsView()) {
+        return std::get<DictItemsViewPtr>(data)->toString();
     }
 
     if (std::holds_alternative<std::monostate>(data)) {
@@ -403,4 +418,40 @@ bool Value::isListIterator() const {
 
 bool Value::isTupleIterator() const {
     return std::holds_alternative<TupleIteratorPtr>(data);
+}
+
+bool Value::isDictKeysView() const {
+    return std::holds_alternative<DictKeysViewPtr>(data);
+}
+
+Value::DictKeysViewPtr Value::asDictKeysView() const {
+    if (!isDictKeysView()) {
+        throw std::runtime_error("Value is not a dict keys view");
+    }
+
+    return std::get<DictKeysViewPtr>(data);
+}
+
+bool Value::isDictValuesView() const {
+    return std::holds_alternative<DictValuesViewPtr>(data);
+}
+
+Value::DictValuesViewPtr Value::asDictValuesView() const {
+    if (!isDictValuesView()) {
+        throw std::runtime_error("Value is not a dict values view");
+    }
+
+    return std::get<DictValuesViewPtr>(data);
+}
+
+bool Value::isDictItemsView() const {
+    return std::holds_alternative<DictItemsViewPtr>(data);
+}
+
+Value::DictItemsViewPtr Value::asDictItemsView() const {
+    if (!isDictItemsView()) {
+        throw std::runtime_error("Value is not a dict items view");
+    }
+
+    return std::get<DictItemsViewPtr>(data);
 }
