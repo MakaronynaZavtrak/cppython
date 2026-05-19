@@ -46,5 +46,7 @@ public:
 
     [[nodiscard]] QHash<QString, Value> getItems() const;
 
+    [[nodiscard]] static Value keys(const std::shared_ptr<DictValue>& self);
+
 };
 #endif //CPPYTHON_DICTVALUE_H

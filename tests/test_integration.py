@@ -2232,6 +2232,30 @@ def test_single_line_expressions(expr, expected):
       "a.popitem()",
       "a"], "{}"),
 
+    # базовый keys()
+    (["a = {'x': 1, 'y': 2}",
+      "a.keys()"],
+     "dict_keys(['x', 'y'])"),
+
+    # пустой словарь
+    (["a = {}",
+      "a.keys()"],
+     "dict_keys([])"),
+
+    # dynamic view semantics
+    (["a = {'x': 1}",
+      "k = a.keys()",
+      "a['y'] = 2",
+      "k"],
+     "dict_keys(['x', 'y'])"),
+
+    # после удаления
+    (["a = {'x': 1, 'y': 2}",
+      "k = a.keys()",
+      "c = a.pop('x')",
+      "k"],
+     "dict_keys(['y'])"),
+
     # пустой tuple
     (["a = ()",
       "a"], "()"),

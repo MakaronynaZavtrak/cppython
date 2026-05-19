@@ -126,6 +126,10 @@ public:
     explicit Value(const ListIteratorPtr& listIter) : data(listIter) {}
     explicit Value(const TupleIteratorPtr& tupleIter) : data(tupleIter) {}
 
+    explicit Value(const DictKeysViewPtr& dictKeys) : data(dictKeys) {}
+    explicit Value(const DictValuesViewPtr& dictValues) : data(dictValues) {}
+    explicit Value(const DictItemsViewPtr& dictItems) : data(dictItems) {}
+
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString asString() const;
     [[nodiscard]] bool toBool() const;
