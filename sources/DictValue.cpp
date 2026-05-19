@@ -4,9 +4,12 @@
 #include "DictValue.h"
 #include <Value.h>
 
+#include "CallRuntime.h"
+#include "ClassUtils.h"
 #include "DictItemsView.h"
 #include "DictKeysView.h"
 #include "DictValuesView.h"
+#include "StopIterationException.h"
 #include "TupleValue.h"
 
 DictValue:: DictValue(const QHash<QString, Value>& items,
@@ -182,4 +185,45 @@ Value DictValue::values(const std::shared_ptr<DictValue>& self) {
 
 Value DictValue::items(const std::shared_ptr<DictValue>& self) {
       return Value(std::make_shared<DictItemsView>(self));
+}
+
+Value DictValue::fromKeys(
+    const Value& iterable,
+    const std::optional<Value>& defaultValue
+) {
+
+      auto result = std::make_shared<DictValue>();
+
+      Value value = defaultValue.has_value()
+          ? *defaultValue
+          : Value();
+
+      Value iterMethod = getAttrValue(iterable, "__iter__");
+
+      Value iterator = call(iterMethod, {}, {}, nullptr);
+
+      while (true) {
+
+            try {
+
+                  Value nextMethod = getAttrValue(
+                      iterator,
+                      "__next__"
+                  );
+
+                  Value key = call(
+                      nextMethod,
+                      {},
+                      {},
+                      nullptr
+                  );
+
+                  result->setItem(key, value);
+
+            } catch (const StopIterationException&) {
+                  break;
+            }
+      }
+
+      return Value(result);
 }

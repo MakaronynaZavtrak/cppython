@@ -52,5 +52,7 @@ public:
 
     [[nodiscard]] static Value items(const std::shared_ptr<DictValue>& self);
 
+    [[nodiscard]] static Value fromKeys(const Value& iterable, const std::optional<Value>& defaultValue);
+
 };
 #endif //CPPYTHON_DICTVALUE_H

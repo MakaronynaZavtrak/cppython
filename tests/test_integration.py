@@ -2300,6 +2300,26 @@ def test_single_line_expressions(expr, expected):
       "a.pop('x')",
       "i"], "dict_items([('y', 2)])"),
 
+    # fromKeys
+    (["{}.fromkeys(['a', 'b'])"],
+     "{'a': None, 'b': None}"),
+
+    # с default value
+    (["{}.fromkeys(['a', 'b'], 0)"],
+     "{'a': 0, 'b': 0}"),
+
+    # tuple
+    (["{}.fromkeys(('x', 'y'), 1)"],
+     "{'x': 1, 'y': 1}"),
+
+    # пустой iterable
+    (["{}.fromkeys([])"],
+     "{}"),
+
+    # перезапись дубликатов
+    (["a = {}.fromkeys(['a', 'a', 'a'], 1)",
+      "a"], "{'a': 1}"),
+
     # пустой tuple
     (["a = ()",
       "a"], "()"),

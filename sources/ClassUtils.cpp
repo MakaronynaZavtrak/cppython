@@ -792,6 +792,33 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "fromkeys") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "fromkeys",
+
+                    [](const std::vector<Value>& args,
+                       const Kwargs&,
+                       const std::shared_ptr<Environment>& env)
+                       -> Value {
+
+                        if (args.empty() || args.size() > 2) {
+                            throw std::runtime_error("fromkeys expects 1 or 2 args");
+                        }
+
+                        std::optional<Value> defaultValue;
+
+                        if (args.size() == 2) {
+                            defaultValue = args[1];
+                        }
+
+                        return DictValue::fromKeys(args[0], defaultValue);
+                    }
+                )
+            );
+        }
+
     }
 
     if (std::holds_alternative<Value::TuplePtr>(obj.data)) {
