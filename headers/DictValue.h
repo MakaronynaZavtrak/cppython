@@ -9,7 +9,7 @@
 #include "Value.h"
 
 class DictValue : public ReprMixin {
-    QHash<QString, Value> items;
+    QHash<QString, Value> elements;
     QVector<QString> order;
 
 public:
@@ -44,11 +44,13 @@ public:
 
     [[nodiscard]] QVector<QString> getOrder() const;
 
-    [[nodiscard]] QHash<QString, Value> getItems() const;
+    [[nodiscard]] QHash<QString, Value> getElements() const;
 
     [[nodiscard]] static Value keys(const std::shared_ptr<DictValue>& self);
 
     [[nodiscard]] static Value values(const std::shared_ptr<DictValue>& self);
+
+    [[nodiscard]] static Value items(const std::shared_ptr<DictValue>& self);
 
 };
 #endif //CPPYTHON_DICTVALUE_H

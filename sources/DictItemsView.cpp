@@ -5,6 +5,7 @@
 #include "DictItemsView.h"
 
 #include "DictValue.h"
+#include "TupleValue.h"
 
 DictItemsView::DictItemsView(std::shared_ptr<DictValue> dict)
     : dict(std::move(dict)) {}
@@ -23,11 +24,9 @@ QString DictItemsView::toString() const {
 
         first = false;
 
-        out += "('";
-        out += key;
-        out += "', ";
-        out += dict->getItems()[key].toString();
-        out += ")";
+        TupleValue tuple({Value(key), dict->getElements()[key]});
+
+        out += tuple.toString();
     }
 
     out += "])";

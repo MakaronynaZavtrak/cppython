@@ -22,7 +22,7 @@ QString DictValuesView::toString() const {
 
         first = false;
 
-        out += dict->getItems()[key].toString();
+        out += dict->getElements()[key].toString();
     }
 
     out += "])";

@@ -4,13 +4,14 @@
 #include "DictValue.h"
 #include <Value.h>
 
+#include "DictItemsView.h"
 #include "DictKeysView.h"
 #include "DictValuesView.h"
 #include "TupleValue.h"
 
 DictValue:: DictValue(const QHash<QString, Value>& items,
                       const QVector<QString>& order)
-        : items(items),
+        : elements(items),
           order(order) {}
 
 QString DictValue::toString() const {
@@ -29,7 +30,7 @@ QString DictValue::toString() const {
 
             out += "'" + key + "'";
             out += ": ";
-            out += items[key].toString();
+            out += elements[key].toString();
       }
 
       out += "}";
@@ -49,11 +50,11 @@ Value DictValue::getItem(const Value& key) const {
 
       const QString strKey = std::get<QString>(key.data);
 
-      if (!items.contains(strKey)) {
+      if (!elements.contains(strKey)) {
             throw std::runtime_error("KeyError: " + strKey.toStdString());
       }
 
-      return items[strKey];
+      return elements[strKey];
 }
 
 void DictValue::setItem(const Value &key, const Value &value) {
@@ -65,10 +66,10 @@ void DictValue::setItem(const Value &key, const Value &value) {
 
       const auto strKey = std::get<QString>(key.data);
 
-      if (!items.contains(strKey))
+      if (!elements.contains(strKey))
             order.push_back(strKey);
 
-      items[strKey] = value;
+      elements[strKey] = value;
 }
 
 Value DictValue::get(const Value &key, const Value &defaultValue) const {
@@ -79,30 +80,30 @@ Value DictValue::get(const Value &key, const Value &defaultValue) const {
 
       const QString strKey = std::get<QString>(key.data);
 
-      if (!items.contains(strKey)) {
+      if (!elements.contains(strKey)) {
             return defaultValue;
       }
 
-      return items[strKey];
+      return elements[strKey];
 }
 
 std::size_t DictValue::len() const {
-      return items.size();
+      return elements.size();
 }
 
 void DictValue::clear() {
-      items.clear();
+      elements.clear();
       order.clear();
 }
 
 Value DictValue::copy() const {
-      return Value(std::make_shared<DictValue>(items, order));
+      return Value(std::make_shared<DictValue>(elements, order));
 }
 
 Value DictValue::pop(const QString& key, const Value* defaultValue) {
-      if (items.contains(key)) {
-            Value result = items[key];
-            items.remove(key);
+      if (elements.contains(key)) {
+            Value result = elements[key];
+            elements.remove(key);
             order.removeAll(key);
 
             return result;
@@ -122,21 +123,21 @@ Value DictValue::pop(const QString& key, const Value* defaultValue) {
 void DictValue::update(const std::shared_ptr<DictValue>& other) {
       for (const auto& key : other->order) {
 
-            if (!items.contains(key)) {
+            if (!elements.contains(key)) {
                   order.push_back(key);
             }
 
-            items[key] = other->items[key];
+            elements[key] = other->elements[key];
       }
 }
 
 Value DictValue::setdefault(const QString& key, const Value& defaultValue) {
 
-      if (items.contains(key)) {
-            return items[key];
+      if (elements.contains(key)) {
+            return elements[key];
       }
 
-      items[key] = defaultValue;
+      elements[key] = defaultValue;
       order.push_back(key);
 
       return defaultValue;
@@ -151,9 +152,9 @@ Value DictValue::popitem() {
       const QString key = order.back();
       order.pop_back();
 
-      const Value value = items[key];
+      const Value value = elements[key];
 
-      items.remove(key);
+      elements.remove(key);
 
       std::vector tupleItems = {
             Value(key),
@@ -167,8 +168,8 @@ QVector<QString> DictValue::getOrder() const {
       return order;
 }
 
-QHash<QString, Value> DictValue::getItems() const {
-      return items;
+QHash<QString, Value> DictValue::getElements() const {
+      return elements;
 }
 
 Value DictValue::keys(const std::shared_ptr<DictValue>& self) {
@@ -177,4 +178,8 @@ Value DictValue::keys(const std::shared_ptr<DictValue>& self) {
 
 Value DictValue::values(const std::shared_ptr<DictValue>& self) {
       return Value(std::make_shared<DictValuesView>(self));
+}
+
+Value DictValue::items(const std::shared_ptr<DictValue>& self) {
+      return Value(std::make_shared<DictItemsView>(self));
 }
