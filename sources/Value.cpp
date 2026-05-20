@@ -9,6 +9,7 @@
 #include "FunctionValue.h"
 #include "ListValue.h"
 #include "PropertyValue.h"
+#include "SetValue.h"
 #include "StaticMethodValue.h"
 #include "TupleValue.h"
 
@@ -107,6 +108,10 @@ QString Value::toString() const {
 
     if (isDictItemsView()) {
         return std::get<DictItemsViewPtr>(data)->toString();
+    }
+
+    if (isSet()) {
+        return std::get<SetPtr>(data)->toString();
     }
 
     if (std::holds_alternative<std::monostate>(data)) {
@@ -494,6 +499,18 @@ Value::DictItemsIteratorPtr Value::asDictItemsIterator() const {
     }
 
     return std::get<DictItemsIteratorPtr>(data);
+}
+
+bool Value::isSet() const {
+    return std::holds_alternative<SetPtr>(data);
+}
+
+Value::SetPtr Value::asSet() const {
+    if (!isSet()) {
+        throw std::runtime_error("Value is not a set");
+    }
+
+    return std::get<SetPtr>(data);
 }
 
 bool Value::isHashable() const {

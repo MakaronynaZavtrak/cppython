@@ -260,8 +260,9 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
                 node = parseParenthesizedExpression();
             else if (token.value == "[")
                 node = parseList();
-            else if (token.value == "{")
-                node = parseDict();
+            else if (token.value == "{") {
+                node = parseDictOrSet();
+            }
             else
                 throwUnexpectedTokenError(token);
             break;
@@ -1014,6 +1015,81 @@ std::shared_ptr<ASTNode> Parser::parseForStatement() {
         iterable,
         body
     );
+}
+
+std::shared_ptr<ASTNode> Parser::parseDictOrSet() {
+
+    advance(); // {
+
+    // {}
+    if (peek().type == TOKEN_OP && peek().value == "}") {
+        advance();
+        return std::make_shared<DictNode>(
+            std::vector<
+                std::pair<
+                    std::shared_ptr<ASTNode>,
+                    std::shared_ptr<ASTNode>
+                >
+            >{}
+        );
+    }
+
+    auto first = parseAssignment();
+
+    // dict
+    if (peek().type == TOKEN_OP && peek().value == ":") {
+
+        advance(); // :
+
+        std::vector<std::pair<
+            std::shared_ptr<ASTNode>,
+            std::shared_ptr<ASTNode>
+        >> items;
+
+        auto firstValue = parseAssignment();
+
+        items.emplace_back(first, firstValue);
+
+        while (peek().type == TOKEN_OP && peek().value == ",") {
+
+            advance();
+
+            if (peek().type == TOKEN_OP && peek().value == "}") {
+                break;
+            }
+
+            auto key = parseAssignment();
+
+            consume(TOKEN_OP, ":");
+
+            auto value = parseAssignment();
+
+            items.emplace_back(key, value);
+        }
+
+        consume(TOKEN_OP, "}");
+
+        return std::make_shared<DictNode>(std::move(items));
+    }
+
+    // set
+    std::vector<std::shared_ptr<ASTNode>> elements;
+    elements.push_back(first);
+
+    while (peek().type == TOKEN_OP && peek().value == ",") {
+
+        advance();
+
+        if (peek().type == TOKEN_OP && peek().value == "}") {
+            break;
+        }
+
+        elements.push_back(parseAssignment());
+    }
+
+    consume(TOKEN_OP, "}");
+
+    return std::make_shared<SetNode>(std::move(elements));
 }
 
 /**

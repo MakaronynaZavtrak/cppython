@@ -18,6 +18,7 @@
 #include "ListValue.h"
 #include "Param.h"
 #include "Runtime.h"
+#include "SetValue.h"
 #include "StaticMethodValue.h"
 #include "StopIterationException.h"
 #include "TupleValue.h"
@@ -1378,6 +1379,39 @@ public:
     }
 };
 
+class SetNode : public ASTNode {
+public:
+    std::vector<std::shared_ptr<ASTNode>> elements;
+
+    explicit SetNode(std::vector<std::shared_ptr<ASTNode>> elements)
+    : elements(std::move(elements)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+        const auto set = std::make_shared<SetValue>();
+
+        for (const auto& element : elements) {
+
+            Value value = element->eval(env);
+
+            if (!set->elements.contains(value)) {
+                set->elements[value] = true;
+                set->order.push_back(value);
+            }
+        }
+
+        return Value(set);
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QStringList parts;
+
+        for (const auto& element : elements) {
+            parts << element->toString();
+        }
+        return "{" + parts.join(", ") + "}";
+    }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -1548,6 +1582,8 @@ private:
     std::shared_ptr<ASTNode> parseDict();
 
     std::shared_ptr<ASTNode> parseForStatement();
+
+    std::shared_ptr<ASTNode> parseDictOrSet();
 
     void consume(TokenType type, const QString &value);
 

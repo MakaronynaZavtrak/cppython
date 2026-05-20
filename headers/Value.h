@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class SetValue;
 class DictItemsIterator;
 class DictValuesIterator;
 class DictKeysIterator;
@@ -77,6 +78,8 @@ public:
     using DictItemsViewPtr = std::shared_ptr<DictItemsView>;
     using DictItemsIteratorPtr = std::shared_ptr<DictItemsIterator>;
 
+    using SetPtr = std::shared_ptr<SetValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -102,6 +105,7 @@ public:
         DictValuesIteratorPtr,
         DictItemsViewPtr,
         DictItemsIteratorPtr,
+        SetPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -146,6 +150,8 @@ public:
     explicit Value(const DictItemsViewPtr& dictItems) : data(dictItems) {}
     explicit Value(const DictItemsIteratorPtr &itemsIterator) : data(itemsIterator) {}
 
+    explicit Value(const SetPtr& set) : data(set) {}
+
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString asString() const;
     [[nodiscard]] bool toBool() const;
@@ -183,6 +189,9 @@ public:
     [[nodiscard]] DictItemsViewPtr asDictItemsView() const;
     [[nodiscard]] bool isDictItemsIterator() const;
     [[nodiscard]] DictItemsIteratorPtr asDictItemsIterator() const;
+
+    [[nodiscard]] bool isSet() const;
+    [[nodiscard]] SetPtr asSet() const;
 
     [[nodiscard]] bool isHashable() const;
     [[nodiscard]] std::size_t hash() const;

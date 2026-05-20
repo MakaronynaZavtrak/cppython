@@ -70,7 +70,9 @@ add_executable(cppython main.cpp
         sources/DictItemsView.cpp
         headers/DictKeysIterator.h
         headers/DictValuesIterator.h
-        headers/DictItemsIterator.h)
+        headers/DictItemsIterator.h
+        headers/SetValue.h
+        sources/SetValue.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

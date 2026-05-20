@@ -1,0 +1,26 @@
+//
+// Created by semyo on 20.05.2026.
+//
+
+#ifndef CPPYTHON_SETVALUE_H
+#define CPPYTHON_SETVALUE_H
+#include <QHash>
+#include <QString>
+#include <QVector>
+
+#include "ReprMixin.h"
+
+class Value;
+
+class SetValue : public ReprMixin {
+public:
+    QHash<Value, bool> elements;
+    QVector<Value> order;
+
+    [[nodiscard]] QString toString() const override;
+
+    [[nodiscard]] QString repr() const override;
+
+
+};
+#endif //CPPYTHON_SETVALUE_H
