@@ -7,13 +7,13 @@
 #include <memory>
 class TupleValue;
 
-class TupleIteratorValue {
+class TupleIterator {
 public:
 
     std::shared_ptr<TupleValue> tuple;
     std::size_t index = 0;
 
-    explicit TupleIteratorValue(std::shared_ptr<TupleValue> tuple)
+    explicit TupleIterator(std::shared_ptr<TupleValue> tuple)
     : tuple(std::move(tuple)) {}
 };
 #endif //CPPYTHON_TUPLEITERATORVALUE_H

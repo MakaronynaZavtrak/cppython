@@ -10,11 +10,14 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class DictItemsIterator;
+class DictValuesIterator;
+class DictKeysIterator;
 class DictItemsView;
 class DictValuesView;
 class DictKeysView;
-class TupleIteratorValue;
-class ListIteratorValue;
+class TupleIterator;
+class ListIterator;
 class TupleValue;
 class DictValue;
 class ListValue;
@@ -62,12 +65,17 @@ public:
     using StaticMethodPtr = std::shared_ptr<StaticMethodValue>;
     using ClassMethodPtr = std::shared_ptr<ClassMethodValue>;
 
-    using ListIteratorPtr = std::shared_ptr<ListIteratorValue>;
-    using TupleIteratorPtr = std::shared_ptr<TupleIteratorValue>;
+    using ListIteratorPtr = std::shared_ptr<ListIterator>;
+    using TupleIteratorPtr = std::shared_ptr<TupleIterator>;
 
     using DictKeysViewPtr = std::shared_ptr<DictKeysView>;
+    using DictKeysIteratorPtr = std::shared_ptr<DictKeysIterator>;
+
     using DictValuesViewPtr = std::shared_ptr<DictValuesView>;
+    using DictValuesIteratorPtr = std::shared_ptr<DictValuesIterator>;
+
     using DictItemsViewPtr = std::shared_ptr<DictItemsView>;
+    using DictItemsIteratorPtr = std::shared_ptr<DictItemsIterator>;
 
     std::variant<
         BigInt,
@@ -89,8 +97,11 @@ public:
         ListIteratorPtr,
         TupleIteratorPtr,
         DictKeysViewPtr,
+        DictKeysIteratorPtr,
         DictValuesViewPtr,
+        DictValuesIteratorPtr,
         DictItemsViewPtr,
+        DictItemsIteratorPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -127,8 +138,13 @@ public:
     explicit Value(const TupleIteratorPtr& tupleIter) : data(tupleIter) {}
 
     explicit Value(const DictKeysViewPtr& dictKeys) : data(dictKeys) {}
+    explicit Value(const DictKeysIteratorPtr &keysIterator) : data(keysIterator) {}
+
     explicit Value(const DictValuesViewPtr& dictValues) : data(dictValues) {}
+    explicit Value(const DictValuesIteratorPtr &valuesIterator) : data(valuesIterator) {}
+
     explicit Value(const DictItemsViewPtr& dictItems) : data(dictItems) {}
+    explicit Value(const DictItemsIteratorPtr &itemsIterator) : data(itemsIterator) {}
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString asString() const;
@@ -155,12 +171,15 @@ public:
 
     [[nodiscard]] bool isDictKeysView() const;
     [[nodiscard]] DictKeysViewPtr asDictKeysView() const;
+    [[nodiscard]] DictKeysIteratorPtr asDictKeysIterator() const;
 
     [[nodiscard]] bool isDictValuesView() const;
     [[nodiscard]] DictValuesViewPtr asDictValuesView() const;
+    [[nodiscard]] DictValuesIteratorPtr asDictValuesIterator() const;
 
     [[nodiscard]] bool isDictItemsView() const;
     [[nodiscard]] DictItemsViewPtr asDictItemsView() const;
+    [[nodiscard]] DictItemsIteratorPtr asDictItemsIterator() const;
 
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;

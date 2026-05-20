@@ -32,6 +32,7 @@ def run_cppython(cmds: str | list[str]) -> str:
         lines = list(cmds)
 
     stdin = "\n".join(lines) + "\n\nexit\n"
+
     p = subprocess.run(
         [MYPYTHON],
         input=stdin.encode("utf-8"),
@@ -2546,7 +2547,92 @@ def test_single_line_expressions(expr, expected):
       "",
       "res"], "6"),
 
+    # keys() iteration
+    (["a = {'x': 1, 'y': 2}",
+      "res = []",
+      "for k in a.keys():",
+      "    res.append(k)",
+      "",
+      "res"], "['x', 'y']"),
 
+    # values() iteration
+    (["a = {'x': 1, 'y': 2}",
+      "res = []",
+      "for v in a.values():",
+      "    res.append(v)",
+      "",
+      "res"], "[1, 2]"),
+
+
+    # iter(keys())
+    (["a = {'x': 1}",
+      "i = iter(a.keys())",
+      "next(i)"], "'x'"),
+
+    # iter(values())
+    (["a = {'x': 42}",
+      "i = iter(a.values())",
+      "next(i)"], "42"),
+
+    # iter(items())
+    (["a = {'x': 1}",
+      "i = iter(a.items())",
+      "next(i)"], "('x', 1)"),
+
+    # empty dict keys
+    (["a = {}",
+      "for k in a.keys():",
+      "    k",
+      ""], ""),
+
+    # empty dict values
+    (["a = {}",
+      "for v in a.values():",
+      "    v",
+      ""], ""),
+
+    # empty dict items
+    (["a = {}",
+      "for item in a.items():",
+      "    item",
+      ""], ""),
+
+    # iter(iterator)
+    (["a = {'x': 1}",
+      "i = iter(a.keys())",
+      "j = iter(i)",
+      "next(j)"], "'x'"),
+
+    # порядок сохранения не ломается
+    (["a = {}",
+      "a['z'] = 1",
+      "a['a'] = 2",
+      "a['m'] = 3",
+      "res = []",
+      "for k in a.keys():",
+      "    res.append(k)",
+      "",
+      "res"], "['z', 'a', 'm']"),
+
+    # items order
+    (["a = {}",
+      "a['z'] = 1",
+      "a['a'] = 2",
+      "res = []",
+      "for item in a.items():",
+      "    res.append(item)",
+      "",
+      "res"], "[('z', 1), ('a', 2)]"),
+
+    # mutation visibility
+    (["a = {'x': 1}",
+      "v = a.values()",
+      "a['y'] = 2",
+      "res = []",
+      "for x in v:",
+      "    res.append(x)",
+      "",
+      "res"], "[1, 2]")
 
 ])
 

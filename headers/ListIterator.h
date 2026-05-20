@@ -7,13 +7,13 @@
 #include <memory>
 class ListValue;
 
-class ListIteratorValue {
+class ListIterator {
 public:
 
     std::shared_ptr<ListValue> list;
     std::size_t index = 0;
 
-    explicit ListIteratorValue(std::shared_ptr<ListValue> list)
+    explicit ListIterator(std::shared_ptr<ListValue> list)
     : list(std::move(list)) {}
 };
 #endif //CPPYTHON_LISTITERATORVALUE_H

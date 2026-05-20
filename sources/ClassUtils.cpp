@@ -6,13 +6,19 @@
 #include "CallRuntime.h"
 #include "ClassValue.h"
 #include "DescriptorUtils.h"
+#include "DictItemsIterator.h"
+#include "DictItemsView.h"
+#include "DictKeysIterator.h"
+#include "DictKeysView.h"
 #include "DictValue.h"
+#include "DictValuesIterator.h"
+#include "DictValuesView.h"
 #include "InstanceValue.h"
-#include "ListIteratorValue.h"
+#include "ListIterator.h"
 #include "ListValue.h"
 #include "StopIterationException.h"
 #include "SuperValue.h"
-#include "TupleIteratorValue.h"
+#include "TupleIterator.h"
 #include "TupleValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
@@ -153,7 +159,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             throw std::runtime_error("__iter__ expects 0 args");
                         }
 
-                        return Value(std::make_shared<ListIteratorValue>(list));
+                        return Value(std::make_shared<ListIterator>(list));
                     }
                 )
             );
@@ -818,6 +824,86 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 )
             );
         }
+    }
+
+    if (std::holds_alternative<Value::DictKeysViewPtr>(obj.data)) {
+
+        auto keysView = std::get<Value::DictKeysViewPtr>(obj.data);
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [keysView](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(std::make_shared<DictKeysIterator>(keysView->getDict()));
+                    }
+                )
+            );
+        }
+
+    }
+
+    if (std::holds_alternative<Value::DictValuesViewPtr>(obj.data)) {
+
+        auto valuesView = std::get<Value::DictValuesViewPtr>(obj.data);
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [valuesView](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(std::make_shared<DictValuesIterator>(valuesView->getDict()));
+                    }
+                )
+            );
+        }
+
+    }
+
+    if (std::holds_alternative<Value::DictItemsViewPtr>(obj.data)) {
+
+        auto itemsView = std::get<Value::DictItemsViewPtr>(obj.data);
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [itemsView](const std::vector<Value>& args,
+                           const Kwargs&,
+                           const std::shared_ptr<Environment>&)
+                           -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(std::make_shared<DictItemsIterator>(itemsView->getDict()));
+                    }
+                )
+            );
+        }
 
     }
 
@@ -865,7 +951,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             throw std::runtime_error("__iter__ expects 0 args");
                         }
 
-                        return Value(std::make_shared<TupleIteratorValue>(tuple));
+                        return Value(std::make_shared<TupleIterator>(tuple));
                     }
                 )
             );
@@ -1053,6 +1139,148 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 )
             );
         }
+    }
+
+    if (std::holds_alternative<Value::DictKeysIteratorPtr>(obj.data)) {
+
+        auto keysIter = std::get<Value::DictKeysIteratorPtr>(obj.data);
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [keysIter](const std::vector<Value>& args,
+                               const Kwargs&,
+                               const std::shared_ptr<Environment>&)
+                               -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(keysIter);
+                    }
+                )
+            );
+        }
+
+        if (attr == "__next__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__next__",
+
+                    [keysIter](const std::vector<Value>& args,
+                               const Kwargs&,
+                               const std::shared_ptr<Environment>&)
+                               -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__next__ expects 0 args");
+                        }
+
+                        return keysIter->next();
+                    }
+                )
+            );
+        }
+    }
+
+    if (std::holds_alternative<Value::DictValuesIteratorPtr>(obj.data)) {
+
+        auto valuesIter = std::get<Value::DictValuesIteratorPtr>(obj.data);
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [valuesIter](const std::vector<Value>& args,
+                                 const Kwargs&,
+                                 const std::shared_ptr<Environment>&)
+                                 -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(valuesIter);
+                    }
+                )
+            );
+        }
+
+        if (attr == "__next__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__next__",
+
+                    [valuesIter](const std::vector<Value>& args,
+                                 const Kwargs&,
+                                 const std::shared_ptr<Environment>&)
+                                 -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__next__ expects 0 args");
+                        }
+
+                        return valuesIter->next();
+                    }
+                )
+            );
+        }
+    }
+
+    if (std::holds_alternative<Value::DictItemsIteratorPtr>(obj.data)) {
+
+        auto itemsIter = std::get<Value::DictItemsIteratorPtr>(obj.data);
+
+        if (attr == "__iter__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__iter__",
+
+                    [itemsIter](const std::vector<Value>& args,
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
+                                -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__iter__ expects 0 args");
+                        }
+
+                        return Value(itemsIter);
+                    }
+                )
+            );
+        }
+
+        if (attr == "__next__") {
+
+            return Value(
+                std::make_shared<BuiltinFunction>(
+                    "__next__",
+
+                    [itemsIter](const std::vector<Value>& args,
+                                const Kwargs&,
+                                const std::shared_ptr<Environment>&)
+                                -> Value {
+
+                        if (!args.empty()) {
+                            throw std::runtime_error("__next__ expects 0 args");
+                        }
+
+                        return itemsIter->next();
+                    }
+                )
+            );
+        }
+
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +
