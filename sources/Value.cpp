@@ -432,6 +432,18 @@ Value::DictKeysViewPtr Value::asDictKeysView() const {
     return std::get<DictKeysViewPtr>(data);
 }
 
+bool Value::isDictKeysIterator() const {
+    return std::holds_alternative<DictKeysIteratorPtr>(data);
+}
+
+Value::DictKeysIteratorPtr Value::asDictKeysIterator() const {
+    if (!isDictKeysIterator()) {
+        throw std::runtime_error("Value is not a dict keys iterator");
+    }
+
+    return std::get<DictKeysIteratorPtr>(data);
+}
+
 bool Value::isDictValuesView() const {
     return std::holds_alternative<DictValuesViewPtr>(data);
 }
@@ -444,6 +456,18 @@ Value::DictValuesViewPtr Value::asDictValuesView() const {
     return std::get<DictValuesViewPtr>(data);
 }
 
+bool Value::isDictValuesIterator() const {
+    return std::holds_alternative<DictValuesIteratorPtr>(data);
+}
+
+Value::DictValuesIteratorPtr Value::asDictValuesIterator() const {
+    if (!isDictValuesIterator()) {
+        throw std::runtime_error("Value is not a dict values iterator");
+    }
+
+    return std::get<DictValuesIteratorPtr>(data);
+}
+
 bool Value::isDictItemsView() const {
     return std::holds_alternative<DictItemsViewPtr>(data);
 }
@@ -454,4 +478,99 @@ Value::DictItemsViewPtr Value::asDictItemsView() const {
     }
 
     return std::get<DictItemsViewPtr>(data);
+}
+
+bool Value::isDictItemsIterator() const {
+    return std::holds_alternative<DictItemsIteratorPtr>(data);
+}
+
+Value::DictItemsIteratorPtr Value::asDictItemsIterator() const {
+    if (!isDictItemsIterator()) {
+        throw std::runtime_error("Value is not a dict items iterator");
+    }
+
+    return std::get<DictItemsIteratorPtr>(data);
+}
+
+bool Value::isHashable() const {
+
+    if (isNumeric())
+        return true;
+
+    // str
+    if (std::holds_alternative<QString>(data)) {
+        return true;
+    }
+
+    // tuple
+    if (std::holds_alternative<TuplePtr>(data)) {
+
+        const auto& items =
+            std::get<TuplePtr>(data)->items;
+
+        for (const auto& item : items) {
+
+            if (!item.isHashable()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+std::size_t Value::hash() const {
+
+    if (!isHashable()) {
+        throw std::runtime_error("TypeError: unhashable type");
+    }
+
+    // numeric
+    if (isNumeric()) {
+
+        const auto value = toBigFloat();
+
+        // 1 == 1.0 == True
+        if (floor(value) == value) {
+
+            return std::hash<long long>{}(
+                value.convert_to<long long>()
+            );
+        }
+
+        return std::hash<long double>{}(
+            value.convert_to<long double>()
+        );
+    }
+
+    // str
+    if (std::holds_alternative<QString>(data)) {
+
+        return qHash(
+            std::get<QString>(data)
+        );
+    }
+
+    // tuple
+    if (std::holds_alternative<TuplePtr>(data)) {
+
+        const auto& items =
+            std::get<TuplePtr>(data)->items;
+
+        std::size_t seed = 0;
+
+        for (const auto& item : items) {
+
+            seed ^= item.hash()
+                + 0x9e3779b9
+                + (seed << 6)
+                + (seed >> 2);
+        }
+
+        return seed;
+    }
+
+    throw std::runtime_error("TypeError: unhashable type");
 }

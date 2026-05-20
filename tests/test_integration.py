@@ -339,7 +339,26 @@ if _result is not None:
     # dict len
     ("len({})", "0"),
     ("len({'a': 1})", "1"),
-    ("len({'a': 1, 'b': 2})", "2")
+    ("len({'a': 1, 'b': 2})", "2"),
+
+    # hash
+    ("hash(1) == hash(1)", "True"),
+    ("hash(1) == hash(1.0)", "True"),
+    ("hash(1) == hash(True)", "True"),
+
+    ("hash(0) == hash(False)", "True"),
+    ("hash(2) == hash(2.0)", "True"),
+
+    ("hash(2.5) == hash(2.5)", "True"),
+    ("hash(2.5) != hash(3.5)", "True"),
+
+    ("hash('abc') == hash('abc')", "True"),
+    ("hash('abc') != hash('xyz')", "True"),
+
+    ("hash((1, 2)) == hash((1, 2))", "True"),
+    ("hash((1, 2)) == hash((1, 3))", "False"),
+
+    ("hash((1, True)) == hash((1.0, 1))", "True"),
 
 ])
 

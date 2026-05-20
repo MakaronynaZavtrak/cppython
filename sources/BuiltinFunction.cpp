@@ -287,6 +287,32 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) 
         }
 )));
 
+    env->set(
+"hash",
+
+Value(
+    std::make_shared<BuiltinFunction>(
+        "hash",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>&)
+           -> Value {
+
+            if (args.size() != 1) {
+                throw std::runtime_error("hash expects 1 arg");
+            }
+
+            return Value(
+                Value::BigInt(
+                    static_cast<long long>(
+                        args[0].hash()
+                    )
+                )
+            );
+        }
+)));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {

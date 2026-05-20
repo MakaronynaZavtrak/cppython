@@ -171,15 +171,21 @@ public:
 
     [[nodiscard]] bool isDictKeysView() const;
     [[nodiscard]] DictKeysViewPtr asDictKeysView() const;
+    [[nodiscard]] bool isDictKeysIterator() const;
     [[nodiscard]] DictKeysIteratorPtr asDictKeysIterator() const;
 
     [[nodiscard]] bool isDictValuesView() const;
     [[nodiscard]] DictValuesViewPtr asDictValuesView() const;
+    [[nodiscard]] bool isDictValuesIterator() const;
     [[nodiscard]] DictValuesIteratorPtr asDictValuesIterator() const;
 
     [[nodiscard]] bool isDictItemsView() const;
     [[nodiscard]] DictItemsViewPtr asDictItemsView() const;
+    [[nodiscard]] bool isDictItemsIterator() const;
     [[nodiscard]] DictItemsIteratorPtr asDictItemsIterator() const;
+
+    [[nodiscard]] bool isHashable() const;
+    [[nodiscard]] std::size_t hash() const;
 
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;
