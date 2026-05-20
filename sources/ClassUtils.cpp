@@ -639,7 +639,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             throw std::runtime_error("pop expects 1 or 2 args");
                         }
 
-                        const QString key = args[0].asString();
+                        const Value key = args[0];
 
                         if (args.size() == 2) {
                             return dict->pop(key, &args[1]);
@@ -690,17 +690,10 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                            -> Value {
 
                         if (args.size() != 1 && args.size() != 2) {
-                            throw std::runtime_error(
-                                "setdefault expects 1 or 2 args"
-                            );
+                            throw std::runtime_error("setdefault expects 1 or 2 args");
                         }
 
-                        //TODO: временно только string
-                        if (!args[0].isString()) {
-                            throw std::runtime_error("dict keys must be strings");
-                        }
-
-                        const QString key = args[0].asString();
+                        const Value key = args[0];
 
                         Value defaultValue;
 

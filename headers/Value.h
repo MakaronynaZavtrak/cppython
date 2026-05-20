@@ -190,4 +190,6 @@ public:
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;
 };
+
+size_t qHash(const Value& value, size_t seed = 0);
 #endif //VALUE_H

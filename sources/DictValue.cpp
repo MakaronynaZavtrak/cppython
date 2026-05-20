@@ -12,8 +12,8 @@
 #include "StopIterationException.h"
 #include "TupleValue.h"
 
-DictValue:: DictValue(const QHash<QString, Value>& items,
-                      const QVector<QString>& order)
+DictValue:: DictValue(const QHash<Value, Value>& items,
+                      const QVector<Value>& order)
         : elements(items),
           order(order) {}
 
@@ -31,7 +31,7 @@ QString DictValue::toString() const {
 
             first = false;
 
-            out += "'" + key + "'";
+            out += key.toString();
             out += ": ";
             out += elements[key].toString();
       }
@@ -46,48 +46,41 @@ QString DictValue::repr() const {
 }
 
 Value DictValue::getItem(const Value& key) const {
-      // TODO: пока что поддерживаются только строки в качестве ключей
-      if (!std::holds_alternative<QString>(key.data)) {
-            throw std::runtime_error("Dict key must be string");
+
+      if (!key.isHashable()) {
+            throw std::runtime_error("TypeError: unhashable type");
       }
 
-      const QString strKey = std::get<QString>(key.data);
-
-      if (!elements.contains(strKey)) {
-            throw std::runtime_error("KeyError: " + strKey.toStdString());
+      if (!elements.contains(key)) {
+            throw std::runtime_error("KeyError: " + key.toString().toStdString());
       }
 
-      return elements[strKey];
+      return elements[key];
 }
 
 void DictValue::setItem(const Value &key, const Value &value) {
 
-      //TODO: пока только строки
-      if (!std::holds_alternative<QString>(key.data)) {
-            throw std::runtime_error("Dict key must be string");
+      if (!key.isHashable()) {
+            throw std::runtime_error("TypeError: unhashable type");
       }
 
-      const auto strKey = std::get<QString>(key.data);
+      if (!elements.contains(key))
+            order.push_back(key);
 
-      if (!elements.contains(strKey))
-            order.push_back(strKey);
-
-      elements[strKey] = value;
+      elements[key] = value;
 }
 
 Value DictValue::get(const Value &key, const Value &defaultValue) const {
-      //TODO: пока только строки
-      if (!std::holds_alternative<QString>(key.data)) {
-            throw std::runtime_error("Dict key must be string");
+
+      if (!key.isHashable()) {
+            throw std::runtime_error("TypeError: unhashable type");
       }
 
-      const QString strKey = std::get<QString>(key.data);
-
-      if (!elements.contains(strKey)) {
+      if (!elements.contains(key)) {
             return defaultValue;
       }
 
-      return elements[strKey];
+      return elements[key];
 }
 
 std::size_t DictValue::len() const {
@@ -103,8 +96,10 @@ Value DictValue::copy() const {
       return Value(std::make_shared<DictValue>(elements, order));
 }
 
-Value DictValue::pop(const QString& key, const Value* defaultValue) {
+Value DictValue::pop(const Value& key, const Value* defaultValue) {
+
       if (elements.contains(key)) {
+
             Value result = elements[key];
             elements.remove(key);
             order.removeAll(key);
@@ -116,11 +111,7 @@ Value DictValue::pop(const QString& key, const Value* defaultValue) {
             return *defaultValue;
       }
 
-      throw std::runtime_error(
-          QString("KeyError: '%1'")
-              .arg(key)
-              .toStdString()
-      );
+      throw std::runtime_error("KeyError: " + key.toString().toStdString());
 }
 
 void DictValue::update(const std::shared_ptr<DictValue>& other) {
@@ -134,7 +125,7 @@ void DictValue::update(const std::shared_ptr<DictValue>& other) {
       }
 }
 
-Value DictValue::setdefault(const QString& key, const Value& defaultValue) {
+Value DictValue::setdefault(const Value& key, const Value& defaultValue) {
 
       if (elements.contains(key)) {
             return elements[key];
@@ -152,7 +143,7 @@ Value DictValue::popitem() {
             throw std::runtime_error("KeyError: 'popitem(): dictionary is empty'");
       }
 
-      const QString key = order.back();
+      const Value key = order.back();
       order.pop_back();
 
       const Value value = elements[key];
@@ -167,11 +158,11 @@ Value DictValue::popitem() {
       return Value(std::make_shared<TupleValue>(tupleItems));
 }
 
-QVector<QString> DictValue::getOrder() const {
+QVector<Value> DictValue::getOrder() const {
       return order;
 }
 
-QHash<QString, Value> DictValue::getElements() const {
+QHash<Value, Value> DictValue::getElements() const {
       return elements;
 }
 

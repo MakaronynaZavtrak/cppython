@@ -2320,9 +2320,67 @@ def test_single_line_expressions(expr, expected):
       "a.pop('x')",
       "i"], "dict_items([('y', 2)])"),
 
-    # fromKeys
+    # fromkeys
     (["{}.fromkeys(['a', 'b'])"],
      "{'a': None, 'b': None}"),
+
+    # разные типы ключей
+    (["d = {1: 'a', 'x': 42, True: 'yes'}",
+      "d"], "{1: 'yes', 'x': 42}"),
+
+    # tuple-ключи
+    (["d = {(1, 2): 'tuple', (3, 4): 'xy'}",
+      "d[(1, 2)]"], "'tuple'"),
+
+    # bool/int hash collision
+    (["d = {}",
+      "d[1] = 'int'",
+      "d[True] = 'bool'",
+      "d"], "{1: 'bool'}"),
+
+    # float/int equality
+    (["d = {}",
+      "d[1] = 'x'",
+      "d[1.0] = 'y'",
+      "d"], "{1: 'y'}"),
+
+    # nested tuple keys
+    (["d = {((1, 2), (3, 4)): 'nested'}",
+      "d"], "{((1, 2), (3, 4)): 'nested'}"),
+
+    # iteration over items
+    (["d = {True: 1, '1': 2}",
+      "res = []",
+      "for i in d.items():",
+      "    res.append(i)",
+      "",
+      "res"], "[(True, 1), ('1', 2)]"),
+
+    # popitem
+    (["d = {42.0: 1, 305: 2}",
+      "d.popitem()"], "(305, 2)"),
+
+    # setdefault()
+    (["d = {}",
+      "d.setdefault((400, 'qwer', True), 42)",
+      "d"], "{(400, 'qwer', True): 42}"),
+
+    # update()
+    (["a = {5 == 10 ** 2 / (2 * 10): 1}",
+      "b = {('one', 'two', 'three'): 'four'}",
+      "a.update(b)",
+      "a"], "{True: 1, ('one', 'two', 'three'): 'four'}"),
+
+    (["d = {}.fromkeys([1, 2, 3, 'six', 'seven'], 67)",
+      "d"], "{1: 67, 2: 67, 3: 67, 'six': 67, 'seven': 67}"),
+
+    # сохранение порядка ключей при перезаписи
+    (["d = {}",
+      "d[True] = 1",
+      "d[1] = 2",
+      "d[(404,)] = 3",
+      "d['abc'] = 4.0",
+      "d"], "{True: 2, (404,): 3, 'abc': 4.0}"),
 
     # с default value
     (["{}.fromkeys(['a', 'b'], 0)"],

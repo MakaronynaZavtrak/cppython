@@ -9,14 +9,14 @@
 #include "Value.h"
 
 class DictValue : public ReprMixin {
-    QHash<QString, Value> elements;
-    QVector<QString> order;
+    QHash<Value, Value> elements;
+    QVector<Value> order;
 
 public:
 
     DictValue() = default;
 
-    explicit DictValue(const QHash<QString, Value>&, const QVector<QString>&);
+    explicit DictValue(const QHash<Value, Value>&, const QVector<Value>&);
 
     [[nodiscard]] QString toString() const override;
 
@@ -34,17 +34,17 @@ public:
 
     [[nodiscard]] Value copy() const;
 
-    Value pop(const QString&, const Value* = nullptr);
+    Value pop(const Value&, const Value* = nullptr);
 
     void update(const std::shared_ptr<DictValue>&);
 
-    Value setdefault(const QString&, const Value& = Value());
+    Value setdefault(const Value&, const Value& = Value());
 
     [[nodiscard]] Value popitem();
 
-    [[nodiscard]] QVector<QString> getOrder() const;
+    [[nodiscard]] QVector<Value> getOrder() const;
 
-    [[nodiscard]] QHash<QString, Value> getElements() const;
+    [[nodiscard]] QHash<Value, Value> getElements() const;
 
     [[nodiscard]] static Value keys(const std::shared_ptr<DictValue>& self);
 

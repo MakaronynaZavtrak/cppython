@@ -26,9 +26,9 @@ public:
             throw StopIterationException();
         }
 
-        const QString key = dict->getOrder()[index++];
+        const Value key = dict->getOrder()[index++];
 
-        return Value(key);
+        return key;
     }
 };
 #endif //CPPYTHON_DICTKEYSITERATOR_H

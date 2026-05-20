@@ -22,7 +22,7 @@ QString DictKeysView::toString() const {
 
         first = false;
 
-        out += "'" + key + "'";
+        out += key.toString();
     }
 
     out += "])";

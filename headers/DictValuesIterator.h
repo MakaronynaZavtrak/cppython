@@ -23,7 +23,7 @@ public:
             throw StopIterationException();
         }
 
-        const QString key = dict->getOrder()[index++];
+        const Value key = dict->getOrder()[index++];
 
         return dict->getElements()[key];
     }

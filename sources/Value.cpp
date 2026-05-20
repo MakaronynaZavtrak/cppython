@@ -354,6 +354,10 @@ bool Value::operator<(const Value& other) const {
     throw std::runtime_error("TypeError: unsupported comparison: " + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
 
+size_t qHash(const Value &value, const size_t seed) {
+    return value.hash() ^ seed;
+}
+
 bool Value::isNumeric() const {
     return std::holds_alternative<BigInt>(data) ||
            std::holds_alternative<BigFloat>(data) ||
