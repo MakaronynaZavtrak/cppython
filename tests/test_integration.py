@@ -2724,7 +2724,15 @@ def test_single_line_expressions(expr, expected):
     (["a = {1 + 2, 3 * 4}",
       "a"], "{3, 12}"),
 
+    # add
+    (["a = {1, 2}",
+      "a.add(3)",
+      "a"], "{1, 2, 3}"),
 
+    # add duplicate
+    (["a = {1, 2}",
+      "a.add(2)",
+      "a"], "{1, 2}")
 
 ])
 

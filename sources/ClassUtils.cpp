@@ -16,6 +16,7 @@
 #include "InstanceValue.h"
 #include "ListIterator.h"
 #include "ListValue.h"
+#include "SetValue.h"
 #include "StopIterationException.h"
 #include "SuperValue.h"
 #include "TupleIterator.h"
@@ -1031,6 +1032,31 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
     }
+
+    if (obj.isSet()) {
+        auto set = std::get<Value::SetPtr>(obj.data);
+
+        if (attr == "add") {
+            return Value(std::make_shared<BuiltinFunction>(
+                "add",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (args.size() != 1) {
+                        throw std::runtime_error("set.add() takes exactly one argument");
+                    }
+
+                    set->add(args[0]);
+
+                    return {};
+                }
+            ));
+        }
+
+
+    }
+
 
     if (std::holds_alternative<Value::ListIteratorPtr>(obj.data)) {
 

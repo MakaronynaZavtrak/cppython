@@ -21,6 +21,7 @@ public:
 
     [[nodiscard]] QString repr() const override;
 
+    void add(const Value& value);
 
 };
 #endif //CPPYTHON_SETVALUE_H

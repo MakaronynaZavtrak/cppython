@@ -33,3 +33,12 @@ QString SetValue::toString() const {
 QString SetValue::repr() const {
     return toString();
 }
+
+void SetValue::add(const Value& value) {
+
+    if (!elements.contains(value)) {
+        elements[value] = true;
+        order.push_back(value);
+    }
+}
+
