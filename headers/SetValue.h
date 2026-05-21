@@ -31,9 +31,11 @@ public:
 
     [[nodiscard]] bool contains(const Value& value) const;
 
-    [[nodiscard]]std::shared_ptr<SetValue> intersectionWith(const std::shared_ptr<SetValue>& other) const;
+    [[nodiscard]] std::shared_ptr<SetValue> intersectionWith(const std::shared_ptr<SetValue>& other) const;
 
-    [[nodiscard]]std::shared_ptr<SetValue> differenceWith(const std::shared_ptr<SetValue>& other) const;
+    [[nodiscard]] std::shared_ptr<SetValue> differenceWith(const std::shared_ptr<SetValue>& other) const;
+
+    [[nodiscard]] std::shared_ptr<SetValue> symmetricDifferenceWith(const std::shared_ptr<SetValue>& other) const;
 
 };
 #endif //CPPYTHON_SETVALUE_H

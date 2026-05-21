@@ -116,6 +116,30 @@ std::shared_ptr<SetValue> SetValue::differenceWith(const std::shared_ptr<SetValu
     return result;
 }
 
+std::shared_ptr<SetValue> SetValue::symmetricDifferenceWith(const std::shared_ptr<SetValue>& other) const {
+
+    auto result = std::make_shared<SetValue>();
+
+    // элементы только из текущего set
+    for (const auto& value : order) {
+
+        if (!other->contains(value)) {
+            result->add(value);
+        }
+    }
+
+    // элементы только из other
+    for (const auto& value : other->order) {
+
+        if (!contains(value)) {
+            result->add(value);
+        }
+    }
+
+    return result;
+}
+
+
 
 
 
