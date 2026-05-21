@@ -102,6 +102,21 @@ std::shared_ptr<SetValue> SetValue::intersectionWith(const std::shared_ptr<SetVa
     return result;
 }
 
+std::shared_ptr<SetValue> SetValue::differenceWith(const std::shared_ptr<SetValue>& other) const {
+
+    auto result = std::make_shared<SetValue>();
+
+    for (const auto& value : order) {
+
+        if (!other->contains(value)) {
+            result->add(value);
+        }
+    }
+
+    return result;
+}
+
+
 
 
 
