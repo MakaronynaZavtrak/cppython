@@ -67,3 +67,21 @@ void SetValue::discard(const Value& value) {
     });
 }
 
+std::shared_ptr<SetValue> SetValue::unionWith(const std::shared_ptr<SetValue>& other) const {
+
+    auto result = std::make_shared<SetValue>();
+
+    // сначала текущий set
+    for (const auto& value : order) {
+        result->add(value);
+    }
+
+    // потом второй
+    for (const auto& value : other->order) {
+        result->add(value);
+    }
+
+    return result;
+}
+
+

@@ -27,5 +27,8 @@ public:
 
     void discard(const Value& value);
 
+    [[nodiscard]] std::shared_ptr<SetValue> unionWith(const std::shared_ptr<SetValue>& other) const;
+
+
 };
 #endif //CPPYTHON_SETVALUE_H

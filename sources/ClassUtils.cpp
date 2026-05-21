@@ -640,7 +640,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             throw std::runtime_error("pop expects 1 or 2 args");
                         }
 
-                        const Value key = args[0];
+                        const Value& key = args[0];
 
                         if (args.size() == 2) {
                             return dict->pop(key, &args[1]);
@@ -694,7 +694,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             throw std::runtime_error("setdefault expects 1 or 2 args");
                         }
 
-                        const Value key = args[0];
+                        const Value& key = args[0];
 
                         Value defaultValue;
 
@@ -744,7 +744,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             throw std::runtime_error("keys expects 0 args");
                         }
 
-                        return dict->keys(dict);
+                        return DictValue::keys(dict);
                     }
                 )
             );
@@ -765,7 +765,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             throw std::runtime_error("values expects 0 args");
                         }
 
-                        return dict->values(dict);
+                        return DictValue::values(dict);
                     }
                 )
             );
@@ -786,7 +786,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                             throw std::runtime_error("items expects 0 args");
                         }
 
-                        return dict->items(dict);
+                        return DictValue::items(dict);
                     }
                 )
             );
@@ -1090,6 +1090,27 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             ));
         }
 
+        if (attr == "union") {
+            return Value(std::make_shared<BuiltinFunction>(
+                "union",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (args.size() != 1) {
+                        throw std::runtime_error("set.union() takes exactly one argument");
+                    }
+
+                    const auto other = args[0].asSet();
+
+                    if (!other) {
+                        throw std::runtime_error("union() argument must be set");
+                    }
+
+                    return Value(set->unionWith(other));
+                }
+            ));
+        }
 
     }
 
