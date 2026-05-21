@@ -2732,7 +2732,11 @@ def test_single_line_expressions(expr, expected):
     # add duplicate
     (["a = {1, 2}",
       "a.add(2)",
-      "a"], "{1, 2}")
+      "a"], "{1, 2}"),
+
+    (["a = {1, 2, 3}",
+      "a.remove(2)",
+      "a"], "{1, 3}")
 
 ])
 

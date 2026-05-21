@@ -23,5 +23,8 @@ public:
 
     void add(const Value& value);
 
+    void remove(const Value& value);
+
+
 };
 #endif //CPPYTHON_SETVALUE_H

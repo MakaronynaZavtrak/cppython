@@ -42,3 +42,17 @@ void SetValue::add(const Value& value) {
     }
 }
 
+void SetValue::remove(const Value& value) {
+
+    if (!elements.contains(value)) {
+        throw std::runtime_error("KeyError: element not found in set");
+    }
+
+    elements.remove(value);
+
+    order.removeIf([&](const Value& v) {
+        return v == value;
+    });
+}
+
+
