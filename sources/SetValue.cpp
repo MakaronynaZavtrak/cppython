@@ -84,4 +84,24 @@ std::shared_ptr<SetValue> SetValue::unionWith(const std::shared_ptr<SetValue>& o
     return result;
 }
 
+bool SetValue::contains(const Value& value) const {
+    return elements.contains(value);
+}
+
+std::shared_ptr<SetValue> SetValue::intersectionWith(const std::shared_ptr<SetValue>& other) const {
+
+    auto result = std::make_shared<SetValue>();
+
+    for (const auto& value : order) {
+
+        if (other->contains(value)) {
+            result->add(value);
+        }
+    }
+
+    return result;
+}
+
+
+
 

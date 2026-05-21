@@ -1034,9 +1034,11 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
     }
 
     if (obj.isSet()) {
+
         auto set = std::get<Value::SetPtr>(obj.data);
 
         if (attr == "add") {
+
             return Value(std::make_shared<BuiltinFunction>(
                 "add",
                 [set](const std::vector<Value> &args,
@@ -1055,6 +1057,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
         if (attr == "remove") {
+
             return Value(std::make_shared<BuiltinFunction>(
                 "remove",
                 [set](const std::vector<Value> &args,
@@ -1073,6 +1076,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
         if (attr == "discard") {
+
             return Value(std::make_shared<BuiltinFunction>(
                 "discard",
                 [set](const std::vector<Value> &args,
@@ -1091,6 +1095,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
         if (attr == "union") {
+
             return Value(std::make_shared<BuiltinFunction>(
                 "union",
                 [set](const std::vector<Value> &args,
@@ -1111,6 +1116,30 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 }
             ));
         }
+
+        if (attr == "intersection") {
+
+            return Value(std::make_shared<BuiltinFunction>(
+                "intersection",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (args.size() != 1) {
+                        throw std::runtime_error("set.intersection() takes exactly one argument");
+                    }
+
+                    const auto other = args[0].asSet();
+
+                    if (!other) {
+                        throw std::runtime_error("intersection() argument must be set");
+                    }
+
+                    return Value(set->intersectionWith(other));
+                }
+            ));
+        }
+
 
     }
 
