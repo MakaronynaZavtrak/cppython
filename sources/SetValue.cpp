@@ -55,4 +55,15 @@ void SetValue::remove(const Value& value) {
     });
 }
 
+void SetValue::discard(const Value& value) {
+    if (!elements.contains(value)) {
+        return;
+    }
+
+    elements.remove(value);
+
+    order.removeIf([&](const Value& v) {
+        return v == value;
+    });
+}
 

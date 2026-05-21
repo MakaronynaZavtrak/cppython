@@ -2734,9 +2734,20 @@ def test_single_line_expressions(expr, expected):
       "a.add(2)",
       "a"], "{1, 2}"),
 
+    # remove
     (["a = {1, 2, 3}",
       "a.remove(2)",
-      "a"], "{1, 3}")
+      "a"], "{1, 3}"),
+
+    # discard existing
+    (["a = {1, 2}",
+      "a.discard(2)",
+      "a"], "{1}"),
+
+    # discard missing
+    (["a = {1}",
+      "a.discard(999)",
+      "a"], "{1}")
 
 ])
 

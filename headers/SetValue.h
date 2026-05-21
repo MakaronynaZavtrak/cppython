@@ -25,6 +25,7 @@ public:
 
     void remove(const Value& value);
 
+    void discard(const Value& value);
 
 };
 #endif //CPPYTHON_SETVALUE_H

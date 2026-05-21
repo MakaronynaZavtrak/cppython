@@ -1060,11 +1060,30 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                 [set](const std::vector<Value> &args,
                       const Kwargs &,
                       const std::shared_ptr<Environment> &) -> Value {
+
                     if (args.size() != 1) {
                         throw std::runtime_error("set.remove() takes exactly one argument");
                     }
 
                     set->remove(args[0]);
+
+                    return {};
+                }
+            ));
+        }
+
+        if (attr == "discard") {
+            return Value(std::make_shared<BuiltinFunction>(
+                "discard",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (args.size() != 1) {
+                        throw std::runtime_error("set.discard() takes exactly one argument");
+                    }
+
+                    set->discard(args[0]);
 
                     return {};
                 }
