@@ -45,5 +45,7 @@ public:
 
     [[nodiscard]] std::shared_ptr<SetValue> copy() const;
 
+    void clear();
+
 };
 #endif //CPPYTHON_SETVALUE_H

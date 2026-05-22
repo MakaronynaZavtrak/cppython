@@ -1282,6 +1282,25 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             ));
         }
 
+        if (attr == "clear") {
+
+            return Value(std::make_shared<BuiltinFunction>(
+                "clear",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (!args.empty()) {
+                        throw std::runtime_error("set.clear() takes no arguments");
+                    }
+
+                    set->clear();
+
+                    return {};
+                }
+            ));
+        }
+
     }
 
 

@@ -185,3 +185,9 @@ std::shared_ptr<SetValue> SetValue::copy() const {
 
     return result;
 }
+
+void SetValue::clear() {
+
+    elements.clear();
+    order.clear();
+}
