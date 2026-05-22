@@ -1390,6 +1390,31 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             ));
         }
 
+        if (attr == "symmetric_difference_update") {
+
+            return Value(std::make_shared<BuiltinFunction>(
+                "symmetric_difference_update",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (args.size() != 1) {
+                        throw std::runtime_error("symmetric_difference_update() takes exactly one argument");
+                    }
+
+                    const auto other = args[0].asSet();
+
+                    if (!other) {
+                        throw std::runtime_error("argument must be a set");
+                    }
+
+                    set->symmetricDifferenceUpdate(other);
+
+                    return {};
+                }
+            ));
+        }
+
     }
 
 

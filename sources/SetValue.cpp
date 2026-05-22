@@ -238,3 +238,32 @@ void SetValue::intersectionUpdate(const std::shared_ptr<SetValue>& other) {
     order = std::move(newOrder);
     elements = std::move(newElements);
 }
+
+void SetValue::symmetricDifferenceUpdate(const std::shared_ptr<SetValue>& other) {
+
+    QVector<Value> newOrder;
+    QHash<Value, bool> newElements;
+
+    // элементы текущего set, которых нет в other
+    for (const auto& value : order) {
+
+        if (!other->elements.contains(value)) {
+
+            newOrder.push_back(value);
+            newElements[value] = true;
+        }
+    }
+
+    // элементы other, которых нет в текущем set
+    for (const auto& value : other->order) {
+
+        if (!elements.contains(value)) {
+
+            newOrder.push_back(value);
+            newElements[value] = true;
+        }
+    }
+
+    order = std::move(newOrder);
+    elements = std::move(newElements);
+}

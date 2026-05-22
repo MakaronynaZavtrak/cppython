@@ -3143,7 +3143,53 @@ def test_single_line_expressions(expr, expected):
     # intersection_update самим собой
     (["a = {1, 2, 3}",
       "a.intersection_update(a)",
-      "a"], "{1, 2, 3}")
+      "a"], "{1, 2, 3}"),
+
+    # symmetric_difference_update базовый
+    (["a = {1, 2, 3}",
+      "b = {3, 4, 5}",
+      "a.symmetric_difference_update(b)",
+      "a"], "{1, 2, 4, 5}"),
+
+    # symmetric_difference_update без пересечений
+    (["a = {1, 2}",
+      "b = {3, 4}",
+      "a.symmetric_difference_update(b)",
+      "a"], "{1, 2, 3, 4}"),
+
+    # # symmetric_difference_update одинаковых множеств (пока не поддерживается)
+    # (["a = {1, 2}",
+    #   "b = {1, 2}",
+    #   "a.symmetric_difference_update(b)",
+    #   "a"], "set()"),
+
+    # symmetric_difference_update частичного пересечения
+    (["a = {1, 2, 3}",
+      "b = {2, 3, 4}",
+      "a.symmetric_difference_update(b)",
+      "a"], "{1, 4}"),
+
+    # # symmetric_difference_update пустого множества (пока не поддерживается)
+    # (["a = {1, 2}",
+    #   "b = set()",
+    #   "a.symmetric_difference_update(b)",
+    #   "a"], "{1, 2}"),
+
+    # # symmetric_difference_update с пустым self (пока не поддерживается)
+    # (["a = set()",
+    #   "b = {1, 2}",
+    #   "a.symmetric_difference_update(b)",
+    #   "a"], "{1, 2}"),
+
+    # symmetric_difference_update возвращает None
+    (["a = {1}",
+      "b = {2}",
+      "a.symmetric_difference_update(b)"], ""),
+
+    # # symmetric_difference_update самим собой (пока не поддерживается)
+    # (["a = {1, 2, 3}",
+    #   "a.symmetric_difference_update(a)",
+    #   "a"], "set()")
 
 ])
 
