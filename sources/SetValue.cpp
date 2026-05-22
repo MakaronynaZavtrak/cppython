@@ -151,8 +151,14 @@ bool SetValue::isSubsetOf(const std::shared_ptr<SetValue>& other) const {
     return true;
 }
 
+bool SetValue::isSupersetOf(const std::shared_ptr<SetValue>& other) const {
 
+    for (const auto& value : other->order) {
 
+        if (!contains(value)) {
+            return false;
+        }
+    }
 
-
-
+    return true;
+}

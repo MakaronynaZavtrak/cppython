@@ -39,5 +39,7 @@ public:
 
     [[nodiscard]]bool isSubsetOf(const std::shared_ptr<SetValue>& other) const;
 
+    [[nodiscard]] bool isSupersetOf(const std::shared_ptr<SetValue>& other) const;
+
 };
 #endif //CPPYTHON_SETVALUE_H
