@@ -1318,6 +1318,30 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             ));
         }
 
+        if (attr == "update") {
+
+            return Value(std::make_shared<BuiltinFunction>(
+                "update",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    for (const auto& arg : args) {
+
+                        auto other = arg.asSet();
+
+                        if (!other) {
+                            throw std::runtime_error("update() arguments must be sets");
+                        }
+
+                        set->update(other);
+                    }
+
+                    return {};
+                }
+            ));
+        }
+
     }
 
 

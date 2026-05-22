@@ -206,3 +206,10 @@ Value SetValue::pop() {
 
     return value;
 }
+
+void SetValue::update(const std::shared_ptr<SetValue>& other) {
+
+    for (const auto& value : other->order) {
+        add(value);
+    }
+}

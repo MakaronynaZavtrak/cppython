@@ -49,5 +49,7 @@ public:
 
     Value pop();
 
+    void update(const std::shared_ptr<SetValue>& other);
+
 };
 #endif //CPPYTHON_SETVALUE_H
