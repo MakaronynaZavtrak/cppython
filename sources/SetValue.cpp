@@ -191,3 +191,18 @@ void SetValue::clear() {
     elements.clear();
     order.clear();
 }
+
+Value SetValue::pop() {
+
+    if (order.empty()) {
+        throw std::runtime_error("pop from an empty set");
+    }
+
+    Value value = order.front();
+
+    order.pop_front();
+
+    elements.remove(value);
+
+    return value;
+}

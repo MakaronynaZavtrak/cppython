@@ -47,5 +47,7 @@ public:
 
     void clear();
 
+    Value pop();
+
 };
 #endif //CPPYTHON_SETVALUE_H
