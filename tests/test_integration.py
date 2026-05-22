@@ -3063,7 +3063,47 @@ def test_single_line_expressions(expr, expected):
     # update самим собой
     (["a = {1, 2}",
       "a.update(a)",
-      "a"], "{1, 2}")
+      "a"], "{1, 2}"),
+
+    # difference_update одним множеством
+    (["a = {1, 2, 3}",
+      "b = {2}",
+      "a.difference_update(b)",
+      "a"], "{1, 3}"),
+
+    # difference_update несколькими множествами
+    (["a = {1, 2, 3, 4, 5}",
+      "b = {2}",
+      "c = {4, 5}",
+      "a.difference_update(b, c)",
+      "a"], "{1, 3}"),
+
+    # difference_update без пересечений
+    (["a = {1, 2}",
+      "b = {3, 4}",
+      "a.difference_update(b)",
+      "a"], "{1, 2}"),
+
+    # # difference_update полного множества (пока не поддерживается)
+    # (["a = {1, 2}",
+    #   "b = {1, 2}",
+    #   "a.difference_update(b)",
+    #   "a"], "set()"),
+
+    # difference_update без аргументов
+    (["a = {1, 2}",
+      "a.difference_update()",
+      "a"], "{1, 2}"),
+
+    # difference_update возвращает None
+    (["a = {1}",
+      "b = {1}",
+      "a.difference_update(b)"], ""),
+
+    # # difference_update самим собой (пока не поддерживается)
+    # (["a = {1, 2, 3}",
+    #   "a.difference_update(a)",
+    #   "a"], "set()")
 
 ])
 

@@ -1342,6 +1342,30 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             ));
         }
 
+        if (attr == "difference_update") {
+
+            return Value(std::make_shared<BuiltinFunction>(
+                "difference_update",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    for (const auto& arg : args) {
+
+                        auto other = arg.asSet();
+
+                        if (!other) {
+                            throw std::runtime_error("difference_update() arguments must be sets");
+                        }
+
+                        set->differenceUpdate(other);
+                    }
+
+                    return {};
+                }
+            ));
+        }
+
     }
 
 

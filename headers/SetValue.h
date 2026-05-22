@@ -51,5 +51,7 @@ public:
 
     void update(const std::shared_ptr<SetValue>& other);
 
+    void differenceUpdate(const std::shared_ptr<SetValue>& other);
+
 };
 #endif //CPPYTHON_SETVALUE_H

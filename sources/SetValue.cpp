@@ -213,3 +213,10 @@ void SetValue::update(const std::shared_ptr<SetValue>& other) {
         add(value);
     }
 }
+
+void SetValue::differenceUpdate(const std::shared_ptr<SetValue>& other) {
+
+    for (const auto& value : other->order) {
+        remove(value);
+    }
+}
