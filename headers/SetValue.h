@@ -37,5 +37,7 @@ public:
 
     [[nodiscard]] std::shared_ptr<SetValue> symmetricDifferenceWith(const std::shared_ptr<SetValue>& other) const;
 
+    [[nodiscard]]bool isSubsetOf(const std::shared_ptr<SetValue>& other) const;
+
 };
 #endif //CPPYTHON_SETVALUE_H

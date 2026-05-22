@@ -139,6 +139,18 @@ std::shared_ptr<SetValue> SetValue::symmetricDifferenceWith(const std::shared_pt
     return result;
 }
 
+bool SetValue::isSubsetOf(const std::shared_ptr<SetValue>& other) const {
+
+    for (const auto& value : order) {
+
+        if (!other->contains(value)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 
 
 

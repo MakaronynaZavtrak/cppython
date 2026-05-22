@@ -1187,6 +1187,29 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             ));
         }
 
+        if (attr == "issubset") {
+
+            return Value(std::make_shared<BuiltinFunction>(
+                "issubset",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (args.size() != 1) {
+                        throw std::runtime_error("set.issubset() takes exactly one argument");
+                    }
+
+                    const auto other = args[0].asSet();
+
+                    if (!other) {
+                        throw std::runtime_error("issubset() argument must be set");
+                    }
+
+                    return Value(set->isSubsetOf(other));
+                }
+            ));
+        }
+
 
     }
 
