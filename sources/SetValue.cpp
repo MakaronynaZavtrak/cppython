@@ -174,3 +174,14 @@ bool SetValue::isDisjointWith(const std::shared_ptr<SetValue>& other) const {
 
     return true;
 }
+
+std::shared_ptr<SetValue> SetValue::copy() const {
+
+    auto result = std::make_shared<SetValue>();
+
+    for (const auto& value : order) {
+        result->add(value);
+    }
+
+    return result;
+}

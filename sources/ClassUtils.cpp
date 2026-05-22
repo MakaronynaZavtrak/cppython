@@ -1256,6 +1256,23 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             ));
         }
 
+        if (attr == "copy") {
+
+            return Value(std::make_shared<BuiltinFunction>(
+                "copy",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (!args.empty()) {
+                        throw std::runtime_error("set.copy() takes no arguments");
+                    }
+
+                    return Value(set->copy());
+                }
+            ));
+        }
+
     }
 
 
