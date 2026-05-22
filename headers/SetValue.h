@@ -41,5 +41,7 @@ public:
 
     [[nodiscard]] bool isSupersetOf(const std::shared_ptr<SetValue>& other) const;
 
+    [[nodiscard]] bool isDisjointWith(const std::shared_ptr<SetValue>& other) const;
+
 };
 #endif //CPPYTHON_SETVALUE_H

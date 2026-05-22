@@ -1233,6 +1233,29 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             ));
         }
 
+        if (attr == "isdisjoint") {
+
+            return Value(std::make_shared<BuiltinFunction>(
+                "isdisjoint",
+                [set](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
+
+                    if (args.size() != 1) {
+                        throw std::runtime_error("set.isdisjoint() takes exactly one argument");
+                    }
+
+                    const auto other = args[0].asSet();
+
+                    if (!other) {
+                        throw std::runtime_error("isdisjoint() argument must be set");
+                    }
+
+                    return Value(set->isDisjointWith(other));
+                }
+            ));
+        }
+
     }
 
 

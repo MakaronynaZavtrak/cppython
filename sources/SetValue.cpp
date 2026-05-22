@@ -162,3 +162,15 @@ bool SetValue::isSupersetOf(const std::shared_ptr<SetValue>& other) const {
 
     return true;
 }
+
+bool SetValue::isDisjointWith(const std::shared_ptr<SetValue>& other) const {
+
+    for (const auto& value : order) {
+
+        if (other->contains(value)) {
+            return false;
+        }
+    }
+
+    return true;
+}
