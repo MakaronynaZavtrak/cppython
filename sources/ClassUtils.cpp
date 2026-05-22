@@ -1102,17 +1102,20 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                       const Kwargs &,
                       const std::shared_ptr<Environment> &) -> Value {
 
-                    if (args.size() != 1) {
-                        throw std::runtime_error("set.union() takes exactly one argument");
+                    auto result = set->copy();
+
+                    for (const auto &arg: args) {
+
+                        const auto other = arg.asSet();
+
+                        if (!other) {
+                            throw std::runtime_error("union() argument must be set");
+                        }
+
+                        result = result->unionWith(other);
                     }
 
-                    const auto other = args[0].asSet();
-
-                    if (!other) {
-                        throw std::runtime_error("union() argument must be set");
-                    }
-
-                    return Value(set->unionWith(other));
+                    return Value(result);
                 }
             ));
         }
@@ -1125,17 +1128,20 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                       const Kwargs &,
                       const std::shared_ptr<Environment> &) -> Value {
 
-                    if (args.size() != 1) {
-                        throw std::runtime_error("set.intersection() takes exactly one argument");
+                    auto result = set->copy();
+
+                    for (const auto &arg: args) {
+
+                        const auto other = arg.asSet();
+
+                        if (!other) {
+                            throw std::runtime_error("intersection() argument must be set");
+                        }
+
+                        result = result->intersectionWith(other);
                     }
 
-                    const auto other = args[0].asSet();
-
-                    if (!other) {
-                        throw std::runtime_error("intersection() argument must be set");
-                    }
-
-                    return Value(set->intersectionWith(other));
+                    return Value(result);
                 }
             ));
         }
@@ -1148,17 +1154,20 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
                       const Kwargs &,
                       const std::shared_ptr<Environment> &) -> Value {
 
-                    if (args.size() != 1) {
-                        throw std::runtime_error("set.difference() takes exactly one argument");
+                    auto result = set->copy();
+
+                    for (const auto &arg: args) {
+
+                        const auto other = arg.asSet();
+
+                        if (!other) {
+                            throw std::runtime_error("difference() argument must be set");
+                        }
+
+                        result = result->differenceWith(other);
                     }
 
-                    const auto other = args[0].asSet();
-
-                    if (!other) {
-                        throw std::runtime_error("difference() argument must be set");
-                    }
-
-                    return Value(set->differenceWith(other));
+                    return Value(result);
                 }
             ));
         }
