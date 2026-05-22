@@ -53,5 +53,7 @@ public:
 
     void differenceUpdate(const std::shared_ptr<SetValue>& other);
 
+    void intersectionUpdate(const std::shared_ptr<SetValue>& other);
+
 };
 #endif //CPPYTHON_SETVALUE_H

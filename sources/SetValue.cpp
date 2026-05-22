@@ -220,3 +220,21 @@ void SetValue::differenceUpdate(const std::shared_ptr<SetValue>& other) {
         remove(value);
     }
 }
+
+void SetValue::intersectionUpdate(const std::shared_ptr<SetValue>& other) {
+
+    QVector<Value> newOrder;
+    QHash<Value, bool> newElements;
+
+    for (const auto& value : order) {
+
+        if (other->elements.contains(value)) {
+
+            newOrder.push_back(value);
+            newElements[value] = true;
+        }
+    }
+
+    order = std::move(newOrder);
+    elements = std::move(newElements);
+}

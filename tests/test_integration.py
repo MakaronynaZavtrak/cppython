@@ -3103,7 +3103,47 @@ def test_single_line_expressions(expr, expected):
     # # difference_update самим собой (пока не поддерживается)
     # (["a = {1, 2, 3}",
     #   "a.difference_update(a)",
-    #   "a"], "set()")
+    #   "a"], "set()"),
+
+    # intersection_update одним множеством
+    (["a = {1, 2, 3}",
+      "b = {2, 3, 4}",
+      "a.intersection_update(b)",
+      "a"], "{2, 3}"),
+
+    # intersection_update несколькими множествами
+    (["a = {1, 2, 3, 4}",
+      "b = {2, 3, 4}",
+      "c = {3, 4}",
+      "a.intersection_update(b, c)",
+      "a"], "{3, 4}"),
+
+    # # intersection_update без пересечений (пока не поддерживается)
+    # (["a = {1, 2}",
+    #   "b = {3, 4}",
+    #   "a.intersection_update(b)",
+    #   "a"], "set()"),
+
+    # intersection_update полного совпадения
+    (["a = {1, 2}",
+      "b = {1, 2}",
+      "a.intersection_update(b)",
+      "a"], "{1, 2}"),
+
+    # intersection_update без аргументов
+    (["a = {1, 2}",
+      "a.intersection_update()",
+      "a"], "{1, 2}"),
+
+    # intersection_update возвращает None
+    (["a = {1}",
+      "b = {1}",
+      "a.intersection_update(b)"], ""),
+
+    # intersection_update самим собой
+    (["a = {1, 2, 3}",
+      "a.intersection_update(a)",
+      "a"], "{1, 2, 3}")
 
 ])
 
