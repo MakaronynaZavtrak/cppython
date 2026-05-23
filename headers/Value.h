@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class IteratorValue;
 class SetValue;
 class DictItemsIterator;
 class DictValuesIterator;
@@ -79,6 +80,7 @@ public:
     using DictItemsIteratorPtr = std::shared_ptr<DictItemsIterator>;
 
     using SetPtr = std::shared_ptr<SetValue>;
+    using IteratorPtr = std::shared_ptr<IteratorValue>;
 
     std::variant<
         BigInt,
@@ -97,15 +99,11 @@ public:
         PropertyPtr,
         StaticMethodPtr,
         ClassMethodPtr,
-        ListIteratorPtr,
-        TupleIteratorPtr,
         DictKeysViewPtr,
-        DictKeysIteratorPtr,
         DictValuesViewPtr,
-        DictValuesIteratorPtr,
         DictItemsViewPtr,
-        DictItemsIteratorPtr,
         SetPtr,
+        IteratorPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -138,19 +136,16 @@ public:
     explicit Value(const StaticMethodPtr& staticMethodValue) : data(staticMethodValue) {}
     explicit Value(const ClassMethodPtr& classMethodValue) : data(classMethodValue) {}
 
-    explicit Value(const ListIteratorPtr& listIter) : data(listIter) {}
-    explicit Value(const TupleIteratorPtr& tupleIter) : data(tupleIter) {}
 
     explicit Value(const DictKeysViewPtr& dictKeys) : data(dictKeys) {}
-    explicit Value(const DictKeysIteratorPtr &keysIterator) : data(keysIterator) {}
 
     explicit Value(const DictValuesViewPtr& dictValues) : data(dictValues) {}
-    explicit Value(const DictValuesIteratorPtr &valuesIterator) : data(valuesIterator) {}
 
     explicit Value(const DictItemsViewPtr& dictItems) : data(dictItems) {}
-    explicit Value(const DictItemsIteratorPtr &itemsIterator) : data(itemsIterator) {}
 
     explicit Value(const SetPtr& set) : data(set) {}
+
+    explicit Value(const IteratorPtr & iter) : data(iter) {}
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString asString() const;
@@ -172,29 +167,23 @@ public:
 
     [[nodiscard]] bool isString() const;
 
-    [[nodiscard]] bool isListIterator() const;
-    [[nodiscard]] bool isTupleIterator() const;
-
     [[nodiscard]] bool isDictKeysView() const;
     [[nodiscard]] DictKeysViewPtr asDictKeysView() const;
-    [[nodiscard]] bool isDictKeysIterator() const;
-    [[nodiscard]] DictKeysIteratorPtr asDictKeysIterator() const;
 
     [[nodiscard]] bool isDictValuesView() const;
     [[nodiscard]] DictValuesViewPtr asDictValuesView() const;
-    [[nodiscard]] bool isDictValuesIterator() const;
-    [[nodiscard]] DictValuesIteratorPtr asDictValuesIterator() const;
 
     [[nodiscard]] bool isDictItemsView() const;
     [[nodiscard]] DictItemsViewPtr asDictItemsView() const;
-    [[nodiscard]] bool isDictItemsIterator() const;
-    [[nodiscard]] DictItemsIteratorPtr asDictItemsIterator() const;
 
     [[nodiscard]] bool isSet() const;
     [[nodiscard]] SetPtr asSet() const;
 
     [[nodiscard]] bool isHashable() const;
     [[nodiscard]] std::size_t hash() const;
+
+    [[nodiscard]] bool isIterable() const;
+    [[nodiscard]] IteratorPtr getIterator() const;
 
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;

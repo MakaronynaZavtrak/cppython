@@ -3189,7 +3189,57 @@ def test_single_line_expressions(expr, expected):
     # # symmetric_difference_update самим собой (пока не поддерживается)
     # (["a = {1, 2, 3}",
     #   "a.symmetric_difference_update(a)",
-    #   "a"], "set()")
+    #   "a"], "set()"),
+
+    # # __iter__ возвращает самого себя (пока не поддерживается)
+    # (["a = {1, 2}",
+    #   "it = iter(a)",
+    #   "iter(it) == it"], "True"),
+
+    # next() возвращает элементы множества
+    (["a = {1}",
+      "it = iter(a)",
+      "next(it)"], "1"),
+
+    # Итерация по нескольким элементам
+    (["a = {1, 2}",
+      "it = iter(a)",
+      "x = next(it)",
+      "y = next(it)",
+      "{x, y}"], "{1, 2}"),
+
+    # # Итерация по пустому set (пока не поддерживается)
+    # (["a = set()",
+    #   "it = iter(a)",
+    #   "next(it)"], "StopIteration"),
+
+    # Итерация по set со строками
+    (["a = {'x', 'y'}",
+      "it = iter(a)",
+      "v1 = next(it)",
+      "v2 = next(it)",
+      "{v1, v2}"], "{'x', 'y'}"),
+
+    # Итерация по set с tuple
+    (["a = {(1, 2), (3, 4)}",
+      "it = iter(a)",
+      "v1 = next(it)",
+      "v2 = next(it)",
+      "{v1, v2}"], "{(1, 2), (3, 4)}"),
+
+    # Повторный вызов iter()
+    (["a = {1, 2}",
+      "it1 = iter(a)",
+      "it2 = iter(a)",
+      "it1 == it2"], "False"),
+
+    # Итерация через for
+    (["a = {1, 2, 3}",
+      "result = []",
+      "for x in a:",
+      "    result.append(x)",
+      "",
+      "result"], "[1, 2, 3]"),
 
 ])
 

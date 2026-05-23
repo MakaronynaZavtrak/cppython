@@ -6,13 +6,13 @@
 #define CPPYTHON_DICTITEMSITERATOR_H
 #include <memory>
 
-#include "DictValue.h"
-#include "StopIterationException.h"
+#include "IteratorValue.h"
 #include "TupleValue.h"
+
 class DictValue;
 class DictItemsView;
 
-class DictItemsIterator {
+class DictItemsIterator : public IteratorValue {
 public:
 
     std::shared_ptr<DictValue> dict;
@@ -21,20 +21,10 @@ public:
     explicit DictItemsIterator(std::shared_ptr<DictValue> dict)
     : dict(std::move(dict)) {}
 
-    [[nodiscard]] Value next() {
+    Value next() override;
 
-        if (index >= static_cast<size_t>(dict->getOrder().size())) {
-            throw StopIterationException();
-        }
+    [[nodiscard]] bool hasNext() const override;
 
-        const Value key = dict->getOrder()[index++];
-
-        std::vector tupleItems = {
-            Value(key),
-            dict->getElements()[key]
-        };
-
-        return Value(std::make_shared<TupleValue>(tupleItems));
-    }
+    [[nodiscard]] QString getTypeName() const override;
 };
 #endif //CPPYTHON_DICTITEMSITERATOR_H

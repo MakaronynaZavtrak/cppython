@@ -5,10 +5,13 @@
 #ifndef CPPYTHON_DICTVALUEITERATOR_H
 #define CPPYTHON_DICTVALUEITERATOR_H
 #include <memory>
+
+#include "IteratorValue.h"
+
 class DictValue;
 class DictItemsView;
 
-class DictValuesIterator {
+class DictValuesIterator : public IteratorValue {
 public:
 
     std::shared_ptr<DictValue> dict;
@@ -17,15 +20,10 @@ public:
     explicit DictValuesIterator(std::shared_ptr<DictValue> dict)
     : dict(std::move(dict)) {}
 
-    [[nodiscard]] Value next() {
+    Value next() override;
 
-        if (index >= static_cast<size_t>(dict->getOrder().size())) {
-            throw StopIterationException();
-        }
+    [[nodiscard]] bool hasNext() const override;
 
-        const Value key = dict->getOrder()[index++];
-
-        return dict->getElements()[key];
-    }
+    [[nodiscard]] QString getTypeName() const override;
 };
 #endif //CPPYTHON_DICTVALUEITERATOR_H

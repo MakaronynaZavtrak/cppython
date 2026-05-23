@@ -5,9 +5,12 @@
 #ifndef CPPYTHON_TUPLEITERATORVALUE_H
 #define CPPYTHON_TUPLEITERATORVALUE_H
 #include <memory>
+
+#include "IteratorValue.h"
+
 class TupleValue;
 
-class TupleIterator {
+class TupleIterator : public IteratorValue {
 public:
 
     std::shared_ptr<TupleValue> tuple;
@@ -15,5 +18,11 @@ public:
 
     explicit TupleIterator(std::shared_ptr<TupleValue> tuple)
     : tuple(std::move(tuple)) {}
+
+    Value next() override;
+
+    [[nodiscard]] bool hasNext() const override;
+
+    [[nodiscard]] QString getTypeName() const override;
 };
 #endif //CPPYTHON_TUPLEITERATORVALUE_H

@@ -2,15 +2,21 @@
 
 #include "BoundMethod.h"
 #include "ClassMethodValue.h"
+#include "DictItemsIterator.h"
 #include "DictItemsView.h"
+#include "DictKeysIterator.h"
 #include "DictKeysView.h"
 #include "DictValue.h"
+#include "DictValuesIterator.h"
 #include "DictValuesView.h"
 #include "FunctionValue.h"
+#include "ListIterator.h"
 #include "ListValue.h"
 #include "PropertyValue.h"
+#include "SetIterator.h"
 #include "SetValue.h"
 #include "StaticMethodValue.h"
+#include "TupleIterator.h"
 #include "TupleValue.h"
 
 /**
@@ -112,6 +118,10 @@ QString Value::toString() const {
 
     if (isSet()) {
         return std::get<SetPtr>(data)->toString();
+    }
+
+    if (std::holds_alternative<IteratorPtr>(data)) {
+        return std::get<IteratorPtr>(data)->toString();
     }
 
     if (std::holds_alternative<std::monostate>(data)) {
@@ -421,14 +431,6 @@ bool Value::isString() const {
     return std::holds_alternative<QString>(data);
 }
 
-bool Value::isListIterator() const {
-    return std::holds_alternative<ListIteratorPtr>(data);
-}
-
-bool Value::isTupleIterator() const {
-    return std::holds_alternative<TupleIteratorPtr>(data);
-}
-
 bool Value::isDictKeysView() const {
     return std::holds_alternative<DictKeysViewPtr>(data);
 }
@@ -439,18 +441,6 @@ Value::DictKeysViewPtr Value::asDictKeysView() const {
     }
 
     return std::get<DictKeysViewPtr>(data);
-}
-
-bool Value::isDictKeysIterator() const {
-    return std::holds_alternative<DictKeysIteratorPtr>(data);
-}
-
-Value::DictKeysIteratorPtr Value::asDictKeysIterator() const {
-    if (!isDictKeysIterator()) {
-        throw std::runtime_error("Value is not a dict keys iterator");
-    }
-
-    return std::get<DictKeysIteratorPtr>(data);
 }
 
 bool Value::isDictValuesView() const {
@@ -465,18 +455,6 @@ Value::DictValuesViewPtr Value::asDictValuesView() const {
     return std::get<DictValuesViewPtr>(data);
 }
 
-bool Value::isDictValuesIterator() const {
-    return std::holds_alternative<DictValuesIteratorPtr>(data);
-}
-
-Value::DictValuesIteratorPtr Value::asDictValuesIterator() const {
-    if (!isDictValuesIterator()) {
-        throw std::runtime_error("Value is not a dict values iterator");
-    }
-
-    return std::get<DictValuesIteratorPtr>(data);
-}
-
 bool Value::isDictItemsView() const {
     return std::holds_alternative<DictItemsViewPtr>(data);
 }
@@ -487,18 +465,6 @@ Value::DictItemsViewPtr Value::asDictItemsView() const {
     }
 
     return std::get<DictItemsViewPtr>(data);
-}
-
-bool Value::isDictItemsIterator() const {
-    return std::holds_alternative<DictItemsIteratorPtr>(data);
-}
-
-Value::DictItemsIteratorPtr Value::asDictItemsIterator() const {
-    if (!isDictItemsIterator()) {
-        throw std::runtime_error("Value is not a dict items iterator");
-    }
-
-    return std::get<DictItemsIteratorPtr>(data);
 }
 
 bool Value::isSet() const {
@@ -594,4 +560,59 @@ std::size_t Value::hash() const {
     }
 
     throw std::runtime_error("TypeError: unhashable type");
+}
+
+bool Value::isIterable() const {
+    return isList() ||
+           isTuple() ||
+           isString() ||
+           isSet() ||
+           isDict() ||
+           isDictKeysView() ||
+           isDictValuesView() ||
+           isDictItemsView();
+}
+
+Value::IteratorPtr Value::getIterator() const {
+
+    if (isSet()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<SetIterator>(std::get<SetPtr>(data)));
+    }
+
+    if (isList()) {
+        return std::static_pointer_cast<IteratorValue>(
+                std::make_shared<ListIterator>(std::get<ListPtr>(data)));
+    }
+
+    if (isTuple()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<TupleIterator>(std::get<TuplePtr>(data)));
+    }
+
+    if (isDictKeysView()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<DictKeysIterator>(
+                std::get<DictKeysViewPtr>(data)->getDict()
+            )
+        );
+    }
+
+    if (isDictItemsView()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<DictItemsIterator>(
+                std::get<DictItemsViewPtr>(data)->getDict()
+            )
+        );
+    }
+
+    if (isDictValuesView()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<DictValuesIterator>(
+                std::get<DictValuesViewPtr>(data)->getDict()
+            )
+        );
+    }
+
+    throw std::runtime_error("Object is not iterable");
 }

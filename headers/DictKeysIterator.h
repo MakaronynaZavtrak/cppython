@@ -6,12 +6,12 @@
 #define CPPYTHON_DICTKEYSITERATOR_H
 #include <memory>
 
-#include "DictValue.h"
-#include "StopIterationException.h"
+#include "IteratorValue.h"
+
 class DictValue;
 class DictItemsView;
 
-class DictKeysIterator {
+class DictKeysIterator : public IteratorValue {
 public:
 
     std::shared_ptr<DictValue> dict;
@@ -20,15 +20,10 @@ public:
     explicit DictKeysIterator(std::shared_ptr<DictValue> dict)
     : dict(std::move(dict)) {}
 
-    [[nodiscard]] Value next() {
+    Value next() override;
 
-        if (index >= static_cast<size_t>(dict->getOrder().size())) {
-            throw StopIterationException();
-        }
+    [[nodiscard]] bool hasNext() const override;
 
-        const Value key = dict->getOrder()[index++];
-
-        return key;
-    }
+    [[nodiscard]] QString getTypeName() const override;
 };
 #endif //CPPYTHON_DICTKEYSITERATOR_H

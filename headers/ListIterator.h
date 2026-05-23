@@ -5,9 +5,12 @@
 #ifndef CPPYTHON_LISTITERATORVALUE_H
 #define CPPYTHON_LISTITERATORVALUE_H
 #include <memory>
+
+#include "IteratorValue.h"
+
 class ListValue;
 
-class ListIterator {
+class ListIterator : public IteratorValue {
 public:
 
     std::shared_ptr<ListValue> list;
@@ -15,5 +18,11 @@ public:
 
     explicit ListIterator(std::shared_ptr<ListValue> list)
     : list(std::move(list)) {}
+
+    Value next() override;
+
+    [[nodiscard]] bool hasNext() const override;
+
+    [[nodiscard]] QString getTypeName() const override;
 };
 #endif //CPPYTHON_LISTITERATORVALUE_H
