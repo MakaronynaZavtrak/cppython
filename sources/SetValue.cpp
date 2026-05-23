@@ -216,8 +216,10 @@ void SetValue::update(const std::shared_ptr<SetValue>& other) {
 
 void SetValue::differenceUpdate(const std::shared_ptr<SetValue>& other) {
 
-    for (const auto& value : other->order) {
-        remove(value);
+    QVector<Value> snapshot = other->order;
+
+    for (const auto& value : snapshot) {
+        discard(value);
     }
 }
 

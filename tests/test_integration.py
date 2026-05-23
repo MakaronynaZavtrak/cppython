@@ -2075,7 +2075,7 @@ def test_single_line_expressions(expr, expected):
       "a.clear()",
       "a"], "{}" ),
 
-    # копирование спика
+    # copy
     (["a = {}",
       "a.copy()"], "{}"),
 
@@ -2280,6 +2280,18 @@ def test_single_line_expressions(expr, expected):
     (["a = {'x': 1, 'y': 2}",
       "a.values()"],
      "dict_values([1, 2])"),
+
+    # list(values())
+    (["d = {'x': 1, 'y': 2}",
+      "list(d.values())"], "[1, 2]"),
+
+    # list(keys())
+    (["d = {'x': 1, 'y': 2}",
+      "list(d.keys())"], "['x', 'y']"),
+
+    # list(items())
+    (["d = {'x': 1, 'y': 2}",
+      "list(d.items())"], "[('x', 1), ('y', 2)]"),
 
     # пустой dict
     (["a = {}",
@@ -2760,9 +2772,9 @@ def test_single_line_expressions(expr, expected):
       "c = a.union(b)",
       "a"], "{1, 2}"),
 
-    # # union empty (пока не поддерживается)
-    # (["a = {1, 2}",
-    #   "a.union(set())"], "{1, 2}"),
+    # union empty
+    (["a = {1, 2}",
+      "a.union(set())"], "{1, 2}"),
 
     # union с несколькими множествами
     (["a = {1, 2}",
@@ -2794,17 +2806,18 @@ def test_single_line_expressions(expr, expected):
       "b = {2, 3, 4}",
       "a.intersection(b)"], "{2, 3}"),
 
-    # # пересечение без общих элементов (пока не поддерживается)
-    # (["a = {1, 2}",
-    #   "b = {3, 4}",
-    #   "a.intersection(b)"], "set()"),
+    # пересечение без общих элементов
+    (["a = {1, 2}",
+      "b = {3, 4}",
+      "a.intersection(b)"], "set()"),
 
     # пересечение множества с самим собой
     (["a = {1, 2, 3}",
       "a.intersection(a)"], "{1, 2, 3}"),
 
-    # # пересечение с пустым множеством (пока не поддерживается)
-    # (["a = {1, 2, 3}", "a.intersection(set())"], "set()"),
+    # пересечение с пустым множеством
+    (["a = {1, 2, 3}",
+      "a.intersection(set())"], "set()"),
 
     # intersection нескольких множеств
     (["a = {1, 2, 3, 4}",
@@ -2832,17 +2845,18 @@ def test_single_line_expressions(expr, expected):
       "b = {3, 4}",
       "a.difference(b)"], "{1, 2}"),
 
-    # # разность множества с самим собой (пока не поддерживается)
-    # (["a = {1, 2, 3}", "a.difference(a)"], "set()"),
+    # разность множества с самим собой
+    (["a = {1, 2, 3}",
+      "a.difference(a)"], "set()"),
 
-    # # разность с пустым множеством (пока не поддерживается)
-    # (["a = {1, 2, 3}",
-    #   "a.difference(set())"], "{1, 2, 3}"),
+    # разность с пустым множеством
+    (["a = {1, 2, 3}",
+      "a.difference(set())"], "{1, 2, 3}"),
 
-    # # пустое множество минус непустое (пока не поддерживается)
-    # (["a = set()",
-    #   "b = {1, 2}",
-    #   "a.difference(b)"], "set()"),
+    # пустое множество минус непустое
+    (["a = set()",
+      "b = {1, 2}",
+      "a.difference(b)"], "set()"),
 
     # difference нескольких множеств
     (["a = {1, 2, 3, 4, 5}",
@@ -2865,24 +2879,24 @@ def test_single_line_expressions(expr, expected):
       "b = {3, 4}",
       "a.symmetric_difference(b)"], "{1, 2, 4}"),
 
-    # # полностью одинаковые множества (пока не поддерживается)
-    # (["a = {1, 2}",
-    #   "b = {1, 2}",
-    #   "a.symmetric_difference(b)"], "set()")
+    # полностью одинаковые множества
+    (["a = {1, 2}",
+      "b = {1, 2}",
+      "a.symmetric_difference(b)"], "set()"),
 
     # полностью разные множества
     (["a = {1, 2}",
       "b = {3, 4}",
       "a.symmetric_difference(b)"], "{1, 2, 3, 4}"),
 
-    # # симметрическая разность с пустым множеством (пока не поддерживается)
-    # (["a = {1, 2, 3}",
-    #   "a.symmetric_difference(set())"], "{1, 2, 3}"),
+    # симметрическая разность с пустым множеством
+    (["a = {1, 2, 3}",
+      "a.symmetric_difference(set())"], "{1, 2, 3}"),
 
-    # # пустое множество с непустым (пока не поддерживается)
-    # (["a = set()",
-    #   "b = {1, 2}",
-    #   "a.symmetric_difference(b)"], "{1, 2}")
+    # пустое множество с непустым
+    (["a = set()",
+      "b = {1, 2}",
+      "a.symmetric_difference(b)"], "{1, 2}"),
 
     # issubset
     (["a = {1, 2}",
@@ -2897,20 +2911,20 @@ def test_single_line_expressions(expr, expected):
     (["a = {1, 2, 3}",
       "a.issubset(a)"], "True"),
 
-    # # пустое множество — подмножество любого (пока не поддерживается)
-    # (["a = set()",
-    #   "b = {1, 2}",
-    #   "a.issubset(b)"], "True"),
+    # пустое множество — подмножество любого
+    (["a = set()",
+      "b = {1, 2}",
+      "a.issubset(b)"], "True"),
 
-    # # непустое множество не является подмножеством пустого (пока не поддерживается)
-    # (["a = {1}",
-    #   "b = set()",
-    #   "a.issubset(b)"], "False"),
+    # непустое множество не является подмножеством пустого
+    (["a = {1}",
+      "b = set()",
+      "a.issubset(b)"], "False"),
 
-    # # пустое множество — подмножество самого себя (пока не поддерживается)
-    # (["a = set()",
-    #   "b = set()",
-    #   "a.issubset(b)"], "True")
+    # пустое множество — подмножество самого себя
+    (["a = set()",
+      "b = set()",
+      "a.issubset(b)"], "True"),
 
     # базовая проверка надмножества
     (["a = {1, 2, 3}",
@@ -2925,20 +2939,20 @@ def test_single_line_expressions(expr, expected):
     (["a = {1, 2, 3}",
       "a.issuperset(a)"], "True"),
 
-    # # любое множество — надмножество пустого (пока не поддерживается)
-    # (["a = {1, 2}",
-    #   "b = set()",
-    #   "a.issuperset(b)"], "True"),
+    # любое множество — надмножество пустого
+    (["a = {1, 2}",
+      "b = set()",
+      "a.issuperset(b)"], "True"),
 
-    # # пустое множество не является надмножеством непустого (пока не поддерживается)
-    # (["a = set()",
-    #   "b = {1}",
-    #   "a.issuperset(b)"], "False"),
+    # пустое множество не является надмножеством непустого
+    (["a = set()",
+      "b = {1}",
+      "a.issuperset(b)"], "False"),
 
-    # # пустое множество — надмножество самого себя (пока не поддерживается)
-    # (["a = set()",
-    #   "b = set()",
-    #   "a.issuperset(b)"], "True")
+    # пустое множество — надмножество самого себя
+    (["a = set()",
+      "b = set()",
+      "a.issuperset(b)"], "True"),
 
     # isdisjoint
     # полностью не пересекающиеся множества
@@ -2956,15 +2970,15 @@ def test_single_line_expressions(expr, expected):
       "b = {1, 2}",
       "a.isdisjoint(b)"], "False"),
 
-    # # пустое множество и непустое (пока не поддерживается)
-    # (["a = set()",
-    #   "b = {1, 2}",
-    #   "a.isdisjoint(b)"], "True"),
+    # пустое множество и непустое
+    (["a = set()",
+      "b = {1, 2}",
+      "a.isdisjoint(b)"], "True"),
 
-    # # два пустых множества (пока не поддерживается)
-    # (["a = set()",
-    #   "b = set()",
-    #   "a.isdisjoint(b)"], "True"),
+    # два пустых множества
+    (["a = set()",
+      "b = set()",
+      "a.isdisjoint(b)"], "True"),
 
     # один общий элемент среди многих
     (["a = {1, 2, 3, 4}",
@@ -2982,20 +2996,21 @@ def test_single_line_expressions(expr, expected):
       "b.add(3)",
       "a"], "{1, 2}"),
 
-    # # копирование пустого множества (пока не поддерживается)
-    # (["a = set()", "a.copy()"], "set()"),
+    # копирование пустого множества
+    (["a = set()",
+      "a.copy()"], "set()"),
 
-    # # clear (пока не поддерживается)
-    # (["a = {1, 2, 3}",
-    #   "a.clear()", "a"], "set()"),
+    # clear
+    (["a = {1, 2, 3}",
+      "a.clear()", "a"], "set()"),
 
     # clear возвращает None
     (["a = {1}", "a.clear()"], ""),
 
-    # # clear для пустого множества (пока не поддерживается)
-    # (["a = set()",
-    #   "a.clear()",
-    #   "a"], "set()"),
+    # clear для пустого множества
+    (["a = set()",
+      "a.clear()",
+      "a"], "set()"),
 
     # clear не ломает set после повторного использования
     (["a = {1, 2}",
@@ -3012,10 +3027,10 @@ def test_single_line_expressions(expr, expected):
     (["a = {1, 2}",
       "a.pop()"], "1"),
 
-    # # pop на множестве из одного элемента (пока не поддерживается)
-    # (["a = {42}",
-    #   "a.pop()",
-    #   "a"], "set()"),
+    # pop на множестве из одного элемента
+    (["a = {42}",
+      "a.pop()",
+      "a"], "set()"),
 
     # после pop можно продолжать использовать set
     (["a = {1, 2}",
@@ -3043,7 +3058,7 @@ def test_single_line_expressions(expr, expected):
       "a.update(b, c)",
       "a"], "{1, 2, 3, 4}"),
 
-    # update пустым множеством (пока не поддерживается)
+    # update пустым множеством
     (["a = {1, 2}",
       "b = set()",
       "a.update(b)",
@@ -3084,11 +3099,11 @@ def test_single_line_expressions(expr, expected):
       "a.difference_update(b)",
       "a"], "{1, 2}"),
 
-    # # difference_update полного множества (пока не поддерживается)
-    # (["a = {1, 2}",
-    #   "b = {1, 2}",
-    #   "a.difference_update(b)",
-    #   "a"], "set()"),
+    # difference_update полного множества
+    (["a = {1, 2}",
+      "b = {1, 2}",
+      "a.difference_update(b)",
+      "a"], "set()"),
 
     # difference_update без аргументов
     (["a = {1, 2}",
@@ -3100,10 +3115,10 @@ def test_single_line_expressions(expr, expected):
       "b = {1}",
       "a.difference_update(b)"], ""),
 
-    # # difference_update самим собой (пока не поддерживается)
-    # (["a = {1, 2, 3}",
-    #   "a.difference_update(a)",
-    #   "a"], "set()"),
+    # difference_update самим собой (пока не поддерживается)
+    (["a = {1, 2, 3}",
+      "a.difference_update(a)",
+      "a"], "set()"),
 
     # intersection_update одним множеством
     (["a = {1, 2, 3}",
@@ -3118,11 +3133,11 @@ def test_single_line_expressions(expr, expected):
       "a.intersection_update(b, c)",
       "a"], "{3, 4}"),
 
-    # # intersection_update без пересечений (пока не поддерживается)
-    # (["a = {1, 2}",
-    #   "b = {3, 4}",
-    #   "a.intersection_update(b)",
-    #   "a"], "set()"),
+    # intersection_update без пересечений (пока не поддерживается)
+    (["a = {1, 2}",
+      "b = {3, 4}",
+      "a.intersection_update(b)",
+      "a"], "set()"),
 
     # intersection_update полного совпадения
     (["a = {1, 2}",
@@ -3157,11 +3172,11 @@ def test_single_line_expressions(expr, expected):
       "a.symmetric_difference_update(b)",
       "a"], "{1, 2, 3, 4}"),
 
-    # # symmetric_difference_update одинаковых множеств (пока не поддерживается)
-    # (["a = {1, 2}",
-    #   "b = {1, 2}",
-    #   "a.symmetric_difference_update(b)",
-    #   "a"], "set()"),
+    # symmetric_difference_update одинаковых множеств (пока не поддерживается)
+    (["a = {1, 2}",
+      "b = {1, 2}",
+      "a.symmetric_difference_update(b)",
+      "a"], "set()"),
 
     # symmetric_difference_update частичного пересечения
     (["a = {1, 2, 3}",
@@ -3169,27 +3184,27 @@ def test_single_line_expressions(expr, expected):
       "a.symmetric_difference_update(b)",
       "a"], "{1, 4}"),
 
-    # # symmetric_difference_update пустого множества (пока не поддерживается)
-    # (["a = {1, 2}",
-    #   "b = set()",
-    #   "a.symmetric_difference_update(b)",
-    #   "a"], "{1, 2}"),
+    # symmetric_difference_update пустого множества (пока не поддерживается)
+    (["a = {1, 2}",
+      "b = set()",
+      "a.symmetric_difference_update(b)",
+      "a"], "{1, 2}"),
 
-    # # symmetric_difference_update с пустым self (пока не поддерживается)
-    # (["a = set()",
-    #   "b = {1, 2}",
-    #   "a.symmetric_difference_update(b)",
-    #   "a"], "{1, 2}"),
+    # symmetric_difference_update с пустым self (пока не поддерживается)
+    (["a = set()",
+      "b = {1, 2}",
+      "a.symmetric_difference_update(b)",
+      "a"], "{1, 2}"),
 
     # symmetric_difference_update возвращает None
     (["a = {1}",
       "b = {2}",
       "a.symmetric_difference_update(b)"], ""),
 
-    # # symmetric_difference_update самим собой (пока не поддерживается)
-    # (["a = {1, 2, 3}",
-    #   "a.symmetric_difference_update(a)",
-    #   "a"], "set()"),
+    # symmetric_difference_update самим собой
+    (["a = {1, 2, 3}",
+      "a.symmetric_difference_update(a)",
+      "a"], "set()"),
 
     # # __iter__ возвращает самого себя (пока не поддерживается)
     # (["a = {1, 2}",
@@ -3208,17 +3223,12 @@ def test_single_line_expressions(expr, expected):
       "y = next(it)",
       "{x, y}"], "{1, 2}"),
 
-    # # Итерация по пустому set (пока не поддерживается)
-    # (["a = set()",
+    # # Итерация по set со строками (не стабильный тест)
+    # (["a = {'x', 'y'}",
     #   "it = iter(a)",
-    #   "next(it)"], "StopIteration"),
-
-    # Итерация по set со строками
-    (["a = {'x', 'y'}",
-      "it = iter(a)",
-      "v1 = next(it)",
-      "v2 = next(it)",
-      "{v1, v2}"], "{'x', 'y'}"),
+    #   "v1 = next(it)",
+    #   "v2 = next(it)",
+    #   "{v1, v2}"], "{'x', 'y'}"),
 
     # Итерация по set с tuple
     (["a = {(1, 2), (3, 4)}",
@@ -3241,6 +3251,57 @@ def test_single_line_expressions(expr, expected):
       "",
       "result"], "[1, 2, 3]"),
 
+    # пустой список
+    (["a = list()",
+      "a"], "[]"),
+
+    # из списка
+    (["a = list([1, 2, 3])",
+      "a"], "[1, 2, 3]"),
+
+    # # из строки (итерабельность) (пока не поддерживается)
+    # (["a = list('ab')",
+    #   "a"], "['a', 'b']"),
+
+    # из множества
+    (["a = list({1, 2, 2})",
+      "a"], "[1, 2]"),
+
+    # пустое множество
+    (["a = set()",
+      "a"], "set()"),
+
+    # удаление дублей
+    (["a = set([1, 2, 2, 3])",
+      "a"], "{1, 2, 3}"),
+
+    # # из строки (пока не поддерживается)
+    # (["a = set('aba')",
+    #   "a"], "{'a', 'b'}"),
+
+    # пустой dict
+    (["a = dict()",
+      "a"], "{}"),
+
+    # из пар (tuple)
+    (["a = dict([(1, 'a'), (2, 'b')])",
+      "a"], "{1: 'a', 2: 'b'}"),
+
+    # из tupl'а tuple-ов
+    (["a = dict(((1, 2), (3, 4)))",
+      "a"], "{1: 2, 3: 4}"),
+
+    # set не должен печататься как {}
+    (["a = set()",
+      "a"], "set()"),
+
+    # dict vs set конфликт на {}
+    (["a = {}",
+      "a"], "{}"),
+
+    # # list из set сохраняет уникальность (пока не поддерживается)
+    # (["a = list({3, 1, 2, 2})",
+    #   "a"], "[3, 1, 2]"),
 ])
 
 def test_multiline_expressions(commands, expected):

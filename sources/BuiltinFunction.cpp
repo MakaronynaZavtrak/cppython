@@ -2,11 +2,15 @@
 #include "CallRuntime.h"
 #include "ClassMethodValue.h"
 #include "ClassUtils.h"
+#include "DictValue.h"
 #include "Environment.h"
+#include "IteratorValue.h"
 #include "ListValue.h"
 #include "PropertyValue.h"
+#include "SetValue.h"
 #include "StaticMethodValue.h"
 #include "SuperValue.h"
+#include "TupleValue.h"
 #include "Value.h"
 //
 // Created by semyo on 04.05.2026.
@@ -311,6 +315,143 @@ Value(
                 )
             );
         }
+)));
+
+    env->set("list",
+Value(std::make_shared<BuiltinFunction>(
+    "list",
+
+    [](const std::vector<Value>& args,
+       const Kwargs&,
+       const std::shared_ptr<Environment>&)
+       -> Value {
+
+        if (args.empty()) {
+            return Value(std::make_shared<ListValue>());
+        }
+
+        if (args.size() != 1) {
+            throw std::runtime_error("list expects 0 or 1 argument");
+        }
+
+        const Value& iterable = args[0];
+
+        const auto it = iterable.getIterator();
+
+        std::vector<Value> items;
+
+        while (it->hasNext()) {
+            items.push_back(it->next());
+        }
+
+        return Value(std::make_shared<ListValue>(items));
+    }
+)));
+
+    env->set("tuple",
+Value(std::make_shared<BuiltinFunction>(
+    "tuple",
+
+    [](const std::vector<Value>& args,
+       const Kwargs&,
+       const std::shared_ptr<Environment>&)
+       -> Value {
+
+        if (args.empty()) {
+            return Value(std::make_shared<TupleValue>(std::vector<Value>{}));
+        }
+
+        if (args.size() != 1) {
+            throw std::runtime_error("tuple expects 0 or 1 argument");
+        }
+
+        const Value& iterable = args[0];
+
+        const auto it = iterable.getIterator();
+
+        std::vector<Value> items;
+
+        while (it->hasNext()) {
+            items.push_back(it->next());
+        }
+
+        return Value(std::make_shared<TupleValue>(items));
+    }
+)));
+
+    env->set("set",
+Value(std::make_shared<BuiltinFunction>(
+    "set",
+
+    [](const std::vector<Value>& args,
+       const Kwargs&,
+       const std::shared_ptr<Environment>&)
+       -> Value {
+
+        if (args.empty()) {
+            return Value(std::make_shared<SetValue>());
+        }
+
+        if (args.size() != 1) {
+            throw std::runtime_error("set expects 0 or 1 argument");
+        }
+
+        const Value& iterable = args[0];
+
+        const auto it = iterable.getIterator();
+
+        const auto set = std::make_shared<SetValue>();
+
+        while (it->hasNext()) {
+            set->add(it->next());
+        }
+
+        return Value(set);
+    }
+)));
+
+    env->set("dict",
+Value(std::make_shared<BuiltinFunction>(
+    "dict",
+
+    [](const std::vector<Value>& args,
+       const Kwargs&,
+       const std::shared_ptr<Environment>&)
+       -> Value {
+
+        if (args.empty()) {
+            return Value(std::make_shared<DictValue>());
+        }
+
+        if (args.size() != 1) {
+            throw std::runtime_error("dict expects 0 or 1 argument");
+        }
+
+        const Value& iterable = args[0];
+
+        const auto it = iterable.getIterator();
+
+        auto dict = std::make_shared<DictValue>();
+
+        while (it->hasNext()) {
+
+            Value item = it->next();
+
+            if (!item.isTuple()) {
+                throw std::runtime_error("dict() expects iterable of pairs");
+            }
+
+            const auto tup = item.asTuple();
+
+            if (tup->items.size() != 2) {
+                throw std::runtime_error("dict() expects (key, value) pairs");
+            }
+
+            dict->setItem(tup->items[0], tup->items[1]);
+        }
+
+        return Value(dict);
+    }
 )));
 
 }
