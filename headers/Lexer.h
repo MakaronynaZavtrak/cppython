@@ -105,6 +105,7 @@ struct Token {
     QString value;
     int line; //Строка, где начинается токен
     // int column; //Столбец, где начинается токен
+
     Token(const TokenType type,
         QString value,
         const int line,

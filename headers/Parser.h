@@ -15,6 +15,7 @@
 #include "FunctionValue.h"
 #include "InstanceValue.h"
 #include "Interpreter.h"
+#include "IteratorValue.h"
 #include "ListValue.h"
 #include "Param.h"
 #include "Runtime.h"
@@ -1130,6 +1131,22 @@ public:
     [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
+class StarredNode : public ASTNode {
+public:
+    std::shared_ptr<ASTNode> value;
+
+    explicit StarredNode(std::shared_ptr<ASTNode> value)
+        : value(std::move(value)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+        return value->eval(env);
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return "*" + value->toString();
+    }
+};
+
 class ListNode : public ASTNode {
 public:
     std::vector<std::shared_ptr<ASTNode>> elements;
@@ -1141,8 +1158,21 @@ public:
 
         std::vector<Value> values;
 
-        for (const auto& el : elements) {
-            values.push_back(el->eval(env));
+        for (const auto &el: elements) {
+
+            if (const auto starred = dynamic_cast<StarredNode *>(el.get())) {
+
+                Value iterable = starred->value->eval(env);
+
+                const auto iter = iterable.getIterator();
+
+                while (iter->hasNext()) {
+                    values.push_back(iter->next());
+                }
+            }
+            else {
+                values.push_back(el->eval(env));
+            }
         }
 
         return Value(std::make_shared<ListValue>(std::move(values)));
@@ -1248,39 +1278,92 @@ public:
 
 };
 
-class DictNode final : public ASTNode {
-    std::vector<
-        std::pair<
-            std::shared_ptr<ASTNode>,
-            std::shared_ptr<ASTNode>
-        >
-    > items;
-
+class DictElementNode : public ASTNode {
 public:
-    explicit DictNode(std::vector<std::pair<
-                std::shared_ptr<ASTNode>,
-                std::shared_ptr<ASTNode>>> elems) : items(std::move(elems)) {}
+
+    virtual void apply(
+        const std::shared_ptr<DictValue>& dict,
+        std::shared_ptr<Environment> env) const = 0;
+};
+
+class DictPairNode : public DictElementNode {
+public:
+
+    std::shared_ptr<ASTNode> key;
+    std::shared_ptr<ASTNode> value;
+
+    DictPairNode(std::shared_ptr<ASTNode> key,
+                std::shared_ptr<ASTNode> value)
+        : key(std::move(key)),
+          value(std::move(value)) {}
+
+    void apply(const std::shared_ptr<DictValue>& dict, std::shared_ptr<Environment> env) const override {
+        dict->setItem(key->eval(env), value->eval(env));
+    }
+
+    [[nodiscard]] Value eval(EnvPtr) const override {
+        throw std::runtime_error("DictKeyValueNode cannot be evaluated directly");
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return key->toString() + ": " + value->toString();
+    }
+};
+
+class DictUnpackNode : public DictElementNode {
+public:
+    std::shared_ptr<ASTNode> value;
+
+    explicit DictUnpackNode(std::shared_ptr<ASTNode> value)
+        : value(std::move(value)) {}
+
+    void apply(const std::shared_ptr<DictValue>& dict, std::shared_ptr<Environment> env) const override {
+
+        const auto other = value->eval(env).asDict();
+
+        for (const auto& key : other->getOrder()) {
+
+            dict->setItem(key, other->getElements()[key]);
+        }
+    }
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
-        auto dict = std::make_shared<DictValue>();
+        throw std::runtime_error("DictUnpackNode cannot be evaluated directly");
+    }
 
-        for (const auto& [kExpr, vExpr] : items) {
+    [[nodiscard]] QString toString() const override {
+        return "**" + value->toString();
+    }
+};
 
-            Value k = kExpr->eval(env);
-            Value v = vExpr->eval(env);
+class DictNode final : public ASTNode {
 
-            dict->setItem(k, v);
+    std::vector<std::shared_ptr<DictElementNode>> items;
+
+public:
+
+    explicit DictNode(std::vector<std::shared_ptr<DictElementNode>> items)
+        : items(std::move(items)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+
+        const auto dict = std::make_shared<DictValue>();
+
+        for (const auto& item : items) {
+            item->apply(dict, env);
         }
 
         return Value(dict);
     }
 
     [[nodiscard]] QString toString() const override {
+
         QStringList parts;
 
-        for (const auto& [kExpr, vExpr] : items) {
-            parts << kExpr->toString() + ": " + vExpr->toString();
+        for (const auto& item : items) {
+            parts << item->toString();
         }
+
         return "{" + parts.join(", ") + "}";
     }
 };
@@ -1297,10 +1380,23 @@ public:
         std::vector<Value> values;
 
         for (const auto& element : elements) {
-            values.push_back(element->eval(env));
+
+            if (const auto starred = dynamic_cast<StarredNode *>(element.get())) {
+
+                Value iterable = starred->value->eval(env);
+
+                const auto iter = iterable.getIterator();
+
+                while (iter->hasNext()) {
+                    values.push_back(iter->next());
+                }
+            }
+            else {
+                values.push_back(element->eval(env));
+            }
         }
 
-        return Value(std::make_shared<TupleValue>(values));
+        return Value(std::make_shared<TupleValue>(std::move(values)));
     }
 
     [[nodiscard]] QString toString() const override {
@@ -1391,11 +1487,32 @@ public:
 
         for (const auto& element : elements) {
 
-            Value value = element->eval(env);
+            if (const auto starred = dynamic_cast<StarredNode *>(element.get())) {
 
-            if (!set->elements.contains(value)) {
-                set->elements[value] = true;
-                set->order.push_back(value);
+                Value iterable = starred->value->eval(env);
+
+                const auto iter = iterable.getIterator();
+
+                while (iter->hasNext()) {
+
+                    Value next = iter->next();
+
+                    if (!set->elements.contains(next)) {
+
+                        set->elements[next] = true;
+                        set->order.push_back(next);
+                    }
+                }
+            }
+            else {
+
+                Value value = element->eval(env);
+
+                if (!set->elements.contains(value)) {
+
+                    set->elements[value] = true;
+                    set->order.push_back(value);
+                }
             }
         }
 
@@ -1439,7 +1556,11 @@ private:
      * @brief Разбирает операции присваивания (=)
      * @return Узел присваивания или выражение более высокого приоритета
      */
-    std::shared_ptr<ASTNode> parseAssignment();
+    std::shared_ptr<ASTNode> parseExpression();
+
+    std::shared_ptr<ASTNode> parseStarredExpression();
+
+    std::shared_ptr<ASTNode> parseDoubleStarredExpression();
 
     /**
      * @brief Разбирает операции сравнения (==, !=, <, <=, >, >=)
@@ -1581,11 +1702,23 @@ private:
 
     std::shared_ptr<ASTNode> parseDict();
 
+    std::shared_ptr<ASTNode> parseSet();
+
+    bool isDictLiteral();
+
     std::shared_ptr<ASTNode> parseForStatement();
 
     std::shared_ptr<ASTNode> parseDictOrSet();
 
-    void consume(TokenType type, const QString &value);
+    QString consume(TokenType type, const QString &value);
+
+    [[nodiscard]] bool match(TokenType type, const QString& value) const;
+
+    bool matchAndAdvance(TokenType type, const QString& value);
+
+    [[nodiscard]] bool matchAny(TokenType type, const std::vector<QString>& values) const;
+
+    bool matchAnyAndAdvance(TokenType type, const std::vector<QString>& values);
 
     QVector<Token> tokens;
     int current = 0;
