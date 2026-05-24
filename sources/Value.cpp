@@ -16,6 +16,7 @@
 #include "SetIterator.h"
 #include "SetValue.h"
 #include "StaticMethodValue.h"
+#include "StringIterator.h"
 #include "TupleIterator.h"
 #include "TupleValue.h"
 
@@ -610,6 +611,22 @@ Value::IteratorPtr Value::getIterator() const {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<DictValuesIterator>(
                 std::get<DictValuesViewPtr>(data)->getDict()
+            )
+        );
+    }
+
+    if (isString()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<StringIterator>(
+                std::get<QString>(data)
+            )
+        );
+    }
+
+    if (isDict()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<DictKeysIterator>(
+                std::get<DictPtr>(data)
             )
         );
     }

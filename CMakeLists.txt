@@ -80,7 +80,9 @@ add_executable(cppython main.cpp
         sources/TupleIterator.cpp
         sources/DictKeysIterator.cpp
         sources/DictValuesIterator.cpp
-        sources/DictItemsIterator.cpp)
+        sources/DictItemsIterator.cpp
+        headers/StringIterator.h
+        sources/StringIterator.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 
