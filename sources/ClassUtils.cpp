@@ -6,20 +6,12 @@
 #include "CallRuntime.h"
 #include "ClassValue.h"
 #include "DescriptorUtils.h"
-#include "DictItemsIterator.h"
-#include "DictItemsView.h"
 #include "DictKeysIterator.h"
-#include "DictKeysView.h"
 #include "DictValue.h"
-#include "DictValuesIterator.h"
-#include "DictValuesView.h"
 #include "InstanceValue.h"
-#include "ListIterator.h"
 #include "ListValue.h"
-#include "SetIterator.h"
 #include "SetValue.h"
 #include "SuperValue.h"
-#include "TupleIterator.h"
 #include "TupleValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
@@ -150,24 +142,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
         if (attr == "__iter__") {
-
-            return Value(
-                std::make_shared<BuiltinFunction>(
-                    "__iter__",
-
-                    [list](const std::vector<Value>& args,
-                           const Kwargs&,
-                           const std::shared_ptr<Environment>&)
-                           -> Value {
-
-                        if (!args.empty()) {
-                            throw std::runtime_error("__iter__ expects 0 args");
-                        }
-
-                        return Value(std::make_shared<ListIterator>(list));
-                    }
-                )
-            );
+            return makeIterMethod(obj);
         }
 
         if (attr == "append") {
@@ -539,6 +514,10 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             );
         }
 
+        if (attr == "__iter__") {
+            return makeIterMethod(obj);
+        }
+
         if (attr == "__len__") {
 
             return Value(
@@ -829,24 +808,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         auto keysView = std::get<Value::DictKeysViewPtr>(obj.data);
 
         if (attr == "__iter__") {
-
-            return Value(
-                std::make_shared<BuiltinFunction>(
-                    "__iter__",
-
-                    [keysView](const std::vector<Value>& args,
-                           const Kwargs&,
-                           const std::shared_ptr<Environment>&)
-                           -> Value {
-
-                        if (!args.empty()) {
-                            throw std::runtime_error("__iter__ expects 0 args");
-                        }
-
-                        return Value(std::make_shared<DictKeysIterator>(keysView->getDict()));
-                    }
-                )
-            );
+            return makeIterMethod(obj);
         }
 
     }
@@ -856,53 +818,16 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         auto valuesView = std::get<Value::DictValuesViewPtr>(obj.data);
 
         if (attr == "__iter__") {
-
-            return Value(
-                std::make_shared<BuiltinFunction>(
-                    "__iter__",
-
-                    [valuesView](const std::vector<Value>& args,
-                           const Kwargs&,
-                           const std::shared_ptr<Environment>&)
-                           -> Value {
-
-                        if (!args.empty()) {
-                            throw std::runtime_error("__iter__ expects 0 args");
-                        }
-
-                        return Value(std::make_shared<DictValuesIterator>(valuesView->getDict()));
-                    }
-                )
-            );
+            return makeIterMethod(obj);
         }
 
     }
 
     if (obj.isDictItemsView()) {
 
-        auto itemsView = std::get<Value::DictItemsViewPtr>(obj.data);
-
         if (attr == "__iter__") {
-
-            return Value(
-                std::make_shared<BuiltinFunction>(
-                    "__iter__",
-
-                    [itemsView](const std::vector<Value>& args,
-                           const Kwargs&,
-                           const std::shared_ptr<Environment>&)
-                           -> Value {
-
-                        if (!args.empty()) {
-                            throw std::runtime_error("__iter__ expects 0 args");
-                        }
-
-                        return Value(std::make_shared<DictItemsIterator>(itemsView->getDict()));
-                    }
-                )
-            );
+            return makeIterMethod(obj);
         }
-
     }
 
     if (obj.isTuple()) {
@@ -935,24 +860,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
         if (attr == "__iter__") {
-
-            return Value(
-                std::make_shared<BuiltinFunction>(
-                    "__iter__",
-
-                    [tuple](const std::vector<Value>& args,
-                           const Kwargs&,
-                           const std::shared_ptr<Environment>&)
-                           -> Value {
-
-                        if (!args.empty()) {
-                            throw std::runtime_error("__iter__ expects 0 args");
-                        }
-
-                        return Value(std::make_shared<TupleIterator>(tuple));
-                    }
-                )
-            );
+            return makeIterMethod(obj);
         }
 
         if (attr == "count") {
@@ -1042,28 +950,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         auto set = std::get<Value::SetPtr>(obj.data);
 
         if (attr == "__iter__") {
-
-            return Value(
-                std::make_shared<BuiltinFunction>(
-                    "__iter__",
-
-                    [set](const std::vector<Value>& args,
-                          const Kwargs&,
-                          const std::shared_ptr<Environment>&)
-                          -> Value {
-
-                        if (!args.empty()) {
-                            throw std::runtime_error("__iter__ expects 0 args");
-                        }
-
-                        return Value(
-                            std::static_pointer_cast<IteratorValue>(
-                                std::make_shared<SetIterator>(set)
-                            )
-                        );
-                    }
-                )
-            );
+            return makeIterMethod(obj);
         }
 
         if (attr == "add") {
@@ -1448,25 +1335,23 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
 
     if (std::holds_alternative<Value::IteratorPtr>(obj.data)) {
-
         auto iter = std::get<Value::IteratorPtr>(obj.data);
 
         if (attr == "__iter__") {
 
             return Value(
                 std::make_shared<BuiltinFunction>(
-                    "__iter__",
+                "__iter__",
 
-                    [iter](const std::vector<Value>& args,
-                           const Kwargs&,
-                           const std::shared_ptr<Environment>&)
-                           -> Value {
+                [obj](const std::vector<Value> &args,
+                      const Kwargs &,
+                      const std::shared_ptr<Environment> &) -> Value {
 
                         if (!args.empty()) {
                             throw std::runtime_error("__iter__ expects 0 args");
                         }
 
-                        return Value(std::static_pointer_cast<IteratorValue>(iter));
+                        return obj;
                     }
                 )
             );
@@ -1494,8 +1379,36 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
     }
 
+    if (obj.isString()) {
+
+        if (attr == "__iter__") {
+            return makeIterMethod(obj);
+        }
+    }
+
     throw std::runtime_error("AttributeError: object has no attribute '" +
                             attr.toStdString() + "'");
+}
+
+Value makeIterMethod(const Value& obj) {
+
+    return Value(
+        std::make_shared<BuiltinFunction>(
+            "__iter__",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+                  -> Value {
+
+                if (!args.empty()) {
+                    throw std::runtime_error("__iter__ expects 0 args");
+                }
+
+                return Value(obj.getIterator());
+            }
+        )
+    );
 }
 
 Value getAttrValue(const Value& obj, const QString& attr) {

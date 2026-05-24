@@ -10,6 +10,8 @@ bool hasAttr(const Value::ClassPtr&, const QString&);
 
 Value genericGetAttr(const Value&, const QString&);
 
+Value makeIterMethod(const Value&);
+
 Value getAttrValue(const Value&, const QString&);
 
 void genericSetAttr(const Value&, const QString&, const Value&);
