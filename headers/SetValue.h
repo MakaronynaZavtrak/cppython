@@ -7,6 +7,7 @@
 #include <QHash>
 #include <QString>
 #include <QVector>
+#include <boost/multiprecision/detail/number_base.hpp>
 
 #include "ReprMixin.h"
 
@@ -57,5 +58,6 @@ public:
 
     void symmetricDifferenceUpdate(const std::shared_ptr<SetValue>& other);
 
+    std::size_t len() const;
 };
 #endif //CPPYTHON_SETVALUE_H

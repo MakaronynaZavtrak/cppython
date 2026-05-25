@@ -269,3 +269,7 @@ void SetValue::symmetricDifferenceUpdate(const std::shared_ptr<SetValue>& other)
     order = std::move(newOrder);
     elements = std::move(newElements);
 }
+
+std::size_t SetValue::len() const {
+    return order.size();
+}

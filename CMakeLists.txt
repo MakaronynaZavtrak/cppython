@@ -82,7 +82,26 @@ add_executable(cppython main.cpp
         sources/DictValuesIterator.cpp
         sources/DictItemsIterator.cpp
         headers/StringIterator.h
-        sources/StringIterator.cpp)
+        sources/StringIterator.cpp
+        runtime/builtins/list/ListMethods.h
+        runtime/builtins/list/ListMethods.cpp
+        runtime/builtins/dict/DictMethods.h
+        runtime/builtins/dict/DictMethods.cpp
+        runtime/builtins/tuple/TupleMethods.h
+        runtime/builtins/tuple/TupleMethods.cpp
+        runtime/builtins/set/SetMethods.h
+        runtime/builtins/set/SetMethods.cpp
+        runtime/builtins/iterator/IteratorMethods.h
+        runtime/builtins/iterator/IteratorMethods.cpp
+        runtime/builtins/str/StrMethods.h
+        runtime/builtins/str/StrMethods.cpp
+        runtime/builtins/BuiltinMethodFactory.h
+        runtime/RuntimeUtils.h
+        runtime/builtins/BuiltinMethodRegistry.h
+        runtime/builtins/BuiltinAttrLookup.h
+        runtime/ProtocolHelpers.h
+        runtime/ArgValidation.h
+        runtime/TypeChecks.h)
 
 target_include_directories(cppython PRIVATE headers)
 

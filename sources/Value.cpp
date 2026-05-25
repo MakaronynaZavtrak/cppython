@@ -132,9 +132,14 @@ QString Value::toString() const {
     return "Unknown unsupported type";
 }
 
-QString Value::asString() const {
-    if (!std::holds_alternative<QString>(data))
-        throw std::runtime_error("Not a string");
+QString Value::asString(const QString& where) const {
+
+    if (!std::holds_alternative<QString>(data)) {
+        throw std::runtime_error(
+        (where + " argument must be str")
+           .toStdString()
+       );
+    }
 
     return std::get<QString>(data);
 }
@@ -395,9 +400,12 @@ bool Value::isList() const {
     return std::holds_alternative<ListPtr>(data);
 }
 
-Value::ListPtr Value::asList() const {
+Value::ListPtr Value::asList(const QString& where) const {
     if (!isList()) {
-        throw std::runtime_error("Value is not a list");
+        throw std::runtime_error(
+        (where + " argument must be list")
+           .toStdString()
+       );
     }
 
     return std::get<ListPtr>(data);
@@ -407,10 +415,13 @@ bool Value::isDict() const {
     return std::holds_alternative<DictPtr>(data);
 }
 
-Value::DictPtr Value::asDict() const {
+Value::DictPtr Value::asDict(const QString& where) const {
 
     if (!isDict()) {
-        throw std::runtime_error("Value is not a dict");
+        throw std::runtime_error(
+        (where + " argument must be dict")
+           .toStdString()
+       );
     }
 
     return std::get<DictPtr>(data);
@@ -420,9 +431,13 @@ bool Value::isTuple() const {
     return std::holds_alternative<TuplePtr>(data);
 }
 
-Value::TuplePtr Value::asTuple() const {
+Value::TuplePtr Value::asTuple(const QString& where) const {
+
     if (!isTuple()) {
-        throw std::runtime_error("Value is not a tuple");
+        throw std::runtime_error(
+        (where + " argument must be tuple")
+           .toStdString()
+       );
     }
 
     return std::get<TuplePtr>(data);
@@ -472,9 +487,13 @@ bool Value::isSet() const {
     return std::holds_alternative<SetPtr>(data);
 }
 
-Value::SetPtr Value::asSet() const {
+Value::SetPtr Value::asSet(const QString& where) const {
+
     if (!isSet()) {
-        throw std::runtime_error("Value is not a set");
+        throw std::runtime_error(
+        (where + " argument must be set")
+           .toStdString()
+       );
     }
 
     return std::get<SetPtr>(data);

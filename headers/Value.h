@@ -148,7 +148,8 @@ public:
     explicit Value(const IteratorPtr & iter) : data(iter) {}
 
     [[nodiscard]] QString toString() const override;
-    [[nodiscard]] QString asString() const;
+    [[nodiscard]] QString asString(const QString& = "") const;
+
     [[nodiscard]] bool toBool() const;
     [[nodiscard]] bool isNone() const;
     [[nodiscard]] BigFloat toBigFloat() const;
@@ -157,13 +158,13 @@ public:
     [[nodiscard]] bool isCallable() const;
 
     [[nodiscard]] bool isList() const;
-    [[nodiscard]] ListPtr asList() const;
+    [[nodiscard]] ListPtr asList(const QString& = "") const;
 
     [[nodiscard]] bool isDict() const;
-    [[nodiscard]] DictPtr asDict() const;
+    [[nodiscard]] DictPtr asDict(const QString& = "") const;
 
     [[nodiscard]] bool isTuple() const;
-    [[nodiscard]] TuplePtr asTuple() const;
+    [[nodiscard]] TuplePtr asTuple(const QString& = "") const;
 
     [[nodiscard]] bool isString() const;
 
@@ -177,7 +178,7 @@ public:
     [[nodiscard]] DictItemsViewPtr asDictItemsView() const;
 
     [[nodiscard]] bool isSet() const;
-    [[nodiscard]] SetPtr asSet() const;
+    [[nodiscard]] SetPtr asSet(const QString& = "") const;
 
     [[nodiscard]] bool isHashable() const;
     [[nodiscard]] std::size_t hash() const;
