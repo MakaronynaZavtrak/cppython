@@ -24,5 +24,7 @@ public:
     [[nodiscard]] std::size_t len() const;
 
     [[nodiscard]] Value getItem(const Value&) const;
+
+    [[nodiscard]] Value upper() const;
 };
 #endif //CPPYTHON_STRVALUE_H

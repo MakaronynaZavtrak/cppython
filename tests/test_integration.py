@@ -360,6 +360,12 @@ if _result is not None:
 
     ("hash((1, True)) == hash((1.0, 1))", "True"),
 
+    # str upper
+    ("'hello'.upper()", "'HELLO'"),
+    ("'HeLLo'.upper()", "'HELLO'"),
+    ("''.upper()", "''"),
+    ("'123abc'.upper()", "'123ABC'")
+
 ])
 
 def test_single_line_expressions(expr, expected):
