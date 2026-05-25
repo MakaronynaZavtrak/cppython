@@ -34,6 +34,11 @@ inline Value::IteratorPtr extract<Value::IteratorPtr>(const Value& obj) {
     return std::get<Value::IteratorPtr>(obj.data);
 }
 
+template<>
+inline Value::StrPtr extract<Value::StrPtr>(const Value& obj) {
+    return std::get<Value::StrPtr>(obj.data);
+}
+
 template<typename Fn>
 Value makeBuiltin(const QString& name, Fn&& fn) {
     return Value(

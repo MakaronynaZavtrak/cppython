@@ -3403,6 +3403,40 @@ def test_single_line_expressions(expr, expected):
     # Распаковка generator-like iteration через tuple
     (["a = [1, 2, 3]",
       "(*a,)"], "(1, 2, 3)"),
+
+    # str __getitem__
+    (["s = 'hello'",
+      "s[0]"], "'h'"),
+
+    (["s = 'hello'",
+      "s[1]"], "'e'"),
+
+    (["s = 'hello'",
+      "s[4]"], "'o'"),
+
+    # отрицательная индексация
+    (["s = 'hello'",
+      "s[-1]"], "'o'"),
+
+    (["s = 'hello'",
+      "s[-2]"], "'l'"),
+
+    # nested indexing
+    (["s = 'abc'",
+      "s[0][0]"], "'a'"),
+
+    # # tuple unpacking от итератора (пока не поддерживается)
+    # (["s = 'abc'",
+    #   "(*s,)"], "('a', 'b', 'c')"),
+
+    # len
+    (["s = 'hello'",
+      "len(s)"], "5"),
+
+    # конкатенация
+    (["s = 'abc'",
+      "s[0] + s[1] + s[2]"], "'abc'")
+
 ])
 
 def test_multiline_expressions(commands, expected):

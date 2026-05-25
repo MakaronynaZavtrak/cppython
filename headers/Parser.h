@@ -22,6 +22,7 @@
 #include "SetValue.h"
 #include "StaticMethodValue.h"
 #include "StopIterationException.h"
+#include "StrValue.h"
 #include "TupleValue.h"
 
 /**
@@ -89,8 +90,8 @@ public:
                 );
         }
 
-        if (std::holds_alternative<QString>(data)) {
-            return "\'" + std::get<QString>(data) + "\'";
+        if (std::holds_alternative<Value::StrPtr>(data)) {
+            return "\'" + std::get<Value::StrPtr>(data)->toString() + "\'";
         }
 
         if (std::holds_alternative<bool>(data)) {
@@ -156,13 +157,13 @@ public:
             (std::holds_alternative<Value::BigFloat>(r.data) || std::holds_alternative<Value::BigInt>(r.data))
         ) { return evalTwoNumbers(l, r); }
 
-        if (std::holds_alternative<QString>(l.data) && std::holds_alternative<QString>(r.data))
+        if (std::holds_alternative<Value::StrPtr>(l.data) && std::holds_alternative<Value::StrPtr>(r.data))
             { return evalTwoStrings(l, r); }
 
         if (
-            (std::holds_alternative<QString>(l.data) && std::holds_alternative<Value::BigInt>(r.data))
+            (std::holds_alternative<Value::StrPtr>(l.data) && std::holds_alternative<Value::BigInt>(r.data))
             ||
-            (std::holds_alternative<QString>(r.data) && std::holds_alternative<Value::BigInt>(l.data))
+            (std::holds_alternative<Value::StrPtr>(r.data) && std::holds_alternative<Value::BigInt>(l.data))
         ) { return evalNumAndString(l, r); }
 
         if (
@@ -369,8 +370,8 @@ public:
      * @throws std::runtime_error Если встречается неподдерживаемая операция.
      */
     [[nodiscard]] Value evalTwoStrings(const Value &l, const Value &r) const {
-        const QString lv = std::get<QString>(l.data);
-        const QString rv = std::get<QString>(r.data);
+        const QString lv = std::get<Value::StrPtr>(l.data)->toString();
+        const QString rv = std::get<Value::StrPtr>(r.data)->toString();
 
         switch (parseOperation(op)) {
             case Operation::Add:          return Value(lv + rv);
@@ -399,10 +400,11 @@ public:
      * @throw std::runtime_error Если тип операции (`op`) не поддерживается.
      */
     [[nodiscard]] Value evalNumAndString(const Value &l, const Value &r) const {
-        const bool swap = std::holds_alternative<Value::BigInt>(l.data) && std::holds_alternative<QString>(r.data);
+        const bool swap = std::holds_alternative<Value::BigInt>(l.data)
+        && std::holds_alternative<Value::StrPtr>(r.data);
         auto [numVal, strVal] = swap
-        ? std::pair{ std::get<Value::BigInt>(l.data), std::get<QString>(r.data) }
-        : std::pair{ std::get<Value::BigInt>(r.data), std::get<QString>(l.data) };
+        ? std::pair{ std::get<Value::BigInt>(l.data), std::get<Value::StrPtr>(r.data) }
+        : std::pair{ std::get<Value::BigInt>(r.data), std::get<Value::StrPtr>(l.data) };
 
         switch (parseOperation(op)) {
             case Operation::Multiply: {
@@ -413,7 +415,7 @@ public:
                     throw std::runtime_error("String repetition too large");
                 }
 
-                return Value(strVal.repeated(static_cast<qsizetype>(numVal)));
+                return Value(strVal->toString().repeated(static_cast<qsizetype>(numVal)));
             }
             default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
         }

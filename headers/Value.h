@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class StrValue;
 class IteratorValue;
 class SetValue;
 class DictItemsIterator;
@@ -82,11 +83,13 @@ public:
     using SetPtr = std::shared_ptr<SetValue>;
     using IteratorPtr = std::shared_ptr<IteratorValue>;
 
+    using StrPtr = std::shared_ptr<StrValue>;
+
     std::variant<
         BigInt,
         BigFloat,
         bool,
-        QString,
+        StrPtr,
         ListPtr,
         DictPtr,
         TuplePtr,
@@ -113,8 +116,10 @@ public:
     explicit Value(BigInt integer) : data(integer) {}
     explicit Value(BigFloat number) : data(number) {}
     explicit Value(bool boolean) : data(boolean) {}
-    explicit Value(const QString& str) : data(str) {}
-    explicit Value(const char* str) : data(QString(str)) {}
+
+    explicit Value(const StrPtr& str) : data(str) {}
+    explicit Value(const QString& str);
+    explicit Value(const char* str);
 
     explicit Value(const ListPtr& list) : data(list) {}
     explicit Value(const DictPtr& dict) : data(dict) {}
@@ -148,7 +153,6 @@ public:
     explicit Value(const IteratorPtr & iter) : data(iter) {}
 
     [[nodiscard]] QString toString() const override;
-    [[nodiscard]] QString asString(const QString& = "") const;
 
     [[nodiscard]] bool toBool() const;
     [[nodiscard]] bool isNone() const;
@@ -156,6 +160,8 @@ public:
     [[nodiscard]] BigInt toBigInt() const;
     [[nodiscard]] bool isNumeric() const;
     [[nodiscard]] bool isCallable() const;
+
+    [[nodiscard]] bool isBigInt() const;
 
     [[nodiscard]] bool isList() const;
     [[nodiscard]] ListPtr asList(const QString& = "") const;
@@ -167,6 +173,7 @@ public:
     [[nodiscard]] TuplePtr asTuple(const QString& = "") const;
 
     [[nodiscard]] bool isString() const;
+    [[nodiscard]] StrPtr asString(const QString& = "") const;
 
     [[nodiscard]] bool isDictKeysView() const;
     [[nodiscard]] DictKeysViewPtr asDictKeysView() const;

@@ -101,7 +101,8 @@ add_executable(cppython main.cpp
         runtime/builtins/BuiltinAttrLookup.h
         runtime/ProtocolHelpers.h
         runtime/ArgValidation.h
-        runtime/TypeChecks.h)
+        headers/StrValue.h
+        sources/StrValue.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

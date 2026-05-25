@@ -17,8 +17,13 @@
 #include "SetValue.h"
 #include "StaticMethodValue.h"
 #include "StringIterator.h"
+#include "StrValue.h"
 #include "TupleIterator.h"
 #include "TupleValue.h"
+
+Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
+
+Value::Value(const char *str) : data(std::make_shared<StrValue>(str)) {}
 
 /**
  * Преобразует экземпляр `Value` в его строковое представление в зависимости от его типа.
@@ -63,7 +68,7 @@ QString Value::toString() const {
     }
 
     if (isString()) {
-        return QString("\'" + std::get<QString>(data) + "\'");
+        return QString("\'" + std::get<StrPtr>(data)->toString() + "\'");
     }
 
     if (isList()) {
@@ -132,17 +137,6 @@ QString Value::toString() const {
     return "Unknown unsupported type";
 }
 
-QString Value::asString(const QString& where) const {
-
-    if (!std::holds_alternative<QString>(data)) {
-        throw std::runtime_error(
-        (where + " argument must be str")
-           .toStdString()
-       );
-    }
-
-    return std::get<QString>(data);
-}
 /**
  * Преобразует экземпляр `Value` в булево значение в зависимости от его типа.
  *
@@ -173,8 +167,8 @@ bool Value::toBool() const {
         return std::get<bool>(data);
     }
 
-    if (std::holds_alternative<QString>(data)) {
-        return !std::get<QString>(data).isEmpty();
+    if (std::holds_alternative<StrPtr>(data)) {
+        return std::get<StrPtr>(data)->len() == 0;
     }
 
     if (std::holds_alternative<ListPtr>(data)) {
@@ -277,7 +271,8 @@ bool Value::operator==(const Value& other) const {
 
     // string
     if (isString() && other.isString()) {
-        return std::get<QString>(data) == std::get<QString>(other.data);
+        return std::get<StrPtr>(data)->toString() ==
+            std::get<StrPtr>(other.data)->toString();
     }
 
     // list
@@ -329,7 +324,8 @@ bool Value::operator<(const Value& other) const {
 
     // string
     if (isString() && other.isString()) {
-        return std::get<QString>(data) < std::get<QString>(other.data);
+        return std::get<StrPtr>(data)->toString()
+        < std::get<StrPtr>(other.data)->toString();
     }
 
     // list
@@ -396,6 +392,10 @@ bool Value::isCallable() const {
         std::holds_alternative<ClassMethodPtr>(data);
 }
 
+bool Value::isBigInt() const {
+    return std::holds_alternative<BigInt>(data);
+}
+
 bool Value::isList() const {
     return std::holds_alternative<ListPtr>(data);
 }
@@ -444,7 +444,19 @@ Value::TuplePtr Value::asTuple(const QString& where) const {
 }
 
 bool Value::isString() const {
-    return std::holds_alternative<QString>(data);
+    return std::holds_alternative<StrPtr>(data);
+}
+
+Value::StrPtr Value::asString(const QString& where) const {
+
+    if (!isString()) {
+        throw std::runtime_error(
+        (where + " argument must be str")
+           .toStdString()
+       );
+    }
+
+    return std::get<StrPtr>(data);
 }
 
 bool Value::isDictKeysView() const {
@@ -505,7 +517,7 @@ bool Value::isHashable() const {
         return true;
 
     // str
-    if (std::holds_alternative<QString>(data)) {
+    if (std::holds_alternative<StrPtr>(data)) {
         return true;
     }
 
@@ -553,18 +565,17 @@ std::size_t Value::hash() const {
     }
 
     // str
-    if (std::holds_alternative<QString>(data)) {
+    if (isString()) {
 
         return qHash(
-            std::get<QString>(data)
+            std::get<StrPtr>(data)->toString()
         );
     }
 
     // tuple
-    if (std::holds_alternative<TuplePtr>(data)) {
+    if (isTuple()) {
 
-        const auto& items =
-            std::get<TuplePtr>(data)->items;
+        const auto& items = std::get<TuplePtr>(data)->items;
 
         std::size_t seed = 0;
 
@@ -637,7 +648,7 @@ Value::IteratorPtr Value::getIterator() const {
     if (isString()) {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<StringIterator>(
-                std::get<QString>(data)
+                std::get<StrPtr>(data)->toString()
             )
         );
     }

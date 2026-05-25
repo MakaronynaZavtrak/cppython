@@ -9,451 +9,422 @@
 #include "PropertyValue.h"
 #include "SetValue.h"
 #include "StaticMethodValue.h"
+#include "StrValue.h"
 #include "SuperValue.h"
 #include "TupleValue.h"
 #include "Value.h"
+#include "../runtime/ArgValidation.h"
+#include "../runtime/RuntimeUtils.h"
 //
 // Created by semyo on 04.05.2026.
 //
-void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment>& env) {
-    env->set("super", Value(std::make_shared<BuiltinFunction>(
-    "super",
-    [](const std::vector<Value>&, const Kwargs&, const std::shared_ptr<Environment>& local_env) -> Value {
+void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) {
 
-        Value receiver;
+    env->set("super",
+             makeBuiltin(
+                 "super",
 
-        // instance method
-       try {
-           receiver = local_env->get("self");
-       }
-       catch (...) {
-           // classmethod
-           receiver = local_env->get("cls");
-       }
+                 [](const std::vector<Value> &,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &local_env) -> Value {
 
-        auto clsVal  = local_env->get("__class__");
-        auto origin   = std::get<Value::ClassPtr>(clsVal.data);
+                     Value receiver;
 
-        return Value(std::make_shared<SuperValue>(
-            origin,    // currentClass
-            receiver,
-            origin     // originClass
-        ));
-    }
-)));
+                     // instance method
+                     try {
+                         receiver = local_env->get("self");
+                     } catch (...) {
+                         // classmethod
+                         receiver = local_env->get("cls");
+                     }
 
-    env->set("hasattr", Value(std::make_shared<BuiltinFunction>(
-    "hasattr",
-    [](const std::vector<Value>& args,
-            const Kwargs&,
-            const std::shared_ptr<Environment>&) -> Value {
+                     auto clsVal = local_env->get("__class__");
+                     auto origin = std::get<Value::ClassPtr>(clsVal.data);
 
-        if (args.size() != 2)
-            throw std::runtime_error("hasattr expects 2 arguments");
+                     return Value(std::make_shared<SuperValue>(
+                         origin, // currentClass
+                         receiver,
+                         origin // originClass
+                     ));
+                 }
+             ));
 
-        const Value& obj = args[0];
-        const QString attr = args[1].asString();
+    env->set("hasattr",
+             makeBuiltin(
+                 "hasattr",
 
-        try {
-            genericGetAttr(obj, attr);
-            return Value(true);
-        } catch (...) {
-            return Value(false);
-        }
-    }
-)));
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-    env->set("getattr", Value(std::make_shared<BuiltinFunction>(
-    "getattr",
-    [](const std::vector<Value>& args,
-            const Kwargs&,
-            const std::shared_ptr<Environment>&) -> Value {
+                     expectArgs(args, 2, "hasattr");
 
-        if (args.size() < 2 || args.size() > 3)
-            throw std::runtime_error("getattr expects 2 or 3 arguments");
+                     const Value &obj = args[0];
+                     const QString attr = args[1].asString()->toString();
 
-        const Value& obj = args[0];
-        const QString& attr = args[1].asString();
+                     try {
+                         genericGetAttr(obj, attr);
 
-        try {
-            return genericGetAttr(obj, attr);
-        } catch (...) {
-            if (args.size() == 3) {
-                return args[2]; // default
-            }
-            throw; // AttributeError
-        }
-    }
-)));
+                         return Value(true);
+                     } catch (...) {
+                         return Value(false);
+                     }
+                 }
+             ));
 
-    env->set("setattr", Value(std::make_shared<BuiltinFunction>(
-"setattr",
-[](const std::vector<Value>& args,
-        const Kwargs&,
-        const std::shared_ptr<Environment>&) -> Value {
+    env->set("getattr",
+             makeBuiltin(
+                 "getattr",
 
-    if (args.size() != 3)
-        throw std::runtime_error("setattr expects 3 arguments");
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-    const Value& obj = args[0];
-    const QString attr = args[1].asString();
-    const Value& value = args[2];
+                     expectArgsRange(args, 2, 3, "getattr");
 
-    setAttrValue(obj, attr, value);
-    return {};
-}
-)));
+                     const Value &obj = args[0];
+                     const QString &attr = args[1].asString()->toString();
 
-    env->set("property", Value(std::make_shared<BuiltinFunction>(
-    "property",
-    [](const std::vector<Value>& args,
-            const Kwargs&,
-            const std::shared_ptr<Environment>&) -> Value {
+                     try {
+                         return genericGetAttr(obj, attr);
+                     } catch (...) {
+                         if (args.size() == 3) {
+                             return args[2]; // default
+                         }
+                         throw; // AttributeError
+                     }
+                 }
+             ));
 
-        if (args.empty())
-            throw std::runtime_error("property needs at least fget");
+    env->set("setattr",
+             makeBuiltin(
+                 "setattr",
 
-        auto fget = std::get<Value::FunctionPtr>(args[0].data);
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-        Value::FunctionPtr fset = nullptr;
-        Value::FunctionPtr fdel = nullptr;
+                     expectArgs(args, 3, "setattr");
 
-        if (args.size() > 1 && !args[1].isNone())
-            fset = std::get<Value::FunctionPtr>(args[1].data);
+                     const Value &obj = args[0];
+                     const QString attr = args[1].asString()->toString();
+                     const Value &value = args[2];
 
-        if (args.size() > 2 && !args[2].isNone())
-            fdel = std::get<Value::FunctionPtr>(args[2].data);
+                     setAttrValue(obj, attr, value);
+                     return {};
+                 }
+             ));
 
-        return Value(std::make_shared<PropertyValue>(fget, fset, fdel));
-    }
-)));
+    env->set("property",
+             makeBuiltin(
+                 "property",
 
-    env->set("__object_getattribute__", Value(std::make_shared<BuiltinFunction>(
-        "__object_getattribute__",
-        [](const std::vector<Value>& args,
-                const Kwargs&,
-                const std::shared_ptr<Environment>&) -> Value {
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-            if (args.size() != 2) {
-                throw std::runtime_error("__object_getattribute__ expects 2 arguments");
-            }
+                     if (args.empty())
+                         throw std::runtime_error("property needs at least fget");
 
-            return genericGetAttr(args[0], args[1].asString());
-    }
-)));
+                     auto fget = std::get<Value::FunctionPtr>(args[0].data);
+
+                     Value::FunctionPtr fset = nullptr;
+                     Value::FunctionPtr fdel = nullptr;
+
+                     if (args.size() > 1 && !args[1].isNone())
+                         fset = std::get<Value::FunctionPtr>(args[1].data);
+
+                     if (args.size() > 2 && !args[2].isNone())
+                         fdel = std::get<Value::FunctionPtr>(args[2].data);
+
+                     return Value(std::make_shared<PropertyValue>(fget, fset, fdel));
+                 }
+             ));
+
+    env->set("__object_getattribute__",
+             makeBuiltin(
+                 "__object_getattribute__",
+
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
+
+                     expectArgs(args, 2, "__object_getattribute__");
+
+                     return genericGetAttr(args[0], args[1].asString()->toString());
+                 }
+             ));
 
     env->set("__object_setattr__",
-    Value(std::make_shared<BuiltinFunction>(
-        "__object_setattr__",
-        [](const std::vector<Value>& args,
-                const Kwargs&,
-                const std::shared_ptr<Environment>&)
-           -> Value {
+             makeBuiltin(
+                 "__object_setattr__",
 
-            if (args.size() != 3) {
-                throw std::runtime_error("__object_setattr__ expects 3 args");
-            }
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-            genericSetAttr(args[0], args[1].asString(), args[2]);
+                     expectArgs(args, 3, "__object_setattr__");
 
-            return {};
-        }
-)));
+                     genericSetAttr(args[0], args[1].asString()->toString(), args[2]);
+
+                     return {};
+                 }
+             ));
 
     env->set("staticmethod",
-    Value(std::make_shared<BuiltinFunction>(
-        "staticmethod",
-        [](const std::vector<Value>& args,
-                const Kwargs&,
-                const std::shared_ptr<Environment>&)
-           -> Value {
+             makeBuiltin(
+                 "staticmethod",
 
-            if (args.size() != 1) {
-                throw std::runtime_error("staticmethod expects 1 argument");
-            }
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-            if (!std::holds_alternative<Value::FunctionPtr>(
-                    args[0].data)) {
+                     expectArgs(args, 1, "staticmethod");
 
-                throw std::runtime_error("staticmethod expects function");
-            }
+                     if (!std::holds_alternative<Value::FunctionPtr>(args[0].data)) {
+                         throw std::runtime_error("staticmethod expects function");
+                     }
 
-            return Value(std::make_shared<StaticMethodValue>(std::get<Value::FunctionPtr>(args[0].data)));
-        }
-)));
+                     return Value(
+                         std::make_shared<StaticMethodValue>(
+                             std::get<Value::FunctionPtr>(
+                                 args[0].data
+                            )
+                        )
+                    );
+                 }
+             ));
 
     env->set("classmethod",
-    Value(std::make_shared<BuiltinFunction>(
-        "classmethod",
+             makeBuiltin(
+                 "classmethod",
 
-        [](const std::vector<Value>& args,
-                const Kwargs&,
-                const std::shared_ptr<Environment>&)
-           -> Value {
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-            if (args.size() != 1) {
-                throw std::runtime_error("classmethod expects 1 argument");
-            }
+                     expectArgs(args, 1, "classmethod");
 
-            if (!std::holds_alternative<Value::FunctionPtr>(
-                    args[0].data)) {
+                     if (!std::holds_alternative<Value::FunctionPtr>(args[0].data)) {
+                         throw std::runtime_error("classmethod expects function");
+                     }
 
-                throw std::runtime_error("classmethod expects function");
-            }
-
-            return Value(
-                std::make_shared<ClassMethodValue>(
-                    std::get<Value::FunctionPtr>(
-                        args[0].data
-                    )
-                )
-            );
-        }
-)));
+                     return Value(
+                         std::make_shared<ClassMethodValue>(
+                             std::get<Value::FunctionPtr>(
+                                 args[0].data
+                             )
+                         )
+                     );
+                 }
+             ));
 
     env->set("len",
-    Value(std::make_shared<BuiltinFunction>(
-        "len",
+             makeBuiltin(
+                 "len",
 
-        [](const std::vector<Value>& args,
-                const Kwargs&,
-                const std::shared_ptr<Environment>&)
-           -> Value {
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-            if (args.size() != 1) {
-                throw std::runtime_error("len expects 1 arg");
+                     expectArgs(args, 1, "len");
+
+                     const Value &obj = args[0];
+
+                     // string
+                     if (const auto s = std::get_if<Value::StrPtr>(&obj.data)) {
+                         return Value(Value::BigInt(s->get()->len()));
+                     }
+
+                     // list
+                     if (const auto l = std::get_if<Value::ListPtr>(&obj.data)) {
+                         return Value(Value::BigInt((*l)->len()));
+                     }
+
+                     try {
+
+                         const Value lenMethod = getAttrValue(obj, "__len__");
+
+                         return call(lenMethod, {}, {}, nullptr);
+
+                     } catch (...) {}
+
+                     throw std::runtime_error("Object has no len()");
+                 }
+             ));
+
+    env->set("iter",
+        makeBuiltin(
+            "iter",
+
+            [](const std::vector<Value> &args,
+               const Kwargs &,
+               const std::shared_ptr<Environment> &env) -> Value {
+
+                expectArgs(args, 1, "iter");
+
+                const Value method = getAttrValue(args[0], "__iter__");
+
+                return call(method, {}, {}, env);
             }
+        ));
 
-            const Value& obj = args[0];
+    env->set("next",
+        makeBuiltin(
+            "next",
 
-            // string
-            if (const auto s = std::get_if<QString>(&obj.data)) {
-                return Value(Value::BigInt(s->size()));
+            [](const std::vector<Value> &args,
+               const Kwargs &,
+               const std::shared_ptr<Environment> &env) -> Value {
+
+                expectArgs(args, 1, "next");
+
+                const Value method = getAttrValue(args[0], "__next__");
+
+                return call(method, {}, {}, env);
             }
+        ));
 
-            // list
-            if (const auto l = std::get_if<Value::ListPtr>(&obj.data)) {
-                return Value(Value::BigInt((*l)->len()));
-            }
+    env->set("hash",
+        makeBuiltin(
+            "hash",
 
-            try {
-                const Value lenMethod =
-                getAttrValue(obj, "__len__");
+            [](const std::vector<Value> &args,
+               const Kwargs &,
+               const std::shared_ptr<Environment> &) -> Value {
 
-                return call(lenMethod, {}, {}, nullptr);
+                expectArgs(args, 1, "hash");
 
-            } catch (...) {}
-
-            throw std::runtime_error("Object has no len()");
-
-        }
-)));
-
-    env->set(
-    "iter",
-    Value(std::make_shared<BuiltinFunction>(
-        "iter",
-
-        [](const std::vector<Value>& args,
-           const Kwargs&,
-           const std::shared_ptr<Environment>& env)
-           -> Value {
-
-            if (args.size() != 1) {
-                throw std::runtime_error("iter expects 1 arg");
-            }
-
-            const Value method = getAttrValue(args[0], "__iter__");
-
-            return call(method, {}, {}, env);
-        }
-)));
-
-    env->set(
-    "next",
-
-    Value(
-        std::make_shared<BuiltinFunction>(
-        "next",
-
-        [](const std::vector<Value>& args,
-           const Kwargs&,
-           const std::shared_ptr<Environment>& env)
-           -> Value {
-
-            if (args.size() != 1) {
-                throw std::runtime_error("next expects 1 arg");
-            }
-
-            const Value method = getAttrValue(args[0], "__next__");
-
-            return call(method, {}, {}, env);
-        }
-)));
-
-    env->set(
-"hash",
-
-Value(
-    std::make_shared<BuiltinFunction>(
-        "hash",
-
-        [](const std::vector<Value>& args,
-           const Kwargs&,
-           const std::shared_ptr<Environment>&)
-           -> Value {
-
-            if (args.size() != 1) {
-                throw std::runtime_error("hash expects 1 arg");
-            }
-
-            return Value(
-                Value::BigInt(
-                    static_cast<long long>(
-                        args[0].hash()
+                return Value(
+                    Value::BigInt(
+                        static_cast<long long>(
+                            args[0].hash()
+                        )
                     )
-                )
-            );
-        }
-)));
+                );
+            }
+        ));
 
     env->set("list",
-Value(std::make_shared<BuiltinFunction>(
-    "list",
+             makeBuiltin(
+                 "list",
 
-    [](const std::vector<Value>& args,
-       const Kwargs&,
-       const std::shared_ptr<Environment>&)
-       -> Value {
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-        if (args.empty()) {
-            return Value(std::make_shared<ListValue>());
-        }
+                     expectArgsRange(args, 0, 1, "list");
 
-        if (args.size() != 1) {
-            throw std::runtime_error("list expects 0 or 1 argument");
-        }
+                     if (args.empty()) {
+                         return Value(std::make_shared<ListValue>());
+                     }
 
-        const Value& iterable = args[0];
+                     const Value &iterable = args[0];
 
-        const auto it = iterable.getIterator();
+                     const auto it = iterable.getIterator();
 
-        std::vector<Value> items;
+                     std::vector<Value> items;
 
-        while (it->hasNext()) {
-            items.push_back(it->next());
-        }
+                     while (it->hasNext()) {
+                         items.push_back(it->next());
+                     }
 
-        return Value(std::make_shared<ListValue>(items));
-    }
-)));
+                     return Value(std::make_shared<ListValue>(items));
+                 }
+             ));
 
     env->set("tuple",
-Value(std::make_shared<BuiltinFunction>(
-    "tuple",
+             makeBuiltin(
+                 "tuple",
 
-    [](const std::vector<Value>& args,
-       const Kwargs&,
-       const std::shared_ptr<Environment>&)
-       -> Value {
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-        if (args.empty()) {
-            return Value(std::make_shared<TupleValue>(std::vector<Value>{}));
-        }
+                     expectArgsRange(args, 0, 1, "tuple");
 
-        if (args.size() != 1) {
-            throw std::runtime_error("tuple expects 0 or 1 argument");
-        }
+                     if (args.empty()) {
+                         return Value(std::make_shared<TupleValue>(std::vector<Value>{}));
+                     }
 
-        const Value& iterable = args[0];
+                     const Value &iterable = args[0];
 
-        const auto it = iterable.getIterator();
+                     const auto it = iterable.getIterator();
 
-        std::vector<Value> items;
+                     std::vector<Value> items;
 
-        while (it->hasNext()) {
-            items.push_back(it->next());
-        }
+                     while (it->hasNext()) {
+                         items.push_back(it->next());
+                     }
 
-        return Value(std::make_shared<TupleValue>(items));
-    }
-)));
+                     return Value(std::make_shared<TupleValue>(items));
+                 }
+             ));
 
     env->set("set",
-Value(std::make_shared<BuiltinFunction>(
-    "set",
+             makeBuiltin(
+                 "set",
 
-    [](const std::vector<Value>& args,
-       const Kwargs&,
-       const std::shared_ptr<Environment>&)
-       -> Value {
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-        if (args.empty()) {
-            return Value(std::make_shared<SetValue>());
-        }
+                     expectArgsRange(args, 0, 1, "set");
 
-        if (args.size() != 1) {
-            throw std::runtime_error("set expects 0 or 1 argument");
-        }
+                     if (args.empty()) {
+                         return Value(std::make_shared<SetValue>());
+                     }
 
-        const Value& iterable = args[0];
+                     const Value &iterable = args[0];
 
-        const auto it = iterable.getIterator();
+                     const auto it = iterable.getIterator();
 
-        const auto set = std::make_shared<SetValue>();
+                     const auto set = std::make_shared<SetValue>();
 
-        while (it->hasNext()) {
-            set->add(it->next());
-        }
+                     while (it->hasNext()) {
+                         set->add(it->next());
+                     }
 
-        return Value(set);
-    }
-)));
+                     return Value(set);
+                 }
+             ));
 
     env->set("dict",
-Value(std::make_shared<BuiltinFunction>(
-    "dict",
+             makeBuiltin(
+                 "dict",
 
-    [](const std::vector<Value>& args,
-       const Kwargs&,
-       const std::shared_ptr<Environment>&)
-       -> Value {
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
 
-        if (args.empty()) {
-            return Value(std::make_shared<DictValue>());
-        }
+                     expectArgsRange(args, 0, 1, "dict");
 
-        if (args.size() != 1) {
-            throw std::runtime_error("dict expects 0 or 1 argument");
-        }
+                     if (args.empty()) {
+                         return Value(std::make_shared<DictValue>());
+                     }
 
-        const Value& iterable = args[0];
+                     const Value &iterable = args[0];
 
-        const auto it = iterable.getIterator();
+                     const auto it = iterable.getIterator();
 
-        auto dict = std::make_shared<DictValue>();
+                     const auto dict = std::make_shared<DictValue>();
 
-        while (it->hasNext()) {
+                     while (it->hasNext()) {
 
-            Value item = it->next();
+                         Value item = it->next();
 
-            if (!item.isTuple()) {
-                throw std::runtime_error("dict() expects iterable of pairs");
-            }
+                         const auto tup = item.asTuple("dict()");
 
-            const auto tup = item.asTuple();
+                         if (tup->items.size() != 2) {
+                             throw std::runtime_error("dict() expects (key, value) pairs");
+                         }
 
-            if (tup->items.size() != 2) {
-                throw std::runtime_error("dict() expects (key, value) pairs");
-            }
+                         dict->setItem(tup->items[0], tup->items[1]);
+                     }
 
-            dict->setItem(tup->items[0], tup->items[1]);
-        }
-
-        return Value(dict);
-    }
-)));
-
+                     return Value(dict);
+                 }
+             ));
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {
