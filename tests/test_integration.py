@@ -364,7 +364,13 @@ if _result is not None:
     ("'hello'.upper()", "'HELLO'"),
     ("'HeLLo'.upper()", "'HELLO'"),
     ("''.upper()", "''"),
-    ("'123abc'.upper()", "'123ABC'")
+    ("'123abc'.upper()", "'123ABC'"),
+
+    # lower
+    (["'HELLO'.lower()"], "'hello'"),
+    (["'HeLLo'.lower()"], "'hello'"),
+    (["''.lower()"], "''"),
+    (["'123ABC'.lower()"], "'123abc'"),
 
 ])
 

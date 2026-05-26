@@ -26,5 +26,7 @@ public:
     [[nodiscard]] Value getItem(const Value&) const;
 
     [[nodiscard]] Value upper() const;
+
+    [[nodiscard]] Value lower() const;
 };
 #endif //CPPYTHON_STRVALUE_H

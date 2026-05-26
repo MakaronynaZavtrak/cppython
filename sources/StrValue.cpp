@@ -45,3 +45,7 @@ Value StrValue::getItem(const Value& index) const {
 Value StrValue::upper() const {
     return Value(value.toUpper());
 }
+
+Value StrValue::lower() const {
+    return Value(value.toLower());
+}
