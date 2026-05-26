@@ -372,6 +372,27 @@ if _result is not None:
     (["''.lower()"], "''"),
     (["'123ABC'.lower()"], "'123abc'"),
 
+    # strip whitespace
+    (["'  hello  '.strip()"], "'hello'"),
+
+    # strip chars
+    (["'---hello---'.strip('-')"], "'hello'"),
+
+    # strip multiple chars
+    (["'abcHelloabc'.strip('abc')"], "'Hello'"),
+
+    # no changes
+    (["'hello'.strip()"], "'hello'"),
+
+    # empty string
+    (["''.strip()"], "''"),
+
+    # strip all chars
+    (["'aaaa'.strip('a')"], "''"),
+
+    # strip only edges
+    (["'abchelloabcworldabc'.strip('abc')"], "'helloabcworld'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

@@ -49,3 +49,30 @@ Value StrValue::upper() const {
 Value StrValue::lower() const {
     return Value(value.toLower());
 }
+
+Value StrValue::strip(const std::optional<QString>& chars) const {
+
+    QString result = value;
+
+    // default whitespace strip
+    if (!chars.has_value()) {
+        return Value(result.trimmed());
+    }
+
+    const QString& trimChars = *chars;
+
+    qsizetype start = 0;
+    qsizetype end = result.size() - 1;
+
+    while (start < result.size() && trimChars.contains(result[start])) {
+        ++start;
+    }
+
+    while (end >= start && trimChars.contains(result[end])) {
+        --end;
+    }
+
+    return Value(
+        result.mid(start, end - start + 1)
+    );
+}

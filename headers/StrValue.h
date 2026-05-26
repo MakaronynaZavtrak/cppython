@@ -28,5 +28,7 @@ public:
     [[nodiscard]] Value upper() const;
 
     [[nodiscard]] Value lower() const;
+
+    [[nodiscard]] Value strip(const std::optional<QString>& chars = std::nullopt) const;
 };
 #endif //CPPYTHON_STRVALUE_H

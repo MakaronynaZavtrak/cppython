@@ -66,12 +66,38 @@ namespace {
         );
     }
 
+    Value makeStripMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "strip",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                if (args.size() > 1) {
+                    throw std::runtime_error("strip expects at most 1 arg");
+                }
+
+                if (args.empty()) {
+                    return str->strip();
+                }
+
+                return str->strip(args[0].asString("strip")->toString());
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("upper", makeUpperMethod),
-        REGISTER_METHOD("lower", makeLowerMethod)
+        REGISTER_METHOD("lower", makeLowerMethod),
+        REGISTER_METHOD("strip", makeStripMethod)
     };
 }
 
