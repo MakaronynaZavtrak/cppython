@@ -6,6 +6,7 @@
 
 #include <QRegularExpression>
 
+#include "IteratorValue.h"
 #include "ListValue.h"
 #include "Value.h"
 
@@ -133,4 +134,20 @@ Value StrValue::split(const std::optional<QString>& sep,
     }
 
     return Value(std::make_shared<ListValue>(result));
+}
+
+Value StrValue::join(const Value& iterable) const {
+
+    const auto it = iterable.getIterator();
+
+    QStringList parts;
+
+    while (it->hasNext()) {
+
+        Value item = it->next();
+
+        parts.append(item.asString("join iterable")->toString());
+    }
+
+    return Value(parts.join(value));
 }

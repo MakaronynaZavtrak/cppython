@@ -34,5 +34,7 @@ public:
     [[nodiscard]] Value split(
     const std::optional<QString>& sep = std::nullopt,
     std::optional<qsizetype> maxSplit = std::nullopt) const;
+
+    [[nodiscard]] Value join(const Value& iterable) const;
 };
 #endif //CPPYTHON_STRVALUE_H

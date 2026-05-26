@@ -416,6 +416,24 @@ if _result is not None:
     # empty string with sep
     ("''.split(',')", "['']"),
 
+    # list join
+    ("','.join(['a', 'b', 'c'])", "'a,b,c'"),
+
+    # tuple join
+    ("' '.join(('hello', 'world'))", "'hello world'"),
+
+    # single element
+    ("','.join(['abc'])", "'abc'"),
+
+    # empty iterable
+    ("','.join([])" , "''"),
+
+    # join chars
+    ("'-'.join('abc')", "'a-b-c'"),
+
+    # join + split
+    ("\",\".join('a b c'.split())", "'a,b,c'")
+
 ])
 
 def test_single_line_expressions(expr, expected):
