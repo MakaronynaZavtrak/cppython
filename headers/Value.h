@@ -162,6 +162,7 @@ public:
     [[nodiscard]] bool isCallable() const;
 
     [[nodiscard]] bool isBigInt() const;
+    [[nodiscard]] BigInt asBigInt(const QString& = "") const;
 
     [[nodiscard]] bool isList() const;
     [[nodiscard]] ListPtr asList(const QString& = "") const;

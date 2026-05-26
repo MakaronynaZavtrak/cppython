@@ -30,5 +30,9 @@ public:
     [[nodiscard]] Value lower() const;
 
     [[nodiscard]] Value strip(const std::optional<QString>& chars = std::nullopt) const;
+
+    [[nodiscard]] Value split(
+    const std::optional<QString>& sep = std::nullopt,
+    std::optional<qsizetype> maxSplit = std::nullopt) const;
 };
 #endif //CPPYTHON_STRVALUE_H

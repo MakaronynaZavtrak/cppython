@@ -78,9 +78,7 @@ namespace {
                   const std::shared_ptr<Environment>&)
             -> Value {
 
-                if (args.size() > 1) {
-                    throw std::runtime_error("strip expects at most 1 arg");
-                }
+                expectArgsRange(args, 0, 1, "strip");
 
                 if (args.empty()) {
                     return str->strip();
@@ -91,13 +89,47 @@ namespace {
         );
     }
 
+    Value makeSplitMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "split",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 2, "split");
+
+                std::optional<QString> sep;
+                std::optional<qsizetype> maxsplit;
+
+                if (args.size() >= 1) {
+
+                    if (!args[0].isNone()) {
+                        sep = args[0].asString("split")->toString();
+                    }
+                }
+
+                if (args.size() == 2) {
+                    maxsplit = static_cast<qsizetype>(args[1].asBigInt("split"));
+                }
+
+                return str->split(sep, maxsplit);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("upper", makeUpperMethod),
         REGISTER_METHOD("lower", makeLowerMethod),
-        REGISTER_METHOD("strip", makeStripMethod)
+        REGISTER_METHOD("strip", makeStripMethod),
+        REGISTER_METHOD("split", makeSplitMethod)
     };
 }
 

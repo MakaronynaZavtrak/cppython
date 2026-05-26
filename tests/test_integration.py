@@ -367,31 +367,54 @@ if _result is not None:
     ("'123abc'.upper()", "'123ABC'"),
 
     # lower
-    (["'HELLO'.lower()"], "'hello'"),
-    (["'HeLLo'.lower()"], "'hello'"),
-    (["''.lower()"], "''"),
-    (["'123ABC'.lower()"], "'123abc'"),
+    ("'HELLO'.lower()", "'hello'"),
+    ("'HeLLo'.lower()", "'hello'"),
+    ("''.lower()", "''"),
+    ("'123ABC'.lower()", "'123abc'"),
 
     # strip whitespace
-    (["'  hello  '.strip()"], "'hello'"),
+    ("'  hello  '.strip()", "'hello'"),
 
     # strip chars
-    (["'---hello---'.strip('-')"], "'hello'"),
+    ("'---hello---'.strip('-')", "'hello'"),
 
     # strip multiple chars
-    (["'abcHelloabc'.strip('abc')"], "'Hello'"),
+    ("'abcHelloabc'.strip('abc')", "'Hello'"),
 
     # no changes
-    (["'hello'.strip()"], "'hello'"),
+    ("'hello'.strip()", "'hello'"),
 
     # empty string
-    (["''.strip()"], "''"),
+    ("''.strip()", "''"),
 
     # strip all chars
-    (["'aaaa'.strip('a')"], "''"),
+    ("'aaaa'.strip('a')", "''"),
 
     # strip only edges
-    (["'abchelloabcworldabc'.strip('abc')"], "'helloabcworld'"),
+    ("'abchelloabcworldabc'.strip('abc')", "'helloabcworld'"),
+
+    # split
+    ("'a b c'.split()", "['a', 'b', 'c']"),
+    ("'apple#banana#cherry#orange'.split('#')", "['apple', 'banana', 'cherry', 'orange']"),
+    ("'apple#banana#cherry#orange'.split('#', 1)", "['apple', 'banana#cherry#orange']"),
+
+    # multiple spaces
+    ("'  a   b  c '.split()", "['a', 'b', 'c']"),
+
+    # separator split
+    ("'a,b,c'.split(',')", "['a', 'b', 'c']"),
+
+    # maxsplit
+    ("'a,b,c'.split(',', 1)", "['a', 'b,c']"),
+
+    # maxsplit 2
+    ("'a,b,c,d'.split(',', 2)", "['a', 'b', 'c,d']"),
+
+    # no separator found
+    ("'abc'.split(',')", "['abc']"),
+
+    # empty string with sep
+    ("''.split(',')", "['']"),
 
 ])
 

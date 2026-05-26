@@ -4,6 +4,9 @@
 
 #include "StrValue.h"
 
+#include <QRegularExpression>
+
+#include "ListValue.h"
 #include "Value.h"
 
 QString StrValue::toString() const {
@@ -75,4 +78,59 @@ Value StrValue::strip(const std::optional<QString>& chars) const {
     return Value(
         result.mid(start, end - start + 1)
     );
+}
+
+Value StrValue::split(const std::optional<QString>& sep,
+    std::optional<qsizetype> maxSplit) const {
+
+    QStringList parts;
+
+    // whitespace split
+    if (!sep.has_value()) {
+
+        parts = value.split(
+            QRegularExpression("\\s+"),
+            Qt::SkipEmptyParts
+        );
+
+    } else {
+
+        if (sep->isEmpty()) {
+            throw std::runtime_error("empty separator");
+        }
+
+        if (maxSplit.has_value()) {
+
+            QString remaining = value;
+            qsizetype splits = 0;
+
+            while (splits < *maxSplit) {
+
+                const qsizetype idx = remaining.indexOf(*sep);
+
+                if (idx == -1)
+                    break;
+
+                parts.append(remaining.left(idx));
+
+                remaining = remaining.mid(idx + sep->size());
+
+                ++splits;
+            }
+
+            parts.append(remaining);
+
+        } else {
+
+            parts = value.split(*sep);
+        }
+    }
+
+    std::vector<Value> result;
+
+    for (const auto& part : parts) {
+        result.emplace_back(part);
+    }
+
+    return Value(std::make_shared<ListValue>(result));
 }

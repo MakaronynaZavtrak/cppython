@@ -396,6 +396,18 @@ bool Value::isBigInt() const {
     return std::holds_alternative<BigInt>(data);
 }
 
+Value::BigInt Value::asBigInt(const QString& where) const {
+
+    if (!isBigInt()) {
+        throw std::runtime_error(
+        (where + " argument must be int")
+           .toStdString()
+       );
+    }
+
+    return std::get<BigInt>(data);
+}
+
 bool Value::isList() const {
     return std::holds_alternative<ListPtr>(data);
 }
