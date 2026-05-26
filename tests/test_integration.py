@@ -432,7 +432,25 @@ if _result is not None:
     ("'-'.join('abc')", "'a-b-c'"),
 
     # join + split
-    ("\",\".join('a b c'.split())", "'a,b,c'")
+    ("\",\".join('a b c'.split())", "'a,b,c'"),
+
+    # basic replace
+    ("'hello'.replace('l', 'X')", "'heXXo'"),
+
+    # replace all
+    ("'aaaa'.replace('a', 'b')", "'bbbb'"),
+
+    # replace count
+    ("'aaaa'.replace('a', 'b', 2)", "'bbaa'"),
+
+    # no matches
+    ("'hello'.replace('z', 'X')", "'hello'"),
+
+    # negative count -> replace all
+    ("'aaaa'.replace('a', 'b', -1)", "'bbbb'"),
+
+    # empty replacement
+    ("'hello'.replace('l', '')", "'heo'"),
 
 ])
 

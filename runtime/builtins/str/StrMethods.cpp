@@ -141,6 +141,29 @@ namespace {
         );
     }
 
+    Value makeReplaceMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "replace",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 2, 3, "replace");
+
+                if (args.size() == 2) {
+                    return str->replace(args[0], args[1]);
+                }
+
+                return str->replace(args[0], args[1], args[2]);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -149,7 +172,8 @@ namespace {
         REGISTER_METHOD("lower", makeLowerMethod),
         REGISTER_METHOD("strip", makeStripMethod),
         REGISTER_METHOD("split", makeSplitMethod),
-        REGISTER_METHOD("join", makeJoinMethod)
+        REGISTER_METHOD("join", makeJoinMethod),
+        REGISTER_METHOD("replace", makeReplaceMethod)
     };
 }
 

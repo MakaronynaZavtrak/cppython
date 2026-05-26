@@ -5,6 +5,7 @@
 #ifndef CPPYTHON_STRVALUE_H
 #define CPPYTHON_STRVALUE_H
 #include "ReprMixin.h"
+#include "Value.h"
 
 class Value;
 
@@ -36,5 +37,10 @@ public:
     std::optional<qsizetype> maxSplit = std::nullopt) const;
 
     [[nodiscard]] Value join(const Value& iterable) const;
+
+    [[nodiscard]] Value replace(
+    const Value& oldValue,
+    const Value& newValue,
+    const std::optional<Value>& count = std::nullopt) const;
 };
 #endif //CPPYTHON_STRVALUE_H

@@ -151,3 +151,45 @@ Value StrValue::join(const Value& iterable) const {
 
     return Value(parts.join(value));
 }
+
+Value StrValue::replace(
+    const Value& oldValue,
+    const Value& newValue,
+    const std::optional<Value>& count) const {
+
+    const QString oldStr = oldValue.asString("replace")->toString();
+    const QString newStr = newValue.asString("replace")->toString();
+
+    QString result = value;
+
+    // replace all
+    if (!count.has_value()) {
+
+        result.replace(oldStr, newStr);
+
+        return Value(result);
+    }
+
+    const long long limit = static_cast<long long>(count->asBigInt());
+
+    if (limit < 0) {
+
+        result.replace(oldStr, newStr);
+
+        return Value(result);
+    }
+
+    qsizetype pos = 0;
+    long long replaced = 0;
+
+    while ((pos = result.indexOf(oldStr, pos)) != -1 && replaced < limit) {
+
+        result.replace(pos, oldStr.size(), newStr);
+
+        pos += newStr.size();
+
+        ++replaced;
+    }
+
+    return Value(result);
+}
