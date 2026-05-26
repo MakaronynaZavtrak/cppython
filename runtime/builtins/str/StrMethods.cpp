@@ -194,6 +194,36 @@ namespace {
         );
     }
 
+    Value makeEndswithMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "endswith",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "endswith");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() == 3) {
+                    end = args[2];
+                }
+
+                return str->endswith(args[0], start, end);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -204,7 +234,8 @@ namespace {
         REGISTER_METHOD("split", makeSplitMethod),
         REGISTER_METHOD("join", makeJoinMethod),
         REGISTER_METHOD("replace", makeReplaceMethod),
-        REGISTER_METHOD("startswith", makeStartswithMethod)
+        REGISTER_METHOD("startswith", makeStartswithMethod),
+        REGISTER_METHOD("endswith", makeEndswithMethod)
     };
 }
 

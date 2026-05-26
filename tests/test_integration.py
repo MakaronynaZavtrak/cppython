@@ -467,6 +467,26 @@ if _result is not None:
     # пустой срез
     ("'hello'.startswith('h', 3, 1)", "False"),
 
+    # базовый endswith
+    ("'hello'.endswith('lo')", "True"),
+
+    ("'hello'.endswith('he')", "False"),
+
+    # with start
+    ("'hello'.endswith('lo', 2)", "True"),
+
+    # с параметром end
+    ("'hello'.endswith('ll', 0, 4)", "True"),
+
+    # обрезанный конец
+    ("'hello'.endswith('lo', 0, 4)", "False"),
+
+    # пустой параметр suffix
+    ("'hello'.endswith('')", "True"),
+
+    # пустой срез
+    ("'hello'.endswith('o', 3, 1)", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
