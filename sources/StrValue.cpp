@@ -193,3 +193,35 @@ Value StrValue::replace(
 
     return Value(result);
 }
+
+Value StrValue::startswith(
+    const Value& prefix,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QString prefixStr =
+        prefix.asString("startwith")->toString();
+
+    qsizetype begin = 0;
+    qsizetype finish = value.size();
+
+    if (start.has_value()) {
+        begin = static_cast<qsizetype>(start->asBigInt());
+    }
+
+    if (end.has_value()) {
+        finish = static_cast<qsizetype>(end->asBigInt());
+    }
+
+    // clamp
+    begin = std::max<qsizetype>(0, begin);
+    finish = std::min<qsizetype>(finish, value.size());
+
+    if (begin > finish) {
+        begin = finish;
+    }
+
+    const QString sliced = value.mid(begin, finish - begin);
+
+    return Value(sliced.startsWith(prefixStr));
+}

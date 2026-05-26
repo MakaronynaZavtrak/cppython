@@ -42,5 +42,10 @@ public:
     const Value& oldValue,
     const Value& newValue,
     const std::optional<Value>& count = std::nullopt) const;
+
+    [[nodiscard]] Value startswith(
+    const Value& prefix,
+    const std::optional<Value>& start = std::nullopt,
+    const std::optional<Value>& end = std::nullopt) const;
 };
 #endif //CPPYTHON_STRVALUE_H

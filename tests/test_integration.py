@@ -452,6 +452,21 @@ if _result is not None:
     # empty replacement
     ("'hello'.replace('l', '')", "'heo'"),
 
+    # start only
+    ("'hello'.startswith('ll', 2)", "True"),
+
+    # неправильный аргумент start
+    ("'hello'.startswith('he', 1)", "False"),
+
+    # с параметром end
+    ("'hello'.startswith('ll', 2, 4)", "True"),
+
+    # обрезанный конец
+    ("'hello'.startswith('lo', 0, 4)", "False"),
+
+    # пустой срез
+    ("'hello'.startswith('h', 3, 1)", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
