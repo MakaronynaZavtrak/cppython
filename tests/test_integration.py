@@ -567,7 +567,14 @@ if _result is not None:
     # capitalize
     ("'hello'.capitalize()", "'Hello'"),
     ("'hELLO'.capitalize()", "'Hello'"),
-    ("''.capitalize()", "''")
+    ("''.capitalize()", "''"),
+
+    # title
+    ("'hello world'.title()", "'Hello World'"),
+    ("'heLLo woRLD'.title()", "'Hello World'"),
+    ("'hello-world'.title()", "'Hello-World'"),
+    ("'hello_world'.title()", "'Hello_World'"),
+    ("''.title()", "''")
 
 ])
 

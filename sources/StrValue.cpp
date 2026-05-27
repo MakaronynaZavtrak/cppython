@@ -430,3 +430,31 @@ Value StrValue::capitalize() const {
 
     return Value(std::make_shared<StrValue>(result));
 }
+
+Value StrValue::title() const {
+
+    QString result;
+
+    bool newWord = true;
+
+    for (const QChar ch : value) {
+
+        if (!ch.isLetterOrNumber()) {
+
+            result += ch;
+            newWord = true;
+
+            continue;
+        }
+
+        if (newWord) {
+            result += ch.toUpper();
+            newWord = false;
+        }
+        else {
+            result += ch.toLower();
+        }
+    }
+
+    return Value(std::make_shared<StrValue>(result));
+}

@@ -79,5 +79,7 @@ public:
     const std::optional<Value>& end = std::nullopt) const;
 
     [[nodiscard]] Value capitalize() const;
+
+    [[nodiscard]] Value title() const;
 };
 #endif //CPPYTHON_STRVALUE_H
