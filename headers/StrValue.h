@@ -85,5 +85,7 @@ public:
     [[nodiscard]] Value swapcase() const;
 
     [[nodiscard]] Value isalpha() const;
+
+    [[nodiscard]] Value isdigit() const;
 };
 #endif //CPPYTHON_STRVALUE_H

@@ -592,6 +592,23 @@ if _result is not None:
     ("''.isalpha()", "False"),
     ("'Привет'.isalpha()", "True"),
 
+    # isdigit
+
+    # только цифры
+    ("'12345'.isdigit()", "True"),
+
+    # цифры и буквы
+    ("'123abc'.isdigit()", "False"),
+
+    # буквы
+    ("'hello'.isdigit()", "False"),
+
+    # пробел
+    ("'123 456'.isdigit()", "False"),
+
+    # пустая строка
+    ("''.isdigit()", "False")
+
 ])
 
 def test_single_line_expressions(expr, expected):

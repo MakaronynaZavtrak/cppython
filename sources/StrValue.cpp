@@ -496,3 +496,19 @@ Value StrValue::isalpha() const {
 
     return Value(true);
 }
+
+Value StrValue::isdigit() const {
+
+    if (value.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const QChar& ch : value) {
+
+        if (!ch.isDigit()) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
