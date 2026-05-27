@@ -298,3 +298,57 @@ Value StrValue::find(
     // возвращаем индекс относительно исходной строки
     return Value(Value::BigInt(begin + idx));
 }
+
+Value StrValue::count(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    const QString subStr = sub.asString("count")->toString();
+
+    qsizetype begin = 0;
+    qsizetype finish = value.size();
+
+    if (start.has_value()) {
+        begin = static_cast<qsizetype>(start->toBigInt());
+    }
+
+    if (end.has_value()) {
+        finish = static_cast<qsizetype>(end->toBigInt() );
+    }
+
+    begin = std::max<qsizetype>(0, begin);
+
+    finish = std::min<qsizetype>(finish, value.size());
+
+    if (begin > finish) {
+        begin = finish;
+    }
+
+    const QString sliced = value.mid(begin, finish - begin);
+
+    // особый случай:
+    // Python: "".count("") == 1
+    if (subStr.isEmpty()) {
+        return Value(Value::BigInt(sliced.size() + 1));
+    }
+
+    qsizetype occurrences = 0;
+    qsizetype pos = 0;
+
+    while (true) {
+
+        pos = sliced.indexOf(subStr, pos);
+
+        if (pos == -1) {
+            break;
+        }
+
+        ++occurrences;
+
+        // не пересекающиеся вхождения
+        pos += subStr.size();
+    }
+
+    return Value(Value::BigInt(occurrences));
+}

@@ -488,28 +488,42 @@ if _result is not None:
     ("'hello'.endswith('o', 3, 1)", "False"),
 
     # find
-    ([ "'hello'.find('ll')" ],
-     "2"),
+    ("'hello'.find('ll')", "2"),
 
     # not found
-    ([ "'hello'.find('z')" ],
-     "-1"),
+    ("'hello'.find('z')", "-1"),
 
     # с параметром start
-    ([ "'hello'.find('l', 3)" ],
-     "3"),
+    ("'hello'.find('l', 3)", "3"),
 
     # с параметром end
-    ([ "'hello'.find('l', 0, 3)" ],
-     "2"),
+    ("'hello'.find('l', 0, 3)", "2"),
 
     # обрезанный диапазон
-    ([ "'hello'.find('o', 0, 4)" ],
-     "-1"),
+    ("'hello'.find('o', 0, 4)", "-1"),
 
     # пустая подстрока
-    ([ "'hello'.find('')" ],
-     "0"),
+    ("'hello'.find('')", "0"),
+
+    # count
+    ("'hello'.count('l')", "2"),
+
+    # отсутствующий символ
+    ("'hello'.count('z')", "0"),
+
+    # повторяющийся шаблон
+    ("'aaaa'.count('aa')", "2"),
+
+    # с параметром start
+    ("'hello'.count('l', 3)", "1"),
+
+    # с параметром end
+    ("'hello'.count('l', 0, 3)", "1"),
+
+    # count от пустой строки
+    ("'hello'.count('')", "6"),
+
+    ("''.count('')", "1"),
 
 ])
 
