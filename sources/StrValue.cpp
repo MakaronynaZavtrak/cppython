@@ -528,3 +528,19 @@ Value StrValue::isalnum() const {
 
     return Value(true);
 }
+
+Value StrValue::isspace() const {
+
+    if (value.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const QChar& ch : value) {
+
+        if (!ch.isSpace()) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}

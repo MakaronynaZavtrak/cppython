@@ -629,7 +629,24 @@ if _result is not None:
     ("''.isalnum()", "False"),
 
     # кириллица
-    ("'Привет123'.isalnum()", "True")
+    ("'Привет123'.isalnum()", "True"),
+
+    # isspace
+
+    # только пробелы
+    ("'   '.isspace()", "True"),
+
+    # # пробелы и табы (пока не поддерживается)
+    # ("'\\t\\n'.isspace()", "True"),
+
+    # текст и пробелы
+    ("' hello '.isspace()", "False"),
+
+    # пустая строка
+    ("''.isspace()", "False"),
+
+    # обычный текст
+    ("'hello'.isspace()", "False"),
 
 ])
 

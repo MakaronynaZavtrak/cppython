@@ -89,5 +89,7 @@ public:
     [[nodiscard]] Value isdigit() const;
 
     [[nodiscard]] Value isalnum() const;
+
+    [[nodiscard]] Value isspace() const;
 };
 #endif //CPPYTHON_STRVALUE_H

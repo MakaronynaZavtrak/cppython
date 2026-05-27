@@ -493,6 +493,26 @@ namespace {
         );
     }
 
+    Value makeIsSpaceMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isspace",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isspace");
+
+                return str->isspace();
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -515,7 +535,8 @@ namespace {
         REGISTER_METHOD("swapcase", makeSwapcaseMethod),
         REGISTER_METHOD("isalpha", makeIsAlphaMethod),
         REGISTER_METHOD("isdigit", makeIsDigitMethod),
-        REGISTER_METHOD("isalnum", makeIsAlnumMethod)
+        REGISTER_METHOD("isalnum", makeIsAlnumMethod),
+        REGISTER_METHOD("isspace", makeIsSpaceMethod)
     };
 }
 
