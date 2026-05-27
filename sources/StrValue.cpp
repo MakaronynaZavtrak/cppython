@@ -417,3 +417,16 @@ Value StrValue::rindex(
 
     return result;
 }
+
+Value StrValue::capitalize() const {
+
+    if (value.isEmpty()) {
+        return Value(std::make_shared<StrValue>(""));
+    }
+
+    QString result = value.toLower();
+
+    result[0] = result[0].toUpper();
+
+    return Value(std::make_shared<StrValue>(result));
+}

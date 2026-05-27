@@ -374,6 +374,26 @@ namespace {
         );
     }
 
+    Value makeCapitalizeMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "capitalize",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&
+            ) -> Value {
+
+                expectArgs(args, 0, "capitalize");
+
+                return str->capitalize();
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -390,7 +410,8 @@ namespace {
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("index", makeIndexMethod),
         REGISTER_METHOD("rfind", makeRfindMethod),
-        REGISTER_METHOD("rindex", makeRindexMethod)
+        REGISTER_METHOD("rindex", makeRindexMethod),
+        REGISTER_METHOD("capitalize", makeCapitalizeMethod)
     };
 }
 

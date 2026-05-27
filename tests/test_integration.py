@@ -564,6 +564,11 @@ if _result is not None:
     # с параметром end
     ("'banana'.rindex('na', 0, 4)", "2"),
 
+    # capitalize
+    ("'hello'.capitalize()", "'Hello'"),
+    ("'hELLO'.capitalize()", "'Hello'"),
+    ("''.capitalize()", "''")
+
 ])
 
 def test_single_line_expressions(expr, expected):
