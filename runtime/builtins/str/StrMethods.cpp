@@ -433,6 +433,26 @@ namespace {
         );
     }
 
+    Value makeIsAlphaMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isalpha",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+                -> Value {
+
+                expectArgs(args, 0, "isalpha");
+
+                return str->isalpha();
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -452,7 +472,8 @@ namespace {
         REGISTER_METHOD("rindex", makeRindexMethod),
         REGISTER_METHOD("capitalize", makeCapitalizeMethod),
         REGISTER_METHOD("title", makeTitleMethod),
-        REGISTER_METHOD("swapcase", makeSwapcaseMethod)
+        REGISTER_METHOD("swapcase", makeSwapcaseMethod),
+        REGISTER_METHOD("isalpha", makeIsAlphaMethod)
     };
 }
 

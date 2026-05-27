@@ -581,7 +581,16 @@ if _result is not None:
     ("'abc'.swapcase()", "'ABC'"),
     ("'ABC'.swapcase()", "'abc'"),
     ("'PyThOn123'.swapcase()", "'pYtHoN123'"),
-    ("'!@#'.swapcase()", "'!@#'")
+    ("'!@#'.swapcase()", "'!@#'"),
+
+    # isaplha
+    ("'hello'.isalpha()", "True"),
+    ("'Hello'.isalpha()", "True"),
+    ("'hello123'.isalpha()", "False"),
+    ("'123'.isalpha()", "False"),
+    ("'hello world'.isalpha()", "False"),
+    ("''.isalpha()", "False"),
+    ("'Привет'.isalpha()", "True"),
 
 ])
 

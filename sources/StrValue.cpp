@@ -480,3 +480,19 @@ Value StrValue::swapcase() const {
 
     return Value(result);
 }
+
+Value StrValue::isalpha() const {
+
+    if (value.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const QChar& ch : value) {
+
+        if (!ch.isLetter()) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
