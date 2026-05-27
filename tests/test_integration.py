@@ -525,6 +525,18 @@ if _result is not None:
 
     ("''.count('')", "1"),
 
+    # index
+    ("'hello'.index('e')", "1"),
+
+    # повтор
+    ("'banana'.index('na')", "2"),
+
+    # с параметром start
+    ("'banana'.index('na', 3)", "4"),
+
+    # с параметром end
+    ("'banana'.index('na', 0, 4)", "2"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
