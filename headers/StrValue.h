@@ -81,5 +81,7 @@ public:
     [[nodiscard]] Value capitalize() const;
 
     [[nodiscard]] Value title() const;
+
+    [[nodiscard]] Value swapcase() const;
 };
 #endif //CPPYTHON_STRVALUE_H

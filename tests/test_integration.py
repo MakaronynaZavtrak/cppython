@@ -574,7 +574,14 @@ if _result is not None:
     ("'heLLo woRLD'.title()", "'Hello World'"),
     ("'hello-world'.title()", "'Hello-World'"),
     ("'hello_world'.title()", "'Hello_World'"),
-    ("''.title()", "''")
+    ("''.title()", "''"),
+
+    # swapcase
+    ("'Hello WORLD'.swapcase()", "'hELLO world'"),
+    ("'abc'.swapcase()", "'ABC'"),
+    ("'ABC'.swapcase()", "'abc'"),
+    ("'PyThOn123'.swapcase()", "'pYtHoN123'"),
+    ("'!@#'.swapcase()", "'!@#'")
 
 ])
 

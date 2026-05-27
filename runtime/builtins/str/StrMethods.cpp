@@ -414,6 +414,25 @@ namespace {
         );
     }
 
+    Value makeSwapcaseMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "swapcase",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "swapcase");
+
+                return str->swapcase();
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -432,7 +451,8 @@ namespace {
         REGISTER_METHOD("rfind", makeRfindMethod),
         REGISTER_METHOD("rindex", makeRindexMethod),
         REGISTER_METHOD("capitalize", makeCapitalizeMethod),
-        REGISTER_METHOD("title", makeTitleMethod)
+        REGISTER_METHOD("title", makeTitleMethod),
+        REGISTER_METHOD("swapcase", makeSwapcaseMethod)
     };
 }
 

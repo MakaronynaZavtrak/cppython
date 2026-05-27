@@ -458,3 +458,25 @@ Value StrValue::title() const {
 
     return Value(std::make_shared<StrValue>(result));
 }
+
+Value StrValue::swapcase() const {
+
+    QString result;
+
+    for (const QChar ch : value) {
+
+        if (ch.isUpper()) {
+            result += ch.toLower();
+        }
+
+        else if (ch.isLower()) {
+            result += ch.toUpper();
+        }
+
+        else {
+            result += ch;
+        }
+    }
+
+    return Value(result);
+}
