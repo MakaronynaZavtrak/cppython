@@ -487,6 +487,30 @@ if _result is not None:
     # пустой срез
     ("'hello'.endswith('o', 3, 1)", "False"),
 
+    # find
+    ([ "'hello'.find('ll')" ],
+     "2"),
+
+    # not found
+    ([ "'hello'.find('z')" ],
+     "-1"),
+
+    # с параметром start
+    ([ "'hello'.find('l', 3)" ],
+     "3"),
+
+    # с параметром end
+    ([ "'hello'.find('l', 0, 3)" ],
+     "2"),
+
+    # обрезанный диапазон
+    ([ "'hello'.find('o', 0, 4)" ],
+     "-1"),
+
+    # пустая подстрока
+    ([ "'hello'.find('')" ],
+     "0"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

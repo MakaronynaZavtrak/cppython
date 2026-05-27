@@ -258,3 +258,43 @@ Value StrValue::endswith(
 
     return Value(sliced.endsWith(suffixStr));
 }
+
+Value StrValue::find(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    const QString subStr = sub.asString("find")->toString();
+
+    qsizetype begin = 0;
+    qsizetype finish = value.size();
+
+    if (start.has_value()) {
+        begin = static_cast<qsizetype>(start->toBigInt());
+    }
+
+    if (end.has_value()) {
+        finish = static_cast<qsizetype>(end->toBigInt());
+    }
+
+    // clamp
+    begin = std::max<qsizetype>(0, begin);
+
+    finish = std::min<qsizetype>(finish, value.size());
+
+    if (begin > finish) {
+        begin = finish;
+    }
+
+    const QString sliced = value.mid(begin, finish - begin);
+
+    const qsizetype idx = sliced.indexOf(subStr);
+
+    if (idx == -1) {
+        return Value(Value::BigInt(-1));
+    }
+
+    // важно:
+    // возвращаем индекс относительно исходной строки
+    return Value(Value::BigInt(begin + idx));
+}
