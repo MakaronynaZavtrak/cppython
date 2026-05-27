@@ -403,3 +403,17 @@ Value StrValue::rfind(
 
     return Value(Value::BigInt(begin + pos));
 }
+
+Value StrValue::rindex(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    Value result = rfind(sub, start, end);
+
+    if (result.toBigInt() == -1) {
+        throw std::runtime_error("ValueError: substring not found");
+    }
+
+    return result;
+}
