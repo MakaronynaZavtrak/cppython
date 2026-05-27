@@ -537,6 +537,21 @@ if _result is not None:
     # с параметром end
     ("'banana'.index('na', 0, 4)", "2"),
 
+    # rfind
+    ("'banana'.rfind('na')", "4"),
+
+    # первый символ
+    ("'banana'.rfind('b')", "0"),
+
+    # отсутсвующий символ
+    ("'banana'.rfind('z')", "-1"),
+
+    # с параметром start
+    ("'banana'.rfind('na', 3)", "4"),
+
+    # с параметром end
+    ("'banana'.rfind('na', 0, 4)", "2"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
