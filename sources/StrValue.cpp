@@ -512,3 +512,19 @@ Value StrValue::isdigit() const {
 
     return Value(true);
 }
+
+Value StrValue::isalnum() const {
+
+    if (value.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const QChar& ch : value) {
+
+        if (!ch.isLetterOrNumber()) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}

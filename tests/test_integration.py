@@ -607,7 +607,29 @@ if _result is not None:
     ("'123 456'.isdigit()", "False"),
 
     # пустая строка
-    ("''.isdigit()", "False")
+    ("''.isdigit()", "False"),
+
+    # isalnum
+    # буквы и цифры
+    ("'abc123'.isalnum()", "True"),
+
+    # только буквы
+    ("'hello'.isalnum()", "True"),
+
+    # только цифры
+    ("'12345'.isalnum()", "True"),
+
+    # пробел
+    ("'abc 123'.isalnum()", "False"),
+
+    # символы
+    ("'abc!'.isalnum()", "False"),
+
+    # пустая строка
+    ("''.isalnum()", "False"),
+
+    # кириллица
+    ("'Привет123'.isalnum()", "True")
 
 ])
 

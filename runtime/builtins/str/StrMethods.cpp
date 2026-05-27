@@ -384,8 +384,8 @@ namespace {
             [str](
                 const std::vector<Value>& args,
                 const Kwargs&,
-                const std::shared_ptr<Environment>&
-            ) -> Value {
+                const std::shared_ptr<Environment>&)
+            -> Value {
 
                 expectArgs(args, 0, "capitalize");
 
@@ -404,8 +404,8 @@ namespace {
             [str](
                 const std::vector<Value>& args,
                 const Kwargs&,
-                const std::shared_ptr<Environment>&
-            ) -> Value {
+                const std::shared_ptr<Environment>&)
+            -> Value {
 
                 expectArgs(args, 0, "title");
 
@@ -444,7 +444,7 @@ namespace {
                 const std::vector<Value>& args,
                 const Kwargs&,
                 const std::shared_ptr<Environment>&)
-                -> Value {
+            -> Value {
 
                 expectArgs(args, 0, "isalpha");
 
@@ -464,11 +464,31 @@ namespace {
                 const std::vector<Value>& args,
                 const Kwargs&,
                 const std::shared_ptr<Environment>&)
-                -> Value {
+            -> Value {
 
                 expectArgs(args, 0, "isdigit");
 
                 return str->isdigit();
+            }
+        );
+    }
+
+    Value makeIsAlnumMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isalnum",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isalnum");
+
+                return str->isalnum();
             }
         );
     }
@@ -494,7 +514,8 @@ namespace {
         REGISTER_METHOD("title", makeTitleMethod),
         REGISTER_METHOD("swapcase", makeSwapcaseMethod),
         REGISTER_METHOD("isalpha", makeIsAlphaMethod),
-        REGISTER_METHOD("isdigit", makeIsDigitMethod)
+        REGISTER_METHOD("isdigit", makeIsDigitMethod),
+        REGISTER_METHOD("isalnum", makeIsAlnumMethod)
     };
 }
 
