@@ -31,30 +31,6 @@ QString DictValue::toString() const {
 
             first = false;
 
-            out += key.toString();
-            out += ": ";
-            out += elements[key].toString();
-      }
-
-      out += "}";
-
-      return out;
-}
-
-QString DictValue::repr() const {
-
-      QString out = "{";
-
-      bool first = true;
-
-      for (const auto& key : order) {
-
-            if (!first) {
-                  out += ", ";
-            }
-
-            first = false;
-
             out += key.repr();
             out += ": ";
             out += elements[key].repr();
@@ -63,6 +39,10 @@ QString DictValue::repr() const {
       out += "}";
 
       return out;
+}
+
+QString DictValue::repr() const {
+      return toString();
 }
 
 Value DictValue::getItem(const Value& key) const {

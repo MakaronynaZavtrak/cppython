@@ -13,21 +13,14 @@ QString ListValue::toString() const {
     QStringList parts;
 
     for (const auto& el : elements) {
-        parts << el.toString();
+        parts << el.repr();
     }
 
     return "[" + parts.join(", ") + "]";
 }
 
 QString ListValue::repr() const {
-
-    QStringList parts;
-
-    for (const auto& el : elements) {
-        parts << el.repr();
-    }
-
-    return "[" + parts.join(", ") + "]";
+    return toString();
 }
 
 Value ListValue::getItem(const Value& index) {

@@ -690,7 +690,15 @@ if _result is not None:
     ("repr([1, \"abc\"])", "\"[1, 'abc']\""),
 
     # repr(repr("abc")) -> '"\'abc\'"'
-    ("repr(repr(\"abc\"))", "'\"\\\'abc\\\'\"'")
+    ("repr(repr(\"abc\"))", "'\"\\\'abc\\\'\"'"),
+
+    # print
+    ("print()", ""),
+    ("print(1)", "1"),
+    ("print(1, 2, 3)", "1 2 3"),
+    ("print(1, 2, 3, sep=\", \")", "1, 2, 3"),
+    ("print([1, \"abc\"])", "[1, 'abc']"),
+    ("print(repr(\"abc\"))", "'abc'")
 
 ])
 

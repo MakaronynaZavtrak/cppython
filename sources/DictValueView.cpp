@@ -22,7 +22,7 @@ QString DictValuesView::toString() const {
 
         first = false;
 
-        out += dict->getElements()[key].toString();
+        out += dict->getElements()[key].repr();
     }
 
     out += "])";
@@ -31,25 +31,7 @@ QString DictValuesView::toString() const {
 }
 
 QString DictValuesView::repr() const {
-
-    QString out = "dict_values([";
-
-    bool first = true;
-
-    for (const auto& key : dict->getOrder()) {
-
-        if (!first) {
-            out += ", ";
-        }
-
-        first = false;
-
-        out += dict->getElements()[key].repr();
-    }
-
-    out += "])";
-
-    return out;
+    return toString();
 }
 
 std::shared_ptr<DictValue> DictValuesView::getDict() const {

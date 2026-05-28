@@ -26,7 +26,7 @@ QString DictItemsView::toString() const {
 
         TupleValue tuple({key, dict->getElements()[key]});
 
-        out += tuple.toString();
+        out += tuple.repr();
     }
 
     out += "])";
@@ -35,27 +35,7 @@ QString DictItemsView::toString() const {
 }
 
 QString DictItemsView::repr() const {
-
-    QString out = "dict_items([";
-
-    bool first = true;
-
-    for (const auto& key : dict->getOrder()) {
-
-        if (!first) {
-            out += ", ";
-        }
-
-        first = false;
-
-        TupleValue tuple({key, dict->getElements()[key]});
-
-        out += tuple.repr();
-    }
-
-    out += "])";
-
-    return out;
+    return toString();
 }
 
 std::shared_ptr<DictValue> DictItemsView::getDict() const {

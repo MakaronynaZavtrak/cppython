@@ -22,7 +22,7 @@ QString SetValue::toString() const {
 
         first = false;
 
-        out += value.toString();
+        out += value.repr();
     }
 
     out += "}";
@@ -31,29 +31,7 @@ QString SetValue::toString() const {
 }
 
 QString SetValue::repr() const {
-
-    if (order.empty()) {
-        return "set()";
-    }
-
-    QString out = "{";
-
-    bool first = true;
-
-    for (const auto& value : order) {
-
-        if (!first) {
-            out += ", ";
-        }
-
-        first = false;
-
-        out += value.repr();
-    }
-
-    out += "}";
-
-    return out;
+    return toString();
 }
 
 void SetValue::add(const Value& value) {

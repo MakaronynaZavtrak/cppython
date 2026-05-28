@@ -18,6 +18,20 @@
 //
 // Created by semyo on 04.05.2026.
 //
+
+const Value* findKwarg(const Kwargs& kwargs, const QString& name) {
+
+    const auto it = std::find_if(kwargs.begin(), kwargs.end(),
+        [&](const auto& pair) { return pair.first == name; });
+
+    if (it == kwargs.end()) {
+        return nullptr;
+    }
+
+    return &it->second;
+}
+
+
 void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) {
 
     env->set("super",
@@ -439,6 +453,65 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                      return Value(args[0].repr());
                  }
              ));
+
+    env->set(
+    "print",
+    makeBuiltin(
+        "print",
+
+        [](const std::vector<Value>& args,
+           const Kwargs& kwargs,
+           const std::shared_ptr<Environment>&) -> Value {
+
+            QString sep = " ";
+            QString end = "\n";
+            bool flush = false;
+
+            // sep
+            if (const auto sepArg = findKwarg(kwargs, "sep"))
+            {
+                if (!sepArg->isString()) {
+                    throw std::runtime_error("TypeError: sep must be str");
+                }
+
+                sep = sepArg->toString();
+            }
+
+            // end
+            if (const auto endArg = findKwarg(kwargs, "end"))
+            {
+                if (!endArg->isString()) {
+                    throw std::runtime_error("TypeError: end must be str");
+                }
+
+                end = endArg->toString();
+            }
+
+            // flush
+            if (const auto flushArg = findKwarg(kwargs, "flush")) {
+                flush = flushArg->toBool();
+            }
+
+            // output
+            for (size_t i = 0; i < args.size(); ++i) {
+
+                if (i > 0) {
+                    std::cout << sep.toStdString();
+                }
+
+                std::cout << args[i].toString().toStdString();
+            }
+
+            std::cout << end.toStdString();
+
+            if (flush) {
+                std::cout.flush();
+            }
+
+            return Value(); // None
+        }
+    )
+);
 
 }
 
