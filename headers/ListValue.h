@@ -20,6 +20,8 @@ public:
 
     [[nodiscard]] QString toString() const override;
 
+    [[nodiscard]] QString repr() const override;
+
     Value getItem(const Value& index);
 
     void setItem(const Value& index, const Value& value);

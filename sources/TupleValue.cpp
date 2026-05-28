@@ -32,7 +32,25 @@ QString TupleValue::toString() const {
 }
 
 QString TupleValue::repr() const {
-    return toString();
+
+    QString out = "(";
+
+    for (size_t i = 0; i < items.size(); ++i) {
+
+        out += items[i].repr();
+
+        if (i + 1 < items.size()) {
+            out += ", ";
+        }
+    }
+
+    if (items.size() == 1) {
+        out += ",";
+    }
+
+    out += ")";
+
+    return out;
 }
 
 Value TupleValue::getItem(const Value& index) const {

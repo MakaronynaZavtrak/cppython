@@ -15,7 +15,40 @@ QString StrValue::toString() const {
 }
 
 QString StrValue::repr() const {
-    return value;
+
+    QString escaped;
+
+    for (const QChar ch : value) {
+
+        switch (ch.unicode()) {
+
+            case '\n':
+                escaped += "\\n";
+                break;
+
+            case '\t':
+                escaped += "\\t";
+                break;
+
+            case '\r':
+                escaped += "\\r";
+                break;
+
+            case '\\':
+                escaped += "\\\\";
+                break;
+
+            case '\'':
+                escaped += "\\'";
+                break;
+
+            default:
+                escaped += ch;
+                break;
+        }
+    }
+
+    return "'" + escaped + "'";
 }
 
 std::size_t StrValue::len() const {
@@ -543,4 +576,45 @@ Value StrValue::isspace() const {
     }
 
     return Value(true);
+}
+
+QString StrValue::escapeString(const QString &str) {
+
+    QString result;
+
+    for (const QChar ch : str) {
+
+        switch (ch.unicode()) {
+
+            case '\n':
+                result += "\\n";
+                break;
+
+            case '\t':
+                result += "\\t";
+                break;
+
+            case '\r':
+                result += "\\r";
+                break;
+
+            case '\\':
+                result += "\\\\";
+                break;
+
+            case '\'':
+                result += "\\'";
+                break;
+
+            case '\"':
+                result += "\\\"";
+                break;
+
+            default:
+                result += ch;
+                break;
+        }
+    }
+
+    return result;
 }

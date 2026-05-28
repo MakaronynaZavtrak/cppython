@@ -18,6 +18,8 @@ public:
 
     [[nodiscard]] QString toString() const override;
 
+    [[nodiscard]] QString repr() const override;
+
     [[nodiscard]] std::shared_ptr<DictValue> getDict() const;
 
 private:

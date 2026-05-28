@@ -91,5 +91,8 @@ public:
     [[nodiscard]] Value isalnum() const;
 
     [[nodiscard]] Value isspace() const;
+
+    static QString escapeString(const QString& str);
+
 };
 #endif //CPPYTHON_STRVALUE_H

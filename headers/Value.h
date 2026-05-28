@@ -153,6 +153,8 @@ public:
     explicit Value(const IteratorPtr & iter) : data(iter) {}
 
     [[nodiscard]] QString toString() const override;
+    [[nodiscard]] QString repr() const override;
+    [[nodiscard]] QString replString() const;
 
     [[nodiscard]] bool toBool() const;
     [[nodiscard]] bool isNone() const;

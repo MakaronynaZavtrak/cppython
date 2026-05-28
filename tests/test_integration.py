@@ -636,8 +636,20 @@ if _result is not None:
     # только пробелы
     ("'   '.isspace()", "True"),
 
-    # # пробелы и табы (пока не поддерживается)
-    # ("'\\t\\n'.isspace()", "True"),
+    # пробелы и табы
+    ("'\\t\\n'.isspace()", "True"),
+
+    # isspace с tab
+    ("\"\\t\".isspace()", "True"),
+
+    # isspace с newline
+    ("\"\\n\".isspace()", "True"),
+
+    # escape \n внутри строки
+    ("\"a\\nb\"", "'a\\nb'"),
+
+    # escape \t внутри строки
+    ("\"a\\tb\"", "'a\\tb'"),
 
     # текст и пробелы
     ("' hello '.isspace()", "False"),
@@ -646,7 +658,7 @@ if _result is not None:
     ("''.isspace()", "False"),
 
     # обычный текст
-    ("'hello'.isspace()", "False"),
+    ("'hello'.isspace()", "False")
 
 ])
 

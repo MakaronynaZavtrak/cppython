@@ -160,28 +160,66 @@ Token Lexer::readNumber(const QString& code)
  * @return Token, представляющий строковый литерал, содержащий его тип, значение и номер строки.
  */
 Token Lexer::readString(const QString& code) {
-    const QChar quote = code[pos];
-    pos++;
-    column++;
-    const int start = pos;
 
-    while (pos < code.length() && code[pos] != quote) {
-        if (code[pos] == '\n') {
-            line++;
-            column = 1;
+    const QChar quote = code[pos++];
+    QString result;
+
+    while (pos < code.length()) {
+
+        QChar ch = code[pos++];
+
+        // конец строки
+        if (ch == quote) {
+            return {TOKEN_STRING, result, line};
         }
-        pos++;
-        column++;
+
+        // escape sequence
+        if (ch == '\\') {
+
+            if (pos >= code.length()) {
+                throw std::runtime_error("Invalid escape sequence");
+            }
+
+            QChar next = code[pos++];
+
+            switch (next.unicode()) {
+
+                case 'n':
+                    result += '\n';
+                    break;
+
+                case 't':
+                    result += '\t';
+                    break;
+
+                case 'r':
+                    result += '\r';
+                    break;
+
+                case '\\':
+                    result += '\\';
+                    break;
+
+                case '\'':
+                    result += '\'';
+                    break;
+
+                case '"':
+                    result += '"';
+                    break;
+
+                default:
+                    result += next;
+                    break;
+            }
+
+            continue;
+        }
+
+        result += ch;
     }
 
-    if (pos >= code.length()) {
-        throw std::runtime_error("Unterminated string literal");
-    }
-
-    QString str = code.mid(start, pos - start);
-    pos++;
-    column++;
-    return {TOKEN_STRING, str, line};
+    throw std::runtime_error("Unterminated string literal");
 }
 
 

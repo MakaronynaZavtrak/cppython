@@ -68,7 +68,7 @@ QString Value::toString() const {
     }
 
     if (isString()) {
-        return QString("\'" + std::get<StrPtr>(data)->toString() + "\'");
+        return std::get<StrPtr>(data)->toString();
     }
 
     if (isList()) {
@@ -135,6 +135,47 @@ QString Value::toString() const {
     }
 
     return "Unknown unsupported type";
+}
+
+QString Value::repr() const {
+
+    if (isString()) {
+        return std::get<StrPtr>(data)->repr();
+    }
+
+    if (isList()) {
+        return std::get<ListPtr>(data)->repr();
+    }
+
+    if (isDict()) {
+        return std::get<DictPtr>(data)->repr();
+    }
+
+    if (isTuple()) {
+        return std::get<TuplePtr>(data)->repr();
+    }
+
+    if (isDictKeysView()) {
+        return std::get<DictKeysViewPtr>(data)->repr();
+    }
+
+    if (isDictValuesView()) {
+        return std::get<DictValuesViewPtr>(data)->repr();
+    }
+
+    if (isDictItemsView()) {
+        return std::get<DictItemsViewPtr>(data)->repr();
+    }
+
+    if (isSet()) {
+        return std::get<SetPtr>(data)->repr();
+    }
+
+    return toString();
+}
+
+QString Value::replString() const {
+    return repr();
 }
 
 /**

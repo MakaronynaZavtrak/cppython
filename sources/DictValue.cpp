@@ -42,7 +42,27 @@ QString DictValue::toString() const {
 }
 
 QString DictValue::repr() const {
-      return toString();
+
+      QString out = "{";
+
+      bool first = true;
+
+      for (const auto& key : order) {
+
+            if (!first) {
+                  out += ", ";
+            }
+
+            first = false;
+
+            out += key.repr();
+            out += ": ";
+            out += elements[key].repr();
+      }
+
+      out += "}";
+
+      return out;
 }
 
 Value DictValue::getItem(const Value& key) const {

@@ -30,6 +30,28 @@ QString DictKeysView::toString() const {
     return out;
 }
 
+QString DictKeysView::repr() const {
+
+    QString out = "dict_keys([";
+
+    bool first = true;
+
+    for (const auto& key : dict->getOrder()) {
+
+        if (!first) {
+            out += ", ";
+        }
+
+        first = false;
+
+        out += key.repr();
+    }
+
+    out += "])";
+
+    return out;
+}
+
 std::shared_ptr<DictValue>DictKeysView::getDict() const {
     return dict;
 }

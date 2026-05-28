@@ -31,7 +31,29 @@ QString SetValue::toString() const {
 }
 
 QString SetValue::repr() const {
-    return toString();
+
+    if (order.empty()) {
+        return "set()";
+    }
+
+    QString out = "{";
+
+    bool first = true;
+
+    for (const auto& value : order) {
+
+        if (!first) {
+            out += ", ";
+        }
+
+        first = false;
+
+        out += value.repr();
+    }
+
+    out += "}";
+
+    return out;
 }
 
 void SetValue::add(const Value& value) {

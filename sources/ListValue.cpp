@@ -19,6 +19,17 @@ QString ListValue::toString() const {
     return "[" + parts.join(", ") + "]";
 }
 
+QString ListValue::repr() const {
+
+    QStringList parts;
+
+    for (const auto& el : elements) {
+        parts << el.repr();
+    }
+
+    return "[" + parts.join(", ") + "]";
+}
+
 Value ListValue::getItem(const Value& index) {
 
     auto i = index.toBigInt();
