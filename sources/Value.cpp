@@ -174,10 +174,6 @@ QString Value::repr() const {
     return toString();
 }
 
-QString Value::replString() const {
-    return repr();
-}
-
 /**
  * Преобразует экземпляр `Value` в булево значение в зависимости от его типа.
  *
@@ -510,6 +506,10 @@ Value::StrPtr Value::asString(const QString& where) const {
     }
 
     return std::get<StrPtr>(data);
+}
+
+QString Value::display() const {
+    return repr();
 }
 
 bool Value::isDictKeysView() const {

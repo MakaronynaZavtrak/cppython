@@ -16,6 +16,18 @@ QString StrValue::toString() const {
 
 QString StrValue::repr() const {
 
+    QChar quote;
+
+    if (!value.contains('\'')) {
+        quote = '\'';
+    }
+    else if (!value.contains('"')) {
+        quote = '"';
+    }
+    else {
+        quote = '\'';
+    }
+
     QString escaped;
 
     for (const QChar ch : value) {
@@ -38,17 +50,20 @@ QString StrValue::repr() const {
                 escaped += "\\\\";
                 break;
 
-            case '\'':
-                escaped += "\\'";
-                break;
-
             default:
-                escaped += ch;
+
+                if (ch == quote) {
+                    escaped += '\\';
+                    escaped += ch;
+                } else {
+                    escaped += ch;
+                }
+
                 break;
         }
     }
 
-    return "'" + escaped + "'";
+    return QString(quote) + escaped + QString(quote);
 }
 
 std::size_t StrValue::len() const {

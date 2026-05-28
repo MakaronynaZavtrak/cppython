@@ -425,6 +425,21 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                      return Value(dict);
                  }
              ));
+
+    env->set("repr",
+             makeBuiltin(
+                 "repr",
+
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
+
+                     expectArgs(args, 1, "repr");
+
+                     return Value(args[0].repr());
+                 }
+             ));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {

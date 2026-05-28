@@ -46,7 +46,7 @@ Value Interpreter::executeNode(
     const Value result = node->eval(env);
 
     if (node->shouldPrint() && !result.isNone()) {
-        std::cout << result.replString().toStdString() << "\n";
+        std::cout << result.display().toStdString() << "\n";
     }
 
     return result;

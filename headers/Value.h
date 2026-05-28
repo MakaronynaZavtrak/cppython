@@ -154,7 +154,7 @@ public:
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString repr() const override;
-    [[nodiscard]] QString replString() const;
+    [[nodiscard]] QString display() const;
 
     [[nodiscard]] bool toBool() const;
     [[nodiscard]] bool isNone() const;
