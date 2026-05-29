@@ -720,6 +720,26 @@ namespace {
         );
     }
 
+    Value makeIsTitleMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "istitle",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "istitle");
+
+                return str->istitle();
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -752,7 +772,8 @@ namespace {
         REGISTER_METHOD("islower", makeIsLowerMethod),
         REGISTER_METHOD("isupper", makeIsUpperMethod),
         REGISTER_METHOD("isdecimal", makeIsDecimalMethod),
-        REGISTER_METHOD("isnumeric", makeIsNumericMethod)
+        REGISTER_METHOD("isnumeric", makeIsNumericMethod),
+        REGISTER_METHOD("istitle", makeIsTitleMethod)
     };
 }
 

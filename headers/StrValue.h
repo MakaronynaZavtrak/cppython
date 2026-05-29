@@ -123,5 +123,7 @@ public:
     //TODO: метод неполноценный, так как не поддерживает unicode
     [[nodiscard]] Value isnumeric() const;
 
+    [[nodiscard]] Value istitle() const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

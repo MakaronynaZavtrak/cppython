@@ -804,6 +804,21 @@ if _result is not None:
     ("'123.45'.isnumeric()", "False"),
     ("'-123'.isnumeric()", "False"),
 
+    # istitle
+
+    ("'Hello'.istitle()", "True"),
+    ("'Hello World'.istitle()", "True"),
+    ("'Hello-World'.istitle()", "True"),
+    ("'hello'.istitle()", "False"),
+    ("'HELLO'.istitle()", "False"),
+    ("'Hello world'.istitle()", "False"),
+    ("'hello World'.istitle()", "False"),
+    ("''.istitle()", "False"),
+    ("'A'.istitle()", "True"),
+    ("'a'.istitle()", "False"),
+    ("'Hello123World'.istitle()", "True"),
+    ("'Hello123world'.istitle()", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

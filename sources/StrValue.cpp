@@ -855,3 +855,36 @@ Value StrValue::isnumeric() const {
 
     return Value(true);
 }
+
+Value StrValue::istitle() const {
+
+    bool hasLetter = false;
+    bool newWord = true;
+
+    for (const QChar ch : value) {
+
+        if (!ch.isLetter()) {
+            newWord = true;
+            continue;
+        }
+
+        hasLetter = true;
+
+        if (newWord) {
+
+            if (!ch.isUpper()) {
+                return Value(false);
+            }
+
+            newWord = false;
+        }
+        else {
+
+            if (!ch.isLower()) {
+                return Value(false);
+            }
+        }
+    }
+
+    return Value(hasLetter);
+}
