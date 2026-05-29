@@ -537,6 +537,29 @@ namespace {
         );
     }
 
+    Value makeLjustMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "ljust",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "ljust");
+
+                if (args.size() == 1) {
+                    return str->ljust(args[0]);
+                }
+
+                return str->ljust(args[0], args[1]);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -561,7 +584,8 @@ namespace {
         REGISTER_METHOD("isdigit", makeIsDigitMethod),
         REGISTER_METHOD("isalnum", makeIsAlnumMethod),
         REGISTER_METHOD("isspace", makeIsSpaceMethod),
-        REGISTER_METHOD("center", makeCenterMethod)
+        REGISTER_METHOD("center", makeCenterMethod),
+        REGISTER_METHOD("ljust", makeLjustMethod)
     };
 }
 

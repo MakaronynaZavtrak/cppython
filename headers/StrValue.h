@@ -98,5 +98,9 @@ public:
     const Value& width,
     const std::optional<Value>& fillCharValue = std::nullopt) const;
 
+    [[nodiscard]] Value ljust(
+    const Value& widthValue,
+    const std::optional<Value>& fillCharValue = std::nullopt) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

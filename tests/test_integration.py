@@ -710,7 +710,17 @@ if _result is not None:
     ("'x'.center(5, '*')", "'**x**'"),
     ("'x'.center(6, '*')", "'**x***'"),
     ("''.center(4)", "'    '"),
-    ("''.center(4, '-')", "'----'")
+    ("''.center(4, '-')", "'----'"),
+
+    # ljust
+    ("'abc'.ljust(8)", "'abc     '"),
+    ("'abc'.ljust(8, '*')", "'abc*****'"),
+    ("'abc'.ljust(3)", "'abc'"),
+    ("'abc'.ljust(2)", "'abc'"),
+    ("'abc'.ljust(4)", "'abc '"),
+    ("'x'.ljust(5, '*')", "'x****'"),
+    ("''.ljust(5)", "'     '"),
+    ("''.ljust(3, '*')", "'***'")
 
 ])
 

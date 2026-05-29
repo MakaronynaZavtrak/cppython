@@ -668,3 +668,31 @@ Value StrValue::center(
         QString(right, fillChar[0])
     );
 }
+
+Value StrValue::ljust(
+    const Value& widthValue,
+    const std::optional<Value>& fillCharValue) const {
+
+    const auto width = static_cast<qsizetype>(widthValue.toBigInt());
+
+    QString fillChar = " ";
+
+    if (fillCharValue.has_value()) {
+
+        fillChar = fillCharValue->asString("fillchar")->toString();
+
+        if (fillChar.size() != 1) {
+            throw std::runtime_error(
+                "TypeError: The fill character must be exactly one character long"
+            );
+        }
+    }
+
+    if (width <= value.size()) {
+        return Value(value);
+    }
+
+    const qsizetype padding = width - value.size();
+
+    return Value(value + QString(padding, fillChar[0]));
+}
