@@ -116,7 +116,12 @@ public:
 
     [[nodiscard]] Value isupper() const;
 
+
+    //TODO: метод неполноценный, так как не поддерживает unicode
     [[nodiscard]] Value isdecimal() const;
+
+    //TODO: метод неполноценный, так как не поддерживает unicode
+    [[nodiscard]] Value isnumeric() const;
 
 };
 #endif //CPPYTHON_STRVALUE_H

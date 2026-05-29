@@ -793,6 +793,17 @@ if _result is not None:
     ("'123.45'.isdecimal()", "False"),
     ("'-123'.isdecimal()", "False"),
 
+    # isnumeric
+
+    ("'123'.isnumeric()", "True"),
+    ("'000'.isnumeric()", "True"),
+    ("'123abc'.isnumeric()", "False"),
+    ("'abc'.isnumeric()", "False"),
+    ("'12 3'.isnumeric()", "False"),
+    ("''.isnumeric()", "False"),
+    ("'123.45'.isnumeric()", "False"),
+    ("'-123'.isnumeric()", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

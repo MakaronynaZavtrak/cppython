@@ -839,3 +839,19 @@ Value StrValue::isdecimal() const {
 
     return Value(true);
 }
+
+Value StrValue::isnumeric() const {
+
+    if (value.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const QChar ch : value) {
+
+        if (!ch.isDigit()) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
