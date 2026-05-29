@@ -751,3 +751,35 @@ Value StrValue::lstrip(
 
     return Value(value.mid(start));
 }
+
+Value StrValue::rstrip(const std::optional<QString>& chars) const {
+
+    if (value.isEmpty()) {
+        return Value(value);
+    }
+
+    qsizetype end = value.size() - 1;
+
+    if (!chars.has_value()) {
+
+        while (
+            end >= 0 &&
+            value[end].isSpace()
+        ) {
+            --end;
+        }
+
+    } else {
+
+        const QString& stripChars = *chars;
+
+        while (
+            end >= 0 &&
+            stripChars.contains(value[end])
+        ) {
+            --end;
+        }
+    }
+
+    return Value(value.left(end + 1));
+}

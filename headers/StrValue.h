@@ -109,5 +109,8 @@ public:
     [[nodiscard]] Value lstrip(
     const std::optional<QString>& chars = std::nullopt) const;
 
+    [[nodiscard]] Value rstrip(
+    const std::optional<QString>& chars = std::nullopt) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

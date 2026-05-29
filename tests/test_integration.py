@@ -743,6 +743,18 @@ if _result is not None:
     ("'abcabcHello'.lstrip('abc')", "'Hello'"),
     ("'xyzHello'.lstrip('abc')", "'xyzHello'"),
 
+    # rstrip пробелом
+    ("'   hello   '.rstrip()", "'   hello'"),
+    ("'hello'.rstrip()", "'hello'"),
+    ("''.rstrip()", "''"),
+
+    # rstrip другими символами
+    ("'---hello---'.rstrip('-')", "'---hello'"),
+    ("'abcHelloabc'.rstrip('abc')", "'abcHello'"),
+    ("'aaaa'.rstrip('a')", "''"),
+    ("'Helloabcabc'.rstrip('abc')", "'Hello'"),
+    ("'Helloxyz'.rstrip('abc')", "'Helloxyz'")
+
 ])
 
 def test_single_line_expressions(expr, expected):
