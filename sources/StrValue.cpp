@@ -724,3 +724,30 @@ Value StrValue::rjust(
 
     return Value(QString(padding, fillChar[0]) + value);
 }
+
+Value StrValue::lstrip(
+    const std::optional<QString>& chars) const {
+
+    if (value.isEmpty()) {
+        return Value(value);
+    }
+
+    qsizetype start = 0;
+
+    if (!chars.has_value()) {
+
+        while (start < value.size() && value[start].isSpace()) {
+            ++start;
+        }
+
+    } else {
+
+        const QString& stripChars = *chars;
+
+        while (start < value.size() && stripChars.contains(value[start])) {
+            ++start;
+        }
+    }
+
+    return Value(value.mid(start));
+}

@@ -584,6 +584,34 @@ namespace {
         );
     }
 
+    Value makeLstripMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "lstrip",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "lstrip");
+
+                if (args.empty()) {
+                    return str->lstrip();
+                }
+
+                return str->lstrip(
+                    args[0]
+                        .asString("lstrip")
+                        ->toString()
+                );
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -610,7 +638,8 @@ namespace {
         REGISTER_METHOD("isspace", makeIsSpaceMethod),
         REGISTER_METHOD("center", makeCenterMethod),
         REGISTER_METHOD("ljust", makeLjustMethod),
-        REGISTER_METHOD("rjust", makeRjustMethod)
+        REGISTER_METHOD("rjust", makeRjustMethod),
+        REGISTER_METHOD("lstrip", makeLstripMethod)
     };
 }
 

@@ -729,7 +729,19 @@ if _result is not None:
     ("'abc'.rjust(3)", "'abc'"),
     ("'abc'.rjust(2)", "'abc'"),
     ("''.rjust(3)", "'   '"),
-    ("'hello'.rjust(10, '*')", "'*****hello'")
+    ("'hello'.rjust(10, '*')", "'*****hello'"),
+
+    # lstrip пробелом
+    ("'   hello   '.lstrip()", "'hello   '"),
+    ("'hello'.lstrip()", "'hello'"),
+    ("''.lstrip()", "''"),
+
+    # lstrip другими символами
+    ("'---hello---'.lstrip('-')", "'hello---'"),
+    ("'abcHelloabc'.lstrip('abc')", "'Helloabc'"),
+    ("'aaaa'.lstrip('a')", "''"),
+    ("'abcabcHello'.lstrip('abc')", "'Hello'"),
+    ("'xyzHello'.lstrip('abc')", "'xyzHello'"),
 
 ])
 
