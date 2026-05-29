@@ -513,6 +513,30 @@ namespace {
         );
     }
 
+    Value makeCenterMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "center",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "center");
+
+                if (args.size() == 1) {
+                    return str->center(args[0]);
+                }
+
+                return str->center(args[0], args[1]);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -536,7 +560,8 @@ namespace {
         REGISTER_METHOD("isalpha", makeIsAlphaMethod),
         REGISTER_METHOD("isdigit", makeIsDigitMethod),
         REGISTER_METHOD("isalnum", makeIsAlnumMethod),
-        REGISTER_METHOD("isspace", makeIsSpaceMethod)
+        REGISTER_METHOD("isspace", makeIsSpaceMethod),
+        REGISTER_METHOD("center", makeCenterMethod)
     };
 }
 

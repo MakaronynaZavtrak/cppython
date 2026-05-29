@@ -633,3 +633,38 @@ QString StrValue::escapeString(const QString &str) {
 
     return result;
 }
+
+Value StrValue::center(
+    const Value& widthValue,
+    const std::optional<Value>& fillCharValue) const {
+
+    const auto width = static_cast<qsizetype>(widthValue.toBigInt());
+
+    QString fillChar = " ";
+
+    if (fillCharValue.has_value()) {
+
+        fillChar = fillCharValue->asString("fillchar")->toString();
+
+        if (fillChar.size() != 1) {
+            throw std::runtime_error(
+                "TypeError: The fill character must be exactly one character long");
+        }
+    }
+
+    if (width <= value.size()) {
+        return Value(value);
+    }
+
+    const qsizetype marg = width - value.size();
+
+    const qsizetype left = marg / 2 + (marg & width & 1);
+
+    const qsizetype right = marg - left;
+
+    return Value(
+        QString(left, fillChar[0]) +
+        value +
+        QString(right, fillChar[0])
+    );
+}

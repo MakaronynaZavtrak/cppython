@@ -94,5 +94,9 @@ public:
 
     static QString escapeString(const QString& str);
 
+    [[nodiscard]] Value center(
+    const Value& width,
+    const std::optional<Value>& fillCharValue = std::nullopt) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

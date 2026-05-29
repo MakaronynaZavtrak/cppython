@@ -698,7 +698,19 @@ if _result is not None:
     ("print(1, 2, 3)", "1 2 3"),
     ("print(1, 2, 3, sep=\", \")", "1, 2, 3"),
     ("print([1, \"abc\"])", "[1, 'abc']"),
-    ("print(repr(\"abc\"))", "'abc'")
+    ("print(repr(\"abc\"))", "'abc'"),
+
+    # center
+    ("'abc'.center(7)", "'  abc  '"),
+    ("'abc'.center(8)", "'  abc   '"),
+    ("'abc'.center(3)", "'abc'"),
+    ("'abc'.center(2)", "'abc'"),
+    ("'abc'.center(7, '-')", "'--abc--'"),
+    ("'ab'.center(5, '*')", "'**ab*'"),
+    ("'x'.center(5, '*')", "'**x**'"),
+    ("'x'.center(6, '*')", "'**x***'"),
+    ("''.center(4)", "'    '"),
+    ("''.center(4, '-')", "'----'")
 
 ])
 
