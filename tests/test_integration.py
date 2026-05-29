@@ -783,6 +783,16 @@ if _result is not None:
     ("'Привет'.isupper()", "False"),
     ("'ПРИВЕТ123'.isupper()", "True"),
 
+    # isdecimal
+    ("'123'.isdecimal()", "True"),
+    ("'000'.isdecimal()", "True"),
+    ("'123abc'.isdecimal()", "False"),
+    ("'abc'.isdecimal()", "False"),
+    ("'12 3'.isdecimal()", "False"),
+    ("''.isdecimal()", "False"),
+    ("'123.45'.isdecimal()", "False"),
+    ("'-123'.isdecimal()", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

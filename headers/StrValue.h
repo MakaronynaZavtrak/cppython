@@ -116,5 +116,7 @@ public:
 
     [[nodiscard]] Value isupper() const;
 
+    [[nodiscard]] Value isdecimal() const;
+
 };
 #endif //CPPYTHON_STRVALUE_H
