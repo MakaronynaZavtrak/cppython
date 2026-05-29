@@ -769,6 +769,20 @@ if _result is not None:
     ("'Привет'.islower()", "False"),
     ("'привет123'.islower()", "True"),
 
+    # isupper
+    ("'HELLO'.isupper()", "True"),
+    ("'HELLO123'.isupper()", "True"),
+    ("'HELLO!'.isupper()", "True"),
+    ("'Hello'.isupper()", "False"),
+    ("'hello'.isupper()", "False"),
+    ("'HeLLo'.isupper()", "False"),
+    ("''.isupper()", "False"),
+    ("'123'.isupper()", "False"),
+    ("'!!!'.isupper()", "False"),
+    ("'ПРИВЕТ'.isupper()", "True"),
+    ("'Привет'.isupper()", "False"),
+    ("'ПРИВЕТ123'.isupper()", "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

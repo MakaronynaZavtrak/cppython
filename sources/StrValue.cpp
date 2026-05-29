@@ -803,3 +803,23 @@ Value StrValue::islower() const {
 
     return Value(hasLetter);
 }
+
+Value StrValue::isupper() const {
+
+    bool hasLetter = false;
+
+    for (const QChar ch : value) {
+
+        if (!ch.isLetter()) {
+            continue;
+        }
+
+        hasLetter = true;
+
+        if (!ch.isUpper()) {
+            return Value(false);
+        }
+    }
+
+    return Value(hasLetter);
+}

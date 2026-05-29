@@ -660,6 +660,26 @@ namespace {
         );
     }
 
+    Value makeIsUpperMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isupper",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isupper");
+
+                return str->isupper();
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -689,7 +709,8 @@ namespace {
         REGISTER_METHOD("rjust", makeRjustMethod),
         REGISTER_METHOD("lstrip", makeLstripMethod),
         REGISTER_METHOD("rstrip", makeRstripMethod),
-        REGISTER_METHOD("islower", makeIsLowerMethod)
+        REGISTER_METHOD("islower", makeIsLowerMethod),
+        REGISTER_METHOD("isupper", makeIsUpperMethod)
     };
 }
 

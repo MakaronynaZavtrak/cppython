@@ -114,5 +114,7 @@ public:
 
     [[nodiscard]] Value islower() const;
 
+    [[nodiscard]] Value isupper() const;
+
 };
 #endif //CPPYTHON_STRVALUE_H
