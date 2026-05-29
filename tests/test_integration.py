@@ -720,7 +720,16 @@ if _result is not None:
     ("'abc'.ljust(4)", "'abc '"),
     ("'x'.ljust(5, '*')", "'x****'"),
     ("''.ljust(5)", "'     '"),
-    ("''.ljust(3, '*')", "'***'")
+    ("''.ljust(3, '*')", "'***'"),
+
+    # rjust
+    ("'x'.rjust(5)", "'    x'"),
+    ("'x'.rjust(5, '*')", "'****x'"),
+    ("'abc'.rjust(5)", "'  abc'"),
+    ("'abc'.rjust(3)", "'abc'"),
+    ("'abc'.rjust(2)", "'abc'"),
+    ("''.rjust(3)", "'   '"),
+    ("'hello'.rjust(10, '*')", "'*****hello'")
 
 ])
 

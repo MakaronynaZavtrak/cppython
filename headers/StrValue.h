@@ -102,5 +102,9 @@ public:
     const Value& widthValue,
     const std::optional<Value>& fillCharValue = std::nullopt) const;
 
+    [[nodiscard]] Value rjust(
+    const Value& widthValue,
+    const std::optional<Value>& fillCharValue = std::nullopt) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H
