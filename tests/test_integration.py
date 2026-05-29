@@ -753,7 +753,21 @@ if _result is not None:
     ("'abcHelloabc'.rstrip('abc')", "'abcHello'"),
     ("'aaaa'.rstrip('a')", "''"),
     ("'Helloabcabc'.rstrip('abc')", "'Hello'"),
-    ("'Helloxyz'.rstrip('abc')", "'Helloxyz'")
+    ("'Helloxyz'.rstrip('abc')", "'Helloxyz'"),
+
+    # islower
+    ("'hello'.islower()", "True"),
+    ("'hello123'.islower()", "True"),
+    ("'hello!'.islower()", "True"),
+    ("'Hello'.islower()", "False"),
+    ("'HELLO'.islower()", "False"),
+    ("'HeLLo'.islower()", "False"),
+    ("''.islower()", "False"),
+    ("'123'.islower()", "False"),
+    ("'!!!'.islower()", "False"),
+    ("'привет'.islower()", "True"),
+    ("'Привет'.islower()", "False"),
+    ("'привет123'.islower()", "True"),
 
 ])
 

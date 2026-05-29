@@ -783,3 +783,23 @@ Value StrValue::rstrip(const std::optional<QString>& chars) const {
 
     return Value(value.left(end + 1));
 }
+
+Value StrValue::islower() const {
+
+    bool hasLetter = false;
+
+    for (const QChar ch : value) {
+
+        if (!ch.isLetter()) {
+            continue;
+        }
+
+        hasLetter = true;
+
+        if (!ch.isLower()) {
+            return Value(false);
+        }
+    }
+
+    return Value(hasLetter);
+}

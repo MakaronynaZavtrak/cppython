@@ -112,5 +112,7 @@ public:
     [[nodiscard]] Value rstrip(
     const std::optional<QString>& chars = std::nullopt) const;
 
+    [[nodiscard]] Value islower() const;
+
 };
 #endif //CPPYTHON_STRVALUE_H
