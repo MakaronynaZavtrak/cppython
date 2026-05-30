@@ -827,7 +827,22 @@ if _result is not None:
     ("'\\n'.isascii()", "True"),
     ("'Привет'.isascii()", "False"),
     ("'你好'.isascii()", "False"),
-    ("'café'.isascii()", "False")
+    ("'café'.isascii()", "False"),
+
+    # isidentifier
+    ("'abc'.isidentifier()", "True"),
+    ("'_abc'.isidentifier()", "True"),
+    ("'abc123'.isidentifier()", "True"),
+    ("'123abc'.isidentifier()", "False"),
+    ("'abc-def'.isidentifier()", "False"),
+    ("'abc def'.isidentifier()", "False"),
+    ("''.isidentifier()", "False"),
+    ("'Привет'.isidentifier()", "True"),
+    ("'переменная123'.isidentifier()", "True"),
+    ("'_'.isidentifier()", "True"),
+    ("'__init__'.isidentifier()", "True"),
+    ("'for'.isidentifier()", "True"),
+    ("'class'.isidentifier()", "True"),
 
 ])
 

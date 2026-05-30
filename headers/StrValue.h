@@ -127,5 +127,7 @@ public:
 
     [[nodiscard]] Value isASCII() const;
 
+    [[nodiscard]] Value isidentifier() const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

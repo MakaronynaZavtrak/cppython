@@ -900,3 +900,27 @@ Value StrValue::isASCII() const {
 
     return Value(true);
 }
+
+Value StrValue::isidentifier() const {
+
+    if (value.isEmpty()) {
+        return Value(false);
+    }
+
+    const QChar first = value[0];
+
+    if (!(first == '_' || first.isLetter())) {
+        return Value(false);
+    }
+
+    for (qsizetype i = 1; i < value.size(); ++i) {
+
+        const QChar ch = value[i];
+
+        if (!(ch == '_' || ch.isLetterOrNumber())) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
