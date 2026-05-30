@@ -140,5 +140,12 @@ public:
 
     [[nodiscard]] Value zfill(const Value& widthValue) const;
 
+    [[nodiscard]] Value expandtabs(
+    const std::optional<Value>& tabsizeValue = std::nullopt) const;
+
+    [[nodiscard]] Value rsplit(
+    const std::optional<QString>& sep = std::nullopt,
+    std::optional<qsizetype> maxSplit = std::nullopt) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

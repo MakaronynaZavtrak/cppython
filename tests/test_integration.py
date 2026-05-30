@@ -895,7 +895,30 @@ if _result is not None:
     ("'abc'.zfill(5)", "'00abc'"),
     ("'abc'.zfill(3)", "'abc'"),
     ("'abc'.zfill(0)", "'abc'"),
-    ("'-abc'.zfill(8)", "'-0000abc'")
+    ("'-abc'.zfill(8)", "'-0000abc'"),
+
+    # expandtabs
+    ("'abc\\t'.expandtabs()", "'abc     '"),
+    ("'a\\tb'.expandtabs()", "'a       b'"),
+    ("'a\\tb'.expandtabs(4)", "'a   b'"),
+    ("'\\t'.expandtabs()", "'        '"),
+    ("'\\t'.expandtabs(4)", "'    '"),
+    ("''.expandtabs()", "''"),
+    ("'abc'.expandtabs()", "'abc'"),
+    ("'a\\tb\\nc\\td'.expandtabs(4)", "'a   b\\nc   d'"),
+    ("'a\\tb'.expandtabs(1)", "'a b'"),
+    ("'a\\tb'.expandtabs(0)", "'ab'"),
+
+    # rsplit
+    ("'a,b,c'.rsplit(',')", "['a', 'b', 'c']"),
+    ("'a,b,c,d'.rsplit(',', 1)", "['a,b,c', 'd']"),
+    ("'a,b,c,d'.rsplit(',', 2)", "['a,b', 'c', 'd']"),
+    ("'abc'.rsplit(',')", "['abc']"),
+    ("''.rsplit(',')", "['']"),
+    ("'a b c'.rsplit()", "['a', 'b', 'c']"),
+    ("'  a   b  c '.rsplit()", "['a', 'b', 'c']"),
+    ("'a b c d'.rsplit(None, 1)", "['a b c', 'd']"),
+    ("'a b c d'.rsplit(None, 2)", "['a b', 'c', 'd']"),
 
 ])
 

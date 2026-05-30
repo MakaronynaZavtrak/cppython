@@ -11,6 +11,22 @@
 #include "TupleValue.h"
 #include "Value.h"
 
+namespace {
+
+    std::vector<Value> toValueVector(const QStringList& list) {
+
+        std::vector<Value> result;
+        result.reserve(list.size());
+
+        for (const auto& item : list) {
+            result.emplace_back(item);
+        }
+
+        return result;
+    }
+
+}
+
 QString StrValue::toString() const {
     return value;
 }
@@ -131,7 +147,7 @@ Value StrValue::strip(const std::optional<QString>& chars) const {
 }
 
 Value StrValue::split(const std::optional<QString>& sep,
-    std::optional<qsizetype> maxSplit) const {
+    const std::optional<qsizetype> maxSplit) const {
 
     QStringList parts;
 
@@ -176,13 +192,11 @@ Value StrValue::split(const std::optional<QString>& sep,
         }
     }
 
-    std::vector<Value> result;
-
-    for (const auto& part : parts) {
-        result.emplace_back(part);
-    }
-
-    return Value(std::make_shared<ListValue>(result));
+    return Value(
+        std::make_shared<ListValue>(
+            toValueVector(parts)
+        )
+    );
 }
 
 Value StrValue::join(const Value& iterable) const {
@@ -1102,4 +1116,194 @@ Value StrValue::zfill(const Value& widthValue) const {
     }
 
     return Value(QString(zeros, '0') + value);
+}
+
+Value StrValue::expandtabs(
+    const std::optional<Value>& tabsizeValue) const {
+
+    const qsizetype tabsize =
+        tabsizeValue.has_value()
+            ? static_cast<qsizetype>(tabsizeValue->toBigInt())
+            : 8;
+
+    QString result;
+
+    qsizetype column = 0;
+
+    for (const QChar ch : value) {
+
+        if (ch == '\t') {
+
+            const qsizetype spaces =
+                tabsize <= 0
+                    ? 0
+                    : tabsize - (column % tabsize);
+
+            result += QString(spaces, ' ');
+            column += spaces;
+
+            continue;
+        }
+
+        result += ch;
+
+        if (ch == '\n' || ch == '\r') {
+            column = 0;
+        }
+        else {
+            ++column;
+        }
+    }
+
+    return Value(result);
+}
+
+Value StrValue::rsplit(
+    const std::optional<QString>& sep,
+    const std::optional<qsizetype> maxSplit) const {
+
+    // rsplit(None)
+    if (!sep.has_value()) {
+
+        const qsizetype limit =
+            maxSplit.has_value()
+                ? *maxSplit
+                : -1;
+
+        // без ограничения
+        if (limit < 0) {
+
+            const QStringList parts =
+                value.split(
+                    QRegularExpression("\\s+"),
+                    Qt::SkipEmptyParts
+                );
+
+            return Value(
+                std::make_shared<ListValue>(
+                    toValueVector(parts)
+                )
+            );
+        }
+
+        QString remaining = value.trimmed();
+
+        QStringList result;
+
+        qsizetype splits = 0;
+
+        while (splits < limit) {
+
+            //
+            // пропускаем пробелы справа
+            //
+
+            qsizetype pos = remaining.size() - 1;
+
+            while (
+                pos >= 0 &&
+                remaining[pos].isSpace()
+            ) {
+                --pos;
+            }
+
+            if (pos < 0) {
+                break;
+            }
+
+            //
+            // конец последнего слова
+            //
+
+            const qsizetype wordEnd = pos;
+
+            //
+            // ищем начало последнего слова
+            //
+
+            while (
+                pos >= 0 &&
+                !remaining[pos].isSpace()
+            ) {
+                --pos;
+            }
+
+            result.prepend(
+                remaining.mid(
+                    pos + 1,
+                    wordEnd - pos
+                )
+            );
+
+            remaining =
+                remaining.left(pos + 1);
+
+            ++splits;
+        }
+
+        remaining = remaining.trimmed();
+
+        if (!remaining.isEmpty()) {
+            result.prepend(remaining);
+        }
+
+        return Value(
+            std::make_shared<ListValue>(
+                toValueVector(result)
+            )
+        );
+    }
+
+    const QString& separator = *sep;
+
+    if (separator.isEmpty()) {
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const qsizetype limit =
+        maxSplit.has_value()
+            ? *maxSplit
+            : -1;
+
+    if (limit < 0) {
+
+        const QStringList parts = value.split(separator);
+
+        return Value(
+            std::make_shared<ListValue>(
+                toValueVector(parts)
+            )
+        );
+    }
+
+    QString remaining = value;
+
+    QStringList reversed;
+
+    qsizetype splits = 0;
+
+    while (splits < limit) {
+
+        const qsizetype pos = remaining.lastIndexOf(separator);
+
+        if (pos == -1) {
+            break;
+        }
+
+        reversed.prepend(remaining.mid(pos + separator.size()));
+
+        remaining = remaining.left(pos);
+
+        ++splits;
+    }
+
+    reversed.prepend(remaining);
+
+    return Value(
+        std::make_shared<ListValue>(
+            toValueVector(reversed)
+        )
+    );
 }

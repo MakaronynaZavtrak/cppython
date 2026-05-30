@@ -6,6 +6,7 @@
 #include "../BuiltinAttrLookup.h"
 #include "../BuiltinMethodRegistry.h"
 #include "../../ProtocolHelpers.h"
+#include <QDebug>
 
 namespace {
 
@@ -884,6 +885,70 @@ namespace {
         );
     }
 
+    Value makeExpandTabsMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "expandtabs",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "expandtabs");
+
+                if (args.empty()) {
+                    return str->expandtabs();
+                }
+
+                return str->expandtabs(args[0]);
+            }
+        );
+    }
+
+    Value makeRSplitMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "rsplit",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 2, "rsplit");
+
+                std::optional<QString> sep;
+                std::optional<qsizetype> maxsplit;
+
+                if (!args.empty()) {
+
+                    if (!args[0].isNone()) {
+                        sep =
+                            args[0]
+                                .asString("rsplit")
+                                ->toString();
+                    }
+                }
+
+                if (args.size() == 2) {
+                    maxsplit =
+                        static_cast<qsizetype>(
+                            args[1].asBigInt("rsplit")
+                        );
+                }
+
+                return str->rsplit(sep, maxsplit);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -924,7 +989,9 @@ namespace {
         REGISTER_METHOD("partition", makePartitionMethod),
         REGISTER_METHOD("rpartition", makeRPartitionMethod),
         REGISTER_METHOD("splitlines", makeSplitLinesMethod),
-        REGISTER_METHOD("zfill", makeZfillMethod)
+        REGISTER_METHOD("zfill", makeZfillMethod),
+        REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
+        REGISTER_METHOD("rsplit", makeRSplitMethod)
     };
 }
 
