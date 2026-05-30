@@ -857,20 +857,22 @@ if _result is not None:
     ("'hello\\tworld'.isprintable()", "False"),
 
     # partition
-    ("'abc:def'.partition(':')",
-     "('abc', ':', 'def')"),
-    ("'hello world'.partition(' ')",
-     "('hello', ' ', 'world')"),
-    ("'hello'.partition(':')",
-     "('hello', '', '')"),
-    ("''.partition(':')",
-     "('', '', '')"),
-    ("':abc'.partition(':')",
-     "('', ':', 'abc')"),
-    ("'abc:'.partition(':')",
-     "('abc', ':', '')"),
-    ("'a:b:c'.partition(':')",
-     "('a', ':', 'b:c')")
+    ("'abc:def'.partition(':')", "('abc', ':', 'def')"),
+    ("'hello world'.partition(' ')", "('hello', ' ', 'world')"),
+    ("'hello'.partition(':')", "('hello', '', '')"),
+    ("''.partition(':')", "('', '', '')"),
+    ("':abc'.partition(':')", "('', ':', 'abc')"),
+    ("'abc:'.partition(':')", "('abc', ':', '')"),
+    ("'a:b:c'.partition(':')", "('a', ':', 'b:c')"),
+
+    # rpartition
+    ("'abc:def:ghi'.rpartition(':')", "('abc:def', ':', 'ghi')"),
+    ("'abc:def'.rpartition(':')", "('abc', ':', 'def')"),
+    ("'hello'.rpartition(':')", "('', '', 'hello')"),
+    ("''.rpartition(':')", "('', '', '')"),
+    ("':abc'.rpartition(':')", "('', ':', 'abc')"),
+    ("'abc:'.rpartition(':')", "('abc', ':', '')"),
+    ("'a:b:c:d'.rpartition(':')", "('a:b:c', ':', 'd')")
 
 ])
 

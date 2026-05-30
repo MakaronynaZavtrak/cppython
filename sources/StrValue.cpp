@@ -986,3 +986,42 @@ Value StrValue::partition(const Value& sepValue) const {
         )
     );
 }
+
+Value StrValue::rpartition(const Value& sepValue) const {
+
+    const QString sep =
+        sepValue
+            .asString("rpartition")
+            ->toString();
+
+    if (sep.isEmpty()) {
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const qsizetype pos = value.lastIndexOf(sep);
+
+    if (pos == -1) {
+
+        return Value(
+            std::make_shared<TupleValue>(
+                std::vector{
+                    Value(""),
+                    Value(""),
+                    Value(value)
+                }
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::vector{
+                Value(value.left(pos)),
+                Value(sep),
+                Value(value.mid(pos + sep.size()))
+            }
+        )
+    );
+}

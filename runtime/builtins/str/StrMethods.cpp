@@ -820,6 +820,26 @@ namespace {
         );
     }
 
+    Value makeRPartitionMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "rpartition",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "rpartition");
+
+                return str->rpartition(args[0]);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -857,7 +877,8 @@ namespace {
         REGISTER_METHOD("isascii", makeIsAsciiMethod),
         REGISTER_METHOD("isidentifier", makeIsIdentifierMethod),
         REGISTER_METHOD("isprintable", makeIsPrintableMethod),
-        REGISTER_METHOD("partition", makePartitionMethod)
+        REGISTER_METHOD("partition", makePartitionMethod),
+        REGISTER_METHOD("rpartition", makeRPartitionMethod)
     };
 }
 
