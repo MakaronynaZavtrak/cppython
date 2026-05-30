@@ -135,5 +135,8 @@ public:
 
     [[nodiscard]] Value rpartition(const Value& sep) const;
 
+    [[nodiscard]] Value splitlines(
+    const std::optional<Value>& keepEnds = std::nullopt) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

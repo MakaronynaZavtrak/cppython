@@ -1025,3 +1025,58 @@ Value StrValue::rpartition(const Value& sepValue) const {
         )
     );
 }
+
+Value StrValue::splitlines(
+    const std::optional<Value>& keepEnds) const {
+
+    const bool keep = keepEnds.has_value()
+            ? keepEnds->toBool()
+            : false;
+
+    std::vector<Value> result;
+
+    qsizetype start = 0;
+
+    while (start < value.size()) {
+
+        qsizetype end = start;
+
+        while (
+            end < value.size()
+            && value[end] != '\n'
+            && value[end] != '\r')
+        {
+            ++end;
+        }
+
+        if (end == value.size()) {
+            result.emplace_back(value.mid(start));
+            break;
+        }
+
+        const qsizetype lineEnd = end;
+
+        if (value[end] == '\r'
+            && end + 1 < value.size()
+            && value[end + 1] == '\n')
+        {
+            end += 2;
+        }
+        else {
+            ++end;
+        }
+
+        if (keep) {
+
+            result.emplace_back(value.mid(start, end - start));
+        }
+        else {
+
+            result.emplace_back(value.mid(start, lineEnd - start));
+        }
+
+        start = end;
+    }
+
+    return Value(std::make_shared<ListValue>(result));
+}

@@ -872,7 +872,18 @@ if _result is not None:
     ("''.rpartition(':')", "('', '', '')"),
     ("':abc'.rpartition(':')", "('', ':', 'abc')"),
     ("'abc:'.rpartition(':')", "('abc', ':', '')"),
-    ("'a:b:c:d'.rpartition(':')", "('a:b:c', ':', 'd')")
+    ("'a:b:c:d'.rpartition(':')", "('a:b:c', ':', 'd')"),
+
+    # splitlines
+    ("'a\\nb\\nc'.splitlines()", "['a', 'b', 'c']"),
+    ("'a\\nb\\nc'.splitlines(True)", "['a\\n', 'b\\n', 'c']"),
+    ("'a\\nb\\nc'.splitlines(False)", "['a', 'b', 'c']"),
+    ("'abc'.splitlines()", "['abc']"),
+    ("''.splitlines()", "[]"),
+    ("'abc\\n'.splitlines()", "['abc']"),
+    ("'abc\\n'.splitlines(True)", "['abc\\n']"),
+    ("'a\\r\\nb'.splitlines()", "['a', 'b']"),
+    ("'a\\r\\nb'.splitlines(True)", "['a\\r\\n', 'b']"),
 
 ])
 
