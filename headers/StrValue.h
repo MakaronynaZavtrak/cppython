@@ -131,5 +131,7 @@ public:
 
     [[nodiscard]] Value isprintable() const;
 
+    [[nodiscard]] Value partition(const Value& sep) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

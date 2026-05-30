@@ -8,6 +8,7 @@
 
 #include "IteratorValue.h"
 #include "ListValue.h"
+#include "TupleValue.h"
 #include "Value.h"
 
 QString StrValue::toString() const {
@@ -945,4 +946,43 @@ Value StrValue::isprintable() const {
     }
 
     return Value(true);
+}
+
+Value StrValue::partition(const Value& sepValue) const {
+
+    const QString sep =
+        sepValue
+            .asString("partition")
+            ->toString();
+
+    if (sep.isEmpty()) {
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const qsizetype pos = value.indexOf(sep);
+
+    if (pos == -1) {
+
+        return Value(
+            std::make_shared<TupleValue>(
+                std::vector<Value>{
+                    Value(value),
+                    Value(""),
+                    Value("")
+                }
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::vector{
+                Value(value.left(pos)),
+                Value(sep),
+                Value(value.mid(pos + sep.size()))
+            }
+        )
+    );
 }

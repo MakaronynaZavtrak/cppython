@@ -854,7 +854,23 @@ if _result is not None:
     ("'\\t'.isprintable()", "False"),
     ("'\\r'.isprintable()", "False"),
     ("'hello\\n'.isprintable()", "False"),
-    ("'hello\\tworld'.isprintable()", "False")
+    ("'hello\\tworld'.isprintable()", "False"),
+
+    # partition
+    ("'abc:def'.partition(':')",
+     "('abc', ':', 'def')"),
+    ("'hello world'.partition(' ')",
+     "('hello', ' ', 'world')"),
+    ("'hello'.partition(':')",
+     "('hello', '', '')"),
+    ("''.partition(':')",
+     "('', '', '')"),
+    ("':abc'.partition(':')",
+     "('', ':', 'abc')"),
+    ("'abc:'.partition(':')",
+     "('abc', ':', '')"),
+    ("'a:b:c'.partition(':')",
+     "('a', ':', 'b:c')")
 
 ])
 
