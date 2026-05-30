@@ -844,6 +844,18 @@ if _result is not None:
     ("'for'.isidentifier()", "True"),
     ("'class'.isidentifier()", "True"),
 
+    # isprintable
+    ("'hello'.isprintable()", "True"),
+    ("'123'.isprintable()", "True"),
+    ("''.isprintable()", "True"),
+    ("'Привет'.isprintable()", "True"),
+    ("'hello world'.isprintable()", "True"),
+    ("'\\n'.isprintable()", "False"),
+    ("'\\t'.isprintable()", "False"),
+    ("'\\r'.isprintable()", "False"),
+    ("'hello\\n'.isprintable()", "False"),
+    ("'hello\\tworld'.isprintable()", "False")
+
 ])
 
 def test_single_line_expressions(expr, expected):

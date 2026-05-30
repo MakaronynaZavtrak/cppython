@@ -129,5 +129,7 @@ public:
 
     [[nodiscard]] Value isidentifier() const;
 
+    [[nodiscard]] Value isprintable() const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

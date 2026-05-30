@@ -924,3 +924,25 @@ Value StrValue::isidentifier() const {
 
     return Value(true);
 }
+
+Value StrValue::isprintable() const {
+
+    for (const QChar ch : value) {
+
+        switch (ch.category()) {
+
+            case QChar::Other_Control:
+            case QChar::Other_Format:
+            case QChar::Other_Surrogate:
+            case QChar::Other_PrivateUse:
+            case QChar::Other_NotAssigned:
+
+                return Value(false);
+
+            default:
+                break;
+        }
+    }
+
+    return Value(true);
+}
