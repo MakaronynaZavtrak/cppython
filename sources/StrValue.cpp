@@ -1194,16 +1194,9 @@ Value StrValue::rsplit(
 
         while (splits < limit) {
 
-            //
-            // пропускаем пробелы справа
-            //
-
             qsizetype pos = remaining.size() - 1;
 
-            while (
-                pos >= 0 &&
-                remaining[pos].isSpace()
-            ) {
+            while (pos >= 0 && remaining[pos].isSpace()) {
                 --pos;
             }
 
@@ -1211,32 +1204,15 @@ Value StrValue::rsplit(
                 break;
             }
 
-            //
-            // конец последнего слова
-            //
-
             const qsizetype wordEnd = pos;
 
-            //
-            // ищем начало последнего слова
-            //
-
-            while (
-                pos >= 0 &&
-                !remaining[pos].isSpace()
-            ) {
+            while (pos >= 0 && !remaining[pos].isSpace()) {
                 --pos;
             }
 
-            result.prepend(
-                remaining.mid(
-                    pos + 1,
-                    wordEnd - pos
-                )
-            );
+            result.prepend(remaining.mid(pos + 1, wordEnd - pos));
 
-            remaining =
-                remaining.left(pos + 1);
+            remaining = remaining.left(pos + 1);
 
             ++splits;
         }
@@ -1306,4 +1282,15 @@ Value StrValue::rsplit(
             toValueVector(reversed)
         )
     );
+}
+
+//TODO: метод пока костыльный, не поддерживает полностью unicode.
+Value StrValue::casefold() const {
+    QString result = value.toCaseFolded();
+
+    //TODO: костыль
+    result.replace(QChar(0x00DF), "ss"); // ß
+    result.replace(QChar(0x1E9E), "ss"); // ẞ
+
+    return Value(result);
 }

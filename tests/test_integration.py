@@ -920,6 +920,13 @@ if _result is not None:
     ("'a b c d'.rsplit(None, 1)", "['a b c', 'd']"),
     ("'a b c d'.rsplit(None, 2)", "['a b', 'c', 'd']"),
 
+    # casefold
+    ("'HELLO'.casefold()", "'hello'"),
+    ("'Hello'.casefold()", "'hello'"),
+    ("'straße'.casefold()", "'strasse'"),
+    ("'Straße'.casefold()", "'strasse'"),
+    ("''.casefold()", "''")
+
 ])
 
 def test_single_line_expressions(expr, expected):

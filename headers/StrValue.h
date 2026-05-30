@@ -147,5 +147,7 @@ public:
     const std::optional<QString>& sep = std::nullopt,
     std::optional<qsizetype> maxSplit = std::nullopt) const;
 
+    [[nodiscard]] Value casefold() const;
+
 };
 #endif //CPPYTHON_STRVALUE_H
