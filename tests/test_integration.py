@@ -885,6 +885,18 @@ if _result is not None:
     ("'a\\r\\nb'.splitlines()", "['a', 'b']"),
     ("'a\\r\\nb'.splitlines(True)", "['a\\r\\n', 'b']"),
 
+    # zfill
+    ("'42'.zfill(5)", "'00042'"),
+    ("'42'.zfill(2)", "'42'"),
+    ("'42'.zfill(1)", "'42'"),
+    ("'-42'.zfill(5)", "'-0042'"),
+    ("'+42'.zfill(5)", "'+0042'"),
+    ("''.zfill(5)", "'00000'"),
+    ("'abc'.zfill(5)", "'00abc'"),
+    ("'abc'.zfill(3)", "'abc'"),
+    ("'abc'.zfill(0)", "'abc'"),
+    ("'-abc'.zfill(8)", "'-0000abc'")
+
 ])
 
 def test_single_line_expressions(expr, expected):

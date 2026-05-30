@@ -1080,3 +1080,26 @@ Value StrValue::splitlines(
 
     return Value(std::make_shared<ListValue>(result));
 }
+
+Value StrValue::zfill(const Value& widthValue) const {
+
+    const auto width = static_cast<qsizetype>(widthValue.toBigInt());
+
+    if (width <= value.size()) {
+        return Value(value);
+    }
+
+    const qsizetype zeros = width - value.size();
+
+    if (!value.isEmpty()
+        && (value[0] == '+' || value[0] == '-'))
+    {
+        return Value(
+            QString(value[0]) +
+            QString(zeros, '0') +
+            value.mid(1)
+        );
+    }
+
+    return Value(QString(zeros, '0') + value);
+}

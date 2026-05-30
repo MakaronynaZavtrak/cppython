@@ -138,5 +138,7 @@ public:
     [[nodiscard]] Value splitlines(
     const std::optional<Value>& keepEnds = std::nullopt) const;
 
+    [[nodiscard]] Value zfill(const Value& widthValue) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H

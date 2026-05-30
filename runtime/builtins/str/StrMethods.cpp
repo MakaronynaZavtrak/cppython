@@ -864,6 +864,26 @@ namespace {
         );
     }
 
+    Value makeZfillMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "zfill",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "zfill");
+
+                return str->zfill(args[0]);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -903,7 +923,8 @@ namespace {
         REGISTER_METHOD("isprintable", makeIsPrintableMethod),
         REGISTER_METHOD("partition", makePartitionMethod),
         REGISTER_METHOD("rpartition", makeRPartitionMethod),
-        REGISTER_METHOD("splitlines", makeSplitLinesMethod)
+        REGISTER_METHOD("splitlines", makeSplitLinesMethod),
+        REGISTER_METHOD("zfill", makeZfillMethod)
     };
 }
 
