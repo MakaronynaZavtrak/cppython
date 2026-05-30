@@ -794,7 +794,6 @@ if _result is not None:
     ("'-123'.isdecimal()", "False"),
 
     # isnumeric
-
     ("'123'.isnumeric()", "True"),
     ("'000'.isnumeric()", "True"),
     ("'123abc'.isnumeric()", "False"),
@@ -805,7 +804,6 @@ if _result is not None:
     ("'-123'.isnumeric()", "False"),
 
     # istitle
-
     ("'Hello'.istitle()", "True"),
     ("'Hello World'.istitle()", "True"),
     ("'Hello-World'.istitle()", "True"),
@@ -818,6 +816,18 @@ if _result is not None:
     ("'a'.istitle()", "False"),
     ("'Hello123World'.istitle()", "True"),
     ("'Hello123world'.istitle()", "False"),
+
+    # isascii
+    ("'hello'.isascii()", "True"),
+    ("'HELLO'.isascii()", "True"),
+    ("'123'.isascii()", "True"),
+    ("'hello123'.isascii()", "True"),
+    ("''.isascii()", "True"),
+    ("' '.isascii()", "True"),
+    ("'\\n'.isascii()", "True"),
+    ("'Привет'.isascii()", "False"),
+    ("'你好'.isascii()", "False"),
+    ("'café'.isascii()", "False")
 
 ])
 

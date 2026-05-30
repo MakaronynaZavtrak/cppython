@@ -888,3 +888,15 @@ Value StrValue::istitle() const {
 
     return Value(hasLetter);
 }
+
+Value StrValue::isASCII() const {
+
+    for (const QChar ch : value) {
+
+        if (ch.unicode() > 127) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
