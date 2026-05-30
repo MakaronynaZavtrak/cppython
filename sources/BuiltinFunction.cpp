@@ -440,6 +440,24 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
+    env->set("str",
+    makeBuiltin(
+        "str",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>&) -> Value {
+
+            expectArgsRange(args, 0, 1, "str");
+
+            if (args.empty()) {
+                return Value("");
+            }
+
+            return Value(args[0].toString());
+        }
+    ));
+
     env->set("repr",
              makeBuiltin(
                  "repr",
@@ -508,7 +526,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                 std::cout.flush();
             }
 
-            return Value(); // None
+            return {}; // None
         }
     )
 );

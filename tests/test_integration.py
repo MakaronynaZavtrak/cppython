@@ -925,7 +925,25 @@ if _result is not None:
     ("'Hello'.casefold()", "'hello'"),
     ("'straße'.casefold()", "'strasse'"),
     ("'Straße'.casefold()", "'strasse'"),
-    ("''.casefold()", "''")
+    ("''.casefold()", "''"),
+    
+    # str
+    ("str()", "''"),
+    ("str('abc')", "'abc'"),
+    ("str(123)", "'123'"),
+    ("str(-42)", "'-42'"),
+    ("str(True)", "'True'"),
+    ("str(False)", "'False'"),
+    ("str(None)", "'None'"),
+
+    ("str([])", "'[]'"),
+    ("str([1, 2, 3])", "'[1, 2, 3]'"),
+    ("str((1, 2))", "'(1, 2)'"),
+    ("str((1,))", "'(1,)'"),
+    ("str({})", "'{}'"),
+    ("str(str(123))", "'123'"),
+    ("str(str(True))", "'True'"),
+    ("str(str(None))", "'None'")
 
 ])
 
