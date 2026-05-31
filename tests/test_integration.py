@@ -978,7 +978,11 @@ if _result is not None:
     ("'{a}{b}{c}'.format_map({'a': 'x', 'b': 'y', 'c': 'z'})", "'xyz'"),
     ("'{x}'.format_map({'x': True})", "'True'"),
     ("'{x}'.format_map({'x': None})", "'None'"),
-    ("''.format_map({})", "''")
+    ("''.format_map({})", "''"),
+    ("'{{hello}}'.format_map({})", "'{hello}'"),
+    ("'{{x}} = {x}'.format_map({'x': 42})", "'{x} = 42'"),
+    ("'{x!r}'.format_map({'x': 'abc'})", "\"'abc'\""),
+    ("'{x!s}'.format_map({'x': 'abc'})", "'abc'")
 
 ])
 

@@ -1444,13 +1444,30 @@ Value StrValue::formatMap(const Value& mapping) const {
 
     while (pos < value.size()) {
 
+        if (value[pos] == '{' &&
+            pos + 1 < value.size() &&
+            value[pos + 1] == '{')
+        {
+            result += '{';
+            pos += 2;
+            continue;
+        }
+
+        if (value[pos] == '}' &&
+            pos + 1 < value.size() &&
+            value[pos + 1] == '}')
+        {
+            result += '}';
+            pos += 2;
+            continue;
+        }
+
         if (value[pos] != '{') {
             result += value[pos++];
             continue;
         }
 
-        const qsizetype end =
-            value.indexOf('}', pos);
+        const qsizetype end = value.indexOf('}', pos);
 
         if (end == -1) {
             throw std::runtime_error(
@@ -1458,7 +1475,28 @@ Value StrValue::formatMap(const Value& mapping) const {
             );
         }
 
-        const QString key = value.mid(pos + 1, end - pos - 1);
+        QString field = value.mid(pos + 1, end - pos - 1);
+
+        QString key = field;
+
+        QChar conversion;
+
+        const qsizetype bang =
+            field.indexOf('!');
+
+        if (bang != -1) {
+
+            key =
+                field.left(bang);
+
+            if (bang + 1 >= field.size()) {
+                throw std::runtime_error(
+                    "ValueError: expected conversion"
+                );
+            }
+
+            conversion = field[bang + 1];
+        }
 
         Value replacement;
 
@@ -1467,7 +1505,8 @@ Value StrValue::formatMap(const Value& mapping) const {
             replacement =
                 dict->getItem(Value(key));
 
-        } catch (...) {
+        }
+        catch (...) {
 
             throw std::runtime_error(
                 "KeyError: '" +
@@ -1476,7 +1515,25 @@ Value StrValue::formatMap(const Value& mapping) const {
             );
         }
 
-        result += replacement.toString();
+
+        if (conversion == 'r') {
+
+            result += replacement.repr();
+        }
+        else if (conversion == 's') {
+
+            result += replacement.toString();
+        }
+        else if (!conversion.isNull()) {
+
+            throw std::runtime_error(
+                "ValueError: unknown conversion"
+            );
+        }
+        else {
+
+            result += replacement.toString();
+        }
 
         pos = end + 1;
     }
