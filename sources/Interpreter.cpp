@@ -7,6 +7,8 @@
 #include <sstream>
 
 #include "Runtime.h"
+#include "../runtime/RuntimeUtils.h"
+#include "../runtime/builtins/str/StrMethods.h"
 
 
 /**
@@ -93,7 +95,7 @@ void Interpreter::run(int argc, char* argv[]) {
     const auto globalEnv = std::make_shared<Environment>();
     BuiltinFunction::registerBuiltins(globalEnv);
 
-    Runtime::objectClass = std::make_shared<ClassValue>(* new ClassValue("object"));
+    Runtime::objectClass = std::make_shared<ClassValue>("object");
 
     Runtime::objectClass->name = "object";
 
@@ -104,6 +106,24 @@ void Interpreter::run(int argc, char* argv[]) {
 
     Runtime::objectClass->attributes["__setattr__"] =
     globalEnv->get("__object_setattr__");
+
+
+
+    Runtime::strClass = std::make_shared<ClassValue>("str");
+
+    Runtime::strClass->name = "str";
+
+    Runtime::strClass->bases.push_back(Runtime::objectClass);
+
+    auto builtin = std::get<Value::BuiltinFunctionPtr>(makeMaketransClassBuiltin().data);
+
+    Runtime::strClass->attributes["maketrans"] = makeMaketransClassBuiltin();
+
+    globalEnv->set("str", Value(Runtime::strClass));
+
+    Runtime::strClass->attributes["__call__"] = globalEnv->get("__str_call__");
+
+    globalEnv->set("__str_type__", Value(Runtime::strClass));
 
     Lexer lexer;
     std::vector<std::string> buffer;

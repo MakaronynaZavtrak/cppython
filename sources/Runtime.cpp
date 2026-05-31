@@ -4,3 +4,4 @@
 #include "Runtime.h"
 
 std::shared_ptr<ClassValue> Runtime::objectClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::strClass = nullptr;

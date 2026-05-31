@@ -528,8 +528,23 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
             return {}; // None
         }
-    )
-);
+    ));
+
+    env->set("__str_call__",
+             makeBuiltin(
+                 "__str_call__",
+
+                 [](const std::vector<Value> &args,
+                    const Kwargs &,
+                    const std::shared_ptr<Environment> &) -> Value {
+
+                     if (args.empty()) {
+                         return Value("");
+                     }
+
+                     return Value(args[0].toString());
+                 }
+             ));
 
 }
 

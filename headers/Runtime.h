@@ -11,5 +11,7 @@ class ClassValue;
 class Runtime {
 public:
     static std::shared_ptr<ClassValue> objectClass;
+
+    static std::shared_ptr<ClassValue> strClass;
 };
 #endif //CPPYTHON_RUNTIME_H

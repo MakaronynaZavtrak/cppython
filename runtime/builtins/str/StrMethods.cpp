@@ -1035,3 +1035,17 @@ Value getStrAttr(const Value& obj, const QString& attr) {
 
     return getBuiltinAttr(obj, attr, STR_METHODS, "str");
 }
+
+Value makeMaketransClassBuiltin() {
+    return makeBuiltin(
+        "maketrans",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>&)
+        -> Value
+        {
+            return StrValue::maketrans(args);
+        }
+    );
+}

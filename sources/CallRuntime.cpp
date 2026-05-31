@@ -128,6 +128,23 @@ Value constructClass(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
                      const Kwargs& kwargs,
                      const std::shared_ptr<Environment>& env) {
+
+    if (cls == Runtime::strClass) {
+
+        if (args.empty()) {
+            return Value("");
+        }
+
+        if (args.size() > 1) {
+            throw std::runtime_error(
+                "str() takes at most 1 argument"
+            );
+        }
+
+        return Value(args[0].toString());
+    }
+
+
     const auto instance = std::make_shared<InstanceValue>(cls);
 
     try {

@@ -950,7 +950,14 @@ if _result is not None:
     ("'abc'.maketrans('ab', 'xy', '!')", "{97: 120, 98: 121, 33: None}"),
     ("''.maketrans({'a': 'x', 'b': 'y'})", "{97: 'x', 98: 'y'}"),
     ("''.maketrans({97: 'x'})", "{97: 'x'}"),
-    ("''.maketrans({'a': None})", "{97: None}")
+    ("''.maketrans({'a': None})", "{97: None}"),
+
+    # str.maketrans
+    ("str.maketrans('abc', 'xyz')", "{97: 120, 98: 121, 99: 122}"),
+    ("str.maketrans('ab', 'xy', '!')", "{97: 120, 98: 121, 33: None}"),
+    ("str.maketrans({'a': 'x', 'b': 'y'})", "{97: 'x', 98: 'y'}"),
+    ("str.maketrans({97: 'x'})", "{97: 'x'}"),
+    ("str.maketrans({'a': None})", "{97: None}")
 
 ])
 

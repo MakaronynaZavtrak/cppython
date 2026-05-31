@@ -7,4 +7,7 @@
 #include "../../../headers/Value.h"
 
 Value getStrAttr(const Value& obj, const QString& attr);
+
+Value makeMaketransClassBuiltin();
+
 #endif //CPPYTHON_STRMETHODS_H
