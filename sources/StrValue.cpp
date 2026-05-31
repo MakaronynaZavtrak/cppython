@@ -6,6 +6,7 @@
 
 #include <QRegularExpression>
 
+#include "DictValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
 #include "TupleValue.h"
@@ -1293,4 +1294,88 @@ Value StrValue::casefold() const {
     result.replace(QChar(0x1E9E), "ss"); // ẞ
 
     return Value(result);
+}
+
+Value StrValue::maketrans(const std::vector<Value>& args) {
+
+    if (args.size() == 1) {
+
+        const auto dict = args[0].asDict("maketrans");
+
+        const auto result = std::make_shared<DictValue>();
+
+        for (const auto& key : dict->getOrder()) {
+
+            Value convertedKey;
+
+            if (key.isString()) {
+
+                const QString str = key.asString("maketrans")->toString();
+
+                if (str.size() != 1) {
+                    throw std::runtime_error(
+                        "ValueError: string keys in translate table must be length 1"
+                    );
+                }
+
+                convertedKey = Value(Value::BigInt(str[0].unicode()));
+            }
+            else if (key.isBigInt()) {
+
+                convertedKey = key;
+            }
+            else {
+
+                throw std::runtime_error(
+                    "TypeError: keys in translate table must be integers or single-character strings"
+                );
+            }
+
+            result->setItem(convertedKey, dict->getItem(key));
+        }
+
+        return Value(result);
+    }
+
+    if (args.size() == 2 || args.size() == 3) {
+
+        const QString from = args[0].asString("maketrans")->toString();
+
+        const QString to = args[1].asString("maketrans")->toString();
+
+        if (from.size() != to.size()) {
+            throw std::runtime_error(
+                "ValueError: the first two maketrans arguments must have equal length"
+            );
+        }
+
+        const auto result = std::make_shared<DictValue>();
+
+        for (qsizetype i = 0; i < from.size(); ++i) {
+
+            result->setItem(
+                Value(Value::BigInt(from[i].unicode())),
+                Value(Value::BigInt(to[i].unicode()))
+            );
+        }
+
+        if (args.size() == 3) {
+
+            const QString remove = args[2].asString("maketrans")->toString();
+
+            for (const auto ch : remove) {
+
+                result->setItem(
+                    Value(Value::BigInt(ch.unicode())),
+                    Value()
+                );
+            }
+        }
+
+        return Value(result);
+    }
+
+    throw std::runtime_error(
+        "maketrans expected 1, 2 or 3 arguments"
+    );
 }

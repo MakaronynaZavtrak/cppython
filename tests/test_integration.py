@@ -943,7 +943,14 @@ if _result is not None:
     ("str({})", "'{}'"),
     ("str(str(123))", "'123'"),
     ("str(str(True))", "'True'"),
-    ("str(str(None))", "'None'")
+    ("str(str(None))", "'None'"),
+
+    #maketrans
+    ("'abc'.maketrans('abc', 'xyz')", "{97: 120, 98: 121, 99: 122}"),
+    ("'abc'.maketrans('ab', 'xy', '!')", "{97: 120, 98: 121, 33: None}"),
+    ("''.maketrans({'a': 'x', 'b': 'y'})", "{97: 'x', 98: 'y'}"),
+    ("''.maketrans({97: 'x'})", "{97: 'x'}"),
+    ("''.maketrans({'a': None})", "{97: None}")
 
 ])
 

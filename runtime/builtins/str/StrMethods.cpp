@@ -969,6 +969,20 @@ namespace {
         );
     }
 
+    extern Value makeMaketransMethod(const Value&) {
+        return makeBuiltin(
+            "maketrans",
+
+            [](const std::vector<Value>& args,
+               const Kwargs&,
+               const std::shared_ptr<Environment>&)
+            -> Value {
+
+                return StrValue::maketrans(args);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -1012,7 +1026,8 @@ namespace {
         REGISTER_METHOD("zfill", makeZfillMethod),
         REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
         REGISTER_METHOD("rsplit", makeRSplitMethod),
-        REGISTER_METHOD("casefold", makeCasefoldMethod)
+        REGISTER_METHOD("casefold", makeCasefoldMethod),
+        REGISTER_METHOD("maketrans", makeMaketransMethod)
     };
 }
 

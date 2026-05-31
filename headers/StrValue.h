@@ -149,5 +149,7 @@ public:
 
     [[nodiscard]] Value casefold() const;
 
+    static Value maketrans(const std::vector<Value>& args);
+
 };
 #endif //CPPYTHON_STRVALUE_H
