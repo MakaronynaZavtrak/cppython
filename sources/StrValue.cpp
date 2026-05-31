@@ -1379,3 +1379,56 @@ Value StrValue::maketrans(const std::vector<Value>& args) {
         "maketrans expected 1, 2 or 3 arguments"
     );
 }
+
+Value StrValue::translate(const Value& table) const {
+
+    const auto dict = table.asDict("translate");
+
+    QString result;
+
+    for (const auto ch : value) {
+
+        const Value key(
+            Value::BigInt(ch.unicode())
+        );
+
+        Value replacement;
+
+        try {
+            replacement = dict->getItem(key);
+        }
+        catch (...) {
+
+            result += ch;
+            continue;
+        }
+
+        if (replacement.isNone()) {
+            continue;
+        }
+
+        if (replacement.isString()) {
+
+            result += replacement.asString("translate")->toString();
+            continue;
+        }
+
+        if (replacement.isBigInt()) {
+
+            const auto code =
+                static_cast<char32_t>(
+                    replacement.asBigInt("translate")
+                );
+
+            result += QChar(static_cast<char16_t>(code));
+
+            continue;
+        }
+
+        throw std::runtime_error(
+            "TypeError: character mapping must return integer, None or str"
+        );
+    }
+
+    return Value(result);
+}

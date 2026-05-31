@@ -957,7 +957,19 @@ if _result is not None:
     ("str.maketrans('ab', 'xy', '!')", "{97: 120, 98: 121, 33: None}"),
     ("str.maketrans({'a': 'x', 'b': 'y'})", "{97: 'x', 98: 'y'}"),
     ("str.maketrans({97: 'x'})", "{97: 'x'}"),
-    ("str.maketrans({'a': None})", "{97: None}")
+    ("str.maketrans({'a': None})", "{97: None}"),
+
+    # translate
+    ("'abc'.translate({97: 120})", "'xbc'"),
+    ("'abc'.translate({97: 120, 98: 121})", "'xyc'"),
+    ("'abc'.translate({98: None})", "'ac'"),
+    ("'abc'.translate({97: None, 99: None})", "'b'"),
+    ("'abc'.translate({97: 'XYZ'})", "'XYZbc'"),
+    ("'abc'.translate({98: '--'})", "'a--c'"),
+    ("'abc'.translate('abc'.maketrans('abc', 'xyz'))", "'xyz'"),
+    ("'hello'.translate('el'.maketrans('el', 'ip'))", "'hippo'"),
+    ("'a!b!c'.translate('ab'.maketrans('ab', 'xy', '!'))", "'xyc'"),
+    ("'abc'.translate({120: 121})", "'abc'")
 
 ])
 

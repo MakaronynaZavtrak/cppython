@@ -983,6 +983,24 @@ namespace {
         );
     }
 
+    Value makeTranslateMethod(const Value& obj) {
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "translate",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "translate");
+
+                return str->translate(args[0]);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -1027,7 +1045,8 @@ namespace {
         REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
         REGISTER_METHOD("rsplit", makeRSplitMethod),
         REGISTER_METHOD("casefold", makeCasefoldMethod),
-        REGISTER_METHOD("maketrans", makeMaketransMethod)
+        REGISTER_METHOD("maketrans", makeMaketransMethod),
+        REGISTER_METHOD("translate", makeTranslateMethod)
     };
 }
 

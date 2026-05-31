@@ -151,5 +151,7 @@ public:
 
     static Value maketrans(const std::vector<Value>& args);
 
+    Value translate(const Value& table) const;
+
 };
 #endif //CPPYTHON_STRVALUE_H
