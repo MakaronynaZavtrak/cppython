@@ -4,6 +4,7 @@
 
 #ifndef CPPYTHON_STRVALUE_H
 #define CPPYTHON_STRVALUE_H
+#include "CallRuntime.h"
 #include "ReprMixin.h"
 #include "Value.h"
 
@@ -155,6 +156,10 @@ public:
 
     [[nodiscard]] Value formatMap(const Value& mapping) const;
 
+    [[nodiscard]] Value format(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs) const;
+
 private:
 
     static Value resolveFormatField(
@@ -162,6 +167,8 @@ private:
     const QString& field);
 
     static Value getItemValue(const Value& obj, const Value& key);
+
+    static Value resolveEmptyFormatField(const std::shared_ptr<DictValue>& dict);
 
 };
 #endif //CPPYTHON_STRVALUE_H

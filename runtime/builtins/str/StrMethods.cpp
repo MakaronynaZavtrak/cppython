@@ -1019,6 +1019,23 @@ namespace {
         );
     }
 
+    Value makeFormatMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "format",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs& kwargs,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                return str->format(args, kwargs);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -1065,7 +1082,8 @@ namespace {
         REGISTER_METHOD("casefold", makeCasefoldMethod),
         REGISTER_METHOD("maketrans", makeMaketransMethod),
         REGISTER_METHOD("translate", makeTranslateMethod),
-        REGISTER_METHOD("format_map", makeFormatMapMethod)
+        REGISTER_METHOD("format_map", makeFormatMapMethod),
+        REGISTER_METHOD("format", makeFormatMethod)
     };
 }
 
@@ -1081,8 +1099,8 @@ Value makeMaketransClassBuiltin() {
         [](const std::vector<Value>& args,
            const Kwargs&,
            const std::shared_ptr<Environment>&)
-        -> Value
-        {
+        -> Value {
+
             return StrValue::maketrans(args);
         }
     );

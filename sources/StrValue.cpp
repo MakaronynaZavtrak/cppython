@@ -1434,6 +1434,8 @@ Value StrValue::translate(const Value& table) const {
     return Value(result);
 }
 
+//TODO: метод пока неполноценный.
+// Он еще не поддерживает выражения вида "{x:>10}", "{x:^10}", "{x:.2f}", "{x:08d}"
 Value StrValue::formatMap(const Value& mapping) const {
 
     const auto dict =
@@ -1498,9 +1500,11 @@ Value StrValue::formatMap(const Value& mapping) const {
         Value replacement;
 
         try {
-
-            replacement = resolveFormatField(dict, key);
-
+            if (key.isEmpty()) {
+                replacement = resolveEmptyFormatField(dict);
+            } else {
+                replacement = resolveFormatField(dict, key);
+            }
         }
         catch (...) {
 
@@ -1673,4 +1677,48 @@ Value StrValue::getItemValue(const Value& obj, const Value& key) {
     throw std::runtime_error(
         "TypeError: object is not subscriptable"
     );
+}
+
+Value StrValue::format(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs) const {
+    const auto mapping = std::make_shared<DictValue>();
+
+    // позиционные аргументы
+    for (size_t i = 0; i < args.size(); ++i) {
+
+        mapping->setItem(Value(QString::number(i)), args[i]);
+    }
+
+    // именованные аргументы
+    for (const auto& [name, val] : kwargs) {
+
+        mapping->setItem(Value(name), val);
+    }
+
+    return formatMap(Value(mapping));
+}
+
+Value StrValue::resolveEmptyFormatField(const std::shared_ptr<DictValue>& dict) {
+
+    if (dict->hasKey(Value("_positional_0"))) {
+        return dict->getItem(Value("_positional_0"));
+    }
+
+    qlonglong idx = 0;
+
+    while (true) {
+
+        Value key = Value(QString::number(idx));
+
+        if (dict->hasKey(key)) {
+            return dict->getItem(key);
+        }
+
+        idx++;
+
+        if (idx > 100) break;
+    }
+
+    throw std::runtime_error("KeyError: ''");
 }

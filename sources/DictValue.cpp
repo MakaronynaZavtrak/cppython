@@ -70,6 +70,15 @@ void DictValue::setItem(const Value &key, const Value &value) {
       elements[key] = value;
 }
 
+bool DictValue::hasKey(const Value& key) const {
+
+      if (!key.isHashable()) {
+            return false;
+      }
+
+      return elements.contains(key);
+}
+
 Value DictValue::get(const Value &key, const Value &defaultValue) const {
 
       if (!key.isHashable()) {

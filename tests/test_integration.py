@@ -937,9 +937,22 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     # смешанные случаи
     ("'{user[profile][name]}'.format_map({'user': {'profile': {'name': 'Bob'}}})", "'Bob'"),
-    ("'{users[0][name]}'.format_map({'users': [{'name': 'Bob'}]})", "'Bob'")
+    ("'{users[0][name]}'.format_map({'users': [{'name': 'Bob'}]})", "'Bob'"),
 
-
+    # format
+    ("'{}'.format(42)", "'42'"),
+    ("'{0}'.format(42)", "'42'"),
+    ("'{0} {1}'.format('a', 'b')", "'a b'"),
+    ("'{name}'.format(name='Bob')", "'Bob'"),
+    ("'{name} is {age}'.format(name='Bob', age=21)", "'Bob is 21'"),
+    ("'{{hello}}'.format()", "'{hello}'"),
+    ("'{x!r}'.format(x='abc')", "\"'abc'\""),
+    ("'{x!s}'.format(x='abc')", "'abc'"),
+    ("'{0[1]}'.format([10,20,30])", "'20'"),
+    ("'{user[name]}'.format(user={'name':'Bob'})", "'Bob'"),
+    ("'{user[profile][name]}'.format(user={'profile':{'name':'Bob'}})", "'Bob'"),
+    ("'{0} + {1}'.format(2,3)", "'2 + 3'"),
+    ("''.format()", "''")
 
 ])
 

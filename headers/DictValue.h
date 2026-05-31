@@ -26,6 +26,8 @@ public:
 
     void setItem(const Value& key, const Value& value);
 
+    [[nodiscard]] bool hasKey(const Value& key) const;
+
     [[nodiscard]] Value get(const Value&, const Value& = Value()) const;
 
     [[nodiscard]] std::size_t len() const;
