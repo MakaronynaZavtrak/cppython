@@ -4059,7 +4059,27 @@ def test_single_line_expressions(expr, expected):
 
     # конкатенация
     (["s = 'abc'",
-      "s[0] + s[1] + s[2]"], "'abc'")
+      "s[0] + s[1] + s[2]"], "'abc'"),
+
+    # format_map
+    (["class User:",
+      "    pass",
+      "",
+      "u = User()",
+      "u.name = 'Bob'",
+      "'{u.name}'.format_map({'u': u})"], "'Bob'"),
+
+    (["class Profile:",
+      "    pass",
+      "",
+      "class User:",
+      "    pass",
+      "",
+      "p = Profile()",
+      "p.nickname = 'semyo'",
+      "u = User()",
+      "u.profile = p",
+      "'{u.profile.nickname}'.format_map({'u': u})"], "'semyo'")
 
 ])
 

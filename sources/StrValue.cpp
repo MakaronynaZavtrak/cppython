@@ -6,6 +6,7 @@
 
 #include <QRegularExpression>
 
+#include "ClassUtils.h"
 #include "DictValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
@@ -1498,23 +1499,28 @@ Value StrValue::formatMap(const Value& mapping) const {
             conversion = field[bang + 1];
         }
 
+        QStringList parts = key.split('.');
+
         Value replacement;
 
         try {
 
-            replacement =
-                dict->getItem(Value(key));
+            replacement = dict->getItem(Value(parts[0]));
 
         }
         catch (...) {
 
             throw std::runtime_error(
                 "KeyError: '" +
-                key.toStdString() +
+                parts[0].toStdString() +
                 "'"
             );
         }
 
+        for (qsizetype i = 1; i < parts.size(); ++i) {
+
+            replacement = getAttrValue(replacement, parts[i]);
+        }
 
         if (conversion == 'r') {
 
