@@ -53,66 +53,6 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     return payloads[-1] if payloads else ""
 
-def run_cpython(cmds: str | list[str]) -> str:
-    """
-    Выполняет код или выражение Python, вычисляет конечное выражение и захватывает его вывод. Метод
-    динамически создает скрипт Python на основе предоставленных входных данных для оценки одиночного
-    выражения или выполнения блока кода с последующей оценкой конечного выражения. Возвращает
-    строковое представление результата вычисления.
-    
-    :param cmds: Строка, содержащая код Python или выражение, либо список строк, где каждая строка
-        представляет строку кода Python или выражение.
-    :return: Строковое представление вычисленного результата из предоставленного выражения или кода.
-    :rtype: str
-    """
-    if isinstance(cmds, str):
-        lines = cmds.splitlines()
-    else:
-        lines = list(cmds)
-
-    if len(lines) == 1:
-        expr = lines[0]
-
-        code = f"""
-import sys
-
-_result = eval({expr!r})
-
-if _result is not None:
-    sys.stdout.write(repr(_result))
-"""
-    else:
-        code_to_exec = "\n".join(lines[:-1])
-        last_expr = lines[-1].strip()
-
-        code = f"""
-import sys
-
-_ns = {{"__builtins__": __builtins__}}
-
-exec({code_to_exec!r}, _ns)
-
-_result = eval({last_expr!r}, _ns)
-
-if _result is not None:
-    sys.stdout.write(repr(_result))
-"""
-
-    p = subprocess.run([PYTHON, "-c", code],
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       timeout=5)
-
-    err = p.stderr.decode("utf-8", "ignore")
-
-    if err:
-        print("STDERR:")
-        print(err)
-
-    out = p.stdout.decode("utf-8", "ignore").splitlines()
-
-    return out[0].strip() if out else ""
-
 @pytest.mark.parametrize("expr,expected", [
     # Два целых числа
     ("2 + 3",                  "5"),
@@ -926,7 +866,7 @@ if _result is not None:
     ("'straße'.casefold()", "'strasse'"),
     ("'Straße'.casefold()", "'strasse'"),
     ("''.casefold()", "''"),
-    
+
     # str
     ("str()", "''"),
     ("str('abc')", "'abc'"),
@@ -982,13 +922,30 @@ if _result is not None:
     ("'{{hello}}'.format_map({})", "'{hello}'"),
     ("'{{x}} = {x}'.format_map({'x': 42})", "'{x} = 42'"),
     ("'{x!r}'.format_map({'x': 'abc'})", "\"'abc'\""),
-    ("'{x!s}'.format_map({'x': 'abc'})", "'abc'")
+    ("'{x!s}'.format_map({'x': 'abc'})", "'abc'"),
+
+    # индексирование списка
+    ("'{user[0]}'.format_map({'user': [10, 20, 30]})", "'10'"),
+    ("'{user[2]}'.format_map({'user': [10, 20, 30]})", "'30'"),
+
+    # индексирование строки
+    ("'{user[1]}'.format_map({'user': 'abc'})", "'b'"),
+
+    # индексирование словаря
+    ("'{user[name]}'.format_map({'user': {'name': 'Bob'}})", "'Bob'"),
+    ("'{user[age]}'.format_map({'user': {'age': 21}})", "'21'"),
+
+    # смешанные случаи
+    ("'{user[profile][name]}'.format_map({'user': {'profile': {'name': 'Bob'}}})", "'Bob'"),
+    ("'{users[0][name]}'.format_map({'users': [{'name': 'Bob'}]})", "'Bob'")
+
+
 
 ])
 
 def test_single_line_expressions(expr, expected):
     """
-    Этот декоратор позволяет параметрическое выполнение тестовой функции. Тестовые 
+    Этот декоратор позволяет параметрическое выполнение тестовой функции. Тестовые
     случаи определяются списком кортежей, где каждый кортеж состоит из `expr`
     (строки, представляющей выражение для оценки) и `expected` (строки,
     представляющей ожидаемый результат). Декоратор автоматически запускает тестовую
@@ -1004,6 +961,66 @@ def test_single_line_expressions(expr, expected):
     assert my == expected, f"cppython: {expr!r} -> {my!r}, expected: {expected!r}"
     assert py == expected, f"CPython: {expr!r} -> {py!r}, expected: {expected!r}"
     assert my == py,     f"Mismatch: cppython={my!r} vs CPython={py!r}"
+
+def run_cpython(cmds: str | list[str]) -> str:
+    """
+    Выполняет код или выражение Python, вычисляет конечное выражение и захватывает его вывод. Метод
+    динамически создает скрипт Python на основе предоставленных входных данных для оценки одиночного
+    выражения или выполнения блока кода с последующей оценкой конечного выражения. Возвращает
+    строковое представление результата вычисления.
+
+    :param cmds: Строка, содержащая код Python или выражение, либо список строк, где каждая строка
+        представляет строку кода Python или выражение.
+    :return: Строковое представление вычисленного результата из предоставленного выражения или кода.
+    :rtype: str
+    """
+    if isinstance(cmds, str):
+        lines = cmds.splitlines()
+    else:
+        lines = list(cmds)
+
+    if len(lines) == 1:
+        expr = lines[0]
+
+        code = f"""
+import sys
+
+_result = eval({expr!r})
+
+if _result is not None:
+    sys.stdout.write(repr(_result))
+"""
+    else:
+        code_to_exec = "\n".join(lines[:-1])
+        last_expr = lines[-1].strip()
+
+        code = f"""
+import sys
+
+_ns = {{"__builtins__": __builtins__}}
+
+exec({code_to_exec!r}, _ns)
+
+_result = eval({last_expr!r}, _ns)
+
+if _result is not None:
+    sys.stdout.write(repr(_result))
+"""
+
+    p = subprocess.run([PYTHON, "-c", code],
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE,
+                       timeout=5)
+
+    err = p.stderr.decode("utf-8", "ignore")
+
+    if err:
+        print("STDERR:")
+        print(err)
+
+    out = p.stdout.decode("utf-8", "ignore").splitlines()
+
+    return out[0].strip() if out else ""
 
 @pytest.mark.parametrize("commands,expected", [
     # if-elif-else
@@ -4079,7 +4096,14 @@ def test_single_line_expressions(expr, expected):
       "p.nickname = 'semyo'",
       "u = User()",
       "u.profile = p",
-      "'{u.profile.nickname}'.format_map({'u': u})"], "'semyo'")
+      "'{u.profile.nickname}'.format_map({'u': u})"], "'semyo'"),
+
+    # атрибуты
+    (["class User:",
+     "    def __init__(self, name):",
+     "        self.name = name",
+     "",
+     "'{user.name}'.format_map({'user': User('Bob')})"], "'Bob'")
 
 ])
 

@@ -1471,9 +1471,8 @@ Value StrValue::formatMap(const Value& mapping) const {
         const qsizetype end = value.indexOf('}', pos);
 
         if (end == -1) {
-            throw std::runtime_error(
-                "ValueError: unmatched '{'"
-            );
+
+            throw std::runtime_error("ValueError: unmatched '{'");
         }
 
         QString field = value.mid(pos + 1, end - pos - 1);
@@ -1482,44 +1481,32 @@ Value StrValue::formatMap(const Value& mapping) const {
 
         QChar conversion;
 
-        const qsizetype bang =
-            field.indexOf('!');
+        const qsizetype bang = field.indexOf('!');
 
         if (bang != -1) {
 
-            key =
-                field.left(bang);
+            key = field.left(bang);
 
             if (bang + 1 >= field.size()) {
-                throw std::runtime_error(
-                    "ValueError: expected conversion"
-                );
+
+                throw std::runtime_error("ValueError: expected conversion");
             }
 
             conversion = field[bang + 1];
         }
 
-        QStringList parts = key.split('.');
-
         Value replacement;
 
         try {
 
-            replacement = dict->getItem(Value(parts[0]));
+            replacement = resolveFormatField(dict, key);
 
         }
         catch (...) {
 
             throw std::runtime_error(
-                "KeyError: '" +
-                parts[0].toStdString() +
-                "'"
+                "KeyError: '" + key.toStdString() + "'"
             );
-        }
-
-        for (qsizetype i = 1; i < parts.size(); ++i) {
-
-            replacement = getAttrValue(replacement, parts[i]);
         }
 
         if (conversion == 'r') {
@@ -1545,4 +1532,145 @@ Value StrValue::formatMap(const Value& mapping) const {
     }
 
     return Value(result);
+}
+
+Value StrValue::resolveFormatField(
+    const std::shared_ptr<DictValue>& dict,
+    const QString& field) {
+
+    qsizetype pos = 0;
+
+    QString root;
+
+    while (pos < field.size()
+           && field[pos] != '.'
+           && field[pos] != '[')
+    {
+        root += field[pos++];
+    }
+
+    Value current = dict->getItem(Value(root));
+
+    while (pos < field.size()) {
+
+        // .attr
+        if (field[pos] == '.') {
+
+            ++pos;
+
+            QString attr;
+
+            while (pos < field.size()
+                   && field[pos] != '.'
+                   && field[pos] != '[')
+            {
+                attr += field[pos++];
+            }
+
+            current = getAttrValue(current, attr);
+
+            continue;
+        }
+
+        // [ ... ]
+        if (field[pos] == '[') {
+
+            ++pos;
+
+            QString token;
+
+            while (pos < field.size()
+                   && field[pos] != ']')
+            {
+                token += field[pos++];
+            }
+
+            if (pos >= field.size()) {
+                throw std::runtime_error(
+                    "ValueError: unmatched '[' in format field"
+                );
+            }
+
+            ++pos; // пропускаем ]
+
+            // ['name'] или ["name"]
+            if ((token.startsWith('\'') && token.endsWith('\'')) ||
+                (token.startsWith('"') && token.endsWith('"')))
+            {
+                token = token.mid(1, token.size() - 2);
+
+                if (current.isDict()) {
+
+                    current =
+                        current.asDict("format_map")
+                               ->getItem(Value(token));
+                }
+                else {
+
+                    current = getItemValue(current, Value(token));
+                }
+
+                continue;
+            }
+
+            // [123]
+            bool ok = false;
+
+            const qlonglong index = token.toLongLong(&ok);
+
+            if (ok) {
+
+                current =
+                    getItemValue(
+                        current,
+                        Value(Value::BigInt(index))
+                    );
+
+                continue;
+            }
+
+            // [name]
+            if (current.isDict()) {
+
+                current =
+                    current.asDict("format_map")
+                           ->getItem(Value(token));
+
+                continue;
+            }
+
+            throw std::runtime_error(
+                "ValueError: invalid index in format field"
+            );
+        }
+
+        throw std::runtime_error(
+            "ValueError: invalid format field"
+        );
+    }
+
+    return current;
+}
+
+Value StrValue::getItemValue(const Value& obj, const Value& key) {
+
+    if (obj.isString()) {
+        return obj.asString("getitem")->getItem(key);
+    }
+
+    if (obj.isList()) {
+        return obj.asList("getitem")->getItem(key);
+    }
+
+    if (obj.isTuple()) {
+        return obj.asTuple("getitem")->getItem(key);
+    }
+
+    if (obj.isDict()) {
+        return obj.asDict("getitem")->getItem(key);
+    }
+
+    throw std::runtime_error(
+        "TypeError: object is not subscriptable"
+    );
 }

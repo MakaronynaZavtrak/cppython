@@ -155,5 +155,13 @@ public:
 
     [[nodiscard]] Value formatMap(const Value& mapping) const;
 
+private:
+
+    static Value resolveFormatField(
+    const std::shared_ptr<DictValue>& dict,
+    const QString& field);
+
+    static Value getItemValue(const Value& obj, const Value& key);
+
 };
 #endif //CPPYTHON_STRVALUE_H
