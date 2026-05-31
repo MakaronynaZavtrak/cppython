@@ -969,7 +969,16 @@ if _result is not None:
     ("'abc'.translate('abc'.maketrans('abc', 'xyz'))", "'xyz'"),
     ("'hello'.translate('el'.maketrans('el', 'ip'))", "'hippo'"),
     ("'a!b!c'.translate('ab'.maketrans('ab', 'xy', '!'))", "'xyc'"),
-    ("'abc'.translate({120: 121})", "'abc'")
+    ("'abc'.translate({120: 121})", "'abc'"),
+
+    # format_map
+    ("'{name}'.format_map({'name': 'Bob'})", "'Bob'"),
+    ("'{name} is cool'.format_map({'name': 'Bob'})", "'Bob is cool'"),
+    ("'{x}+{y}'.format_map({'x': 2, 'y': 3})", "'2+3'"),
+    ("'{a}{b}{c}'.format_map({'a': 'x', 'b': 'y', 'c': 'z'})", "'xyz'"),
+    ("'{x}'.format_map({'x': True})", "'True'"),
+    ("'{x}'.format_map({'x': None})", "'None'"),
+    ("''.format_map({})", "''")
 
 ])
 

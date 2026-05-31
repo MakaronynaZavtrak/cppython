@@ -1432,3 +1432,54 @@ Value StrValue::translate(const Value& table) const {
 
     return Value(result);
 }
+
+Value StrValue::formatMap(const Value& mapping) const {
+
+    const auto dict =
+        mapping.asDict("format_map");
+
+    QString result;
+
+    qsizetype pos = 0;
+
+    while (pos < value.size()) {
+
+        if (value[pos] != '{') {
+            result += value[pos++];
+            continue;
+        }
+
+        const qsizetype end =
+            value.indexOf('}', pos);
+
+        if (end == -1) {
+            throw std::runtime_error(
+                "ValueError: unmatched '{'"
+            );
+        }
+
+        const QString key = value.mid(pos + 1, end - pos - 1);
+
+        Value replacement;
+
+        try {
+
+            replacement =
+                dict->getItem(Value(key));
+
+        } catch (...) {
+
+            throw std::runtime_error(
+                "KeyError: '" +
+                key.toStdString() +
+                "'"
+            );
+        }
+
+        result += replacement.toString();
+
+        pos = end + 1;
+    }
+
+    return Value(result);
+}
