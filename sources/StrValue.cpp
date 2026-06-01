@@ -1438,8 +1438,7 @@ Value StrValue::translate(const Value& table) const {
 // Он еще не поддерживает выражения вида "{x:>10}", "{x:^10}", "{x:.2f}", "{x:08d}"
 Value StrValue::formatMap(const Value& mapping) const {
 
-    const auto dict =
-        mapping.asDict("format_map");
+    const auto dict = mapping.asDict("format_map");
 
     QString result;
 
@@ -1478,6 +1477,17 @@ Value StrValue::formatMap(const Value& mapping) const {
         }
 
         QString field = value.mid(pos + 1, end - pos - 1);
+
+        QString formatSpec;
+
+        const qsizetype colon = field.indexOf(':');
+
+        if (colon != -1) {
+
+            formatSpec = field.mid(colon + 1);
+
+            field = field.left(colon);
+        }
 
         QString key = field;
 
@@ -1519,7 +1529,7 @@ Value StrValue::formatMap(const Value& mapping) const {
         }
         else if (conversion == 's') {
 
-            result += replacement.toString();
+            result += applyFormatSpec(replacement, formatSpec);
         }
         else if (!conversion.isNull()) {
 
@@ -1529,7 +1539,7 @@ Value StrValue::formatMap(const Value& mapping) const {
         }
         else {
 
-            result += replacement.toString();
+            result += applyFormatSpec(replacement, formatSpec);
         }
 
         pos = end + 1;
@@ -1721,4 +1731,81 @@ Value StrValue::resolveEmptyFormatField(const std::shared_ptr<DictValue>& dict) 
     }
 
     throw std::runtime_error("KeyError: ''");
+}
+
+QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
+
+    QString text = value.toString();
+
+    if (spec.isEmpty()) {
+        return text;
+    }
+
+    // >10
+    if (spec.startsWith('>')) {
+
+        const int width = spec.mid(1).toInt();
+
+        return text.rightJustified(width, ' ');
+    }
+
+    // <10
+    if (spec.startsWith('<')) {
+
+        const int width =
+            spec.mid(1).toInt();
+
+        return text.leftJustified(width, ' ');
+    }
+
+    // ^10
+    if (spec.startsWith('^')) {
+
+        const int width = spec.mid(1).toInt();
+
+        if (width <= text.length()) {
+            return text;
+        }
+
+        const int totalSpaces = width - text.length();
+        const int leftSpaces = totalSpaces / 2;
+        const int rightSpaces = totalSpaces - leftSpaces;
+
+        return QString(leftSpaces, ' ') + text + QString(rightSpaces, ' ');
+    }
+
+    // 04
+    // 08
+    if (spec.size() >= 2 && spec[0] == '0') {
+
+        const int width = spec.toInt();
+
+        return text.rightJustified(width, '0');
+    }
+
+    // .2f
+    if (spec.startsWith('.') && spec.endsWith('f')) {
+
+        if (!value.isBigFloat() && !value.isBigInt()) {
+
+            throw std::runtime_error("ValueError: float format requires number");
+        }
+
+        const int precision = spec.mid(1, spec.size() - 2).toInt();
+
+        double d;
+
+        if (value.isBigInt()) {
+            d = value.toBigInt().convert_to<double>();
+        } else {
+            d = value.toBigFloat().convert_to<double>();
+        }
+
+        return QString::number(d, 'f', precision);
+    }
+
+    throw std::runtime_error(
+        "Unsupported format specifier: "
+        + spec.toStdString()
+    );
 }

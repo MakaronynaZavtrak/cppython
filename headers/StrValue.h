@@ -170,5 +170,9 @@ private:
 
     static Value resolveEmptyFormatField(const std::shared_ptr<DictValue>& dict);
 
+    static QString applyFormatSpec(
+    const Value& value,
+    const QString& spec);
+
 };
 #endif //CPPYTHON_STRVALUE_H

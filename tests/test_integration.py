@@ -952,7 +952,31 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'{user[name]}'.format(user={'name':'Bob'})", "'Bob'"),
     ("'{user[profile][name]}'.format(user={'profile':{'name':'Bob'}})", "'Bob'"),
     ("'{0} + {1}'.format(2,3)", "'2 + 3'"),
-    ("''.format()", "''")
+    ("''.format()", "''"),
+
+    # alignment
+    ("'{:>5}'.format('x')", "'    x'"),
+    ("'{:<5}'.format('x')", "'x    '"),
+    ("'{:^5}'.format('x')", "'  x  '"),
+    ("'{x:>5}'.format(x='a')", "'    a'"),
+    ("'{x:<5}'.format(x='a')", "'a    '"),
+    ("'{x:^5}'.format(x='a')", "'  a  '"),
+
+    # zero fill
+    ("'{:04}'.format(7)", "'0007'"),
+    ("'{:08}'.format(123)", "'00000123'"),
+    ("'{x:04}'.format(x=9)", "'0009'"),
+
+    # float precision
+    ("'{:.2f}'.format(3.14159)", "'3.14'"),
+    ("'{:.3f}'.format(3.14159)", "'3.142'"),
+    ("'{x:.2f}'.format(x=2.71828)", "'2.72'"),
+
+    # mixed
+    ("'{x:>10}'.format(x='Bob')", "'       Bob'"),
+    ("'{x:^10}'.format(x='Bob')", "'   Bob    '"),
+    ("'{x:08}'.format(x=42)", "'00000042'"),
+    ("'{x:.1f}'.format(x=1.99)", "'2.0'"),
 
 ])
 

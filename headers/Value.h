@@ -166,6 +166,9 @@ public:
     [[nodiscard]] bool isBigInt() const;
     [[nodiscard]] BigInt asBigInt(const QString& = "") const;
 
+    [[nodiscard]] bool isBigFloat() const;
+    [[nodiscard]] BigFloat asBigFloat(const QString& = "") const;
+
     [[nodiscard]] bool isList() const;
     [[nodiscard]] ListPtr asList(const QString& = "") const;
 

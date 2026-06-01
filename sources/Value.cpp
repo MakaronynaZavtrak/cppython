@@ -445,6 +445,19 @@ Value::BigInt Value::asBigInt(const QString& where) const {
     return std::get<BigInt>(data);
 }
 
+bool Value::isBigFloat() const {
+    return std::holds_alternative<BigFloat>(data);
+}
+
+Value::BigFloat Value::asBigFloat(const QString &) const {
+
+    if (!isBigFloat()) {
+        throw std::runtime_error("Value is not a float");
+    }
+
+    return std::get<BigFloat>(data);
+}
+
 bool Value::isList() const {
     return std::holds_alternative<ListPtr>(data);
 }
