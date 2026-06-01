@@ -73,6 +73,37 @@ QString BytesValue::repr() const {
     return result;
 }
 
+Value BytesValue::getItem(const Value& indexValue) const {
+
+    int index = indexValue.asBigInt("__getitem__").convert_to<int>();
+
+    if (data.isEmpty()) {
+        throw std::runtime_error(
+            "IndexError: index out of range"
+        );
+    }
+
+    if (index < 0) {
+        index += data.size();
+    }
+
+    if (index < 0 || index >= data.size()) {
+        throw std::runtime_error(
+            "IndexError: index out of range"
+        );
+    }
+
+    return Value(
+        Value::BigInt(
+            static_cast<unsigned char>(data[index])
+        )
+    );
+}
+
+std::size_t BytesValue::len() const {
+    return data.size();
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

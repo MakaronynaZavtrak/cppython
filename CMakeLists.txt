@@ -104,7 +104,9 @@ add_executable(cppython main.cpp
         headers/StrValue.h
         sources/StrValue.cpp
         headers/BytesValue.h
-        sources/BytesValue.cpp)
+        sources/BytesValue.cpp
+        runtime/builtins/bytes/BytesMethods.h
+        runtime/builtins/bytes/BytesMethods.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

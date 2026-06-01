@@ -5,6 +5,7 @@
 #ifndef CPPYTHON_BYTESVALUE_H
 #define CPPYTHON_BYTESVALUE_H
 #include "ReprMixin.h"
+#include "Value.h"
 
 class BytesValue : public ReprMixin {
 
@@ -17,5 +18,9 @@ public:
 
     QString toString() const override;
     QString repr() const override;
+
+    [[nodiscard]] Value getItem(const Value& indexValue) const;
+
+    [[nodiscard]] std::size_t len() const;
 };
 #endif //CPPYTHON_BYTESVALUE_H

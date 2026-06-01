@@ -14,6 +14,7 @@
 #include "../runtime/builtins/set/SetMethods.h"
 #include "../runtime/builtins/str/StrMethods.h"
 #include "SuperValue.h"
+#include "../runtime/builtins/bytes/BytesMethods.h"
 #include "../runtime/builtins/tuple/TupleMethods.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
@@ -142,6 +143,10 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
     if (obj.isString()) {
         return getStrAttr(obj, attr);
+    }
+
+    if (obj.isBytes()) {
+        return getBytesAttr(obj, attr);
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +
