@@ -1783,6 +1783,81 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
         return text.rightJustified(width, '0');
     }
 
+    if (spec == "%") {
+
+        if (!value.isBigFloat() && !value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: percent format requires number"
+            );
+        }
+
+        double d;
+
+        if (value.isBigInt()) {
+            d = value.toBigInt().convert_to<double>();
+        } else {
+            d = value.toBigFloat().convert_to<double>();
+        }
+
+        return QString::number(d * 100.0, 'f', 6) + "%";
+    }
+
+    if (spec == ",") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: comma format requires integer"
+            );
+        }
+
+        QString txt = value.toString();
+
+        int insertPos = txt.length() - 3;
+
+        while (insertPos > 0) {
+
+            txt.insert(insertPos, ',');
+
+            insertPos -= 3;
+        }
+
+        return txt;
+    }
+
+    if (spec == "+d") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: +d format requires integer"
+            );
+        }
+
+        const auto n = value.toBigInt();
+
+        if (n >= 0) {
+            return "+" + value.toString();
+        }
+
+        return value.toString();
+    }
+
+    if (spec == " d") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: space-sign format requires integer"
+            );
+        }
+
+        auto n = value.toBigInt();
+
+        if (n >= 0) {
+            return " " + value.toString();
+        }
+
+        return value.toString();
+    }
+
     if (spec == "d") {
 
         if (!value.isBigInt()) {
@@ -1857,6 +1932,33 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
             );
 
             n >>= 1;
+        }
+
+        return result;
+    }
+
+    if (spec.startsWith("+.") && spec.endsWith('f'))
+    {
+        if (!value.isBigFloat() && !value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: float format requires number"
+            );
+        }
+
+        const int precision = spec.mid(2, spec.size() - 3).toInt();
+
+        double d;
+
+        if (value.isBigInt()) {
+            d = value.toBigInt().convert_to<double>();
+        } else {
+            d = value.toBigFloat().convert_to<double>();
+        }
+
+        QString result = QString::number(d, 'f', precision);
+
+        if (d >= 0) {
+            result.prepend('+');
         }
 
         return result;
