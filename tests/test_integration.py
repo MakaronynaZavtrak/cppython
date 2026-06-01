@@ -978,6 +978,17 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'{x:08}'.format(x=42)", "'00000042'"),
     ("'{x:.1f}'.format(x=1.99)", "'2.0'"),
 
+    # integer formats
+    ("'{:d}'.format(42)", "'42'"),
+
+    ("'{:x}'.format(255)", "'ff'"),
+    ("'{:X}'.format(255)", "'FF'"),
+
+    ("'{:o}'.format(64)", "'100'"),
+
+    ("'{:b}'.format(10)", "'1010'"),
+    ("'{:b}'.format(255)", "'11111111'")
+
 ])
 
 def test_single_line_expressions(expr, expected):

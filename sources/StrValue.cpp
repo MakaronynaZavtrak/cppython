@@ -1783,6 +1783,85 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
         return text.rightJustified(width, '0');
     }
 
+    if (spec == "d") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: d format requires integer"
+            );
+        }
+
+        return value.toString();
+    }
+
+    if (spec == "x") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: x format requires integer"
+            );
+        }
+
+        const auto num = value.toBigInt().convert_to<long long>();
+
+        return QString::number(num, 16);
+    }
+
+    if (spec == "X") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: X format requires integer"
+            );
+        }
+
+        const auto num = value.toBigInt().convert_to<long long>();
+
+        return QString::number(num, 16).toUpper();
+    }
+
+    if (spec == "o") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: o format requires integer"
+            );
+        }
+
+        const long long n = value.toBigInt().convert_to<long long>();
+
+        return QString::number(n, 8);
+    }
+
+    if (spec == "b") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "ValueError: b format requires integer"
+            );
+        }
+
+        long long n =
+            value.toBigInt().convert_to<long long>();
+
+        if (n == 0) {
+            return "0";
+        }
+
+        QString result;
+
+        while (n > 0) {
+
+            result.prepend(
+                n & 1 ? '1' : '0'
+            );
+
+            n >>= 1;
+        }
+
+        return result;
+    }
+
     // .2f
     if (spec.startsWith('.') && spec.endsWith('f')) {
 
