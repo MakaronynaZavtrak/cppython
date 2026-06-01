@@ -1,0 +1,84 @@
+//
+// Created by semyo on 01.06.2026.
+//
+#include <BytesValue.h>
+
+QString BytesValue::repr() const {
+
+    const bool containsSingle = data.contains('\'');
+    const bool containsDouble = data.contains('"');
+
+    QChar quote = '\'';
+
+    if (containsSingle && !containsDouble) {
+        quote = '"';
+    }
+
+    QString result = "b";
+    result += quote;
+
+    for (const unsigned char c : data) {
+
+        switch (c) {
+
+            case '\n':
+                result += "\\n";
+                break;
+
+            case '\r':
+                result += "\\r";
+                break;
+
+            case '\t':
+                result += "\\t";
+                break;
+
+            case '\\':
+                result += "\\\\";
+                break;
+
+            case '\'':
+
+                if (quote == '\'')
+                    result += "\\'";
+                else
+                    result += '\'';
+
+                break;
+
+            case '"':
+
+                if (quote == '"')
+                    result += "\\\"";
+                else
+                    result += '"';
+
+                break;
+
+            default:
+
+                if (c >= 32 && c <= 126) {
+                    result += QChar(c);
+                } else {
+                    result += QString("\\x%1")
+                        .arg(c, 2, 16, QLatin1Char('0'));
+                }
+
+                break;
+        }
+    }
+
+    result += quote;
+
+    return result;
+}
+
+BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
+
+const QByteArray& BytesValue::bytes() const {
+    return data;
+}
+
+QString BytesValue::toString() const {
+    return repr();
+}

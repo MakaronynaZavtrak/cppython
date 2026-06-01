@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class BytesValue;
 class StrValue;
 class IteratorValue;
 class SetValue;
@@ -85,6 +86,8 @@ public:
 
     using StrPtr = std::shared_ptr<StrValue>;
 
+    using BytesPtr = std::shared_ptr<BytesValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -107,6 +110,7 @@ public:
         DictItemsViewPtr,
         SetPtr,
         IteratorPtr,
+        BytesPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -120,6 +124,8 @@ public:
     explicit Value(const StrPtr& str) : data(str) {}
     explicit Value(const QString& str);
     explicit Value(const char* str);
+
+    explicit Value(const BytesPtr& bytes) : data(bytes) {}
 
     explicit Value(const ListPtr& list) : data(list) {}
     explicit Value(const DictPtr& dict) : data(dict) {}
@@ -198,6 +204,9 @@ public:
 
     [[nodiscard]] bool isIterable() const;
     [[nodiscard]] IteratorPtr getIterator() const;
+
+    [[nodiscard]] bool isBytes() const;
+    [[nodiscard]] BytesPtr asBytes(const QString& = "") const;
 
     [[nodiscard]] bool operator==(const Value&) const;
     [[nodiscard]] bool operator<(const Value&) const;

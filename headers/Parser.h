@@ -1611,6 +1611,8 @@ private:
      */
     std::shared_ptr<ASTNode> parseStringToken();
 
+    std::shared_ptr<ASTNode> parseBytesToken();
+
     /**
      * @brief Разбирает логический токен
      * @return Узел логического значения

@@ -12,6 +12,7 @@
  *         токенизированный компонент входного исходного кода.
  */
 QVector<Token> Lexer::tokenize(const QString& code) {
+
     QVector<Token> tokens;
     pos = 0; //текущая позиция в коде
     line = 1;
@@ -20,32 +21,45 @@ QVector<Token> Lexer::tokenize(const QString& code) {
     indentStack.push_back(0);
 
     while (pos < code.length()) {
+
         if (QChar ch = code[pos]; ch == '\n') {
+
             tokens.push_back(Token(TOKEN_NEWLINE, "", line));
             pos++;
             line++;
             column = 1;
 
             int spaceCount = 0, tmpPos = pos;
-            while (tmpPos < code.length() && (code[tmpPos] == ' ' || code[tmpPos] == '\t')) {
+
+            while (tmpPos < code.length() &&
+                (code[tmpPos] == ' ' || code[tmpPos] == '\t')) {
+
                 if (code[tmpPos] == ' ')
                     spaceCount++;
+
                 else if (code[tmpPos] == '\t')
                     spaceCount +=4;
+
                 tmpPos++;
             }
+
             if (spaceCount > indentStack.last()) {
+
                 indentStack.append(spaceCount);
                 tokens.push_back(Token(TOKEN_INDENT, "", line));
+
             } else while (spaceCount < indentStack.last()) {
+
                     indentStack.pop_back();
                     tokens.push_back(Token(TOKEN_DEDENT, "", line));
-                }
+            }
+
             pos = tmpPos;
             continue;
         }
 
         Token token = nextToken(code);
+
         if (token.type == TOKEN_EOF) {
             break;
         }
@@ -74,6 +88,7 @@ QVector<Token> Lexer::tokenize(const QString& code) {
  *         Если достигнут конец кода, возвращается токен типа TOKEN_EOF.
  */
 Token Lexer::nextToken(const QString& code) {
+
     while (true) {
         const int oldPos = pos;
 
@@ -93,12 +108,21 @@ Token Lexer::nextToken(const QString& code) {
     if (ch.isDigit()) {
         return readNumber(code);
     }
+
+    if ((ch == 'b' || ch == 'B') &&
+    pos + 1 < code.length() &&
+    (code[pos + 1] == '"' || code[pos + 1] == '\'')) {
+        return readBytes(code);
+    }
+
     if (ch == '\"' || ch == '\'') {
         return readString(code);
     }
+
     if (ch.isLetter() || ch == '_') {
         return readIdentifierOrBool(code);
     }
+
     return readOperator(code);
 }
 
@@ -207,6 +231,29 @@ Token Lexer::readString(const QString& code) {
                 case '"':
                     result += '"';
                     break;
+                case 'x': {
+
+                    if (pos + 1 >= code.length()) {
+                        throw std::runtime_error("Invalid hex escape");
+                    }
+
+                    QString hex;
+
+                    hex += code[pos++];
+                    hex += code[pos++];
+
+                    bool ok = false;
+
+                    const int value = hex.toInt(&ok, 16);
+
+                    if (!ok) {
+                        throw std::runtime_error("Invalid hex escape");
+                    }
+
+                    result += QChar(value);
+
+                    continue;
+                }
 
                 default:
                     result += next;
@@ -220,6 +267,15 @@ Token Lexer::readString(const QString& code) {
     }
 
     throw std::runtime_error("Unterminated string literal");
+}
+
+Token Lexer::readBytes(const QString& code) {
+
+    pos++; // skip b
+
+    Token str = readString(code);
+
+    return {TOKEN_BYTES, str.value, str.line};
 }
 
 

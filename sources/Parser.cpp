@@ -1,5 +1,7 @@
 #include "Parser.h"
 
+#include "BytesValue.h"
+
 /**
  * @brief Конструирует объект Parser с заданным вектором токенов.
  *
@@ -303,6 +305,7 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
     switch (const Token token = peek(); token.type) {
         case TOKEN_NUMBER: node = parseNumberToken(); break;
         case TOKEN_STRING: node = parseStringToken(); break;
+        case TOKEN_BYTES:  node = parseBytesToken(); break;
         case TOKEN_BOOL:   node = parseBoolToken(); break;
         case TOKEN_NONE:   node = parseNoneToken(); break;
         case TOKEN_ID:     node = parseIdentifierToken(); break;
@@ -382,6 +385,17 @@ std::shared_ptr<ASTNode> Parser::parseStringToken() {
 
     return std::make_shared<ValueNode>(
         Value(advance().value)
+    );
+}
+
+std::shared_ptr<ASTNode> Parser::parseBytesToken() {
+
+    return std::make_shared<ValueNode>(
+        Value(
+            std::make_shared<BytesValue>(
+                advance().value.toLatin1()
+            )
+        )
     );
 }
 

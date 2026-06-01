@@ -1,6 +1,7 @@
 #include "Value.h"
 
 #include "BoundMethod.h"
+#include "BytesValue.h"
 #include "ClassMethodValue.h"
 #include "DictItemsIterator.h"
 #include "DictItemsView.h"
@@ -69,6 +70,10 @@ QString Value::toString() const {
 
     if (isString()) {
         return std::get<StrPtr>(data)->toString();
+    }
+
+    if (isBytes()) {
+        return std::get<BytesPtr>(data)->toString();
     }
 
     if (isList()) {
@@ -143,6 +148,10 @@ QString Value::repr() const {
         return std::get<StrPtr>(data)->repr();
     }
 
+    if (isBytes()) {
+        return std::get<BytesPtr>(data)->repr();
+    }
+
     if (isList()) {
         return std::get<ListPtr>(data)->repr();
     }
@@ -192,11 +201,12 @@ QString Value::repr() const {
  * @throws std::runtime_error Если тип данных не поддерживается.
  */
 bool Value::toBool() const {
-    if (std::holds_alternative<BigInt>(data)) {
+
+    if (isBigInt()) {
         return std::get<BigInt>(data) != 0;
     }
 
-    if (std::holds_alternative<BigFloat>(data)) {
+    if (isBigFloat()) {
         return std::get<BigFloat>(data) != 0.0;
     }
 
@@ -204,15 +214,19 @@ bool Value::toBool() const {
         return std::get<bool>(data);
     }
 
-    if (std::holds_alternative<StrPtr>(data)) {
+    if (isString()) {
         return std::get<StrPtr>(data)->len() == 0;
     }
 
-    if (std::holds_alternative<ListPtr>(data)) {
+    if (isBytes()) {
+        return !std::get<BytesPtr>(data)->bytes().isEmpty();
+    }
+
+    if (isList()) {
         return !std::get<ListPtr>(data)->elements.empty();
     }
 
-    if (std::holds_alternative<DictPtr>(data)) {
+    if (isDict()) {
         return std::get<DictPtr>(data) != nullptr;
     }
 
@@ -301,18 +315,21 @@ bool Value::isNone() const {
 
 bool Value::operator==(const Value& other) const {
 
-    // числовое сравнение
     if (isNumeric() && other.isNumeric()) {
         return toBigFloat() == other.toBigFloat();
     }
 
-    // string
     if (isString() && other.isString()) {
         return std::get<StrPtr>(data)->toString() ==
             std::get<StrPtr>(other.data)->toString();
     }
 
-    // list
+    if (isBytes() && other.isBytes()) {
+
+        return std::get<BytesPtr>(data)->bytes() ==
+               std::get<BytesPtr>(other.data)->bytes();
+    }
+
     if (isList() && other.isList()) {
 
         const auto& a = std::get<ListPtr>(data)->elements;
@@ -331,7 +348,6 @@ bool Value::operator==(const Value& other) const {
         return true;
     }
 
-    // tuple
     if (isTuple() && other.isTuple()) {
 
         const auto& a = std::get<TuplePtr>(data)->items;
@@ -361,8 +377,14 @@ bool Value::operator<(const Value& other) const {
 
     // string
     if (isString() && other.isString()) {
-        return std::get<StrPtr>(data)->toString()
-        < std::get<StrPtr>(other.data)->toString();
+        return std::get<StrPtr>(data)->toString() <
+               std::get<StrPtr>(other.data)->toString();
+    }
+
+    if (isBytes() && other.isBytes()) {
+
+        return std::get<BytesPtr>(data)->bytes() <
+               std::get<BytesPtr>(other.data)->bytes();
     }
 
     // list
@@ -587,6 +609,10 @@ bool Value::isHashable() const {
         return true;
     }
 
+    if (isBytes()) {
+        return true;
+    }
+
     // tuple
     if (std::holds_alternative<TuplePtr>(data)) {
 
@@ -638,6 +664,13 @@ std::size_t Value::hash() const {
         );
     }
 
+    if (isBytes()) {
+
+        return qHash(
+            std::get<BytesPtr>(data)->bytes()
+        );
+    }
+
     // tuple
     if (isTuple()) {
 
@@ -663,6 +696,7 @@ bool Value::isIterable() const {
     return isList() ||
            isTuple() ||
            isString() ||
+           isBytes() ||
            isSet() ||
            isDict() ||
            isDictKeysView() ||
@@ -728,4 +762,16 @@ Value::IteratorPtr Value::getIterator() const {
     }
 
     throw std::runtime_error("Object is not iterable");
+}
+
+bool Value::isBytes() const {
+    return std::holds_alternative<BytesPtr>(data);
+}
+
+Value::BytesPtr Value::asBytes(const QString &) const {
+    if (!isBytes()) {
+        throw std::runtime_error("Value is not a bytes");
+    }
+
+    return std::get<BytesPtr>(data);
 }

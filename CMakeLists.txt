@@ -102,7 +102,9 @@ add_executable(cppython main.cpp
         runtime/ProtocolHelpers.h
         runtime/ArgValidation.h
         headers/StrValue.h
-        sources/StrValue.cpp)
+        sources/StrValue.cpp
+        headers/BytesValue.h
+        sources/BytesValue.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

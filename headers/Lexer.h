@@ -46,6 +46,7 @@ enum TokenType {
     TOKEN_ID,
     TOKEN_NUMBER,
     TOKEN_STRING,
+    TOKEN_BYTES,
     TOKEN_BOOL,
     TOKEN_NONE,
     TOKEN_KEYWORD,
@@ -154,6 +155,8 @@ private:
      * @return Token Токен, содержащий строковое значение
      */
     Token readString(const QString &code);
+
+    Token readBytes(const QString& code);
 
     /**
      * @brief Читает идентификатор, ключевое слово или булево значение

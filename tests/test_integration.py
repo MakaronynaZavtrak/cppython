@@ -1014,6 +1014,21 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'{:,}'.format(1000000)", "'1,000,000'"),
     ("'{:,}'.format(123456789)", "'123,456,789'"),
 
+    # bytes
+    ("b'abc'", "b'abc'"),
+    ("b\"abc\" == b\"abc\"", "True"),
+    ("hash(b'abc') == hash(b'abc')", "True"),
+    ("b'\x41\x42\x43'", "b'ABC'"),
+    ("b\"\\n\"", "b'\\n'"),
+    ("b\"'\"", "b\"'\""),
+    ("b\"\\x00\"", "b'\\x00'"),
+    ("b\"\\n\"", "b'\\n'"),
+    ("b\"\\t\"", "b'\\t'"),
+    ("b\"\\\\\"", "b'\\\\'"),
+    ("b\"\\xff\"", "b'\\xff'"),
+    ("b\"'\"", "b\"'\"")
+
+
 ])
 
 def test_single_line_expressions(expr, expected):
