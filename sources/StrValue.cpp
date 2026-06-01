@@ -1288,11 +1288,15 @@ Value StrValue::rsplit(
 
 //TODO: метод пока костыльный, не поддерживает полностью unicode.
 Value StrValue::casefold() const {
+
     QString result = value.toCaseFolded();
 
     //TODO: костыль
+    // TODO: Full Unicode Case Folding (CaseFolding.txt)
     result.replace(QChar(0x00DF), "ss"); // ß
     result.replace(QChar(0x1E9E), "ss"); // ẞ
+    result.replace(QString(QChar(0x0130)), QString("i\u0307")); // İ
+
 
     return Value(result);
 }
@@ -1434,8 +1438,6 @@ Value StrValue::translate(const Value& table) const {
     return Value(result);
 }
 
-//TODO: метод пока неполноценный.
-// Он еще не поддерживает выражения вида "{x:>10}", "{x:^10}", "{x:.2f}", "{x:08d}"
 Value StrValue::formatMap(const Value& mapping) const {
 
     const auto dict = mapping.asDict("format_map");

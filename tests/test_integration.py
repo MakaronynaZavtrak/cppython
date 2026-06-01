@@ -866,6 +866,11 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'straße'.casefold()", "'strasse'"),
     ("'Straße'.casefold()", "'strasse'"),
     ("''.casefold()", "''"),
+    ("'ß'.casefold()", "'ss'"),
+    ("'ẞ'.casefold()", "'ss'"),
+    ("'İ'.casefold()", "'i̇'"),
+    ("'Σ'.casefold()", "'σ'"),
+    ("'ς'.casefold()", "'σ'"),
 
     # str
     ("str()", "''"),
@@ -1053,6 +1058,8 @@ def run_cpython(cmds: str | list[str]) -> str:
         code = f"""
 import sys
 
+sys.stdout.reconfigure(encoding="utf-8")
+
 _result = eval({expr!r})
 
 if _result is not None:
@@ -1064,6 +1071,8 @@ if _result is not None:
 
         code = f"""
 import sys
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 _ns = {{"__builtins__": __builtins__}}
 
