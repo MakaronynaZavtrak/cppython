@@ -93,6 +93,7 @@ public:
         BigFloat,
         bool,
         StrPtr,
+        BytesPtr,
         ListPtr,
         DictPtr,
         TuplePtr,
@@ -110,7 +111,6 @@ public:
         DictItemsViewPtr,
         SetPtr,
         IteratorPtr,
-        BytesPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -162,7 +162,9 @@ public:
     [[nodiscard]] QString repr() const override;
     [[nodiscard]] QString display() const;
 
+    [[nodiscard]] bool isBool() const;
     [[nodiscard]] bool toBool() const;
+
     [[nodiscard]] bool isNone() const;
     [[nodiscard]] BigFloat toBigFloat() const;
     [[nodiscard]] BigInt toBigInt() const;
@@ -196,6 +198,33 @@ public:
     [[nodiscard]] bool isDictItemsView() const;
     [[nodiscard]] DictItemsViewPtr asDictItemsView() const;
 
+    [[nodiscard]] bool isFunction() const;
+    [[nodiscard]] FunctionPtr asFunction() const;
+
+    [[nodiscard]] bool isClass() const;
+    [[nodiscard]] ClassPtr asClass() const;
+
+    [[nodiscard]] bool isInstance() const;
+    [[nodiscard]] InstancePtr asInstance() const;
+
+    [[nodiscard]] bool isBoundMethod() const;
+    [[nodiscard]] BoundMethodPtr asBoundMethod() const;
+
+    [[nodiscard]] bool isSuper() const;
+    [[nodiscard]] SuperPtr asSuper() const;
+
+    [[nodiscard]] bool isBuiltinFunction() const;
+    [[nodiscard]] BuiltinFunctionPtr asBuiltinFunction() const;
+
+    [[nodiscard]] bool isProperty() const;
+    [[nodiscard]] PropertyPtr asProperty() const;
+
+    [[nodiscard]] bool isStaticMethod() const;
+    [[nodiscard]] StaticMethodPtr asStaticMethod() const;
+
+    [[nodiscard]] bool isClassMethod() const;
+    [[nodiscard]] ClassMethodPtr asClassMethod() const;
+
     [[nodiscard]] bool isSet() const;
     [[nodiscard]] SetPtr asSet(const QString& = "") const;
 
@@ -208,8 +237,63 @@ public:
     [[nodiscard]] bool isBytes() const;
     [[nodiscard]] BytesPtr asBytes(const QString& = "") const;
 
+    [[nodiscard]] Value operator+(const Value&) const;
+
+    [[nodiscard]] Value operator-(const Value&) const;
+
+    [[nodiscard]] Value operator*(const Value&) const;
+
+    [[nodiscard]] Value operator/(const Value&) const;
+
+    [[nodiscard]] Value operator%(const Value&) const;
+
+    [[nodiscard]] Value power (const Value&) const;
+
+    [[nodiscard]] Value intDivide(const Value&) const;
+
     [[nodiscard]] bool operator==(const Value&) const;
+
     [[nodiscard]] bool operator<(const Value&) const;
+
+    [[nodiscard]] bool operator!=(const Value&) const;
+
+    [[nodiscard]] bool operator<=(const Value&) const;
+
+    [[nodiscard]] bool operator>(const Value&) const;
+
+    [[nodiscard]] bool operator>=(const Value&) const;
+
+    Value& operator+=(const Value&);
+
+    Value& operator-=(const Value&);
+
+    Value& operator*=(const Value&);
+
+    Value& operator/=(const Value&);
+
+    Value& operator%=(const Value&);
+
+    Value& intDivideEqual(const Value&);
+
+    Value& powerEqual(const Value&);
+
+    [[nodiscard]] bool is(const Value&) const;
+
+    Value operator+() const;
+
+    Value operator-() const;
+
+
+    template<class... Ts>
+    struct overloaded : Ts... {
+        using Ts::operator()...;
+    };
+
+    template<class... Ts>
+    overloaded(Ts...) -> overloaded<Ts...>;
+
+    static QString formatFloat(const BigFloat& num);
+
 };
 
 size_t qHash(const Value& value, size_t seed = 0);

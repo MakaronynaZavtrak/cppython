@@ -306,3 +306,86 @@ void ListValue::sort(
         elements.push_back(v);
     }
 }
+
+bool ListValue::equal(const Value& other) const {
+
+    if (!other.isList()) {
+        return false;
+    }
+
+    const auto& rhs = other.asList()->elements;
+
+    if (elements.size() != rhs.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < elements.size(); ++i) {
+        if (!(elements[i] == rhs[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool ListValue::notEqual(const Value& other) const {
+    return !equal(other);
+}
+
+bool ListValue::less(const Value& other) const {
+
+    if (!other.isList()) {
+        throw std::runtime_error(
+            "TypeError: '<' not supported between instances of 'list' and other type"
+        );
+    }
+
+    const auto& rhs = other.asList()->elements;
+
+    const size_t minSize =
+        std::min(elements.size(), rhs.size());
+
+    for (size_t i = 0; i < minSize; ++i) {
+
+        if (elements[i] == rhs[i]) {
+            continue;
+        }
+
+        return elements[i] < rhs[i];
+    }
+
+    return elements.size() < rhs.size();
+}
+
+bool ListValue::lessOrEqual(const Value& other) const {
+    return !greater(other);
+}
+
+bool ListValue::greater(const Value& other) const {
+
+    if (!other.isList()) {
+        throw std::runtime_error(
+            "TypeError: '>' not supported between instances of 'list' and other type"
+        );
+    }
+
+    const auto& rhs = other.asList()->elements;
+
+    const size_t minSize =
+        std::min(elements.size(), rhs.size());
+
+    for (size_t i = 0; i < minSize; ++i) {
+
+        if (elements[i] == rhs[i]) {
+            continue;
+        }
+
+        return elements[i] > rhs[i];
+    }
+
+    return elements.size() > rhs.size();
+}
+
+bool ListValue::greaterOrEqual(const Value& other) const {
+    return !less(other);
+}

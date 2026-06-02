@@ -4,23 +4,25 @@
 
 #ifndef CPPYTHON_BYTESVALUE_H
 #define CPPYTHON_BYTESVALUE_H
-#include "ReprMixin.h"
+#include "ObjectValue.h"
 #include "Value.h"
 
-class BytesValue : public ReprMixin {
+class BytesValue : public ObjectValue {
 
 QByteArray data;
 
 public:
     explicit BytesValue(QByteArray data);
 
-    const QByteArray& bytes() const;
+    [[nodiscard]] const QByteArray& bytes() const;
 
-    QString toString() const override;
-    QString repr() const override;
+    [[nodiscard]] QString toString() const override;
+    [[nodiscard]] QString repr() const override;
 
     [[nodiscard]] Value getItem(const Value& indexValue) const;
 
     [[nodiscard]] std::size_t len() const;
+
+    [[nodiscard]] Value add(const Value& other) const override;
 };
 #endif //CPPYTHON_BYTESVALUE_H

@@ -6,10 +6,10 @@
 #define CPPYTHON_TUPLEVALUE_H
 #include <vector>
 
-#include "ReprMixin.h"
+#include "ObjectValue.h"
 #include "Value.h"
 
-class TupleValue : public ReprMixin {
+class TupleValue : public ObjectValue {
 public:
     std::vector<Value> items;
 
@@ -31,6 +31,18 @@ public:
     const std::optional<Value>& end = std::nullopt) const;
 
     [[nodiscard]] std::size_t len() const;
+
+    [[nodiscard]] bool equal(const Value &other) const override;
+
+    [[nodiscard]] bool notEqual(const Value &other) const override;
+
+    [[nodiscard]] bool lessOrEqual(const Value &other) const override;
+
+    [[nodiscard]] bool less(const Value &other) const override;
+
+    [[nodiscard]] bool greaterOrEqual(const Value &other) const override;
+
+    [[nodiscard]] bool greater(const Value &other) const override;
 };
 
 #endif //CPPYTHON_TUPLEVALUE_H

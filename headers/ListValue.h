@@ -6,10 +6,10 @@
 #define CPPYTHON_LISTVALUE_H
 #include <vector>
 
+#include "ObjectValue.h"
 #include "Value.h"
-#include "ReprMixin.h"
 
-class ListValue : public ReprMixin {
+class ListValue : public ObjectValue {
 public:
     std::vector<Value> elements;
 
@@ -51,5 +51,17 @@ public:
     Value copy() const;
 
     void sort(const std::optional<Value>& key, bool reverse, const std::shared_ptr<Environment>& env);
+
+    [[nodiscard]] bool equal(const Value& value) const override;
+
+    [[nodiscard]] bool notEqual(const Value& value) const override;
+
+    [[nodiscard]] bool lessOrEqual(const Value &other) const override;
+
+    [[nodiscard]] bool less(const Value& value) const override;
+
+    [[nodiscard]] bool greaterOrEqual(const Value &other) const override;
+
+    [[nodiscard]] bool greater(const Value &other) const override;
 };
 #endif //CPPYTHON_LISTVALUE_H

@@ -5,12 +5,12 @@
 #ifndef CPPYTHON_STRVALUE_H
 #define CPPYTHON_STRVALUE_H
 #include "CallRuntime.h"
-#include "ReprMixin.h"
+#include "ObjectValue.h"
 #include "Value.h"
 
 class Value;
 
-class StrValue : public  ReprMixin {
+class StrValue : public ObjectValue {
     QString value;
 
 public:
@@ -160,6 +160,22 @@ public:
     const std::vector<Value>& args,
     const Kwargs& kwargs) const;
 
+    [[nodiscard]] Value add(const Value&) const override;
+
+    [[nodiscard]] Value multiply(const Value&) const override;
+
+    [[nodiscard]] bool equal(const Value&) const override;
+
+    [[nodiscard]] bool notEqual(const Value&) const override;
+
+    [[nodiscard]] bool lessOrEqual(const Value&) const override;
+
+    [[nodiscard]] bool less(const Value&) const override;
+
+    [[nodiscard]] bool greaterOrEqual(const Value&) const override;
+
+    [[nodiscard]] bool greater(const Value&) const override;
+
 private:
 
     static Value resolveFormatField(
@@ -173,6 +189,5 @@ private:
     static QString applyFormatSpec(
     const Value& value,
     const QString& spec);
-
 };
 #endif //CPPYTHON_STRVALUE_H

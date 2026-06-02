@@ -22,7 +22,6 @@
 #include "SetValue.h"
 #include "StaticMethodValue.h"
 #include "StopIterationException.h"
-#include "StrValue.h"
 #include "TupleValue.h"
 
 /**
@@ -66,43 +65,62 @@ public:
 
     Value value;
 
-    /**
-     * @brief Возвращает строковое представление значения узла.
-     *
-     * Метод преобразует значение узла в строку на основе типа данных, содержащегося в `Value`.
-     * Поддерживаемые типы данных включают `double`, `int`, `QString` и `bool`. Для типов данных,
-     * которые не поддерживаются, возвращается строка "<Unknown type of value>".
-     *
-     * @return Строковое представление значения узла.
-     */
     [[nodiscard]] QString toString() const override {
-        const auto& data = value.data;
-
-        if (std::holds_alternative<Value::BigFloat>(data)) {
-            return QString::fromStdString(
-                std::get<Value::BigFloat>(data).convert_to<std::string>()
-                );
-        }
-
-        if (std::holds_alternative<Value::BigInt>(data)) {
-            return QString::fromStdString(
-                std::get<Value::BigInt>(data).convert_to<std::string>()
-                );
-        }
-
-        if (std::holds_alternative<Value::StrPtr>(data)) {
-            return "\'" + std::get<Value::StrPtr>(data)->toString() + "\'";
-        }
-
-        if (std::holds_alternative<bool>(data)) {
-            return std::get<bool>(data) ? "True" : "False";
-        }
-
-        return "<Unknown type of value>";
+        return value.toString();
     }
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
         return value;
+    }
+};
+
+class UnaryOpNode final : public ASTNode {
+
+    QString op;
+    std::shared_ptr<ASTNode> operand;
+
+    enum class Operation {
+        Not,
+        UnaryPlus,
+        UnaryMinus
+    };
+
+    static Operation parseOperation(const QString &op) {
+        static const std::unordered_map<QString, Operation> opMap = {
+            {"+", Operation::UnaryPlus},
+            {"-", Operation::UnaryMinus},
+            {"not", Operation::Not}
+        };
+
+        const auto it = opMap.find(op);
+        if (it == opMap.end()) {
+            throw std::runtime_error("Unsupported operation: " + op.toStdString());
+        }
+        return it->second;
+    }
+
+public:
+
+    UnaryOpNode(QString  op, std::shared_ptr<ASTNode> operand)
+        : op(std::move(op)), operand(std::move(operand)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+
+        const Value val = operand->eval(env);
+
+        switch (parseOperation(op)) {
+            case Operation::Not:        return Value(!val.toBool());
+            case Operation::UnaryPlus:  return +val;
+            case Operation::UnaryMinus: return -val;
+
+            default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
+        }
+
+
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return "(" + operand->toString() + op + ")";
     }
 };
 
@@ -124,8 +142,12 @@ public:
  * поведения вспомогательным методам, таким как `evalTwoNumbers`, `evalTwoStrings` и `evalNumAndString`.
  */
 class BinOpNode final : public ASTNode {
+
+    std::shared_ptr<ASTNode> left;
+    QString op; // "+", "-", "=", "/", "%", "*", "**", "//", "=="
+    std::shared_ptr<ASTNode> right;
+
 public:
-    using Num = std::variant<Value::BigInt, Value::BigFloat>;
 
     BinOpNode(std::shared_ptr<ASTNode> left, QString  op, std::shared_ptr<ASTNode> right)
         : left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
@@ -148,34 +170,30 @@ public:
      * @throws std::runtime_error Если операция не поддерживается для данных типов операндов.
      */
     [[nodiscard]] Value eval(const EnvPtr env) const override {
+
         const Value l = left->eval(env);
         const Value r = right->eval(env);
 
-        if (
-            (std::holds_alternative<Value::BigFloat>(l.data) || std::holds_alternative<Value::BigInt>(l.data))
-            &&
-            (std::holds_alternative<Value::BigFloat>(r.data) || std::holds_alternative<Value::BigInt>(r.data))
-        ) { return evalTwoNumbers(l, r); }
+        switch (parseOperation(op)) {
+            case Operation::Add:            return l + r;
+            case Operation::Subtract:       return l - r;
+            case Operation::Multiply:       return l * r;
+            case Operation::Power:          return l.power(r);
+            case Operation::Divide:         return l / r;
+            case Operation::Modulo:         return l % r;
+            case Operation::IntDivide:      return l.intDivide(r);
+            case Operation::Equal:          return Value(l == r);
+            case Operation::NotEqual:       return Value(l != r);
+            case Operation::Less:           return Value(l < r);
+            case Operation::LessOrEqual:    return Value(l <= r);
+            case Operation::Greater:        return Value(l > r);
+            case Operation::GreaterOrEqual: return Value(l >= r);
+            case Operation::And:            return Value(l.toBool() && r.toBool());
+            case Operation::Or:             return Value(l.toBool() || r.toBool());
+            case Operation::Is:             return Value(l.is(r));
 
-        if (std::holds_alternative<Value::StrPtr>(l.data) && std::holds_alternative<Value::StrPtr>(r.data))
-            { return evalTwoStrings(l, r); }
-
-        if (
-            (std::holds_alternative<Value::StrPtr>(l.data) && std::holds_alternative<Value::BigInt>(r.data))
-            ||
-            (std::holds_alternative<Value::StrPtr>(r.data) && std::holds_alternative<Value::BigInt>(l.data))
-        ) { return evalNumAndString(l, r); }
-
-        if (
-            (std::holds_alternative<bool>(l.data) && (std::holds_alternative<Value::BigInt>(r.data) || std::holds_alternative<Value::BigFloat>(r.data)))
-            ||
-            (std::holds_alternative<bool>(r.data) && (std::holds_alternative<Value::BigInt>(l.data) || std::holds_alternative<Value::BigFloat>(l.data)))
-        ) { return evalNumAndBool(l, r); }
-
-        if (std::holds_alternative<bool>(l.data) && std::holds_alternative<bool>(r.data))
-            { return evalTwoBools(l, r); }
-
-        throw std::runtime_error("Unsupported operation: " + op.toStdString());
+            default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
+        }
     }
 
     /**
@@ -205,123 +223,13 @@ public:
         Equal,
         NotEqual,
         Greater,
-        GreaterEqual,
+        GreaterOrEqual,
         Less,
-        LessEqual
+        LessOrEqual,
+        And,
+        Or,
+        Is
     };
-
-    template<typename Op>
-    static Value applyBinaryOp(const Value& l, const Value& r, const bool isFloat, Op operation) {
-        return isFloat
-        ? Value(operation(l.toBigFloat(), r.toBigFloat()))
-        : Value(operation(l.toBigInt(), r.toBigInt()));
-    }
-
-    /**
-     * @brief Вычисляет бинарную операцию между двумя числовыми значениями.
-     *
-     * Этот метод вычисляет результат бинарной операции на основе предоставленных левого и правого операндов.
-     * Он поддерживает арифметические операции, такие как сложение, вычитание, умножение, деление,
-     * а также операции сравнения, такие как равенство, неравенство и реляционные сравнения.
-     * Выполняются дополнительные проверки для операций, которые могут привести к ошибкам времени выполнения,
-     * таких как деление или взятие остатка от деления на ноль.
-     *
-     * @param l Левый операнд бинарной операции.
-     * @param r Правый операнд бинарной операции.
-     * @return Результат вычисленной операции, инкапсулированный как `Value`. Точная природа результата
-     *         (числовой, логический и т.д.) зависит от выполненной операции.
-     * @throws std::runtime_error Если операция не поддерживается или недопустима, или если происходит ошибка времени выполнения,
-     *                           такая как деление на ноль.
-     */
-    [[nodiscard]] Value evalTwoNumbers(const Value &l, const Value &r) const {
-        const bool isFloat =
-            std::holds_alternative<Value::BigFloat>(l.data) ||
-            std::holds_alternative<Value::BigFloat>(r.data);
-
-        switch (parseOperation(op)) {
-            case Operation::Add:      return applyBinaryOp(l, r, isFloat, std::plus<>());
-            case Operation::Subtract: return applyBinaryOp(l, r, isFloat, std::minus<>());
-            case Operation::Multiply: return applyBinaryOp(l, r, isFloat, std::multiplies<>());
-
-            case Operation::Power: {
-                if (isFloat) {
-                    return Value(pow(l.toBigFloat(), r.toBigFloat()));
-                }
-
-                const auto base = l.toBigInt();
-                const auto exp  = r.toBigInt();
-
-                if (exp < 0) {
-                    return Value(pow(l.toBigFloat(), r.toBigFloat()));
-                }
-
-                Value::BigInt result = 1;
-                for (Value::BigInt i = 0; i < exp; ++i)
-                    result *= base;
-
-                return Value(result);
-            }
-
-            case Operation::Divide: {
-                const auto lf = l.toBigFloat();
-                const auto rf = r.toBigFloat();
-                checkDivisionByZero(rf);
-                return Value(lf / rf);
-            }
-
-            case Operation::Modulo: {
-                auto rf = r.toBigFloat();
-                checkDivisionByZero(rf);
-
-                if (!isFloat) {
-                    return Value(l.toBigInt() % r.toBigInt());
-                }
-
-                auto lf = l.toBigFloat();
-
-                auto quotient = floor(lf / rf);
-                auto remainder = lf - rf * quotient;
-
-                return Value(remainder);
-            }
-
-            case Operation::IntDivide: {
-                auto lf = l.toBigFloat();
-                auto rf = r.toBigFloat();
-                checkDivisionByZero(rf);
-
-                auto result = floor(lf / rf);
-
-                return isFloat
-                ? Value(result)
-                : Value(Value::BigInt(result));
-            }
-
-            case Operation::Equal:        return applyBinaryOp(l, r, isFloat, std::equal_to<>());
-            case Operation::NotEqual:     return applyBinaryOp(l, r, isFloat, std::not_equal_to<>());
-            case Operation::Greater:      return applyBinaryOp(l, r, isFloat, std::greater<>());
-            case Operation::GreaterEqual: return applyBinaryOp(l, r, isFloat, std::greater_equal<>());
-            case Operation::Less:         return applyBinaryOp(l, r, isFloat, std::less<>());
-            case Operation::LessEqual:    return applyBinaryOp(l, r, isFloat, std::less_equal<>());
-            default:                      throw std::runtime_error("Unsupported operation: " + op.toStdString() + " in evalTwoNumbers");
-        }
-    }
-
-    /**
-     * @brief Проверяет, делится ли число на ноль.
-     *
-     * Данный метод используется для проверки делителя на равенство нулю
-     * с целью предотвращения ошибки деления на ноль, что может привести
-     * к сбою выполнения программы.
-     *
-     * @param denominator Делитель, который проверяется на равенство нулю.
-     * @throws std::invalid_argument Если делитель равен нулю.
-     */
-    static void checkDivisionByZero(const Value::BigFloat &denominator) {
-        if (denominator == 0) {
-            throw std::runtime_error("Division by zero");
-        }
-    }
 
     /**
      * @brief Разбирает строковое представление операции и сопоставляет его с соответствующим значением перечисления `Operation`.
@@ -346,9 +254,12 @@ public:
             {"==", Operation::Equal},
             {"!=", Operation::NotEqual},
             {">", Operation::Greater},
-            {">=", Operation::GreaterEqual},
+            {">=", Operation::GreaterOrEqual},
             {"<", Operation::Less},
-            {"<=", Operation::LessEqual}
+            {"<=", Operation::LessOrEqual},
+            {"and", Operation::And},
+            {"or", Operation::Or},
+            {"is", Operation::Is}
         };
 
         const auto it = opMap.find(op);
@@ -357,83 +268,6 @@ public:
         }
         return it->second;
     }
-
-    /**
-     * @brief Вычисляет бинарную операцию над двумя строковыми значениями.
-     *
-     * Выполняет указанную операцию, такую как конкатенация или сравнение, между двумя строковыми значениями.
-     * Если операция не поддерживается, выбрасывается исключение.
-     *
-     * @param l Левый операнд, представленный как `Value`, содержащий `QString`.
-     * @param r Правый операнд, представленный как `Value`, содержащий `QString`.
-     * @return `Value`, представляющий результат операции. Тип результата может варьироваться в зависимости от операции (например, конкатенация возвращает строку, сравнение возвращает логическое значение).
-     * @throws std::runtime_error Если встречается неподдерживаемая операция.
-     */
-    [[nodiscard]] Value evalTwoStrings(const Value &l, const Value &r) const {
-        const QString lv = std::get<Value::StrPtr>(l.data)->toString();
-        const QString rv = std::get<Value::StrPtr>(r.data)->toString();
-
-        switch (parseOperation(op)) {
-            case Operation::Add:          return Value(lv + rv);
-            case Operation::Equal:        return Value(lv == rv);
-            case Operation::NotEqual:     return Value(lv != rv);
-            case Operation::LessEqual:    return Value(lv.compare(rv) <= 0);
-            case Operation::Less:         return Value(lv.compare(rv) < 0);
-            case Operation::GreaterEqual: return Value(lv.compare(rv) >= 0);
-            case Operation::Greater:      return Value(lv.compare(rv) > 0);
-            default:                      throw std::runtime_error("Unsupported operation: " + op.toStdString() + "in evalTwoStrings");
-        }
-    }
-
-    /**
-     * @brief Вычисляет операцию между числовым и строковым значением.
-     *
-     * Этот метод выполняет операции между числовым значением (целым числом) и строковым значением
-     * в соответствии с типом операции (`op`). В настоящее время поддерживается только оператор умножения (`*`),
-     * который повторяет строку заданное количество раз.
-     *
-     * @param l Левый операнд, который может содержать целое число или строку.
-     * @param r Правый операнд, который может содержать целое число или строку.
-     * @return Объект Value, который содержит результат операции.
-     *         Если `l` - целое число, а `r` - строка, результатом будет `r`, повторенная `l` раз.
-     *         Если `l` - строка, а `r` - целое число, результатом будет `l`, повторенная `r` раз.
-     * @throw std::runtime_error Если тип операции (`op`) не поддерживается.
-     */
-    [[nodiscard]] Value evalNumAndString(const Value &l, const Value &r) const {
-        const bool swap = std::holds_alternative<Value::BigInt>(l.data)
-        && std::holds_alternative<Value::StrPtr>(r.data);
-        auto [numVal, strVal] = swap
-        ? std::pair{ std::get<Value::BigInt>(l.data), std::get<Value::StrPtr>(r.data) }
-        : std::pair{ std::get<Value::BigInt>(r.data), std::get<Value::StrPtr>(l.data) };
-
-        switch (parseOperation(op)) {
-            case Operation::Multiply: {
-                if (numVal <= 0)
-                    return Value("");
-
-                if (numVal > std::numeric_limits<qsizetype>::max()) {
-                    throw std::runtime_error("String repetition too large");
-                }
-
-                return Value(strVal->toString().repeated(static_cast<qsizetype>(numVal)));
-            }
-            default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
-        }
-    }
-
-    [[nodiscard]] Value evalNumAndBool(const Value& l, const Value& r) const {
-        return std::holds_alternative<bool>(l.data)
-        ? evalTwoNumbers(Value(l.toBigInt()), r)
-        : evalTwoNumbers(l, Value(r.toBigInt()));
-    }
-
-    [[nodiscard]] Value evalTwoBools(const Value& l, const Value& r) const {
-        return evalTwoNumbers(Value(l.toBigInt()), Value(r.toBigInt()));
-    }
-
-    std::shared_ptr<ASTNode> left;
-    QString op; // "+", "-", "=", "/", "%", "*", "**", "//", "=="
-    std::shared_ptr<ASTNode> right;
 };
 
 /**
@@ -521,29 +355,40 @@ public:
     : condition(std::move(std::move(condition))), body(std::move(body)), elifs(std::move(elifs)), elseBody(std::move(elseBody)) {}
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
+
         if (condition->eval(env).toBool()) {
+
             Value lastValue;
+
             for (const auto& stmt : body) {
                 lastValue = Interpreter::executeNode(stmt, env);
             }
+
             return lastValue;
         }
 
         for (const auto& elif: elifs) {
+
             if (elif.first->eval(env).toBool()) {
+
                 Value lastValue;
+
                 for (const auto& stmt : elif.second) {
                     lastValue = Interpreter::executeNode(stmt, env);
                 }
+
                 return lastValue;
             }
         }
 
         if (!elseBody.empty()) {
+
             Value lastValue;
+
             for (const auto& stmt : elseBody) {
                 lastValue = Interpreter::executeNode(stmt, env);
             }
+
             return lastValue;
         }
 
@@ -551,20 +396,26 @@ public:
     }
 
     [[nodiscard]] QString toString() const override {
+
         QString result = "if " + condition->toString() + ":\n";
+
         for (const auto& stmt : body) {
             result += "    " + stmt->toString() + "\n";
         }
 
         for (const auto&[fst, snd] : elifs) {
+
             result += "elif " + fst->toString() + ":\n";
+
             for (const auto& stmt : snd) {
                 result += "    " + stmt->toString() + "\n";
             }
         }
 
         if (!elseBody.empty()) {
+
             result += "else:\n";
+
             for (const auto& stmt : elseBody) {
                 result += "    " + stmt->toString() + "\n";
             }
@@ -702,10 +553,12 @@ public:
             , elseBody(std::move(elseBody)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
+
         Value last;
         bool broken = false;
 
         while (condition->eval(env).toBool()) {
+
             try {
                 for (auto& stmt : body) {
                     last = Interpreter::executeNode(stmt, env);
@@ -727,16 +580,22 @@ public:
     }
 
     [[nodiscard]] QString toString() const override {
+
         QString out = "while " + condition->toString() + ":\n";
+
         for (auto& stmt : body) {
             out += "\t" + stmt->toString() + "\n";
         }
+
         if (!elseBody.empty()) {
+
             out += "else:\n";
+
             for (auto& stmt : elseBody) {
                 out += "\t" + stmt->toString() + "\n";
             }
         }
+
         return out;
     }
 
@@ -785,11 +644,11 @@ public:
             bool res = false;
 
             if      (ops[i] == "==") res = a == b;
-            else if (ops[i] == "!=") res = !(a == b);
+            else if (ops[i] == "!=") res = a != b;
             else if (ops[i] == "<")  res = a < b;
             else if (ops[i] == "<=") res = a < b || a == b;
-            else if (ops[i] == ">")  res = !(a < b) && !(a == b);
-            else if (ops[i] == ">=") res = !(a < b);
+            else if (ops[i] == ">")  res = a >= b && a != b;
+            else if (ops[i] == ">=") res = a >= b;
             else throw std::runtime_error(
                 "Unknown comparison operator: " + ops[i].toStdString());
 

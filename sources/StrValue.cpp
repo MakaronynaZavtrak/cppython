@@ -610,6 +610,105 @@ Value StrValue::isspace() const {
     return Value(true);
 }
 
+Value StrValue::add(const Value& other) const {
+
+    if (!other.isString()) {
+        throw std::runtime_error(
+            "TypeError: can only concatenate str to str"
+        );
+    }
+
+    QString result = value;
+    result += other.asString("__add__")->value;
+
+    return Value(
+        std::make_shared<StrValue>(
+            std::move(result)
+        )
+    );
+}
+
+Value StrValue::multiply(const Value& other) const {
+
+    if (!other.isNumeric() || other.isBigFloat()) {
+        throw std::runtime_error(
+            "TypeError: can't multiply sequence by non-int"
+        );
+    }
+
+    const Value::BigInt numVal = other.toBigInt();
+
+    if (numVal <= 0)
+        return Value("");
+
+    if (numVal > std::numeric_limits<qsizetype>::max()) {
+        throw std::runtime_error("String repetition too large");
+    }
+
+    return Value(value.repeated(static_cast<qsizetype>(numVal)));
+
+}
+
+bool StrValue::equal(const Value &other) const {
+
+    if (!other.isString())
+        return false;
+
+    return value == other.asString("__eq__")->value;
+}
+
+bool StrValue::notEqual(const Value &other) const {
+
+    if (!other.isString())
+        return true;
+
+    return value != other.asString("__ne__")->value;
+}
+
+bool StrValue::lessOrEqual(const Value &other) const {
+
+    if (!other.isString()) {
+        throw std::runtime_error(
+            "TypeError: '<=' not supported between instances of 'str' and other type"
+        );
+    }
+
+    return value <= other.asString("__le__")->value;
+}
+
+bool StrValue::less(const Value &other) const {
+
+    if (!other.isString()) {
+        throw std::runtime_error(
+            "TypeError: '<' not supported between instances of 'str' and other type"
+        );
+    }
+
+    return value < other.asString("__lt__")->value;
+}
+
+bool StrValue::greaterOrEqual(const Value &other) const {
+
+    if (!other.isString()) {
+        throw std::runtime_error(
+            "TypeError: '>=' not supported between instances of 'str' and other type"
+        );
+    }
+
+    return value >= other.asString("__ge__")->value;
+}
+
+bool StrValue::greater(const Value &other) const {
+
+    if (!other.isString()) {
+        throw std::runtime_error(
+            "TypeError: '>' not supported between instances of 'str' and other type"
+        );
+    }
+
+    return value > other.asString("__gt__")->value;
+}
+
 QString StrValue::escapeString(const QString &str) {
 
     QString result;

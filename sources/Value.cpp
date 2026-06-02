@@ -19,6 +19,7 @@
 #include "StaticMethodValue.h"
 #include "StringIterator.h"
 #include "StrValue.h"
+#include "SuperValue.h"
 #include "TupleIterator.h"
 #include "TupleValue.h"
 
@@ -45,101 +46,104 @@ Value::Value(const char *str) : data(std::make_shared<StrValue>(str)) {}
  */
 QString Value::toString() const {
 
-    if (std::holds_alternative<BigInt>(data)) {
-        return QString::fromStdString(std::get<BigInt>(data).convert_to<std::string>());
-    }
+    return std::visit(
+        overloaded{
 
-    if (std::holds_alternative<BigFloat>(data)) {
-        const auto& num = std::get<BigFloat>(data);
+            [](const BigInt& v) {
+                return QString::fromStdString(v.convert_to<std::string>());
+            },
 
-        std::string s = num.str(15);
+            [](const BigFloat& v) {
+                return formatFloat(v);
+            },
 
-        if (s.find('.') == std::string::npos &&
-            s.find('e') == std::string::npos &&
-            s.find('E') == std::string::npos)
-        {
-            s += ".0";
-        }
+            [](const bool v) {
+                return QString(v ? "True" : "False");
+            },
 
-        return QString::fromStdString(s);
-    }
+            [](const StrPtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<bool>(data)) {
-        return std::get<bool>(data) ? "True" : "False";
-    }
+            [](const BytesPtr& p) {
+                return p->toString();
+            },
 
-    if (isString()) {
-        return std::get<StrPtr>(data)->toString();
-    }
+            [](const ListPtr& p) {
+                return p->toString();
+            },
 
-    if (isBytes()) {
-        return std::get<BytesPtr>(data)->toString();
-    }
+            [](const DictPtr& p) {
+                return p->toString();
+            },
 
-    if (isList()) {
-        return std::get<ListPtr>(data)->toString();
-    }
+            [](const TuplePtr& p) {
+                return p->toString();
+            },
 
-    if (isDict()) {
-        return std::get<DictPtr>(data)->toString();
-    }
+            [](const FunctionPtr& p) {
+                return p->toString();
+            },
 
-    if (isTuple()) {
-        return std::get<TuplePtr>(data)->toString();
-    }
+            [](const ClassPtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<FunctionPtr>(data)) {
-        return std::get<FunctionPtr>(data)->toString();
-    }
+            [](const InstancePtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<ClassPtr>(data)) {
-        return std::get<ClassPtr>(data)->toString();
-    }
+            [](const BoundMethodPtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<InstancePtr>(data)) {
-        return std::get<InstancePtr>(data)->toString();
-    }
+            [](const SuperPtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<BoundMethodPtr>(data)) {
-        return std::get<BoundMethodPtr>(data)->toString();
-    }
+            [](const BuiltinFunctionPtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<StaticMethodPtr>(data)) {
-        if (std::holds_alternative<StaticMethodPtr>(data)) {
-            return "<staticmethod>";
-        }
-        return std::get<StaticMethodPtr>(data)->toString();
-    }
+            [](const PropertyPtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<ClassMethodPtr>(data)) {
-        return std::get<ClassMethodPtr>(data)->toString();
-    }
+            [](const StaticMethodPtr& p) {
+                return p->toString();
+            },
 
-    if (isDictKeysView()) {
-        return std::get<DictKeysViewPtr>(data)->toString();
-    }
+            [](const ClassMethodPtr& p) {
+                return p->toString();
+            },
 
-    if (isDictValuesView()) {
-        return std::get<DictValuesViewPtr>(data)->toString();
-    }
+            [](const DictKeysViewPtr& p) {
+                return p->toString();
+            },
 
-    if (isDictItemsView()) {
-        return std::get<DictItemsViewPtr>(data)->toString();
-    }
+            [](const DictValuesViewPtr& p) {
+                return p->toString();
+            },
 
-    if (isSet()) {
-        return std::get<SetPtr>(data)->toString();
-    }
+            [](const DictItemsViewPtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<IteratorPtr>(data)) {
-        return std::get<IteratorPtr>(data)->toString();
-    }
+            [](const SetPtr& p) {
+                return p->toString();
+            },
 
-    if (std::holds_alternative<std::monostate>(data)) {
-        return "None";
-    }
+            [](const IteratorPtr& p) {
+                return p->toString();
+            },
 
-    return "Unknown unsupported type";
+            [](std::monostate) {
+                return QString("None");
+            }
+
+        },
+        data
+    );
 }
 
 QString Value::repr() const {
@@ -215,7 +219,7 @@ bool Value::toBool() const {
     }
 
     if (isString()) {
-        return std::get<StrPtr>(data)->len() == 0;
+        return std::get<StrPtr>(data)->len() != 0;
     }
 
     if (isBytes()) {
@@ -299,6 +303,7 @@ Value::BigFloat Value::toBigFloat() const {
 }
 
 Value::BigInt Value::toBigInt() const {
+
     if (std::holds_alternative<BigInt>(data))
         return std::get<BigInt>(data);
 
@@ -313,15 +318,31 @@ bool Value::isNone() const {
     return std::holds_alternative<std::monostate>(data);;
 }
 
+template<typename Op>
+    static bool applyComparison(const Value &l, const Value &r, const bool isFloat, Op operation) {
+    return isFloat
+    ? operation(l.toBigFloat(), r.toBigFloat())
+    : operation(l.toBigInt(), r.toBigInt());
+}
+
+template<typename Op>
+    static Value applyCalculation(const Value &l, const Value &r, const bool isFloat, Op operation) {
+    return isFloat
+    ? Value(operation(l.toBigFloat(), r.toBigFloat()))
+    : Value(operation(l.toBigInt(), r.toBigInt()));
+}
+
 bool Value::operator==(const Value& other) const {
 
     if (isNumeric() && other.isNumeric()) {
-        return toBigFloat() == other.toBigFloat();
+
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+
+        return applyComparison(*this, other, isFloat, std::equal_to<>());
     }
 
-    if (isString() && other.isString()) {
-        return std::get<StrPtr>(data)->toString() ==
-            std::get<StrPtr>(other.data)->toString();
+    if (isString()) {
+        return asString()->equal(other);
     }
 
     if (isBytes() && other.isBytes()) {
@@ -330,55 +351,30 @@ bool Value::operator==(const Value& other) const {
                std::get<BytesPtr>(other.data)->bytes();
     }
 
-    if (isList() && other.isList()) {
-
-        const auto& a = std::get<ListPtr>(data)->elements;
-        const auto& b = std::get<ListPtr>(other.data)->elements;
-
-        if (a.size() != b.size()) {
-            return false;
-        }
-
-        for (size_t i = 0; i < a.size(); ++i) {
-            if (!(a[i] == b[i])) {
-                return false;
-            }
-        }
-
-        return true;
+    if (isList()) {
+        return asList()->equal(other);
     }
 
-    if (isTuple() && other.isTuple()) {
-
-        const auto& a = std::get<TuplePtr>(data)->items;
-        const auto& b = std::get<TuplePtr>(other.data)->items;
-
-        if (a.size() != b.size()) {
-            return false;
-        }
-
-        for (size_t i = 0; i < a.size(); ++i) {
-            if (!(a[i] == b[i])) {
-                return false;
-            }
-        }
-
-        return true;
+    if (isTuple()) {
+        return asTuple()->equal(other);
     }
 
     return false;
 }
 
 bool Value::operator<(const Value& other) const {
+
     // numeric comparison
     if (isNumeric() && other.isNumeric()) {
-        return toBigFloat() < other.toBigFloat();
+
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+
+        return applyComparison(*this, other, isFloat, std::less<>());
     }
 
     // string
-    if (isString() && other.isString()) {
-        return std::get<StrPtr>(data)->toString() <
-               std::get<StrPtr>(other.data)->toString();
+    if (isString()) {
+        return asString()->less(other);
     }
 
     if (isBytes() && other.isBytes()) {
@@ -388,46 +384,442 @@ bool Value::operator<(const Value& other) const {
     }
 
     // list
-    if (isList() && other.isList()) {
-
-        const auto& a = std::get<ListPtr>(data)->elements;
-        const auto& b = std::get<ListPtr>(other.data)->elements;
-
-        const size_t minSize = std::min(a.size(), b.size());
-
-        for (size_t i = 0; i < minSize; ++i) {
-
-            if (a[i] == b[i]) {
-                continue;
-            }
-
-            return a[i] < b[i];
-        }
-
-        return a.size() < b.size();
+    if (isList()) {
+        return asList()->less(other);
     }
 
     //tuple
-    if (isTuple() && other.isTuple()) {
-
-        const auto& a = std::get<TuplePtr>(data)->items;
-        const auto& b = std::get<TuplePtr>(other.data)->items;
-
-        const size_t minSize = std::min(a.size(), b.size());
-
-        for (size_t i = 0; i < minSize; ++i) {
-
-            if (a[i] == b[i]) {
-                continue;
-            }
-
-            return a[i] < b[i];
-        }
-
-        return a.size() < b.size();
-        }
+    if (isTuple()) {
+        return asTuple()->less(other);
+    }
 
     throw std::runtime_error("TypeError: unsupported comparison: " + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+bool Value::operator!=(const Value &other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+
+        return applyComparison(*this, other, isFloat, std::not_equal_to<>());
+    }
+
+    if (isList()) {
+        return asList()->notEqual(other);
+    }
+
+    if (isTuple()) {
+        return asTuple()->notEqual(other);
+    }
+
+    if (isString()) {
+        return asString()->notEqual(other);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for !=: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+bool Value::operator<=(const Value &other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+
+        return applyComparison(*this, other, isFloat, std::less_equal<>());
+    }
+
+    if (isList()) {
+        return asList()->lessOrEqual(other);
+    }
+
+    if (isTuple()) {
+        return asTuple()->lessOrEqual(other);
+    }
+
+    if (isString()) {
+        return asString()->lessOrEqual(other);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for <=: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+bool Value::operator>(const Value &other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+
+        return applyComparison(*this, other, isFloat, std::greater<>());
+    }
+
+    if (isList()) {
+        return asList()->greater(other);
+    }
+
+    if (isTuple()) {
+        return asTuple()->greater(other);
+    }
+
+    if (isString()) {
+        return asString()->greater(other);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for >: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+bool Value::operator>=(const Value &other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+        return applyComparison(*this, other, isFloat, std::greater_equal<>());
+    }
+
+    if (isList()) {
+        return asList()->greaterOrEqual(other);
+    }
+
+    if (isTuple()) {
+        return asTuple()->greaterOrEqual(other);
+    }
+
+    if (isString()) {
+        return asString()->greaterOrEqual(other);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for >=: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+Value Value::operator+(const Value& other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+
+        return applyCalculation(*this, other, isFloat, std::plus<>());
+    }
+
+    if (isBytes()) {
+        return asBytes()->add(other);
+    }
+
+    if (isString()) {
+        return asString()->add(other);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for +: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+
+}
+
+Value Value::operator-(const Value &other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+
+        return applyCalculation(*this, other, isFloat, std::minus<>());
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for -: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+Value Value::operator*(const Value &other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const bool isFloat = isBigFloat() || other.isBigFloat();
+
+        return applyCalculation(*this, other, isFloat, std::multiplies<>());
+    }
+
+    if (isNumeric() && other.isString()) {
+        return other.asString()->multiply(*this);
+    }
+
+    if (isString()) {
+        return asString()->multiply(other);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for *: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+Value Value::operator/(const Value &other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const BigFloat r = other.toBigFloat();
+
+        if (r == 0) {
+            throw std::runtime_error("ArithmeticError: Division by zero");
+        }
+
+        return Value(toBigFloat() / r);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for /: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+Value Value::operator%(const Value &other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const auto rf = other.toBigFloat();
+
+        if (rf == 0) {
+            throw std::runtime_error("ArithmeticError: Division by zero");
+        }
+
+        if (!isBigFloat() && !other.isBigFloat()) {
+            return Value(toBigInt() % other.toBigInt());
+        }
+
+        const BigFloat lf = toBigFloat();
+
+        const BigFloat quotient = floor(lf / rf);
+        const BigFloat remainder = lf - rf * quotient;
+
+        return Value(remainder);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for %: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+Value Value::power(const Value& other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        if (isBigFloat() || other.isBigFloat()) {
+            return Value(pow(toBigFloat(), other.toBigFloat()));
+        }
+
+        const auto base = toBigInt();
+        const auto exp  = other.toBigInt();
+
+        if (exp < 0) {
+            return Value(pow(toBigFloat(), other.toBigFloat()));
+        }
+
+        BigInt result = 1;
+
+        for (BigInt i = 0; i < exp; ++i)
+            result *= base;
+
+        return Value(result);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for **: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+Value Value::intDivide(const Value& other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+
+        const BigFloat lf = toBigFloat();
+        const BigFloat rf = other.toBigFloat();
+
+        if (rf == 0) {
+            throw std::runtime_error("ArithmeticError: Division by zero");
+        }
+
+        const BigFloat result = floor(lf / rf);
+
+        return isBigFloat() || other.isBigFloat()
+        ? Value(result)
+        : Value(BigInt(result));
+
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for //: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
+Value& Value::operator+=(const Value &other) {
+
+    *this = *this + other;
+    return *this;
+}
+
+Value& Value::operator-=(const Value &other) {
+
+    *this = *this - other;
+    return *this;
+}
+
+Value& Value::operator*=(const Value &other) {
+
+    *this = *this * other;
+    return *this;
+}
+
+Value& Value::operator/=(const Value &other) {
+
+    *this = *this / other;
+    return *this;
+}
+
+Value& Value::operator%=(const Value &other) {
+
+    *this = *this % other;
+    return *this;
+}
+
+Value& Value::intDivideEqual(const Value &other) {
+
+    *this = intDivide(other);
+    return *this;
+}
+
+Value & Value::powerEqual(const Value &other) {
+
+    *this = power(other);
+    return *this;
+}
+
+bool Value::is(const Value& other) const {
+
+    if (data.index() != other.data.index())
+        return false;
+
+    if (isBigInt())
+        return toBigInt() == other.toBigInt();
+
+    if (isBigFloat())
+        return toBigFloat() == other.toBigFloat();
+
+    if (isBool())
+        return toBool() == other.toBool();
+
+    if (isString()) {
+        return asString() == other.asString();
+    }
+
+    if (isBytes())
+        return asBytes().get() == other.asBytes().get();
+
+    if (isList())
+        return asList().get() == other.asList().get();
+
+    if (isDict())
+        return asDict().get() == other.asDict().get();
+
+    if (isTuple()) {
+        return asTuple().get() == other.asTuple().get();
+    }
+
+    if (isFunction()) {
+        return asFunction().get() == other.asFunction().get();
+    }
+
+    if (isClass()) {
+        return asClass().get() == other.asClass().get();
+    }
+
+    if (isInstance()) {
+        return asInstance().get() == other.asInstance().get();
+    }
+
+    if (isBoundMethod()) {
+        return asBoundMethod().get() == other.asBoundMethod().get();
+    }
+
+    if (isSuper()) {
+        return asSuper().get() == other.asSuper().get();
+    }
+
+    if (isBuiltinFunction()) {
+        return asBuiltinFunction().get() == other.asBuiltinFunction().get();
+    }
+
+    if (isProperty()) {
+        return asProperty().get() == other.asProperty().get();
+    }
+
+    if (isStaticMethod()) {
+        return asStaticMethod().get() == other.asStaticMethod().get();
+    }
+
+    if (isClassMethod()) {
+        return asClassMethod().get() == other.asClassMethod().get();
+    }
+
+    if (isDictKeysView()) {
+        return asDictKeysView().get() == other.asDictKeysView().get();
+    }
+
+    if (isDictValuesView()) {
+        return asDictValuesView().get() == other.asDictValuesView().get();
+    }
+
+    if (isDictItemsView()) {
+        return asDictItemsView().get() == other.asDictItemsView().get();
+    }
+
+    if (isSet()) {
+        return asSet().get() == other.asSet().get();
+    }
+
+    if (isIterable()) {
+        return getIterator() == other.getIterator();
+    }
+
+    if (isNone())
+        return true;
+
+    throw std::runtime_error("TypeError: is not supported between instances of '"
+        + toString().toStdString() + "' and '" + other.toString().toStdString() + "'");
+}
+
+Value Value::operator+() const {
+
+    if (isNumeric()) {
+        return *this;
+    }
+
+    throw std::runtime_error(
+        "TypeError: bad operand type for unary +"
+    );
+}
+
+Value Value::operator-() const {
+
+    if (isBigInt()) {
+        return Value(-toBigInt());
+    }
+
+    if (isBigFloat()) {
+        return Value(-toBigFloat());
+    }
+
+    if (isBool()) {
+        return Value(-toBigInt());
+    }
+
+    throw std::runtime_error(
+        "TypeError: bad operand type for unary -"
+    );
+}
+
+
+QString Value::formatFloat(const BigFloat& num) {
+    std::string s = num.str(15);
+
+    if (s.find('.') == std::string::npos &&
+        s.find('e') == std::string::npos &&
+        s.find('E') == std::string::npos) {
+        s += ".0";
+    }
+
+    return QString::fromStdString(s);
 }
 
 size_t qHash(const Value &value, const size_t seed) {
@@ -547,6 +939,10 @@ QString Value::display() const {
     return repr();
 }
 
+bool Value::isBool() const {
+    return std::holds_alternative<bool>(data);
+}
+
 bool Value::isDictKeysView() const {
     return std::holds_alternative<DictKeysViewPtr>(data);
 }
@@ -581,6 +977,124 @@ Value::DictItemsViewPtr Value::asDictItemsView() const {
     }
 
     return std::get<DictItemsViewPtr>(data);
+}
+
+bool Value::isFunction() const {
+    return std::holds_alternative<FunctionPtr>(data);
+}
+
+Value::FunctionPtr Value::asFunction() const {
+
+    if (!isFunction()) {
+        throw std::runtime_error("Value is not a function");
+    }
+
+    return std::get<FunctionPtr>(data);
+
+}
+
+bool Value::isClass() const {
+    return std::holds_alternative<ClassPtr>(data);
+}
+
+Value::ClassPtr Value::asClass() const {
+
+    if (!isClass()) {
+        throw std::runtime_error("Value is not a class");
+    }
+
+    return std::get<ClassPtr>(data);
+}
+
+bool Value::isInstance() const {
+    return std::holds_alternative<InstancePtr>(data);
+}
+
+Value::InstancePtr Value::asInstance() const {
+
+    if (!isInstance()) {
+        throw std::runtime_error("Value is not an instance");
+    }
+
+    return std::get<InstancePtr>(data);
+}
+
+bool Value::isBoundMethod() const {
+    return std::holds_alternative<BoundMethodPtr>(data);
+}
+
+Value::BoundMethodPtr Value::asBoundMethod() const {
+
+    if (!isBoundMethod()) {
+        throw std::runtime_error("Value is not a bound method");
+    }
+
+    return std::get<BoundMethodPtr>(data);
+}
+
+bool Value::isSuper() const {
+    return std::holds_alternative<SuperPtr>(data);
+}
+
+Value::SuperPtr Value::asSuper() const {
+
+    if (!isSuper()) {
+        throw std::runtime_error("Value is not a super");
+    }
+
+    return std::get<SuperPtr>(data);
+}
+
+bool Value::isBuiltinFunction() const {
+    return std::holds_alternative<BuiltinFunctionPtr>(data);
+}
+
+Value::BuiltinFunctionPtr Value::asBuiltinFunction() const {
+
+    if (!isBuiltinFunction()) {
+        throw std::runtime_error("Value is not a builtin function");
+    }
+
+    return std::get<BuiltinFunctionPtr>(data);
+}
+
+bool Value::isProperty() const {
+    return std::holds_alternative<PropertyPtr>(data);
+}
+
+Value::PropertyPtr Value::asProperty() const {
+
+    if (!isProperty()) {
+        throw std::runtime_error("Value is not a property");
+    }
+
+    return std::get<PropertyPtr>(data);
+}
+
+bool Value::isStaticMethod() const {
+    return std::holds_alternative<StaticMethodPtr>(data);
+}
+
+Value::StaticMethodPtr Value::asStaticMethod() const {
+
+    if (!StaticMethodPtr()) {
+        throw std::runtime_error("Value is not a static method");
+    }
+
+    return std::get<StaticMethodPtr>(data);
+}
+
+bool Value::isClassMethod() const {
+    return std::holds_alternative<ClassMethodPtr>(data);
+}
+
+Value::ClassMethodPtr Value::asClassMethod() const {
+
+    if (!isClassMethod()) {
+        throw std::runtime_error("Value is not a class method");
+    }
+
+    return std::get<ClassMethodPtr>(data);
 }
 
 bool Value::isSet() const {

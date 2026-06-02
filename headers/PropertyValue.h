@@ -5,6 +5,9 @@
 #ifndef CPPYTHON_PROPERTYVALUE_H
 #define CPPYTHON_PROPERTYVALUE_H
 #include <memory>
+#include <QString>
+
+#include "ReprMixin.h"
 
 class FunctionValue;
 class InstanceValue;
@@ -12,7 +15,7 @@ class ClassValue;
 
 class Value;
 
-class PropertyValue {
+class PropertyValue : public ReprMixin {
 public:
     std::shared_ptr<FunctionValue> fget;
     std::shared_ptr<FunctionValue> fset;
@@ -24,5 +27,7 @@ public:
         : fget(std::move(get)), fset(std::move(set)), fdel(std::move(del)) {}
 
     [[nodiscard]] Value get(const Value&, const std::shared_ptr<ClassValue>&) const;
+
+    [[nodiscard]] QString toString() const override;
 };
 #endif //CPPYTHON_PROPERTYVALUE_H

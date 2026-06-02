@@ -30,9 +30,29 @@ namespace {
         );
     }
 
+    Value makeAddMethod(const Value& obj) {
+
+        auto bytes = extract<Value::BytesPtr>(obj);
+
+        return makeBuiltin(
+            "__add__",
+
+            [bytes](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__add__");
+
+                return bytes->add(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
-        REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>)
+        REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
+        REGISTER_METHOD("__add__", makeAddMethod)
     };
 }
 

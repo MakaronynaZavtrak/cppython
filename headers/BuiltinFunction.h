@@ -5,13 +5,14 @@
 #ifndef CPPYTHON_BUILTINFUNCTION_H
 #define CPPYTHON_BUILTINFUNCTION_H
 #include <functional>
+#include "ReprMixin.h"
 
 class InstanceValue;
 class ClassValue;
 class Value;
 class Environment;
 
-class BuiltinFunction : std::enable_shared_from_this<BuiltinFunction> {
+class BuiltinFunction : public ReprMixin, public std::enable_shared_from_this<BuiltinFunction> {
 public:
     using FuncType = std::function<Value(const std::vector<Value>&,
         const std::vector<std::pair<QString, Value>>&,
@@ -25,6 +26,8 @@ public:
 
     static void registerBuiltins(const std::shared_ptr<Environment>&);
 
-    Value get(const std::shared_ptr<InstanceValue>&,const std::shared_ptr<ClassValue>&);
+    Value get(const std::shared_ptr<InstanceValue>&, const std::shared_ptr<ClassValue>&);
+
+    [[nodiscard]] QString toString() const override;
 };
 #endif //CPPYTHON_BUILTINFUNCTION_H

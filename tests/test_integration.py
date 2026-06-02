@@ -1048,7 +1048,15 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("len(b\"A\")", "1"),
     ("len(b\"ABC\")", "3"),
     ("len(b\"\\xff\")", "1"),
-    ("len(b\"Hello World\")", "11")
+    ("len(b\"Hello World\")", "11"),
+
+    # __add__
+    ("b\"abc\" + b\"def\"", "b'abcdef'"),
+    ("b\"\" + b\"\"", "b''"),
+    ("b\"\" + b\"abc\"", "b'abc'"),
+    ("b\"abc\" + b\"\"", "b'abc'"),
+    ("b\"\\xff\" + b\"\\x01\"", "b'\\xff\\x01'"),
+    ("b\"a\" + b\"b\" + b\"c\"", "b'abc'")
 
 
 ])

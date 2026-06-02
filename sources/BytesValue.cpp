@@ -104,6 +104,24 @@ std::size_t BytesValue::len() const {
     return data.size();
 }
 
+Value BytesValue::add(const Value& other) const {
+
+    if (!other.isBytes()) {
+        throw std::runtime_error(
+            "TypeError: can't concat bytes to non-bytes"
+        );
+    }
+
+    QByteArray result = data;
+    result += other.asBytes("__add__")->bytes();
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

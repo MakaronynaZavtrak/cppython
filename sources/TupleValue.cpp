@@ -132,3 +132,86 @@ Value TupleValue::index(
 std::size_t TupleValue::len() const {
     return items.size();
 }
+
+bool TupleValue::equal(const Value& other) const {
+
+    if (!other.isTuple()) {
+        return false;
+    }
+
+    const auto& rhs = other.asTuple()->items;
+
+    if (items.size() != rhs.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < items.size(); ++i) {
+
+        if (items[i] != rhs[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool TupleValue::notEqual(const Value& other) const {
+    return !equal(other);
+}
+
+bool TupleValue::lessOrEqual(const Value& other) const {
+    return !greater(other);
+}
+
+bool TupleValue::less(const Value& other) const {
+
+    if (!other.isTuple()) {
+        throw std::runtime_error(
+            "TypeError: '<' not supported between instances of 'tuple' and + other type"
+        );
+    }
+
+    const auto& rhs = other.asTuple()->items;
+
+    const size_t minSize = std::min(items.size(), rhs.size());
+
+    for (size_t i = 0; i < minSize; ++i) {
+
+        if (items[i] == rhs[i]) {
+            continue;
+        }
+
+        return items[i] < rhs[i];
+    }
+
+    return items.size() < rhs.size();
+}
+
+bool TupleValue::greaterOrEqual(const Value& other) const {
+    return !less(other);
+}
+
+bool TupleValue::greater(const Value& other) const {
+
+    if (!other.isTuple()) {
+        throw std::runtime_error(
+            "TypeError: '>' not supported between instances of 'tuple' and other type"
+        );
+    }
+
+    const auto& rhs = other.asTuple()->items;
+
+    const size_t minSize =
+        std::min(items.size(), rhs.size());
+
+    for (size_t i = 0; i < minSize; ++i) {
+
+        if (items[i] == rhs[i]) {
+            continue;
+        }
+
+        return items[i] > rhs[i];
+    }
+
+    return items.size() > rhs.size();
+}

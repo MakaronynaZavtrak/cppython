@@ -560,3 +560,7 @@ Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::Clas
         owner
     ));
 }
+
+QString BuiltinFunction::toString() const {
+    return "<built-in function " + name + ">";
+}
