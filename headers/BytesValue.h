@@ -24,5 +24,7 @@ public:
     [[nodiscard]] std::size_t len() const;
 
     [[nodiscard]] Value add(const Value& other) const override;
+
+    [[nodiscard]] Value multiply(const Value &other) const override;
 };
 #endif //CPPYTHON_BYTESVALUE_H

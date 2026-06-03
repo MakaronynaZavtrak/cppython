@@ -49,14 +49,34 @@ namespace {
         );
     }
 
+    Value makeMultiplyMethod(const Value& obj) {
+
+        auto bytes = extract<Value::BytesPtr>(obj);
+
+        return makeBuiltin(
+            "__mul__",
+
+            [bytes](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__add__");
+
+                return bytes->multiply(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
-        REGISTER_METHOD("__add__", makeAddMethod)
+        REGISTER_METHOD("__add__", makeAddMethod),
+        REGISTER_METHOD("__mul__", makeMultiplyMethod)
     };
 }
 
 Value getBytesAttr(const Value& obj, const QString& attr) {
 
-    return getBuiltinAttr(obj, attr, BYTES_METHODS, "dict");
+    return getBuiltinAttr(obj, attr, BYTES_METHODS, "bytes");
 }

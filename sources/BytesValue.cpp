@@ -122,6 +122,33 @@ Value BytesValue::add(const Value& other) const {
     );
 }
 
+Value BytesValue::multiply(const Value &other) const {
+
+    if (!other.isNumeric() || other.isBigFloat()) {
+        throw std::runtime_error(
+            "TypeError: can't multiply sequence by non-int"
+        );
+    }
+
+    const Value::BigInt count = other.toBigInt();
+
+    if (count <= 0) {
+        return Value(std::make_shared<BytesValue>(QByteArray()));
+    }
+
+    if (count > std::numeric_limits<qsizetype>::max()) {
+        throw std::runtime_error("String repetition too large");
+    }
+
+    QByteArray result;
+
+    for (Value::BigInt i = 0; i < count; ++i) {
+        result += data;
+    }
+
+    return Value(std::make_shared<BytesValue>(result));
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

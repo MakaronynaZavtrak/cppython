@@ -546,6 +546,14 @@ Value Value::operator*(const Value &other) const {
         return asString()->multiply(other);
     }
 
+    if (isNumeric() && other.isBytes()) {
+        return other.asBytes()->multiply(*this);
+    }
+
+    if (isBytes()) {
+        return asBytes()->multiply(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for *: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
@@ -1077,7 +1085,7 @@ bool Value::isStaticMethod() const {
 
 Value::StaticMethodPtr Value::asStaticMethod() const {
 
-    if (!StaticMethodPtr()) {
+    if (!isStaticMethod()) {
         throw std::runtime_error("Value is not a static method");
     }
 

@@ -1056,8 +1056,27 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b\"\" + b\"abc\"", "b'abc'"),
     ("b\"abc\" + b\"\"", "b'abc'"),
     ("b\"\\xff\" + b\"\\x01\"", "b'\\xff\\x01'"),
-    ("b\"a\" + b\"b\" + b\"c\"", "b'abc'")
+    ("b\"a\" + b\"b\" + b\"c\"", "b'abc'"),
 
+    # __mul__
+    ("b'a' * 3", "b'aaa'"),
+    ("b'ab' * 3", "b'ababab'"),
+    ("b'hello' * 2", "b'hellohello'"),
+    ("3 * b'a'", "b'aaa'"),
+    ("2 * b'ab'", "b'abab'"),
+    ("b'a' * 0", "b''"),
+    ("b'hello' * 0", "b''"),
+    ("0 * b'abc'", "b''"),
+    ("b'a' * -1", "b''"),
+    ("b'hello' * -100", "b''"),
+    ("-5 * b'abc'", "b''"),
+    ("b'' * 10", "b''"),
+    ("b'' * 0", "b''"),
+    ("b'' * -5", "b''"),
+    ("b'a' * 1", "b'a'"),
+    ("1 * b'abc'", "b'abc'"),
+    ("b'x' * 100", "b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'"),
+    ("len(b'x' * 100)", "100")
 
 ])
 
