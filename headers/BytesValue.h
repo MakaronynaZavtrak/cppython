@@ -28,5 +28,7 @@ public:
     [[nodiscard]] Value multiply(const Value &other) const override;
 
     [[nodiscard]] bool equal(const Value &other) const override;
+
+    [[nodiscard]] bool notEqual(const Value& other) const override;
 };
 #endif //CPPYTHON_BYTESVALUE_H

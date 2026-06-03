@@ -158,6 +158,15 @@ bool BytesValue::equal(const Value& other) const {
     return data == other.asBytes("__eq__")->bytes();
 }
 
+bool BytesValue::notEqual(const Value& other) const {
+
+    if (!other.isBytes()) {
+        return true;
+    }
+
+    return data != other.asBytes("__ne__")->bytes();
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

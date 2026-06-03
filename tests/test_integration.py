@@ -1090,6 +1090,17 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'abc' == 'abc'", "False"),
     ("b'abc' == 123", "False"),
 
+    # __ne__
+    ("b'' != b''", "False"),
+    ("b'a' != b'a'", "False"),
+    ("b'abc' != b'abc'", "False"),
+    ("b'abc' != b'abd'", "True"),
+    ("b'abc' != b''", "True"),
+    ("b'' != b'abc'", "True"),
+    ("b'123' != b'123'", "False"),
+    ("b'123' != b'456'", "True"),
+    ("b'abc' != 'abc'", "True"),
+    ("b'abc' != 123", "True"),
 
 ])
 
