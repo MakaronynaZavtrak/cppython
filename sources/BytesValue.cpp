@@ -201,6 +201,17 @@ bool BytesValue::greater(const Value& other) const {
     return data > other.asBytes("__gt__")->bytes();
 }
 
+bool BytesValue::greaterOrEqual(const Value& other) const {
+
+    if (!other.isBytes()) {
+        throw std::runtime_error(
+            "TypeError: bytes can only be compared with bytes"
+        );
+    }
+
+    return data >= other.asBytes("__ge__")->bytes();
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

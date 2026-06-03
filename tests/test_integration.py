@@ -1144,6 +1144,21 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'zzz' > b'aaa'", "True"),
     ("b'aaa' > b'zzz'", "False"),
 
+    # __ge__
+    ("b'a' >= b'a'", "True"),
+    ("b'b' >= b'a'", "True"),
+    ("b'a' >= b'b'", "False"),
+    ("b'abc' >= b'abc'", "True"),
+    ("b'abd' >= b'abc'", "True"),
+    ("b'abc' >= b'abd'", "False"),
+    ("b'abc' >= b'ab'", "True"),
+    ("b'ab' >= b'abc'", "False"),
+    ("b'a' >= b''", "True"),
+    ("b'' >= b'a'", "False"),
+    ("b'' >= b''", "True"),
+    ("b'zzz' >= b'aaa'", "True"),
+    ("b'aaa' >= b'zzz'", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
