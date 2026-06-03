@@ -149,6 +149,15 @@ Value BytesValue::multiply(const Value &other) const {
     return Value(std::make_shared<BytesValue>(result));
 }
 
+bool BytesValue::equal(const Value& other) const {
+
+    if (!other.isBytes()) {
+        return false;
+    }
+
+    return data == other.asBytes("__eq__")->bytes();
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

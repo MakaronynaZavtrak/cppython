@@ -345,10 +345,8 @@ bool Value::operator==(const Value& other) const {
         return asString()->equal(other);
     }
 
-    if (isBytes() && other.isBytes()) {
-
-        return std::get<BytesPtr>(data)->bytes() ==
-               std::get<BytesPtr>(other.data)->bytes();
+    if (isBytes()) {
+        return asBytes()->equal(other);
     }
 
     if (isList()) {

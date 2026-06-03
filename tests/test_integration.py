@@ -1076,7 +1076,20 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'a' * 1", "b'a'"),
     ("1 * b'abc'", "b'abc'"),
     ("b'x' * 100", "b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'"),
-    ("len(b'x' * 100)", "100")
+    ("len(b'x' * 100)", "100"),
+
+    # __eq__
+    ("b'' == b''", "True"),
+    ("b'a' == b'a'", "True"),
+    ("b'abc' == b'abc'", "True"),
+    ("b'abc' == b'abd'", "False"),
+    ("b'abc' == b''", "False"),
+    ("b'' == b'abc'", "False"),
+    ("b'123' == b'123'", "True"),
+    ("b'123' == b'456'", "False"),
+    ("b'abc' == 'abc'", "False"),
+    ("b'abc' == 123", "False"),
+
 
 ])
 
