@@ -150,6 +150,27 @@ namespace {
         );
     }
 
+    Value makeGreaterMethod(const Value& obj) {
+
+        auto bytes = extract<Value::BytesPtr>(obj);
+
+        return makeBuiltin(
+            "__gt__",
+
+            [bytes](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__gt__");
+
+                return Value(
+                    bytes->greater(args[0])
+                );
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -158,7 +179,8 @@ namespace {
         REGISTER_METHOD("__eq__", makeEqualMethod),
         REGISTER_METHOD("__ne__", makeNotEqualMethod),
         REGISTER_METHOD("__lt__", makeLessMethod),
-        REGISTER_METHOD("__le__", makeLessOrEqualMethod)
+        REGISTER_METHOD("__le__", makeLessOrEqualMethod),
+        REGISTER_METHOD("__gt__", makeGreaterMethod)
     };
 }
 

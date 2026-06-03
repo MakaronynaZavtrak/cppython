@@ -182,12 +182,7 @@ public:
             case Operation::Divide:         return l / r;
             case Operation::Modulo:         return l % r;
             case Operation::IntDivide:      return l.intDivide(r);
-            case Operation::Equal:          return Value(l == r);
-            case Operation::NotEqual:       return Value(l != r);
-            case Operation::Less:           return Value(l < r);
-            case Operation::LessOrEqual:    return Value(l <= r);
-            case Operation::Greater:        return Value(l > r);
-            case Operation::GreaterOrEqual: return Value(l >= r);
+            //TODO: лучше сделать отдельный узел для and и or
             case Operation::And:            return Value(l.toBool() && r.toBool());
             case Operation::Or:             return Value(l.toBool() || r.toBool());
             case Operation::Is:             return Value(l.is(r));
@@ -220,12 +215,6 @@ public:
         Divide,
         Modulo,
         IntDivide,
-        Equal,
-        NotEqual,
-        Greater,
-        GreaterOrEqual,
-        Less,
-        LessOrEqual,
         And,
         Or,
         Is
@@ -251,12 +240,6 @@ public:
             {"/", Operation::Divide},
             {"%", Operation::Modulo},
             {"//", Operation::IntDivide},
-            {"==", Operation::Equal},
-            {"!=", Operation::NotEqual},
-            {">", Operation::Greater},
-            {">=", Operation::GreaterOrEqual},
-            {"<", Operation::Less},
-            {"<=", Operation::LessOrEqual},
             {"and", Operation::And},
             {"or", Operation::Or},
             {"is", Operation::Is}
@@ -631,30 +614,70 @@ class CompareNode final : public ASTNode {
     std::vector<QString> ops;
     std::vector<std::shared_ptr<ASTNode>> rights;
 
+    enum class Operation {
+        Equal,
+        NotEqual,
+        Less,
+        LessOrEqual,
+        Greater,
+        GreaterOrEqual
+    };
+
+    static Operation parseOperation(const QString &op) {
+        static const std::unordered_map<QString, Operation> opMap = {
+            {"==", Operation::Equal},
+            {"!=", Operation::NotEqual},
+            {"<", Operation::Less},
+            {"<=", Operation::LessOrEqual},
+            {">", Operation::Greater},
+            {">=", Operation::GreaterOrEqual}
+        };
+
+        const auto it = opMap.find(op);
+        if (it == opMap.end()) {
+            throw std::runtime_error("Unsupported operation: " + op.toStdString());
+        }
+        return it->second;
+    }
+
+    static bool compare(const Value& a,
+                        const Value& b,
+                        const Operation op) {
+
+        switch (op) {
+            case Operation::Equal:          return a == b;
+            case Operation::NotEqual:       return a != b;
+            case Operation::Less:           return a < b;
+            case Operation::LessOrEqual:    return a <= b;
+            case Operation::Greater:        return a > b;
+            case Operation::GreaterOrEqual: return a >= b;
+        }
+
+        throw std::runtime_error("Invalid comparison operation");
+    }
+
 public:
+
     CompareNode(std::shared_ptr<ASTNode> lhs,
                 std::vector<QString> operators,
                 std::vector<std::shared_ptr<ASTNode>> rgs)
       : left(std::move(lhs)), ops(std::move(operators)), rights(std::move(rgs)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
+
         Value a = left->eval(env);
+
         for (size_t i = 0; i < ops.size(); ++i) {
+
             Value b = rights[i]->eval(env);
-            bool res = false;
 
-            if      (ops[i] == "==") res = a == b;
-            else if (ops[i] == "!=") res = a != b;
-            else if (ops[i] == "<")  res = a < b;
-            else if (ops[i] == "<=") res = a < b || a == b;
-            else if (ops[i] == ">")  res = a >= b && a != b;
-            else if (ops[i] == ">=") res = a >= b;
-            else throw std::runtime_error(
-                "Unknown comparison operator: " + ops[i].toStdString());
+            if (!compare(a, b, parseOperation(ops[i]))) {
+                return Value(false);
+            }
 
-            if (!res) return Value(false);
             a = std::move(b);
         }
+
         return Value(true);
     }
 
