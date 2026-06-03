@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "CallRuntime.h"
+#include "IteratorValue.h"
 #include "Value.h"
 //
 // Created by semyo on 12.05.2026.
@@ -106,21 +107,15 @@ std::size_t ListValue::len() const {
 
 void ListValue::extend(const Value& other) {
 
-    /* TODO: В настоящее время метод extend принимает только списки.
-         После реализации протокола итераторов
-         перейти к поддержке универсальных итерируемых объектов
-    */
-    if (!std::holds_alternative<Value::ListPtr>(other.data)) {
-        throw std::runtime_error("extend expects list");
+    if (!other.isIterable()) {
+        throw std::runtime_error("extend expects iterable");
     }
 
-    const auto otherList = std::get<Value::ListPtr>(other.data);
+    const auto iter = other.getIterator();
 
-    elements.insert(
-        elements.end(),
-        otherList->elements.begin(),
-        otherList->elements.end()
-    );
+    while (iter->hasNext()) {
+        elements.push_back(iter->next());
+    }
 }
 
 void ListValue::insert(const Value& index,

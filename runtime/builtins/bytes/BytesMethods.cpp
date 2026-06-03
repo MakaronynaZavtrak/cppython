@@ -224,7 +224,8 @@ namespace {
         REGISTER_METHOD("__le__", makeLessOrEqualMethod),
         REGISTER_METHOD("__gt__", makeGreaterMethod),
         REGISTER_METHOD("__ge__", makeGreaterOrEqualMethod),
-        REGISTER_METHOD("__contains__", makeContainsMethod)
+        REGISTER_METHOD("__contains__", makeContainsMethod),
+        REGISTER_METHOD("__iter__", makeIterMethodBuiltin)
     };
 }
 

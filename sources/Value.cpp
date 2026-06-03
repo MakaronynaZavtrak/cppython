@@ -1,6 +1,7 @@
 #include "Value.h"
 
 #include "BoundMethod.h"
+#include "BytesIterator.h"
 #include "BytesValue.h"
 #include "ClassMethodValue.h"
 #include "DictItemsIterator.h"
@@ -1256,6 +1257,7 @@ bool Value::isIterable() const {
            isTuple() ||
            isString() ||
            isBytes() ||
+           isBytes() ||
            isSet() ||
            isDict() ||
            isDictKeysView() ||
@@ -1308,6 +1310,14 @@ Value::IteratorPtr Value::getIterator() const {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<StringIterator>(
                 std::get<StrPtr>(data)->toString()
+            )
+        );
+    }
+
+    if (isBytes()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<BytesIterator>(
+                std::get<BytesPtr>(data)
             )
         );
     }

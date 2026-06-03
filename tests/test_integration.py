@@ -1247,6 +1247,15 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("not 97 not in b'abc'", "True"),
     ("not 100 not in b'abc'", "False"),
 
+    # bytes __iter__ и __next__
+    ("list(b'')", "[]"),
+    ("list(b'a')", "[97]"),
+    ("list(b'ab')", "[97, 98]"),
+    ("list(b'abc')", "[97, 98, 99]"),
+
+    ("list(b'\\xff')", "[255]"),
+    ("list(b'\\x80')", "[128]"),
+    ("list(b'\\x00')", "[0]")
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -4413,7 +4422,25 @@ if _result is not None:
      "    def __init__(self, name):",
      "        self.name = name",
      "",
-     "'{user.name}'.format_map({'user': User('Bob')})"], "'Bob'")
+     "'{user.name}'.format_map({'user': User('Bob')})"], "'Bob'"),
+
+    (["it = iter(b'abc')",
+      "next(it)"], "97"),
+
+    (["it = iter(b'abc')",
+      "temp = next(it)",
+      "next(it)"], "98"),
+
+    (["it = iter(b'abc')",
+      "temp1 = next(it)",
+      "temp2 = next(it)",
+      "next(it)"], "99"),
+
+    (["res = []",
+      "for x in b'abc':",
+      "    res.append(x)",
+      "",
+      "res"], "[97, 98, 99]")
 
 ])
 
