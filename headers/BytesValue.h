@@ -32,5 +32,7 @@ public:
     [[nodiscard]] bool notEqual(const Value& other) const override;
 
     [[nodiscard]] bool less(const Value& other) const override;
+
+    [[nodiscard]] bool lessOrEqual(const Value& other) const override;
 };
 #endif //CPPYTHON_BYTESVALUE_H
