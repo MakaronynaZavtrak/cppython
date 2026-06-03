@@ -73,7 +73,10 @@ enum class Keyword {
     CLASS,
     LAMBDA,
     FOR,
-    IN
+    IN,
+    NOT,
+    AND,
+    OR
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -91,7 +94,10 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"class", Keyword::CLASS},
     {"lambda", Keyword::LAMBDA},
     {"for", Keyword::FOR},
-    {"in", Keyword::IN}
+    {"in", Keyword::IN},
+    {"not", Keyword::NOT},
+    {"and", Keyword::AND},
+    {"or", Keyword::OR}
 };
 
 /**

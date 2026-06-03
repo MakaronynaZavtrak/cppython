@@ -234,39 +234,43 @@ bool Value::toBool() const {
         return std::get<DictPtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<FunctionPtr>(data)) {
+    if (isNone()) {
+        return false;
+    }
+
+    if (isFunction()) {
         return std::get<FunctionPtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<ClassPtr>(data)) {
+    if (isClass()) {
         return std::get<ClassPtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<InstancePtr>(data)) {
+    if (isInstance()) {
         return std::get<InstancePtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<BoundMethodPtr>(data)) {
+    if (isBoundMethod()) {
         return std::get<BoundMethodPtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<SuperPtr>(data)) {
+    if (isSuper()) {
         return std::get<SuperPtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<BuiltinFunctionPtr>(data)) {
+    if (isBuiltinFunction()) {
         return std::get<BuiltinFunctionPtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<PropertyPtr>(data)) {
+    if (isProperty()) {
         return std::get<PropertyPtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<StaticMethodPtr>(data)) {
+    if (isStaticMethod()) {
         return std::get<StaticMethodPtr>(data) != nullptr;
     }
 
-    if (std::holds_alternative<ClassMethodPtr>(data)) {
+    if (isClassMethod()) {
         return std::get<ClassMethodPtr>(data) != nullptr;
     }
 
@@ -807,6 +811,10 @@ bool Value::is(const Value& other) const {
 
 Value Value::operator+() const {
 
+    if (isBool()) {
+        return Value(toBigInt());
+    }
+
     if (isNumeric()) {
         return *this;
     }
@@ -832,6 +840,17 @@ Value Value::operator-() const {
 
     throw std::runtime_error(
         "TypeError: bad operand type for unary -"
+    );
+}
+
+bool Value::contains(const Value &value) const {
+
+    if (isBytes()) {
+        return asBytes()->contains(value);
+    }
+
+    throw std::runtime_error("TypeError: argument of type '" +
+       toString().toStdString() + "' is not iterable"
     );
 }
 

@@ -1159,6 +1159,94 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'zzz' >= b'aaa'", "True"),
     ("b'aaa' >= b'zzz'", "False"),
 
+    # not
+    ("not True", "False"),
+    ("not False", "True"),
+    ("not 0", "True"),
+    ("not 1", "False"),
+    ("not -1", "False"),
+    ("not 42", "False"),
+    ("not b''", "True"),
+    ("not b'a'", "False"),
+    ("not b'abc'", "False"),
+    ("not None", "True"),
+    ("not (1 == 1)", "False"),
+    ("not (1 == 2)", "True"),
+    ("not not True", "True"),
+    ("not not False", "False"),
+    ("not not 0", "False"),
+    ("not not 1", "True"),
+    ("not not not 0", "True"),
+    ("not not not not 0", "False"),
+
+    # унарный +
+    ("+1", "1"),
+    ("+42", "42"),
+    ("+0", "0"),
+    ("+(-5)", "-5"),
+    ("+3.14", "3.14"),
+    ("+(-3.14)", "-3.14"),
+    ("+True", "1"),
+    ("+False", "0"),
+
+    # унарный минус
+    ("-1", "-1"),
+    ("-42", "-42"),
+    ("-0", "0"),
+    ("-(-1)", "1"),
+    ("-(-42)", "42"),
+    ("-3.14", "-3.14"),
+    ("-(-3.14)", "3.14"),
+    ("-True", "-1"),
+    ("-False", "0"),
+
+    # bytes __contains__
+    ("97 in b'abc'", "True"),
+    ("98 in b'abc'", "True"),
+    ("99 in b'abc'", "True"),
+    ("100 in b'abc'", "False"),
+    ("0 in b'abc'", "False"),
+    ("97 in b''", "False"),
+    ("0 in b''", "False"),
+    ("255 in b'\\xff'", "True"),
+    ("254 in b'\\xff'", "False"),
+    ("0 in b'\\x00'", "True"),
+    ("1 in b'\\x00'", "False"),
+    ("0 in b'\\x00'", "True"),
+    ("65 in b'ABC'", "True"),
+    ("97 in b'ABC'", "False"),
+    ("97 in b'aaaaa'", "True"),
+    ("98 in b'aaaaa'", "False"),
+
+    # not in
+    ("97 not in b'abc'", "False"),
+    ("98 not in b'abc'", "False"),
+    ("99 not in b'abc'", "False"),
+    ("100 not in b'abc'", "True"),
+    ("0 not in b'abc'", "True"),
+    ("97 not in b''", "True"),
+    ("0 not in b''", "True"),
+    ("255 not in b'\\xff'", "False"),
+    ("254 not in b'\\xff'", "True"),
+    ("0 not in b'\\x00'", "False"),
+    ("1 not in b'\\x00'", "True"),
+
+    # цепочки сравнений
+    ("97 in b'abc' == True", "False"),
+    ("100 in b'abc' == False", "False"),
+    ("97 in b'abc' != False", "True"),
+    ("100 in b'abc' != True", "False"),
+    ("97 in b'abc' and True", "True"),
+    ("100 in b'abc' or True", "True"),
+
+    # предшествие отрицания
+    ("not 97 in b'abc'", "False"),
+    ("not 100 in b'abc'", "True"),
+    ("not (97 in b'abc')", "False"),
+    ("not (100 in b'abc')", "True"),
+    ("not 97 not in b'abc'", "True"),
+    ("not 100 not in b'abc'", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

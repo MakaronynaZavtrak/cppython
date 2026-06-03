@@ -182,9 +182,6 @@ public:
             case Operation::Divide:         return l / r;
             case Operation::Modulo:         return l % r;
             case Operation::IntDivide:      return l.intDivide(r);
-            //TODO: лучше сделать отдельный узел для and и or
-            case Operation::And:            return Value(l.toBool() && r.toBool());
-            case Operation::Or:             return Value(l.toBool() || r.toBool());
             case Operation::Is:             return Value(l.is(r));
 
             default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
@@ -250,6 +247,44 @@ public:
             throw std::runtime_error("Unsupported operation: " + op.toStdString());
         }
         return it->second;
+    }
+};
+
+class LogicalOpNode : public ASTNode {
+    QString op;
+    std::shared_ptr<ASTNode> left;
+    std::shared_ptr<ASTNode> right;
+
+public:
+
+    LogicalOpNode(std::shared_ptr<ASTNode> left, QString op,  std::shared_ptr<ASTNode> right) :
+    left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+
+        Value l = left->eval(env);
+
+        if (op == "and") {
+
+            if (!l.toBool())
+                return l;
+
+            return right->eval(env);
+        }
+
+        if (op == "or") {
+
+            if (l.toBool())
+                return l;
+
+            return right->eval(env);
+        }
+
+        throw std::runtime_error("Unknown logical operator");
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return left->toString() + " " + op + " " + right->toString();
     }
 };
 
@@ -620,7 +655,9 @@ class CompareNode final : public ASTNode {
         Less,
         LessOrEqual,
         Greater,
-        GreaterOrEqual
+        GreaterOrEqual,
+        In,
+        NotIn
     };
 
     static Operation parseOperation(const QString &op) {
@@ -630,7 +667,9 @@ class CompareNode final : public ASTNode {
             {"<", Operation::Less},
             {"<=", Operation::LessOrEqual},
             {">", Operation::Greater},
-            {">=", Operation::GreaterOrEqual}
+            {">=", Operation::GreaterOrEqual},
+            {"in", Operation::In},
+            {"not in", Operation::NotIn}
         };
 
         const auto it = opMap.find(op);
@@ -651,9 +690,11 @@ class CompareNode final : public ASTNode {
             case Operation::LessOrEqual:    return a <= b;
             case Operation::Greater:        return a > b;
             case Operation::GreaterOrEqual: return a >= b;
-        }
+            case Operation::In:             return b.contains(a);
+            case Operation::NotIn:          return !b.contains(a);
 
-        throw std::runtime_error("Invalid comparison operation");
+            default: throw std::runtime_error("Invalid comparison operation");
+        }
     }
 
 public:
@@ -1464,12 +1505,6 @@ private:
     std::shared_ptr<ASTNode> parseTerm();
 
     /**
-     * @brief Разбирает унарный минус (-)
-     * @return Узел унарного минуса или выражение более высокого приоритета
-     */
-    std::shared_ptr<ASTNode> parseUnaryMinus();
-
-    /**
      * @brief Разбирает операцию возведения в степень (**)
      * @return Узел возведения в степень или первичное выражение
      */
@@ -1605,6 +1640,18 @@ private:
     [[nodiscard]] bool matchAny(TokenType type, const std::vector<QString>& values) const;
 
     bool matchAnyAndAdvance(TokenType type, const std::vector<QString>& values);
+
+    [[nodiscard]] bool isComparisonOperator() const;
+
+    QString parseComparisonOperator();
+
+    std::shared_ptr<ASTNode> parseUnary();
+
+    std::shared_ptr<ASTNode> parseNot();
+
+    std::shared_ptr<ASTNode> parseAnd();
+
+    std::shared_ptr<ASTNode> parseOr();
 
     QVector<Token> tokens;
     int current = 0;

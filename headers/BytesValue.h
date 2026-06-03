@@ -38,5 +38,7 @@ public:
     [[nodiscard]] bool greater(const Value& other) const override;
 
     [[nodiscard]] bool greaterOrEqual(const Value& other) const override;
+
+    [[nodiscard]] bool contains(const Value& value) const override;
 };
 #endif //CPPYTHON_BYTESVALUE_H

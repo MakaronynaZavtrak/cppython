@@ -283,6 +283,7 @@ public:
 
     Value operator-() const;
 
+    [[nodiscard]] bool contains(const Value& value) const;
 
     template<class... Ts>
     struct overloaded : Ts... {

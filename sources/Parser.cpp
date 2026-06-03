@@ -67,11 +67,11 @@ std::shared_ptr<ASTNode> Parser::parse() {
  */
 std::shared_ptr<ASTNode> Parser::parseExpression() {
 
-    std::shared_ptr<ASTNode> left = parseComparison();
+    std::shared_ptr<ASTNode> left = parseOr();
 
     if (matchAndAdvance(TOKEN_OP, "=")) {
 
-        auto right = parseExpression();
+        auto right = parseOr();
 
         if (const auto var =
             std::dynamic_pointer_cast<VarNode>(left)) {
@@ -142,11 +142,9 @@ std::shared_ptr<ASTNode> Parser::parseComparison() {
     std::vector<QString> compOps;
     std::vector<std::shared_ptr<ASTNode>> compRights;
 
-    while (matchAny(TOKEN_OP,
-        {"==", "!=", "<", "<=", ">", ">="})) {
+    while (isComparisonOperator()) {
 
-        compOps.push_back(advance().value);
-
+        compOps.push_back(parseComparisonOperator());
         compRights.push_back(parseAdditionAndSubtraction());
     }
 
@@ -201,50 +199,18 @@ std::shared_ptr<ASTNode> Parser::parseAdditionAndSubtraction() {
  */
 std::shared_ptr<ASTNode> Parser::parseTerm() {
 
-    std::shared_ptr<ASTNode> left = parseUnaryMinus();
+    std::shared_ptr<ASTNode> left = parseUnary();
 
     while (matchAny(TOKEN_OP, {"*", "/", "//", "%"})) {
 
         QString op = advance().value;
 
-        std::shared_ptr<ASTNode> right = parseUnaryMinus();
+        std::shared_ptr<ASTNode> right = parseUnary();
 
         left = std::make_shared<BinOpNode>(left, op, right);
     }
 
     return left;
-}
-
-/**
- * Разбирает выражение с унарным минусом из потока токенов.
- *
- * Метод обрабатывает унарный оператор "-" с соответствующим приоритетом.
- * Если текущий токен является унарным минусом ("-"), создается узел AST,
- * представляющий выражение с унарным минусом, где операндом выступает
- * результат рекурсивного вызова `parseUnaryMinus`. Для представления
- * выражения создается бинарный узел (BinOpNode), в котором левым операндом
- * является значение 0, а правым — значение вычисляемого выражения.
- * Если унарный минус не обнаружен, осуществляется переход к следующему
- * уровню приоритетов (в данном случае к обработке возведения в степень).
- *
- * @return Умный указатель на узел AST, представляющий выражение с унарным минусом,
- *         либо узел, возвращаемый методом `parsePower` для выражений без унарного минуса.
- *         Исключения могут быть выброшены, если возникает ошибка синтаксического анализа.
- */
-std::shared_ptr<ASTNode> Parser::parseUnaryMinus() {
-
-    if (matchAndAdvance(TOKEN_OP, "-")) {
-
-        std::shared_ptr<ASTNode> rhs = parseUnaryMinus();
-
-        auto zero = std::make_shared<ValueNode>(
-            Value(Value::BigInt(0))
-        );
-
-        return std::make_shared<BinOpNode>(zero, "-", rhs);
-    }
-
-    return parsePower();
 }
 
 /**
@@ -268,7 +234,7 @@ std::shared_ptr<ASTNode> Parser::parsePower()
 
         QString op = advance().value;
 
-        std::shared_ptr<ASTNode> right = parseUnaryMinus();
+        std::shared_ptr<ASTNode> right = parseUnary();
 
         left = std::make_shared<BinOpNode>(left, op, right);
     }
@@ -1001,7 +967,7 @@ bool Parser::matchAny(const TokenType type, const std::vector<QString> &values) 
 
 }
 
-bool Parser::matchAnyAndAdvance(TokenType type, const std::vector<QString> &values) {
+bool Parser::matchAnyAndAdvance(const TokenType type, const std::vector<QString> &values) {
 
     if (matchAny(type, values)) {
 
@@ -1010,6 +976,115 @@ bool Parser::matchAnyAndAdvance(TokenType type, const std::vector<QString> &valu
     }
 
     return false;
+}
+
+bool Parser::isComparisonOperator() const {
+    if (matchAny(
+            TOKEN_OP,
+            {"==","!=","<","<=",">",">="}))
+        return true;
+
+    if (peek().type == TOKEN_KEYWORD &&
+        peek().keyword == Keyword::IN)
+        return true;
+
+    if (peek().type == TOKEN_KEYWORD &&
+        peek().keyword == Keyword::NOT &&
+        current + 1 < tokens.size() &&
+        tokens[current + 1].type == TOKEN_KEYWORD &&
+        tokens[current + 1].keyword == Keyword::IN)
+        return true;
+
+    return false;
+}
+
+QString Parser::parseComparisonOperator() {
+    if (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::NOT) {
+
+        advance();
+
+        if (peek().type != TOKEN_KEYWORD ||
+            peek().keyword != Keyword::IN) {
+            throw std::runtime_error("Expected 'in' after 'not'");
+        }
+
+        advance();
+
+        return "not in";
+    }
+
+    if (peek().type == TOKEN_KEYWORD &&
+        peek().keyword == Keyword::IN) {
+
+        advance();
+        return "in";
+    }
+
+    return advance().value;
+}
+
+std::shared_ptr<ASTNode> Parser::parseUnary() {
+
+    if (matchAndAdvance(TOKEN_OP, "+"))
+        return std::make_shared<UnaryOpNode>(
+            "+",
+            parseUnary()
+        );
+
+    if (matchAndAdvance(TOKEN_OP, "-"))
+        return std::make_shared<UnaryOpNode>(
+            "-",
+            parseUnary()
+        );
+
+    return parsePower();
+}
+
+std::shared_ptr<ASTNode> Parser::parseNot() {
+    if (peek().type == TOKEN_KEYWORD &&
+        peek().keyword == Keyword::NOT) {
+        advance();
+
+        return std::make_shared<UnaryOpNode>(
+            "not",
+            parseNot()
+        );
+    }
+
+    return parseComparison();
+}
+
+std::shared_ptr<ASTNode> Parser::parseAnd() {
+    auto left = parseNot();
+
+    while (peek().type == TOKEN_KEYWORD &&
+        peek().keyword == Keyword::AND) {
+
+        advance();
+
+        auto right = parseNot();
+
+        left = std::make_shared<LogicalOpNode>(left, "and", right);
+    }
+
+    return left;
+}
+
+std::shared_ptr<ASTNode> Parser::parseOr()
+{
+    auto left = parseAnd();
+
+    while (peek().type == TOKEN_KEYWORD &&
+        peek().keyword == Keyword::OR) {
+
+        advance();
+
+        auto right = parseAnd();
+
+        left = std::make_shared<LogicalOpNode>(left, "or", right);
+    }
+
+    return left;
 }
 
 ParsedCallArgs Parser::parseCallArguments() {

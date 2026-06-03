@@ -192,6 +192,26 @@ namespace {
         );
     }
 
+    Value makeContainsMethod(const Value& obj) {
+
+        auto bytes = extract<Value::BytesPtr>(obj);
+
+        return makeBuiltin(
+            "__contains__",
+
+            [bytes](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__contains__");
+
+                return Value(
+                    bytes->contains(args[0])
+                );
+            }
+        );
+    }
 
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -203,7 +223,8 @@ namespace {
         REGISTER_METHOD("__lt__", makeLessMethod),
         REGISTER_METHOD("__le__", makeLessOrEqualMethod),
         REGISTER_METHOD("__gt__", makeGreaterMethod),
-        REGISTER_METHOD("__ge__", makeGreaterOrEqualMethod)
+        REGISTER_METHOD("__ge__", makeGreaterOrEqualMethod),
+        REGISTER_METHOD("__contains__", makeContainsMethod)
     };
 }
 

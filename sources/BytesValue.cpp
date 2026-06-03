@@ -212,6 +212,35 @@ bool BytesValue::greaterOrEqual(const Value& other) const {
     return data >= other.asBytes("__ge__")->bytes();
 }
 
+bool BytesValue::contains(const Value& other) const {
+
+    if (other.isNumeric()) {
+
+        const auto byte = other.toBigInt();
+
+        if (byte < 0 || byte > 255) {
+            throw std::runtime_error(
+                "ValueError: byte must be in range(0, 256)"
+            );
+        }
+
+        return data.contains(
+            static_cast<unsigned char>(byte)
+        );
+    }
+
+    if (other.isBytes()) {
+
+        return data.contains(
+            other.asBytes()->bytes()
+        );
+    }
+
+    throw std::runtime_error(
+        "TypeError: a bytes-like object is required"
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
