@@ -167,6 +167,18 @@ bool BytesValue::notEqual(const Value& other) const {
     return data != other.asBytes("__ne__")->bytes();
 }
 
+bool BytesValue::less(const Value& other) const {
+
+    if (!other.isBytes()) {
+        throw std::runtime_error(
+            "TypeError: '<' not supported between instances of 'bytes' and '" +
+            other.toString().toStdString() + "'"
+        );
+    }
+
+    return data < other.asBytes()->bytes();
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

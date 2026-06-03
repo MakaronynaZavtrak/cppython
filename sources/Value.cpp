@@ -386,6 +386,10 @@ bool Value::operator<(const Value& other) const {
         return asList()->less(other);
     }
 
+    if (isBytes()) {
+        return asBytes()->less(other);
+    }
+
     //tuple
     if (isTuple()) {
         return asTuple()->less(other);
