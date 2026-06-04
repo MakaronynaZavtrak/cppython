@@ -46,5 +46,10 @@ public:
     const std::optional<Value>& start = std::nullopt,
     const std::optional<Value>& end = std::nullopt) const;
 
+    [[nodiscard]] Value index(
+    const Value& sub,
+    const std::optional<Value>& start = std::nullopt,
+    const std::optional<Value>& end = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

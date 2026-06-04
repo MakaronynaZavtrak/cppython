@@ -1273,6 +1273,25 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\x00\\x01\\x02'.find(b'\\x01')", "1"),
     ("b'\\xff\\xfe\\xfd'.find(b'\\xfe')", "1"),
 
+    # index
+    ("b'abc'.index(b'a')", "0"),
+    ("b'abc'.index(b'b')", "1"),
+    ("b'abc'.index(b'c')", "2"),
+    ("b'abcabc'.index(b'abc')", "0"),
+    ("b'abcabc'.index(b'abc', 1)", "3"),
+    ("b'ababa'.index(b'aba')", "0"),
+    ("b'ababa'.index(b'aba', 1)", "2"),
+    ("b'abc'.index(b'')", "0"),
+    ("b'abc'.index(b'', 1)", "1"),
+    ("b'abc'.index(b'', 1, 2)", "1"),
+    ("b''.index(b'')", "0"),
+    ("b'abcabc'.index(b'bc', 0, 3)", "1"),
+    ("b'abcabc'.index(b'bc', 2)", "4"),
+    ("b'aaaa'.index(b'aa', 1)", "1"),
+    ("b'\\x00\\x01\\x02'.index(b'\\x01')", "1"),
+    ("b'\\xff\\xfe\\xfd'.index(b'\\xfe')", "1"),
+    ("b'\\x00\\x00\\x01'.index(b'\\x00\\x01')", "1")
+
 ])
 
 def test_single_line_expressions(expr, expected):

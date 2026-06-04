@@ -281,6 +281,20 @@ Value BytesValue::find(
     return Value(Value::BigInt(pos + startIdx));
 }
 
+Value BytesValue::index(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    Value result = find(sub, start, end);
+
+    if (result.toBigInt() == Value::BigInt(-1)) {
+        throw std::runtime_error("ValueError: subsection not found");
+    }
+
+    return result;
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
