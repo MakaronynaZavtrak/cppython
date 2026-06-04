@@ -40,5 +40,11 @@ public:
     [[nodiscard]] bool greaterOrEqual(const Value& other) const override;
 
     [[nodiscard]] bool contains(const Value& value) const override;
+
+    [[nodiscard]] Value find(
+    const Value& sub,
+    const std::optional<Value>& start = std::nullopt,
+    const std::optional<Value>& end = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

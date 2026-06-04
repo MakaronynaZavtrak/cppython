@@ -121,8 +121,7 @@ void ListValue::extend(const Value& other) {
 void ListValue::insert(const Value& index,
                        const Value& value) {
 
-    std::ptrdiff_t i =
-        index.toBigInt().convert_to<long long>();
+    auto i = index.toBigInt().convert_to<long long>();
 
     // отрицательный индекс
     if (i < 0) {

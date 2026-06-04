@@ -1255,7 +1255,24 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("list(b'\\xff')", "[255]"),
     ("list(b'\\x80')", "[128]"),
-    ("list(b'\\x00')", "[0]")
+    ("list(b'\\x00')", "[0]"),
+
+    # find
+    ("b'abc'.find(b'a')", "0"),
+    ("b'abc'.find(b'b')", "1"),
+    ("b'abc'.find(b'c')", "2"),
+    ("b'abc'.find(b'd')", "-1"),
+    ("b'abcabc'.find(b'abc', 1)", "3"),
+    ("b'abcabc'.find(b'abc', 1, 5)", "-1"),
+    ("b'abcabc'.find(b'bc', 0, 3)", "1"),
+    ("b''.find(b'a')", "-1"),
+    ("b'abc'.find(b'')", "0"),
+    ("b'abc'.find(b'', 1, 2)", "1"),
+    ("b'ababa'.find(b'aba')", "0"),
+    ("b'ababa'.find(b'aba', 1)", "2"),
+    ("b'\\x00\\x01\\x02'.find(b'\\x01')", "1"),
+    ("b'\\xff\\xfe\\xfd'.find(b'\\xfe')", "1"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

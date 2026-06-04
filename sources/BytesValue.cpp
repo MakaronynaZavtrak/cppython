@@ -241,6 +241,46 @@ bool BytesValue::contains(const Value& other) const {
     );
 }
 
+Value BytesValue::find(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    if (!sub.isBytes()) {
+        throw std::runtime_error("find() argument must be bytes");
+    }
+
+    int startIdx = 0;
+    int endIdx = data.size();
+
+    if (start.has_value()) {
+        startIdx = static_cast<int>(start->toBigInt());
+    }
+
+    if (end.has_value()) {
+        endIdx = static_cast<int>(end->toBigInt());
+    }
+
+    // нормализация индексов
+    if (startIdx < 0) startIdx = 0;
+    if (endIdx < 0) endIdx = 0;
+
+    if (startIdx > data.size()) startIdx = data.size();
+    if (endIdx > data.size()) endIdx = data.size();
+
+    const auto& needle = sub.asBytes()->bytes();
+
+    const QByteArray slice = data.mid(startIdx, endIdx - startIdx);
+
+    const int pos = slice.indexOf(needle);
+
+    if (pos == -1) {
+        return Value(Value::BigInt(-1));
+    }
+
+    return Value(Value::BigInt(pos + startIdx));
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
