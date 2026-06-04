@@ -381,6 +381,22 @@ Value BytesValue::startsWith(
     return Value(slice.startsWith(needle));
 }
 
+Value BytesValue::endsWith(
+    const Value& suffix,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    const auto [startIdx, endIdx] = getSliceBounds(data, start, end);
+
+    const QByteArray slice = data.mid(startIdx, endIdx - startIdx);
+
+    return Value(
+        slice.endsWith(
+            suffix.asBytes("endswith")->bytes()
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

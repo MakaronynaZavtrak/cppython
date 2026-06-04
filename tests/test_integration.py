@@ -1358,7 +1358,31 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'aaaa'.startswith(b'aa')", "True"),
     ("b'aaaa'.startswith(b'aaa')", "True"),
     ("b'aaaa'.startswith(b'aaaa')", "True"),
-    ("b'aaaa'.startswith(b'aaaaa')", "False")
+    ("b'aaaa'.startswith(b'aaaaa')", "False"),
+
+    # endswith
+    ("b'abc'.endswith(b'c')", "True"),
+    ("b'abc'.endswith(b'b')", "False"),
+    ("b'abc'.endswith(b'bc')", "True"),
+    ("b'abc'.endswith(b'abc')", "True"),
+    ("b'abc'.endswith(b'abcd')", "False"),
+
+    ("b'abcabc'.endswith(b'abc')", "True"),
+    ("b'abcabc'.endswith(b'abc', 0, 3)", "True"),
+    ("b'abcabc'.endswith(b'abc', 0, 6)", "True"),
+    ("b'abcabc'.endswith(b'abc', 1)", "True"),
+
+    ("b'abc'.endswith(b'')", "True"),
+    ("b''.endswith(b'')", "True"),
+    ("b''.endswith(b'a')", "False"),
+
+    ("b'abc'.endswith(b'c', 0, 2)", "False"),
+    ("b'abc'.endswith(b'b', 0, 2)", "True"),
+    ("b'abc'.endswith(b'ab', 0, 2)", "True"),
+
+    ("b'\\x00\\x01\\x02'.endswith(b'\\x02')", "True"),
+    ("b'\\xff\\xfe\\xfd'.endswith(b'\\xfd')", "True"),
+    ("b'\\xff\\xfe\\xfd'.endswith(b'\\xfe')", "False"),
 
 ])
 
