@@ -1324,7 +1324,41 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'\\x00\\x01\\x00\\x01'.count(b'\\x01')", "2"),
     ("b'\\xff\\xff\\xfe'.count(b'\\xff')", "2"),
-    ("b'\\xff\\xff\\xfe'.count(b'\\xff\\xff')", "1")
+    ("b'\\xff\\xff\\xfe'.count(b'\\xff\\xff')", "1"),
+
+    # startswith
+    ("b'abc'.startswith(b'a')", "True"),
+    ("b'abc'.startswith(b'ab')", "True"),
+    ("b'abc'.startswith(b'abc')", "True"),
+
+    ("b'abc'.startswith(b'b')", "False"),
+    ("b'abc'.startswith(b'ac')", "False"),
+    ("b'abc'.startswith(b'abcd')", "False"),
+
+    ("b''.startswith(b'')", "True"),
+    ("b''.startswith(b'a')", "False"),
+
+    ("b'abcabc'.startswith(b'abc')", "True"),
+    ("b'abcabc'.startswith(b'abc', 3)", "True"),
+    ("b'abcabc'.startswith(b'abc', 1)", "False"),
+
+    ("b'abcdef'.startswith(b'cd', 2)", "True"),
+    ("b'abcdef'.startswith(b'cd', 3)", "False"),
+
+    ("b'abcdef'.startswith(b'cd', 2, 4)", "True"),
+    ("b'abcdef'.startswith(b'cd', 2, 3)", "False"),
+
+    ("b'abcdef'.startswith(b'', 0)", "True"),
+    ("b'abcdef'.startswith(b'', 3)", "True"),
+    ("b'abcdef'.startswith(b'', 6)", "True"),
+
+    ("b'\\x00\\x01\\x02'.startswith(b'\\x00')", "True"),
+    ("b'\\x00\\x01\\x02'.startswith(b'\\x01')", "False"),
+
+    ("b'aaaa'.startswith(b'aa')", "True"),
+    ("b'aaaa'.startswith(b'aaa')", "True"),
+    ("b'aaaa'.startswith(b'aaaa')", "True"),
+    ("b'aaaa'.startswith(b'aaaaa')", "False")
 
 ])
 

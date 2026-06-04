@@ -84,7 +84,35 @@ static void normalizeSliceIndices(int& start, int& end, const int size) {
     }
 
     start = std::clamp(start, 0, size);
-    end = std::clamp(end, 0, size);
+    end   = std::clamp(end,   0, size);
+
+    if (end < start) {
+        end = start;
+    }
+}
+
+static std::pair<int, int> getSliceBounds(
+    const QByteArray& data,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) {
+    int startIdx = 0;
+    int endIdx = static_cast<int>(data.size());
+
+    if (start.has_value()) {
+        startIdx = static_cast<int>(start->toBigInt());
+    }
+
+    if (end.has_value()) {
+        endIdx = static_cast<int>(end->toBigInt());
+    }
+
+    normalizeSliceIndices(
+        startIdx,
+        endIdx,
+        static_cast<int>(data.size())
+    );
+
+    return {startIdx, endIdx};
 }
 
 Value BytesValue::getItem(const Value& indexValue) const {
@@ -238,9 +266,7 @@ bool BytesValue::contains(const Value& other) const {
             );
         }
 
-        return data.contains(
-            static_cast<unsigned char>(byte)
-        );
+        return data.contains(static_cast<unsigned char>(byte));
     }
 
     if (other.isBytes()) {
@@ -264,23 +290,7 @@ Value BytesValue::find(
         throw std::runtime_error("find() argument must be bytes");
     }
 
-    int startIdx = 0;
-    int endIdx = data.size();
-
-    if (start.has_value()) {
-        startIdx = static_cast<int>(start->toBigInt());
-    }
-
-    if (end.has_value()) {
-        endIdx = static_cast<int>(end->toBigInt());
-    }
-
-    // нормализация индексов
-    if (startIdx < 0) startIdx = 0;
-    if (endIdx < 0) endIdx = 0;
-
-    if (startIdx > data.size()) startIdx = data.size();
-    if (endIdx > data.size()) endIdx = data.size();
+    auto [startIdx, endIdx] = getSliceBounds(data, start, end);
 
     const auto& needle = sub.asBytes()->bytes();
 
@@ -318,18 +328,7 @@ Value BytesValue::count(
         throw std::runtime_error("count() argument must be bytes");
     }
 
-    int startIdx = 0;
-    int endIdx = data.size();
-
-    if (start.has_value()) {
-        startIdx = static_cast<int>(start->toBigInt());
-    }
-
-    if (end.has_value()) {
-        endIdx = static_cast<int>(end->toBigInt());
-    }
-
-    normalizeSliceIndices(startIdx, endIdx, data.size());
+    auto [startIdx, endIdx] = getSliceBounds(data, start, end);
 
     const QByteArray haystack = data.mid(startIdx, endIdx - startIdx);
 
@@ -360,6 +359,26 @@ Value BytesValue::count(
     }
 
     return Value(Value::BigInt(count));
+}
+
+Value BytesValue::startsWith(
+    const Value& prefix,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    if (!prefix.isBytes()) {
+        throw std::runtime_error(
+            "startswith first arg must be bytes"
+        );
+    }
+
+    auto [startIdx, endIdx] = getSliceBounds(data, start, end);
+
+    const QByteArray slice = data.mid(startIdx, endIdx - startIdx);
+
+    const QByteArray& needle = prefix.asBytes()->bytes();
+
+    return Value(slice.startsWith(needle));
 }
 
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
