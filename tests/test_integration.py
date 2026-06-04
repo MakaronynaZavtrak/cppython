@@ -1290,7 +1290,41 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'aaaa'.index(b'aa', 1)", "1"),
     ("b'\\x00\\x01\\x02'.index(b'\\x01')", "1"),
     ("b'\\xff\\xfe\\xfd'.index(b'\\xfe')", "1"),
-    ("b'\\x00\\x00\\x01'.index(b'\\x00\\x01')", "1")
+    ("b'\\x00\\x00\\x01'.index(b'\\x00\\x01')", "1"),
+
+    # count
+    ("b'abc'.count(b'a')", "1"),
+    ("b'abc'.count(b'b')", "1"),
+    ("b'abc'.count(b'c')", "1"),
+    ("b'abc'.count(b'd')", "0"),
+
+    ("b'abcabc'.count(b'abc')", "2"),
+    ("b'abcabcabc'.count(b'abc')", "3"),
+
+    ("b'aaaa'.count(b'a')", "4"),
+    ("b'aaaa'.count(b'aa')", "2"),
+    ("b'aaaa'.count(b'aaa')", "1"),
+
+    ("b'ababa'.count(b'aba')", "1"),
+    ("b'ababa'.count(b'ba')", "2"),
+
+    ("b''.count(b'a')", "0"),
+    ("b''.count(b'')", "1"),
+
+    ("b'abc'.count(b'')", "4"),
+    ("b'abc'.count(b'', 1)", "3"),
+    ("b'abc'.count(b'', 1, 2)", "2"),
+
+    ("b'abcabc'.count(b'abc', 1)", "1"),
+    ("b'abcabc'.count(b'abc', 3)", "1"),
+    ("b'abcabc'.count(b'abc', 4)", "0"),
+
+    ("b'abcabc'.count(b'bc', 0, 3)", "1"),
+    ("b'abcabc'.count(b'bc', 2, 6)", "1"),
+
+    ("b'\\x00\\x01\\x00\\x01'.count(b'\\x01')", "2"),
+    ("b'\\xff\\xff\\xfe'.count(b'\\xff')", "2"),
+    ("b'\\xff\\xff\\xfe'.count(b'\\xff\\xff')", "1")
 
 ])
 

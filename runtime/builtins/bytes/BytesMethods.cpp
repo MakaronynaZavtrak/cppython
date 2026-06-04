@@ -266,6 +266,34 @@ namespace {
         );
     }
 
+    Value makeCountMethod(const Value &obj) {
+
+        return makeBuiltin(
+            "count",
+
+            [obj](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &)
+        -> Value {
+
+                expectArgsRange(args, 1, 3, "count");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() >= 3) {
+                    end = args[2];
+                }
+
+                return obj.asBytes()->count(args[0], start, end);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -280,7 +308,8 @@ namespace {
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("find", makeFindMethod),
-        REGISTER_METHOD("index", makeIndexMethod)
+        REGISTER_METHOD("index", makeIndexMethod),
+        REGISTER_METHOD("count", makeCountMethod)
     };
 }
 

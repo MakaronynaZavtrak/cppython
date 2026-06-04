@@ -73,6 +73,20 @@ QString BytesValue::repr() const {
     return result;
 }
 
+static void normalizeSliceIndices(int& start, int& end, const int size) {
+
+    if (start < 0) {
+        start += size;
+    }
+
+    if (end < 0) {
+        end += size;
+    }
+
+    start = std::clamp(start, 0, size);
+    end = std::clamp(end, 0, size);
+}
+
 Value BytesValue::getItem(const Value& indexValue) const {
 
     int index = indexValue.asBigInt("__getitem__").convert_to<int>();
@@ -293,6 +307,59 @@ Value BytesValue::index(
     }
 
     return result;
+}
+
+Value BytesValue::count(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    if (!sub.isBytes()) {
+        throw std::runtime_error("count() argument must be bytes");
+    }
+
+    int startIdx = 0;
+    int endIdx = data.size();
+
+    if (start.has_value()) {
+        startIdx = static_cast<int>(start->toBigInt());
+    }
+
+    if (end.has_value()) {
+        endIdx = static_cast<int>(end->toBigInt());
+    }
+
+    normalizeSliceIndices(startIdx, endIdx, data.size());
+
+    const QByteArray haystack = data.mid(startIdx, endIdx - startIdx);
+
+    const QByteArray needle = sub.asBytes()->bytes();
+
+
+    if (needle.isEmpty()) {
+        return Value(
+            Value::BigInt(haystack.size() + 1)
+        );
+    }
+
+    int count = 0;
+    int pos = 0;
+
+    while (true) {
+
+        pos = haystack.indexOf(needle, pos);
+
+        if (pos == -1) {
+            break;
+        }
+
+        ++count;
+
+        // неперекрывающиеся вхождения
+        pos += needle.size();
+    }
+
+    return Value(Value::BigInt(count));
 }
 
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
