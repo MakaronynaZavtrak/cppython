@@ -460,6 +460,23 @@ namespace {
         );
     }
 
+    Value makeIsDigitMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "isdigit",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isdigit");
+
+                return obj.asBytes()->isDigit();
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -482,7 +499,8 @@ namespace {
         REGISTER_METHOD("join", makeJoinMethod),
         REGISTER_METHOD("replace", makeReplaceMethod),
         REGISTER_METHOD("isascii", makeIsAsciiMethod),
-        REGISTER_METHOD("isalpha", makeIsAlphaMethod)
+        REGISTER_METHOD("isalpha", makeIsAlphaMethod),
+        REGISTER_METHOD("isdigit", makeIsDigitMethod)
     };
 }
 

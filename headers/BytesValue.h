@@ -81,5 +81,7 @@ public:
 
     [[nodiscard]] Value isAlpha() const;
 
+    [[nodiscard]] Value isDigit() const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

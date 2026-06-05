@@ -681,6 +681,27 @@ Value BytesValue::isAlpha() const {
     return Value(true);
 }
 
+static bool isAsciiDigit(unsigned char ch) {
+
+    return ch >= '0' && ch <= '9';
+}
+
+Value BytesValue::isDigit() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (unsigned char byte : data) {
+
+        if (!isAsciiDigit(byte)) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

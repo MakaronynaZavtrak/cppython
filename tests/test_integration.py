@@ -1495,7 +1495,37 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'abc\\xff'.isalpha()", "False"),
 
     ("b'Z'.isalpha()", "True"),
-    ("b'z'.isalpha()", "True")
+    ("b'z'.isalpha()", "True"),
+
+    # isdigit
+    ("b''.isdigit()", "False"),
+
+    ("b'0'.isdigit()", "True"),
+    ("b'1'.isdigit()", "True"),
+    ("b'9'.isdigit()", "True"),
+
+    ("b'123'.isdigit()", "True"),
+    ("b'000'.isdigit()", "True"),
+
+    ("b'1234567890'.isdigit()", "True"),
+
+    ("b'12a'.isdigit()", "False"),
+    ("b'a12'.isdigit()", "False"),
+    ("b'1a2'.isdigit()", "False"),
+
+    ("b' '.isdigit()", "False"),
+    ("b'1 2'.isdigit()", "False"),
+
+    ("b'\\n'.isdigit()", "False"),
+    ("b'\\t'.isdigit()", "False"),
+
+    ("b'abc'.isdigit()", "False"),
+
+    ("b'\\x00'.isdigit()", "False"),
+    ("b'\\x7f'.isdigit()", "False"),
+    ("b'\\xff'.isdigit()", "False"),
+
+    ("b'123\\xff'.isdigit()", "False"),
 
 ])
 
