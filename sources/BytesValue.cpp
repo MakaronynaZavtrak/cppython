@@ -756,6 +756,25 @@ Value BytesValue::isLower() const {
     return Value(hasCased);
 }
 
+Value BytesValue::isUpper() const {
+
+    bool hasCased = false;
+
+    for (const unsigned char c : data) {
+
+        if (c >= 'A' && c <= 'Z') {
+            hasCased = true;
+            continue;
+        }
+
+        if (c >= 'a' && c <= 'z') {
+            return Value(false);
+        }
+    }
+
+    return Value(hasCased);
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
