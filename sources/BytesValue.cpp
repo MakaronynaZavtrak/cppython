@@ -721,6 +721,22 @@ Value BytesValue::isAlnum() const {
     return Value(true);
 }
 
+Value BytesValue::isSpace() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char byte : data) {
+
+        if (!isAsciiWhitespace(byte)) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

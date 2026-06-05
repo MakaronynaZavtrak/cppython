@@ -228,6 +228,14 @@ Token Lexer::readString(const QString& code) {
                     result += '\'';
                     break;
 
+                case 'v':
+                    result += '\v';
+                    break;
+
+                case 'f':
+                    result += '\f';
+                    break;
+
                 case '"':
                     result += '"';
                     break;

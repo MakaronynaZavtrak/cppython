@@ -1560,7 +1560,34 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\xff'.isalnum()", "False"),
 
     ("b'abc\\xff'.isalnum()", "False"),
-    ("b'123\\xff'.isalnum()", "False")
+    ("b'123\\xff'.isalnum()", "False"),
+
+    # isspace
+    ("b''.isspace()", "False"),
+
+    ("b' '.isspace()", "True"),
+
+    ("b'\\t'.isspace()", "True"),
+    ("b'\\n'.isspace()", "True"),
+    ("b'\\r'.isspace()", "True"),
+    ("b'\\v'.isspace()", "True"),
+    ("b'\\f'.isspace()", "True"),
+
+    ("b'   '.isspace()", "True"),
+    ("b'\\t\\n\\r'.isspace()", "True"),
+    ("b' \\t\\n\\r\\v\\f '.isspace()", "True"),
+
+    ("b'a'.isspace()", "False"),
+    ("b'1'.isspace()", "False"),
+
+    ("b' a '.isspace()", "False"),
+    ("b'\\tabc\\t'.isspace()", "False"),
+
+    ("b'\\x00'.isspace()", "False"),
+    ("b'\\x7f'.isspace()", "False"),
+    ("b'\\xff'.isspace()", "False"),
+
+    ("b' \\xff '.isspace()", "False")
 
 ])
 
