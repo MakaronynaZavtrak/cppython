@@ -134,6 +134,13 @@ static bool isAsciiWhitespace(const unsigned char c) {
     }
 }
 
+static bool isAsciiAlpha(unsigned char ch) {
+
+    return
+        (ch >= 'a' && ch <= 'z') ||
+        (ch >= 'A' && ch <= 'Z');
+}
+
 Value BytesValue::getItem(const Value& indexValue) const {
 
     int index = indexValue.asBigInt("__getitem__").convert_to<int>();
@@ -651,6 +658,22 @@ Value BytesValue::isAscii() const {
     for (const unsigned char byte : data) {
 
         if (byte > 127) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
+Value BytesValue::isAlpha() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char byte : data) {
+
+        if (!isAsciiAlpha(byte)) {
             return Value(false);
         }
     }

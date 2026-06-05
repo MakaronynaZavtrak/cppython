@@ -79,5 +79,7 @@ public:
 
     [[nodiscard]] Value isAscii() const;
 
+    [[nodiscard]] Value isAlpha() const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
