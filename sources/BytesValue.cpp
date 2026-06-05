@@ -737,6 +737,25 @@ Value BytesValue::isSpace() const {
     return Value(true);
 }
 
+Value BytesValue::isLower() const {
+
+    bool hasCased = false;
+
+    for (const unsigned char c : data) {
+
+        if (c >= 'a' && c <= 'z') {
+            hasCased = true;
+            continue;
+        }
+
+        if (c >= 'A' && c <= 'Z') {
+            return Value(false);
+        }
+    }
+
+    return Value(hasCased);
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

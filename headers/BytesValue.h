@@ -87,5 +87,7 @@ public:
 
     [[nodiscard]] Value isSpace() const;
 
+    [[nodiscard]] Value isLower() const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

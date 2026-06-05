@@ -1587,7 +1587,29 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\x7f'.isspace()", "False"),
     ("b'\\xff'.isspace()", "False"),
 
-    ("b' \\xff '.isspace()", "False")
+    ("b' \\xff '.isspace()", "False"),
+
+    # islower
+    ("b'abc'.islower()", "True"),
+    ("b'hello'.islower()", "True"),
+
+    ("b'abc123'.islower()", "True"),
+    ("b'abc!@#'.islower()", "True"),
+    ("b'abc xyz'.islower()", "True"),
+
+    ("b'ABC'.islower()", "False"),
+    ("b'Abc'.islower()", "False"),
+    ("b'aBc'.islower()", "False"),
+
+    ("b'123'.islower()", "False"),
+    ("b'!@#'.islower()", "False"),
+    ("b'' .islower()", "False"),
+
+    ("b'abc123XYZ'.islower()", "False"),
+
+    ("b'\\xff'.islower()", "False"),
+    ("b'abc\\xff'.islower()", "True"),
+    ("b'ABC\\xff'.islower()", "False")
 
 ])
 
