@@ -91,5 +91,7 @@ public:
 
     [[nodiscard]] Value isUpper() const;
 
+    [[nodiscard]] Value lower() const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
