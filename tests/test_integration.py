@@ -1404,6 +1404,27 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'one two three'.split(None, 1)", "[b'one', b'two three']"),
 
+    ("b','.join([b'a', b'b', b'c'])", "b'a,b,c'"),
+    ("b''.join([b'a', b'b', b'c'])", "b'abc'"),
+
+    ("b'-'.join([b'abc'])", "b'abc'"),
+    ("b'-'.join([])", "b''"),
+
+    ("b' '.join([b'hello', b'world'])", "b'hello world'"),
+    ("b'--'.join([b'a', b'b', b'c'])", "b'a--b--c'"),
+
+    ("b'abc'.join([b'', b''])", "b'abc'"),
+
+    ("b'|'.join([b'a', b'', b'c'])", "b'a||c'"),
+
+    ("b'\\x00'.join([b'a', b'b'])", "b'a\\x00b'"),
+
+    ("b','.join((b'a', b'b', b'c'))", "b'a,b,c'"),
+
+    ("b','.join(set([b'a']))", "b'a'"),
+
+    ("b''.join([b''])", "b''"),
+    ("b'-'.join([b'', b''])", "b'-'")
 ])
 
 def test_single_line_expressions(expr, expected):

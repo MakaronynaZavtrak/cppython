@@ -70,5 +70,7 @@ public:
     const std::optional<Value>& sep = std::nullopt,
     const Value::BigInt &maxsplit = -1) const;
 
+    [[nodiscard]] Value join(const Value& iterable) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

@@ -3,6 +3,7 @@
 //
 #include <BytesValue.h>
 
+#include "IteratorValue.h"
 #include "ListValue.h"
 
 QString BytesValue::repr() const {
@@ -519,6 +520,46 @@ Value BytesValue::split(
         )
     );
 
+}
+
+Value BytesValue::join(const Value& iterable) const {
+
+    if (!iterable.isIterable()) {
+        throw std::runtime_error(
+            "TypeError: can only join an iterable"
+        );
+    }
+
+    QByteArray result;
+
+    const auto iter = iterable.getIterator();
+
+    bool first = true;
+
+    while (iter->hasNext()) {
+
+        const Value item = iter->next();
+
+        if (!item.isBytes()) {
+            throw std::runtime_error(
+                "TypeError: sequence item is not bytes"
+            );
+        }
+
+        if (!first) {
+            result += data;
+        }
+
+        result += item.asBytes()->bytes();
+
+        first = false;
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
 }
 
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}

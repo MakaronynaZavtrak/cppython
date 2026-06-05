@@ -383,6 +383,23 @@ namespace {
         );
     }
 
+    Value makeJoinMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "join",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "join");
+
+                return obj.asBytes()->join(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -401,7 +418,8 @@ namespace {
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("startswith", makeStartsWithMethod),
         REGISTER_METHOD("endswith", makeEndsWithMethod),
-        REGISTER_METHOD("split", makeSplitMethod)
+        REGISTER_METHOD("split", makeSplitMethod),
+        REGISTER_METHOD("join", makeJoinMethod)
     };
 }
 
