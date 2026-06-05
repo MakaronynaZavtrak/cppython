@@ -793,6 +793,24 @@ Value BytesValue::lower() const {
     );
 }
 
+Value BytesValue::upper() const {
+
+    QByteArray result = data;
+
+    for (char& c : result) {
+
+        if (c >= 'a' && c <= 'z') {
+            c = static_cast<char>(c - 'a' + 'A');
+        }
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

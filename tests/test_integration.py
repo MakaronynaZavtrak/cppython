@@ -1654,7 +1654,30 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\xff\\xfeABC'.lower()", "b'\\xff\\xfeabc'"),
 
     ("b'A'.lower()", "b'a'"),
-    ("b'Z'.lower()", "b'z'")
+    ("b'Z'.lower()", "b'z'"),
+
+    # upper
+    ("b'abc'.upper()", "b'ABC'"),
+    ("b'hello'.upper()", "b'HELLO'"),
+
+    ("b'AbC'.upper()", "b'ABC'"),
+    ("b'AbC123'.upper()", "b'ABC123'"),
+
+    ("b'ABC'.upper()", "b'ABC'"),
+    ("b'ABC123'.upper()", "b'ABC123'"),
+
+    ("b''.upper()", "b''"),
+
+    ("b'123'.upper()", "b'123'"),
+    ("b'!@#'.upper()", "b'!@#'"),
+
+    ("b'abc XYZ'.upper()", "b'ABC XYZ'"),
+
+    ("b'\\xffabc'.upper()", "b'\\xffABC'"),
+    ("b'\\xff\\xfeabc'.upper()", "b'\\xff\\xfeABC'"),
+
+    ("b'a'.upper()", "b'A'"),
+    ("b'z'.upper()", "b'Z'")
 
 ])
 

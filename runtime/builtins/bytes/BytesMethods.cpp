@@ -562,6 +562,23 @@ namespace {
         );
     }
 
+    Value makeUpperMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "upper",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "upper");
+
+                return obj.asBytes()->upper();
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -590,7 +607,8 @@ namespace {
         REGISTER_METHOD("isspace", makeIsSpaceMethod),
         REGISTER_METHOD("islower", makeIsLowerMethod),
         REGISTER_METHOD("isupper", makeIsUpperMethod),
-        REGISTER_METHOD("lower", makeLowerMethod)
+        REGISTER_METHOD("lower", makeLowerMethod),
+        REGISTER_METHOD("upper", makeUpperMethod)
     };
 }
 
