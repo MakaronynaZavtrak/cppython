@@ -1527,6 +1527,41 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'123\\xff'.isdigit()", "False"),
 
+    # isalnum
+    ("b''.isalnum()", "False"),
+
+    ("b'a'.isalnum()", "True"),
+    ("b'Z'.isalnum()", "True"),
+
+    ("b'0'.isalnum()", "True"),
+    ("b'9'.isalnum()", "True"),
+
+    ("b'abc'.isalnum()", "True"),
+    ("b'ABC'.isalnum()", "True"),
+
+    ("b'123'.isalnum()", "True"),
+
+    ("b'abc123'.isalnum()", "True"),
+    ("b'123abc'.isalnum()", "True"),
+    ("b'a1b2c3'.isalnum()", "True"),
+
+    ("b'abc!'.isalnum()", "False"),
+    ("b'!abc'.isalnum()", "False"),
+
+    ("b'abc 123'.isalnum()", "False"),
+    ("b'abc\\t123'.isalnum()", "False"),
+    ("b'abc\\n123'.isalnum()", "False"),
+
+    ("b'_'.isalnum()", "False"),
+    ("b'abc_def'.isalnum()", "False"),
+
+    ("b'\\x00'.isalnum()", "False"),
+    ("b'\\x7f'.isalnum()", "False"),
+    ("b'\\xff'.isalnum()", "False"),
+
+    ("b'abc\\xff'.isalnum()", "False"),
+    ("b'123\\xff'.isalnum()", "False")
+
 ])
 
 def test_single_line_expressions(expr, expected):

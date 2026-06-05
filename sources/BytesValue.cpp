@@ -702,6 +702,25 @@ Value BytesValue::isDigit() const {
     return Value(true);
 }
 
+Value BytesValue::isAlnum() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (unsigned char byte : data) {
+
+        if (
+            !isAsciiAlpha(byte) &&
+            !isAsciiDigit(byte)
+        ) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
