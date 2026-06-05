@@ -3,6 +3,8 @@
 //
 #include <BytesValue.h>
 
+#include "ListValue.h"
+
 QString BytesValue::repr() const {
 
     const bool containsSingle = data.contains('\'');
@@ -113,6 +115,22 @@ static std::pair<int, int> getSliceBounds(
     );
 
     return {startIdx, endIdx};
+}
+
+static bool isAsciiWhitespace(const unsigned char c) {
+    switch (c) {
+
+        case ' ':
+        case '\t':
+        case '\n':
+        case '\r':
+        case '\f':
+        case '\v':
+            return true;
+
+        default:
+            return false;
+    }
 }
 
 Value BytesValue::getItem(const Value& indexValue) const {
@@ -395,6 +413,112 @@ Value BytesValue::endsWith(
             suffix.asBytes("endswith")->bytes()
         )
     );
+}
+
+Value BytesValue::split(
+    const std::optional<Value>& sep,
+    const Value::BigInt &maxsplit) const {
+
+    std::vector<Value> result;
+
+    if (!sep.has_value()) {
+
+        qsizetype i = 0;
+        Value::BigInt splits = 0;
+
+        while (i < data.size()) {
+
+            while (i < data.size() && isAsciiWhitespace(data[i])) {
+                ++i;
+            }
+
+            if (i >= data.size()) {
+                break;
+            }
+
+            if (maxsplit >= 0 && splits >= maxsplit) {
+
+                result.emplace_back(
+                    std::make_shared<BytesValue>(
+                        data.mid(i)
+                    )
+                );
+
+                break;
+            }
+
+            const qsizetype start = i;
+
+            while (i < data.size() && !isAsciiWhitespace(data[i])) {
+                ++i;
+            }
+
+            result.emplace_back(
+                std::make_shared<BytesValue>(
+                    data.mid(start, i - start)
+                )
+            );
+
+            ++splits;
+        }
+
+        return Value(
+            std::make_shared<ListValue>(
+                std::move(result)
+            )
+        );
+    }
+
+    if (!sep->isBytes()) {
+        throw std::runtime_error(
+            "split() separator must be bytes"
+        );
+    }
+
+    const QByteArray delimiter = sep->asBytes()->bytes();
+
+    if (delimiter.isEmpty()) {
+        throw std::runtime_error("ValueError: empty separator");
+    }
+
+    qsizetype start = 0;
+    Value::BigInt splits = 0;
+
+    while (true) {
+
+        if (maxsplit >= 0 && splits >= maxsplit) {
+            break;
+        }
+
+        const qsizetype pos = data.indexOf(delimiter, start);
+
+        if (pos == -1) {
+            break;
+        }
+
+        result.emplace_back(
+            std::make_shared<BytesValue>(
+                data.mid(start, pos - start)
+            )
+        );
+
+        start = pos + delimiter.size();
+
+        ++splits;
+    }
+
+    result.emplace_back(
+        std::make_shared<BytesValue>(
+            data.mid(start)
+        )
+    );
+
+    return Value(
+        std::make_shared<ListValue>(
+            std::move(result)
+        )
+    );
+
 }
 
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}

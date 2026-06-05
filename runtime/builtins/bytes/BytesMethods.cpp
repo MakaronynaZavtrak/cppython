@@ -224,7 +224,7 @@ namespace {
         -> Value {
                 expectArgsRange(args, 1, 3, "find");
 
-                Value sub = args[0];
+                const Value& sub = args[0];
 
                 std::optional<Value> start;
                 std::optional<Value> end;
@@ -250,7 +250,7 @@ namespace {
 
                 expectArgsRange(args, 1, 3, "index");
 
-                const Value sub = args[0];
+                const Value& sub = args[0];
 
                 std::optional<Value> start;
                 std::optional<Value> end;
@@ -306,7 +306,7 @@ namespace {
 
                 expectArgsRange(args, 1, 3, "startswith");
 
-                const Value prefix = args[0];
+                const Value& prefix = args[0];
 
                 std::optional<Value> start;
                 std::optional<Value> end;
@@ -335,7 +335,7 @@ namespace {
 
                 expectArgsRange(args, 1, 3, "endswith");
 
-                const Value suffix = args[0];
+                const Value& suffix = args[0];
 
                 std::optional<Value> start;
                 std::optional<Value> end;
@@ -349,6 +349,36 @@ namespace {
                 }
 
                 return obj.asBytes()->endsWith(suffix, start, end);
+            }
+        );
+    }
+
+    Value makeSplitMethod(const Value &obj) {
+        return makeBuiltin(
+            "split",
+
+            [obj](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &)
+        -> Value {
+
+                expectArgsRange(args, 0, 2, "split");
+
+                std::optional<Value> sep;
+                Value::BigInt maxsplit = -1;
+
+                if (!args.empty()) {
+
+                    if (!args[0].isNone()) {
+                        sep = args[0];
+                    }
+                }
+
+                if (args.size() == 2) {
+                    maxsplit = args[1].toBigInt();
+                }
+
+                return obj.asBytes()->split(sep, maxsplit);
             }
         );
     }
@@ -370,7 +400,8 @@ namespace {
         REGISTER_METHOD("index", makeIndexMethod),
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("startswith", makeStartsWithMethod),
-        REGISTER_METHOD("endswith", makeEndsWithMethod)
+        REGISTER_METHOD("endswith", makeEndsWithMethod),
+        REGISTER_METHOD("split", makeSplitMethod)
     };
 }
 
