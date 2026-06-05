@@ -1443,7 +1443,29 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\x00\\x01\\x00'.replace(b'\\x00', b'X')", "b'X\\x01X'"),
     ("b'abcabc'.replace(b'abc', b'X', 1)", "b'Xabc'"),
     ("b'abcabc'.replace(b'abc', b'X', 2)", "b'XX'"),
-    ("b'abcabc'.replace(b'abc', b'X', 10)", "b'XX'")
+    ("b'abcabc'.replace(b'abc', b'X', 10)", "b'XX'"),
+
+    # isascii
+    ("b''.isascii()", "True"),
+
+    ("b'abc'.isascii()", "True"),
+    ("b'ABC'.isascii()", "True"),
+    ("b'123'.isascii()", "True"),
+
+    ("b'hello world'.isascii()", "True"),
+    ("b'\\n\\t\\r'.isascii()", "True"),
+
+    ("b'\\x00'.isascii()", "True"),
+    ("b'\\x7f'.isascii()", "True"),
+
+    ("b'\\x80'.isascii()", "False"),
+    ("b'\\xff'.isascii()", "False"),
+
+    ("b'abc\\x80'.isascii()", "False"),
+    ("b'\\x80abc'.isascii()", "False"),
+
+    ("b'\\x7f\\x7e\\x7d'.isascii()", "True"),
+    ("b'\\x7f\\x80'.isascii()", "False")
 
 ])
 

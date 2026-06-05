@@ -646,6 +646,18 @@ Value BytesValue::replace(
     );
 }
 
+Value BytesValue::isAscii() const {
+
+    for (const unsigned char byte : data) {
+
+        if (byte > 127) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

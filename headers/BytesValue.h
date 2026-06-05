@@ -77,5 +77,7 @@ public:
     const Value& newValue,
     const Value::BigInt& count = -1) const;
 
+    [[nodiscard]] Value isAscii() const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
