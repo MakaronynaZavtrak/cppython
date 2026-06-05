@@ -400,6 +400,32 @@ namespace {
         );
     }
 
+    Value makeReplaceMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "replace",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 2, 3, "replace");
+
+                const Value& oldValue = args[0];
+                const Value& newValue = args[1];
+
+                Value::BigInt count = -1;
+
+                if (args.size() == 3) {
+                    count = args[2].toBigInt();
+                }
+
+                return obj.asBytes()->replace(oldValue, newValue, count);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -419,7 +445,8 @@ namespace {
         REGISTER_METHOD("startswith", makeStartsWithMethod),
         REGISTER_METHOD("endswith", makeEndsWithMethod),
         REGISTER_METHOD("split", makeSplitMethod),
-        REGISTER_METHOD("join", makeJoinMethod)
+        REGISTER_METHOD("join", makeJoinMethod),
+        REGISTER_METHOD("replace", makeReplaceMethod)
     };
 }
 

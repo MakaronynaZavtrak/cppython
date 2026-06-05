@@ -562,6 +562,90 @@ Value BytesValue::join(const Value& iterable) const {
     );
 }
 
+Value BytesValue::replace(
+    const Value& oldValue,
+    const Value& newValue,
+    const Value::BigInt& count) const {
+
+    if (!oldValue.isBytes()) {
+        throw std::runtime_error(
+            "replace() argument 1 must be bytes"
+        );
+    }
+
+    if (!newValue.isBytes()) {
+        throw std::runtime_error(
+            "replace() argument 2 must be bytes"
+        );
+    }
+
+    const QByteArray oldBytes = oldValue.asBytes()->bytes();
+
+    const QByteArray newBytes = newValue.asBytes()->bytes();
+
+    QByteArray result = data;
+
+    if (count < 0) {
+
+        result.replace(oldBytes, newBytes);
+
+        return Value(
+            std::make_shared<BytesValue>(
+                std::move(result)
+            )
+        );
+    }
+
+    if (oldBytes.isEmpty()) {
+
+        QByteArray out;
+
+        Value::BigInt replacements = 0;
+
+        for (qsizetype i = 0; i <= data.size(); ++i) {
+
+            if (replacements < count) {
+                out += newBytes;
+                ++replacements;
+            }
+
+            if (i < data.size()) {
+                out += data[i];
+            }
+        }
+
+        return Value(
+            std::make_shared<BytesValue>(
+                std::move(out)
+            )
+        );
+    }
+
+    Value::BigInt replacements = 0;
+    int pos = 0;
+
+    while (replacements < count) {
+
+        pos = result.indexOf(oldBytes, pos);
+
+        if (pos == -1) {
+            break;
+        }
+
+        result.replace(pos, oldBytes.size(), newBytes);
+
+        pos += newBytes.size();
+
+        ++replacements;
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

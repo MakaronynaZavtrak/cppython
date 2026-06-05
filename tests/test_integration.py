@@ -1424,7 +1424,27 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b','.join(set([b'a']))", "b'a'"),
 
     ("b''.join([b''])", "b''"),
-    ("b'-'.join([b'', b''])", "b'-'")
+    ("b'-'.join([b'', b''])", "b'-'"),
+
+    # replace
+    ("b'abc'.replace(b'a', b'x')", "b'xbc'"),
+    ("b'abcabc'.replace(b'a', b'x')", "b'xbcxbc'"),
+    ("b'aaaa'.replace(b'aa', b'b')", "b'bb'"),
+    ("b'aaaa'.replace(b'aa', b'b', 1)", "b'baa'"),
+    ("b'aaaa'.replace(b'aa', b'b', 2)", "b'bb'"),
+    ("b'aaaa'.replace(b'aa', b'b', 0)", "b'aaaa'"),
+    ("b'abc'.replace(b'z', b'x')", "b'abc'"),
+    ("b''.replace(b'a', b'b')", "b''"),
+    ("b'abc'.replace(b'', b'-')", "b'-a-b-c-'"),
+    ("b'abc'.replace(b'', b'-', 2)", "b'-a-bc'"),
+    ("b'abc'.replace(b'', b'-', 0)", "b'abc'"),
+    ("b'abc'.replace(b'b', b'')", "b'ac'"),
+    ("b'aaaa'.replace(b'a', b'xyz', 2)", "b'xyzxyzaa'"),
+    ("b'\\x00\\x01\\x00'.replace(b'\\x00', b'X')", "b'X\\x01X'"),
+    ("b'abcabc'.replace(b'abc', b'X', 1)", "b'Xabc'"),
+    ("b'abcabc'.replace(b'abc', b'X', 2)", "b'XX'"),
+    ("b'abcabc'.replace(b'abc', b'X', 10)", "b'XX'")
+
 ])
 
 def test_single_line_expressions(expr, expected):

@@ -72,5 +72,10 @@ public:
 
     [[nodiscard]] Value join(const Value& iterable) const;
 
+    [[nodiscard]] Value replace(
+    const Value& oldValue,
+    const Value& newValue,
+    const Value::BigInt& count = -1) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
