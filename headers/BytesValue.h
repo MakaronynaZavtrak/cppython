@@ -103,5 +103,8 @@ public:
 
     [[nodiscard]] Value isTitle() const;
 
+    [[nodiscard]] Value lstrip(
+    const std::optional<Value>& chars = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

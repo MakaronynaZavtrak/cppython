@@ -1787,6 +1787,33 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'Hello\\nWorld'.istitle()", "True"),
     ("b'Hello,World'.istitle()", "True"),
 
+    # lstrip
+    ("b'abc'.lstrip()", "b'abc'"),
+    ("b''.lstrip()", "b''"),
+
+    ("b'   abc'.lstrip()", "b'abc'"),
+    ("b'\\t\\n abc'.lstrip()", "b'abc'"),
+    ("b'\\r\\v\\fabc'.lstrip()", "b'abc'"),
+
+    ("b'abc   '.lstrip()", "b'abc   '"),
+
+    ("b'xxxabc'.lstrip(b'x')", "b'abc'"),
+    ("b'abc'.lstrip(b'x')", "b'abc'"),
+
+    ("b'aaabbbccc'.lstrip(b'ab')", "b'ccc'"),
+
+    ("b'www.python.org'.lstrip(b'cmowz.')", "b'python.org'"),
+
+    ("b'123abc'.lstrip(b'123')", "b'abc'"),
+
+    ("b'aaaa'.lstrip(b'a')", "b''"),
+
+    ("b'abcabc'.lstrip(b'ab')", "b'cabc'"),
+
+    ("b'\\xff\\xffabc'.lstrip(b'\\xff')", "b'abc'"),
+
+    ("b'abc'.lstrip(b'abc')", "b''"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

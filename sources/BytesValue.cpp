@@ -956,6 +956,50 @@ Value BytesValue::isTitle() const {
     return Value(hasCased);
 }
 
+Value BytesValue::lstrip(
+    const std::optional<Value>& chars
+) const {
+
+    qsizetype pos = 0;
+
+    if (!chars.has_value()) {
+
+        while (
+            pos < data.size() &&
+            isAsciiWhitespace(
+                static_cast<unsigned char>(data[pos])
+            )
+        ) {
+            ++pos;
+        }
+    }
+
+    else {
+
+        if (!chars->isBytes()) {
+            throw std::runtime_error(
+                "lstrip arg must be bytes"
+            );
+        }
+
+        const QByteArray stripChars =
+            chars->asBytes()->bytes();
+
+        while (
+            pos < data.size() &&
+            stripChars.contains(data[pos])
+        ) {
+            ++pos;
+        }
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            data.mid(pos)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

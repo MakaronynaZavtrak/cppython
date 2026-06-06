@@ -647,6 +647,27 @@ namespace {
         );
     }
 
+    Value makeLStripMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "lstrip",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "lstrip");
+
+                if (args.empty()) {
+                    return obj.asBytes()->lstrip();
+                }
+
+                return obj.asBytes()->lstrip(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -680,7 +701,8 @@ namespace {
         REGISTER_METHOD("swapcase", makeSwapcaseMethod),
         REGISTER_METHOD("capitalize", makeCapitalizeMethod),
         REGISTER_METHOD("title", makeTitleMethod),
-        REGISTER_METHOD("istitle", makeIsTitleMethod)
+        REGISTER_METHOD("istitle", makeIsTitleMethod),
+        REGISTER_METHOD("lstrip", makeLStripMethod)
     };
 }
 
