@@ -130,5 +130,7 @@ public:
 
     [[nodiscard]] Value removeSuffix(const Value& suffix) const;
 
+    [[nodiscard]] Value partition(const Value& sep) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

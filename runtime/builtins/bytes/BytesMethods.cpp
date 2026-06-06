@@ -848,6 +848,25 @@ namespace {
         );
     }
 
+    Value makePartitionMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "partition",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "partition");
+
+                return obj.asBytes()->partition(
+                    args[0]
+                );
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -890,7 +909,8 @@ namespace {
         REGISTER_METHOD("rjust", makeRJustMethod),
         REGISTER_METHOD("zfill", makeZfillMethod),
         REGISTER_METHOD("removeprefix", makeRemovePrefixMethod),
-        REGISTER_METHOD("removesuffix", makeRemoveSuffixMethod)
+        REGISTER_METHOD("removesuffix", makeRemoveSuffixMethod),
+        REGISTER_METHOD("partition", makePartitionMethod)
     };
 }
 

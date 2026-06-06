@@ -2006,6 +2006,24 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'hello'.removesuffix(b'o')", "b'hell'"),
     ("b'hello'.removesuffix(b'hello')", "b''"),
 
+    # partition
+    ("b'abc=123'.partition(b'=')", "(b'abc', b'=', b'123')"),
+
+    ("b'abc'.partition(b'=')", "(b'abc', b'', b'')"),
+
+    ("b'=abc'.partition(b'=')", "(b'', b'=', b'abc')"),
+    ("b'abc='.partition(b'=')", "(b'abc', b'=', b'')"),
+
+    ("b'abc=123=456'.partition(b'=')", "(b'abc', b'=', b'123=456')"),
+
+    ("b'aaaa'.partition(b'aa')", "(b'', b'aa', b'aa')"),
+    ("b'abc'.partition(b'abc')", "(b'', b'abc', b'')"),
+    ("b'abc'.partition(b'x')", "(b'abc', b'', b'')"),
+
+    ("b''.partition(b'x')", "(b'', b'', b'')"),
+
+    ("b'\\x00\\x01\\x02'.partition(b'\\x01')", "(b'\\x00', b'\\x01', b'\\x02')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
