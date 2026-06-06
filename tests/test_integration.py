@@ -1814,6 +1814,33 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'abc'.lstrip(b'abc')", "b''"),
 
+    # rstrip
+    ("b'abc'.rstrip()", "b'abc'"),
+    ("b''.rstrip()", "b''"),
+
+    ("b'abc   '.rstrip()", "b'abc'"),
+    ("b'abc\\t\\n '.rstrip()", "b'abc'"),
+    ("b'abc\\r\\v\\f'.rstrip()", "b'abc'"),
+
+    ("b'   abc'.rstrip()", "b'   abc'"),
+
+    ("b'abcxxx'.rstrip(b'x')", "b'abc'"),
+    ("b'abc'.rstrip(b'x')", "b'abc'"),
+
+    ("b'aaabbbccc'.rstrip(b'bc')", "b'aaa'"),
+
+    ("b'python.orgwww'.rstrip(b'cmowz.')", "b'python.org'"),
+
+    ("b'abc123'.rstrip(b'123')", "b'abc'"),
+
+    ("b'aaaa'.rstrip(b'a')", "b''"),
+
+    ("b'abcabc'.rstrip(b'bc')", "b'abca'"),
+
+    ("b'abc\\xff\\xff'.rstrip(b'\\xff')", "b'abc'"),
+
+    ("b'abc'.rstrip(b'abc')", "b''"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

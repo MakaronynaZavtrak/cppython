@@ -1000,6 +1000,50 @@ Value BytesValue::lstrip(
     );
 }
 
+Value BytesValue::rstrip(
+    const std::optional<Value>& chars
+) const {
+
+    qsizetype end = data.size();
+
+    if (!chars.has_value()) {
+
+        while (
+            end > 0 &&
+            isAsciiWhitespace(
+                static_cast<unsigned char>(data[end - 1])
+            )
+        ) {
+            --end;
+        }
+    }
+
+    else {
+
+        if (!chars->isBytes()) {
+            throw std::runtime_error(
+                "rstrip arg must be bytes"
+            );
+        }
+
+        const QByteArray stripChars =
+            chars->asBytes()->bytes();
+
+        while (
+            end > 0 &&
+            stripChars.contains(data[end - 1])
+        ) {
+            --end;
+        }
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            data.left(end)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
