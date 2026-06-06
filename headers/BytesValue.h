@@ -120,5 +120,9 @@ public:
     const Value::BigInt& width,
     const std::optional<Value>& fillchar = std::nullopt) const;
 
+    [[nodiscard]] Value rjust(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillchar = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

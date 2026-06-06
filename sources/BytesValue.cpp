@@ -956,9 +956,7 @@ Value BytesValue::isTitle() const {
     return Value(hasCased);
 }
 
-Value BytesValue::lstrip(
-    const std::optional<Value>& chars
-) const {
+Value BytesValue::lstrip(const std::optional<Value>& chars) const {
 
     qsizetype pos = 0;
 
@@ -1000,9 +998,7 @@ Value BytesValue::lstrip(
     );
 }
 
-Value BytesValue::rstrip(
-    const std::optional<Value>& chars
-) const {
+Value BytesValue::rstrip(const std::optional<Value>& chars) const {
 
     qsizetype end = data.size();
 
@@ -1055,8 +1051,7 @@ Value BytesValue::strip(const std::optional<Value>& chars) const {
 
 Value BytesValue::center(
     const Value::BigInt& width,
-    const std::optional<Value>& fillchar
-) const {
+    const std::optional<Value>& fillchar) const {
 
     QByteArray fill = " ";
 
@@ -1113,8 +1108,7 @@ Value BytesValue::center(
 
 Value BytesValue::ljust(
     const Value::BigInt& width,
-    const std::optional<Value>& fillchar
-) const {
+    const std::optional<Value>& fillchar) const {
 
     QByteArray fill = " ";
 
@@ -1151,6 +1145,51 @@ Value BytesValue::ljust(
         targetWidth - data.size(),
         fill[0]
     );
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
+Value BytesValue::rjust(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillchar) const {
+
+    QByteArray fill = " ";
+
+    if (fillchar.has_value()) {
+
+        if (!fillchar->isBytes()) {
+            throw std::runtime_error(
+                "rjust() argument 2 must be bytes"
+            );
+        }
+
+        fill = fillchar->asBytes()->bytes();
+
+        if (fill.size() != 1) {
+            throw std::runtime_error(
+                "TypeError: rjust() argument 2 must be a byte string of length 1"
+            );
+        }
+    }
+
+    const qsizetype targetWidth = static_cast<qsizetype>(width);
+
+    if (targetWidth <= data.size()) {
+
+        return Value(std::make_shared<BytesValue>(data));
+    }
+
+    QByteArray result;
+
+    result.reserve(targetWidth);
+
+    result.append(targetWidth - data.size(), fill[0]);
+
+    result += data;
 
     return Value(
         std::make_shared<BytesValue>(
