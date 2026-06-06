@@ -2024,6 +2024,22 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'\\x00\\x01\\x02'.partition(b'\\x01')", "(b'\\x00', b'\\x01', b'\\x02')"),
 
+    # rpartition
+    ("b'abc=123'.rpartition(b'=')", "(b'abc', b'=', b'123')"),
+    ("b'abc=123=456'.rpartition(b'=')", "(b'abc=123', b'=', b'456')"),
+
+    ("b'abc'.rpartition(b'=')", "(b'', b'', b'abc')"),
+    ("b'=abc'.rpartition(b'=')", "(b'', b'=', b'abc')"),
+
+    ("b'abc='.rpartition(b'=')", "(b'abc', b'=', b'')"),
+    ("b'aaaa'.rpartition(b'aa')", "(b'aa', b'aa', b'')"),
+    ("b'abc'.rpartition(b'abc')", "(b'', b'abc', b'')"),
+
+    ("b''.rpartition(b'x')", "(b'', b'', b'')"),
+    ("b'abc'.rpartition(b'x')", "(b'', b'', b'abc')"),
+
+    ("b'\\x00\\x01\\x02\\x01'.rpartition(b'\\x01')", "(b'\\x00\\x01\\x02', b'\\x01', b'')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

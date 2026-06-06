@@ -1359,6 +1359,77 @@ Value BytesValue::partition(const Value& sep) const {
     );
 }
 
+Value BytesValue::rpartition(const Value& sep) const {
+
+    if (!sep.isBytes()) {
+        throw std::runtime_error(
+            "rpartition() argument must be bytes"
+        );
+    }
+
+    const QByteArray& separator =
+        sep.asBytes()->bytes();
+
+    if (separator.isEmpty()) {
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const int pos = data.lastIndexOf(separator);
+
+    std::vector<Value> items;
+
+    if (pos == -1) {
+
+        items.emplace_back(
+            std::make_shared<BytesValue>(
+                QByteArray()
+            )
+        );
+
+        items.emplace_back(
+            std::make_shared<BytesValue>(
+                QByteArray()
+            )
+        );
+
+        items.emplace_back(
+            std::make_shared<BytesValue>(
+                data
+            )
+        );
+
+    } else {
+
+        items.emplace_back(
+            std::make_shared<BytesValue>(
+                data.mid(0, pos)
+            )
+        );
+
+        items.emplace_back(
+            std::make_shared<BytesValue>(
+                separator
+            )
+        );
+
+        items.emplace_back(
+            std::make_shared<BytesValue>(
+                data.mid(
+                    pos + separator.size()
+                )
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::move(items)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

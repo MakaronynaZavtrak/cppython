@@ -860,9 +860,25 @@ namespace {
 
                 expectArgs(args, 1, "partition");
 
-                return obj.asBytes()->partition(
-                    args[0]
+                return obj.asBytes()->partition(args[0]
                 );
+            }
+        );
+    }
+
+    Value makeRPartitionMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "rpartition",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "rpartition");
+
+                return obj.asBytes()->rpartition(args[0]);
             }
         );
     }
@@ -910,7 +926,8 @@ namespace {
         REGISTER_METHOD("zfill", makeZfillMethod),
         REGISTER_METHOD("removeprefix", makeRemovePrefixMethod),
         REGISTER_METHOD("removesuffix", makeRemoveSuffixMethod),
-        REGISTER_METHOD("partition", makePartitionMethod)
+        REGISTER_METHOD("partition", makePartitionMethod),
+        REGISTER_METHOD("rpartition", makeRPartitionMethod)
     };
 }
 

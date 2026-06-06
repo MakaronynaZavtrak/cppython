@@ -132,5 +132,7 @@ public:
 
     [[nodiscard]] Value partition(const Value& sep) const;
 
+    [[nodiscard]] Value rpartition(const Value& sep) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
