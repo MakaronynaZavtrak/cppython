@@ -794,6 +794,23 @@ namespace {
         );
     }
 
+    Value makeZfillMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "zfill",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "zfill");
+
+                return obj.asBytes()->zfill(args[0].toBigInt());
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -833,7 +850,8 @@ namespace {
         REGISTER_METHOD("strip", makeStripMethod),
         REGISTER_METHOD("center", makeCenterMethod),
         REGISTER_METHOD("ljust", makeLJustMethod),
-        REGISTER_METHOD("rjust", makeRJustMethod)
+        REGISTER_METHOD("rjust", makeRJustMethod),
+        REGISTER_METHOD("zfill", makeZfillMethod)
     };
 }
 

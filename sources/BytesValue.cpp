@@ -1198,6 +1198,47 @@ Value BytesValue::rjust(
     );
 }
 
+Value BytesValue::zfill(const Value::BigInt& width) const {
+
+    const qsizetype targetWidth = static_cast<qsizetype>(width);
+
+    if (targetWidth <= data.size()) {
+
+        return Value(std::make_shared<BytesValue>(data));
+    }
+
+    const qsizetype fillCount =
+        targetWidth - data.size();
+
+    QByteArray result;
+
+    result.reserve(targetWidth);
+
+    if (
+        !data.isEmpty() &&
+        (data[0] == '+' || data[0] == '-')
+    ) {
+
+        result.append(data[0]);
+
+        result.append(fillCount, '0');
+
+        result += data.mid(1);
+    }
+    else {
+
+        result.append(fillCount, '0');
+
+        result += data;
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

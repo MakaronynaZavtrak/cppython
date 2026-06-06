@@ -1936,6 +1936,34 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\xff'.rjust(3)", "b'  \\xff'"),
     ("b'\\xff'.rjust(5, b'-')", "b'----\\xff'"),
 
+    # zfill
+    ("b''.zfill(0)", "b''"),
+    ("b''.zfill(3)", "b'000'"),
+
+    ("b'42'.zfill(2)", "b'42'"),
+    ("b'42'.zfill(1)", "b'42'"),
+    ("b'42'.zfill(0)", "b'42'"),
+
+    ("b'42'.zfill(3)", "b'042'"),
+    ("b'42'.zfill(4)", "b'0042'"),
+    ("b'42'.zfill(5)", "b'00042'"),
+
+    ("b'abc'.zfill(5)", "b'00abc'"),
+
+    ("b'+42'.zfill(5)", "b'+0042'"),
+    ("b'+42'.zfill(6)", "b'+00042'"),
+
+    ("b'-42'.zfill(5)", "b'-0042'"),
+    ("b'-42'.zfill(6)", "b'-00042'"),
+
+    ("b'+'.zfill(3)", "b'+00'"),
+    ("b'-'.zfill(3)", "b'-00'"),
+
+    ("b'0'.zfill(5)", "b'00000'"),
+    ("b'00042'.zfill(7)", "b'0000042'"),
+
+    ("b'\\xff'.zfill(3)", "b'00\\xff'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
