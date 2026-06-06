@@ -1727,7 +1727,33 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'PYTHON ROCKS'.capitalize()", "b'Python rocks'"),
 
     ("b'\\xffABC'.capitalize()", "b'\\xffabc'"),
-    ("b'\\xffabc'.capitalize()", "b'\\xffabc'")
+    ("b'\\xffabc'.capitalize()", "b'\\xffabc'"),
+
+    # title
+    ("b''.title()", "b''"),
+
+    ("b'hello'.title()", "b'Hello'"),
+    ("b'HELLO'.title()", "b'Hello'"),
+    ("b'HeLlO'.title()", "b'Hello'"),
+
+    ("b'hello world'.title()", "b'Hello World'"),
+    ("b'HELLO WORLD'.title()", "b'Hello World'"),
+
+    ("b'hello-world'.title()", "b'Hello-World'"),
+    ("b'hello_world'.title()", "b'Hello_World'"),
+
+    ("b'abc123def'.title()", "b'Abc123Def'"),
+    ("b'123abc'.title()", "b'123Abc'"),
+
+    ("b'a b c'.title()", "b'A B C'"),
+
+    ("b'python\\trocks'.title()", "b'Python\\tRocks'"),
+    ("b'python\\nrocks'.title()", "b'Python\\nRocks'"),
+
+    ("b'foo.bar'.title()", "b'Foo.Bar'"),
+    ("b'foo,bar'.title()", "b'Foo,Bar'"),
+
+    ("b'fooBARbaz'.title()", "b'Foobarbaz'"),
 
 ])
 

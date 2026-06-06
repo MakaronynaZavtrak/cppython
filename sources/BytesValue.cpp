@@ -876,6 +876,50 @@ Value BytesValue::capitalize() const {
     );
 }
 
+Value BytesValue::title() const {
+
+    QByteArray result = data;
+
+    bool newWord = true;
+
+    for (char& c : result) {
+
+        const unsigned char uc =
+            static_cast<unsigned char>(c);
+
+        if (uc >= 'A' && uc <= 'Z') {
+
+            if (newWord) {
+                // оставить заглавной
+            } else {
+                c = static_cast<char>(uc - 'A' + 'a');
+            }
+
+            newWord = false;
+        }
+
+        else if (uc >= 'a' && uc <= 'z') {
+
+            if (newWord) {
+                c = static_cast<char>(uc - 'a' + 'A');
+            }
+
+            newWord = false;
+        }
+
+        else {
+
+            newWord = true;
+        }
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
