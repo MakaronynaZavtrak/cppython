@@ -596,6 +596,23 @@ namespace {
         );
     }
 
+    Value makeCapitalizeMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "capitalize",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "capitalize");
+
+                return obj.asBytes()->capitalize();
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -626,7 +643,8 @@ namespace {
         REGISTER_METHOD("isupper", makeIsUpperMethod),
         REGISTER_METHOD("lower", makeLowerMethod),
         REGISTER_METHOD("upper", makeUpperMethod),
-        REGISTER_METHOD("swapcase", makeSwapcaseMethod)
+        REGISTER_METHOD("swapcase", makeSwapcaseMethod),
+        REGISTER_METHOD("capitalize", makeCapitalizeMethod)
     };
 }
 

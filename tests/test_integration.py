@@ -1702,7 +1702,32 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\xffabcABC'.swapcase()", "b'\\xffABCabc'"),
     ("b'\\xff\\xfeABC'.swapcase()", "b'\\xff\\xfeabc'"),
 
-    ("b'AbCdEfGhIjK'.swapcase()", "b'aBcDeFgHiJk'")
+    ("b'AbCdEfGhIjK'.swapcase()", "b'aBcDeFgHiJk'"),
+
+    # capitalize
+    ("b''.capitalize()", "b''"),
+
+    ("b'hello'.capitalize()", "b'Hello'"),
+    ("b'Hello'.capitalize()", "b'Hello'"),
+    ("b'HELLO'.capitalize()", "b'Hello'"),
+
+    ("b'hElLo'.capitalize()", "b'Hello'"),
+
+    ("b'abc123'.capitalize()", "b'Abc123'"),
+    ("b'ABC123'.capitalize()", "b'Abc123'"),
+
+    ("b'123abc'.capitalize()", "b'123abc'"),
+    ("b'123ABC'.capitalize()", "b'123abc'"),
+
+    ("b'a'.capitalize()", "b'A'"),
+    ("b'A'.capitalize()", "b'A'"),
+
+    ("b'python rocks'.capitalize()", "b'Python rocks'"),
+
+    ("b'PYTHON ROCKS'.capitalize()", "b'Python rocks'"),
+
+    ("b'\\xffABC'.capitalize()", "b'\\xffabc'"),
+    ("b'\\xffabc'.capitalize()", "b'\\xffabc'")
 
 ])
 

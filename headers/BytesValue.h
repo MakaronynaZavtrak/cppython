@@ -97,5 +97,7 @@ public:
 
     [[nodiscard]] Value swapcase() const;
 
+    [[nodiscard]] Value capitalize() const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
