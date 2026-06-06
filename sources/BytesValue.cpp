@@ -920,6 +920,42 @@ Value BytesValue::title() const {
     );
 }
 
+Value BytesValue::isTitle() const {
+
+    bool hasCased = false;
+    bool newWord = true;
+
+    for (const unsigned char c : data) {
+
+        if (c >= 'A' && c <= 'Z') {
+
+            if (!newWord) {
+                return Value(false);
+            }
+
+            hasCased = true;
+            newWord = false;
+        }
+
+        else if (c >= 'a' && c <= 'z') {
+
+            if (newWord) {
+                return Value(false);
+            }
+
+            hasCased = true;
+            newWord = false;
+        }
+
+        else {
+
+            newWord = true;
+        }
+    }
+
+    return Value(hasCased);
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

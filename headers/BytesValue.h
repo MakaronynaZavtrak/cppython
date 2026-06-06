@@ -101,5 +101,7 @@ public:
 
     [[nodiscard]] Value title() const;
 
+    [[nodiscard]] Value isTitle() const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

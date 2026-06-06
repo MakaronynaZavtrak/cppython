@@ -630,6 +630,23 @@ namespace {
         );
     }
 
+    Value makeIsTitleMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "istitle",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "istitle");
+
+                return obj.asBytes()->isTitle();
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -662,7 +679,8 @@ namespace {
         REGISTER_METHOD("upper", makeUpperMethod),
         REGISTER_METHOD("swapcase", makeSwapcaseMethod),
         REGISTER_METHOD("capitalize", makeCapitalizeMethod),
-        REGISTER_METHOD("title", makeTitleMethod)
+        REGISTER_METHOD("title", makeTitleMethod),
+        REGISTER_METHOD("istitle", makeIsTitleMethod)
     };
 }
 

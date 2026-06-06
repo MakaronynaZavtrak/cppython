@@ -1755,6 +1755,38 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'fooBARbaz'.title()", "b'Foobarbaz'"),
 
+    # istitle
+    ("b'Hello'.istitle()", "True"),
+
+    ("b'Hello World'.istitle()", "True"),
+
+    ("b'Abc123Def'.istitle()", "True"),
+    ("b'Foo-Bar'.istitle()", "True"),
+    ("b'Foo_Bar'.istitle()", "True"),
+
+    ("b'hello'.istitle()", "False"),
+    ("b'HELLO'.istitle()", "False"),
+
+    ("b'Hello world'.istitle()", "False"),
+    ("b'hello World'.istitle()", "False"),
+
+    ("b'Foo BAR'.istitle()", "False"),
+    ("b'FOO Bar'.istitle()", "False"),
+
+    ("b''.istitle()", "False"),
+    ("b'123'.istitle()", "False"),
+    ("b'!@#'.istitle()", "False"),
+
+    ("b'123Abc'.istitle()", "True"),
+    ("b'123abc'.istitle()", "False"),
+
+    ("b'A'.istitle()", "True"),
+    ("b'a'.istitle()", "False"),
+
+    ("b'Hello\\tWorld'.istitle()", "True"),
+    ("b'Hello\\nWorld'.istitle()", "True"),
+    ("b'Hello,World'.istitle()", "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
