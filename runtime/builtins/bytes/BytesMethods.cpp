@@ -932,6 +932,23 @@ namespace {
         );
     }
 
+    Value makeHexMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "hex",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "hex");
+
+                return obj.asBytes()->hex();
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -978,7 +995,8 @@ namespace {
         REGISTER_METHOD("partition", makePartitionMethod),
         REGISTER_METHOD("rpartition", makeRPartitionMethod),
         REGISTER_METHOD("splitlines",makeSplitLinesMethod),
-        REGISTER_METHOD("expandtabs", makeExpandTabsMethod)
+        REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
+        REGISTER_METHOD("hex", makeHexMethod)
     };
 }
 

@@ -2087,6 +2087,23 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'1234\\t5'.expandtabs(4)", "b'1234    5'"),
 
+    # hex
+    ("b''.hex()", "''"),
+
+    ("b'abc'.hex()", "'616263'"),
+    ("b'ABC'.hex()", "'414243'"),
+    ("b'123'.hex()", "'313233'"),
+
+    ("b'\\x00'.hex()", "'00'"),
+    ("b'\\x00\\x01\\x02'.hex()", "'000102'"),
+
+    ("b'\\xff'.hex()", "'ff'"),
+    ("b'\\xff\\xfe\\xfd'.hex()", "'fffefd'"),
+
+    ("b'hello'.hex()", "'68656c6c6f'"),
+
+    ("b'\\x10\\x20\\x30'.hex()", "'102030'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

@@ -138,5 +138,7 @@ public:
 
     [[nodiscard]] Value expandTabs(int tabsize = 8) const;
 
+    [[nodiscard]] Value hex() const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

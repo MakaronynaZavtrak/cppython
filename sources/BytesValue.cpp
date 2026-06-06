@@ -1542,6 +1542,15 @@ Value BytesValue::expandTabs(const int tabsize) const {
     );
 }
 
+Value BytesValue::hex() const {
+
+    return Value(
+        QString::fromLatin1(
+            data.toHex()
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
