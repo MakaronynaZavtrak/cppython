@@ -1896,6 +1896,26 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'\\xff'.center(5)", "b'  \\xff  '"),
 
+    # ljust
+    ("b'abc'.ljust(3)", "b'abc'"),
+    ("b'abc'.ljust(2)", "b'abc'"),
+    ("b'abc'.ljust(1)", "b'abc'"),
+
+    ("b'abc'.ljust(4)", "b'abc '"),
+    ("b'abc'.ljust(5)", "b'abc  '"),
+    ("b'abc'.ljust(7)", "b'abc    '"),
+
+    ("b''.ljust(3)", "b'   '"),
+
+    ("b'abc'.ljust(4, b'-')", "b'abc-'"),
+    ("b'abc'.ljust(5, b'-')", "b'abc--'"),
+    ("b'abc'.ljust(7, b'-')", "b'abc----'"),
+
+    ("b'abc'.ljust(10, b'*')", "b'abc*******'"),
+
+    ("b'\\xff'.ljust(3)", "b'\\xff  '"),
+    ("b'\\xff'.ljust(5, b'-')", "b'\\xff----'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

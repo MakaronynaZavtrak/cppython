@@ -1111,6 +1111,54 @@ Value BytesValue::center(
     );
 }
 
+Value BytesValue::ljust(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillchar
+) const {
+
+    QByteArray fill = " ";
+
+    if (fillchar.has_value()) {
+
+        if (!fillchar->isBytes()) {
+            throw std::runtime_error(
+                "ljust() argument 2 must be bytes"
+            );
+        }
+
+        fill = fillchar->asBytes()->bytes();
+
+        if (fill.size() != 1) {
+            throw std::runtime_error(
+                "TypeError: ljust() argument 2 must be a byte string of length 1"
+            );
+        }
+    }
+
+    const qsizetype targetWidth =
+        static_cast<qsizetype>(width);
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<BytesValue>(data)
+        );
+    }
+
+    QByteArray result = data;
+
+    result.append(
+        targetWidth - data.size(),
+        fill[0]
+    );
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

@@ -739,6 +739,35 @@ namespace {
         );
     }
 
+    Value makeLJustMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "ljust",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "ljust");
+
+                const auto width =
+                    args[0].toBigInt();
+
+                std::optional<Value> fillchar;
+
+                if (args.size() == 2) {
+                    fillchar = args[1];
+                }
+
+                return obj.asBytes()->ljust(
+                    width,
+                    fillchar
+                );
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -776,7 +805,8 @@ namespace {
         REGISTER_METHOD("lstrip", makeLStripMethod),
         REGISTER_METHOD("rstrip", makeRStripMethod),
         REGISTER_METHOD("strip", makeStripMethod),
-        REGISTER_METHOD("center", makeCenterMethod)
+        REGISTER_METHOD("center", makeCenterMethod),
+        REGISTER_METHOD("ljust", makeLJustMethod)
     };
 }
 
