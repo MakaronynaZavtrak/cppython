@@ -1270,6 +1270,31 @@ Value BytesValue::removeprefix(const Value& prefix) const {
     );
 }
 
+Value BytesValue::removeSuffix(const Value& suffix) const {
+
+    if (!suffix.isBytes()) {
+        throw std::runtime_error(
+            "removesuffix() argument must be bytes"
+        );
+    }
+
+    const QByteArray& suffixBytes = suffix.asBytes()->bytes();
+
+    if (!suffixBytes.isEmpty() && data.endsWith(suffixBytes)) {
+
+        return Value(
+            std::make_shared<BytesValue>(
+                data.mid(
+                    0,
+                    data.size() - suffixBytes.size()
+                )
+            )
+        );
+    }
+
+    return Value(std::make_shared<BytesValue>(data));
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

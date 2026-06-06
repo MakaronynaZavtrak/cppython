@@ -831,6 +831,23 @@ namespace {
         );
     }
 
+    Value makeRemoveSuffixMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "removesuffix",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "removesuffix");
+
+                return obj.asBytes()->removeSuffix(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -872,7 +889,8 @@ namespace {
         REGISTER_METHOD("ljust", makeLJustMethod),
         REGISTER_METHOD("rjust", makeRJustMethod),
         REGISTER_METHOD("zfill", makeZfillMethod),
-        REGISTER_METHOD("removeprefix", makeRemovePrefixMethod)
+        REGISTER_METHOD("removeprefix", makeRemovePrefixMethod),
+        REGISTER_METHOD("removesuffix", makeRemoveSuffixMethod)
     };
 }
 

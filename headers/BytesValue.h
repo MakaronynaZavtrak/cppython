@@ -128,5 +128,7 @@ public:
 
     [[nodiscard]] Value removeprefix(const Value& prefix) const;
 
+    [[nodiscard]] Value removeSuffix(const Value& suffix) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

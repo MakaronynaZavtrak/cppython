@@ -1985,6 +1985,27 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'\\xff\\x00\\x01'.removeprefix(b'\\x00')", "b'\\xff\\x00\\x01'"),
 
+    # removesuffix
+    ("b'foobar'.removesuffix(b'bar')", "b'foo'"),
+    ("b'foobar'.removesuffix(b'foobar')", "b''"),
+
+    ("b'foobar'.removesuffix(b'baz')", "b'foobar'"),
+    ("b'foobar'.removesuffix(b'')", "b'foobar'"),
+
+    ("b'abcabc'.removesuffix(b'abc')", "b'abc'"),
+    ("b'abcabc'.removesuffix(b'bc')", "b'abca'"),
+
+    ("b''.removesuffix(b'abc')", "b''"),
+    ("b''.removesuffix(b'')", "b''"),
+
+    ("b'abc'.removesuffix(b'abcabc')", "b'abc'"),
+
+    ("b'\\x00\\x01\\x02'.removesuffix(b'\\x02')",
+     "b'\\x00\\x01'"),
+
+    ("b'hello'.removesuffix(b'o')", "b'hell'"),
+    ("b'hello'.removesuffix(b'hello')", "b''"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
