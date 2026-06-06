@@ -1239,6 +1239,37 @@ Value BytesValue::zfill(const Value::BigInt& width) const {
     );
 }
 
+Value BytesValue::removeprefix(const Value& prefix) const {
+
+    if (!prefix.isBytes()) {
+        throw std::runtime_error(
+            "removeprefix() argument must be bytes"
+        );
+    }
+
+    const QByteArray& needle = prefix.asBytes()->bytes();
+
+    if (needle.isEmpty()) {
+
+        return Value(
+            std::make_shared<BytesValue>(data)
+        );
+    }
+
+    if (!data.startsWith(needle)) {
+
+        return Value(
+            std::make_shared<BytesValue>(data)
+        );
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            data.mid(needle.size())
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

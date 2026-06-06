@@ -1964,6 +1964,27 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'\\xff'.zfill(3)", "b'00\\xff'"),
 
+    # removeprefix
+    ("b'foobar'.removeprefix(b'foo')", "b'bar'"),
+    ("b'foobar'.removeprefix(b'foobar')", "b''"),
+    ("b'foobar'.removeprefix(b'')", "b'foobar'"),
+
+    ("b'foobar'.removeprefix(b'bar')", "b'foobar'"),
+    ("b'foobar'.removeprefix(b'foox')", "b'foobar'"),
+
+    ("b''.removeprefix(b'foo')", "b''"),
+    ("b''.removeprefix(b'')", "b''"),
+
+    ("b'abcabc'.removeprefix(b'abc')", "b'abc'"),
+    ("b'abcabc'.removeprefix(b'ab')", "b'cabc'"),
+
+    ("b'aaaa'.removeprefix(b'a')", "b'aaa'"),
+    ("b'aaaa'.removeprefix(b'aa')", "b'aa'"),
+
+    ("b'\\xff\\x00\\x01'.removeprefix(b'\\xff')", "b'\\x00\\x01'"),
+
+    ("b'\\xff\\x00\\x01'.removeprefix(b'\\x00')", "b'\\xff\\x00\\x01'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

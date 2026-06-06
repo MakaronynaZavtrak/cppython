@@ -124,8 +124,9 @@ public:
     const Value::BigInt& width,
     const std::optional<Value>& fillchar = std::nullopt) const;
 
-    [[nodiscard]] Value zfill(
-    const Value::BigInt& width) const;
+    [[nodiscard]] Value zfill(const Value::BigInt& width) const;
+
+    [[nodiscard]] Value removeprefix(const Value& prefix) const;
 
 };
 #endif //CPPYTHON_BYTESVALUE_H
