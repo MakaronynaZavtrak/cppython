@@ -1677,7 +1677,32 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\xff\\xfeabc'.upper()", "b'\\xff\\xfeABC'"),
 
     ("b'a'.upper()", "b'A'"),
-    ("b'z'.upper()", "b'Z'")
+    ("b'z'.upper()", "b'Z'"),
+
+    # swapcase
+    ("b'abc'.swapcase()", "b'ABC'"),
+    ("b'ABC'.swapcase()", "b'abc'"),
+
+    ("b'AbC'.swapcase()", "b'aBc'"),
+    ("b'Hello World'.swapcase()", "b'hELLO wORLD'"),
+
+    ("b'abc123'.swapcase()", "b'ABC123'"),
+    ("b'ABC123'.swapcase()", "b'abc123'"),
+
+    ("b'123'.swapcase()", "b'123'"),
+    ("b'!@#'.swapcase()", "b'!@#'"),
+
+    ("b''.swapcase()", "b''"),
+
+    ("b'a'.swapcase()", "b'A'"),
+    ("b'Z'.swapcase()", "b'z'"),
+
+    ("b'Python3.14'.swapcase()", "b'pYTHON3.14'"),
+
+    ("b'\\xffabcABC'.swapcase()", "b'\\xffABCabc'"),
+    ("b'\\xff\\xfeABC'.swapcase()", "b'\\xff\\xfeabc'"),
+
+    ("b'AbCdEfGhIjK'.swapcase()", "b'aBcDeFgHiJk'")
 
 ])
 
