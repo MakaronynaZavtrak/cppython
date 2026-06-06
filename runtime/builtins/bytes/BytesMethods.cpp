@@ -710,6 +710,35 @@ namespace {
         );
     }
 
+    Value makeCenterMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "center",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "center");
+
+                const auto width =
+                    args[0].toBigInt();
+
+                std::optional<Value> fillchar;
+
+                if (args.size() == 2) {
+                    fillchar = args[1];
+                }
+
+                return obj.asBytes()->center(
+                    width,
+                    fillchar
+                );
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -746,7 +775,8 @@ namespace {
         REGISTER_METHOD("istitle", makeIsTitleMethod),
         REGISTER_METHOD("lstrip", makeLStripMethod),
         REGISTER_METHOD("rstrip", makeRStripMethod),
-        REGISTER_METHOD("strip", makeStripMethod)
+        REGISTER_METHOD("strip", makeStripMethod),
+        REGISTER_METHOD("center", makeCenterMethod)
     };
 }
 

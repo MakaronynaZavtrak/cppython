@@ -1874,6 +1874,28 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'abc'.strip(b'xyz')", "b'abc'"),
 
+    # center
+    ("b'abc'.center(3)", "b'abc'"),
+    ("b'abc'.center(2)", "b'abc'"),
+    ("b'abc'.center(1)", "b'abc'"),
+
+    ("b'abc'.center(4)", "b'abc '"),
+    ("b'abc'.center(5)", "b' abc '"),
+    ("b'abc'.center(6)", "b' abc  '"),
+    ("b'abc'.center(7)", "b'  abc  '"),
+    ("b'abc'.center(8)", "b'  abc   '"),
+
+    ("b''.center(3)", "b'   '"),
+
+    ("b'abc'.center(7, b'-')", "b'--abc--'"),
+    ("b'abc'.center(8, b'-')", "b'--abc---'"),
+
+    ("b'abc'.center(9, b'*')", "b'***abc***'"),
+
+    ("b'abc'.center(4, b'x')", "b'abcx'"),
+
+    ("b'\\xff'.center(5)", "b'  \\xff  '"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

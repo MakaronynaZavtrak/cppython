@@ -112,5 +112,9 @@ public:
     [[nodiscard]] Value strip(
     const std::optional<Value>& chars = std::nullopt) const;
 
+    [[nodiscard]] Value center(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillchar = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

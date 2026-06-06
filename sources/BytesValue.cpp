@@ -1053,6 +1053,64 @@ Value BytesValue::strip(const std::optional<Value>& chars) const {
     return leftStripped->rstrip(chars);
 }
 
+Value BytesValue::center(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillchar
+) const {
+
+    QByteArray fill = " ";
+
+    if (fillchar.has_value()) {
+
+        if (!fillchar->isBytes()) {
+            throw std::runtime_error(
+                "center() argument 2 must be bytes"
+            );
+        }
+
+        fill = fillchar->asBytes()->bytes();
+
+        if (fill.size() != 1) {
+            throw std::runtime_error(
+                "TypeError: center() argument 2 must be a byte string of length 1"
+            );
+        }
+    }
+
+    const qsizetype targetWidth =
+        static_cast<qsizetype>(width);
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<BytesValue>(data)
+        );
+    }
+
+    const qsizetype padding =
+        targetWidth - data.size();
+
+    const qsizetype left =
+        padding / 2;
+
+    const qsizetype right =
+        padding - left;
+
+    QByteArray result;
+
+    result.reserve(targetWidth);
+
+    result.append(left, fill[0]);
+    result += data;
+    result.append(right, fill[0]);
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
