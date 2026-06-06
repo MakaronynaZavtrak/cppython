@@ -2040,6 +2040,33 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'\\x00\\x01\\x02\\x01'.rpartition(b'\\x01')", "(b'\\x00\\x01\\x02', b'\\x01', b'')"),
 
+    # splitlines
+    ("b''.splitlines()", "[]"),
+    ("b'abc'.splitlines()", "[b'abc']"),
+
+    ("b'abc\\ndef'.splitlines()", "[b'abc', b'def']"),
+    ("b'abc\\ndef'.splitlines(True)", "[b'abc\\n', b'def']"),
+
+    ("b'abc\\rdef'.splitlines()", "[b'abc', b'def']"),
+    ("b'abc\\rdef'.splitlines(True)", "[b'abc\\r', b'def']"),
+
+    ("b'abc\\r\\ndef'.splitlines()", "[b'abc', b'def']"),
+    ("b'abc\\r\\ndef'.splitlines(True)", "[b'abc\\r\\n', b'def']"),
+
+    ("b'abc\\vdef'.splitlines()", "[b'abc\\x0bdef']"),
+    ("b'abc\\vdef'.splitlines(True)", "[b'abc\\x0bdef']"),
+
+    ("b'abc\\fdef'.splitlines()", "[b'abc\\x0cdef']"),
+    ("b'abc\\fdef'.splitlines(True)", "[b'abc\\x0cdef']"),
+
+    ("b'\\n'.splitlines()", "[b'']"),
+    ("b'\\n'.splitlines(True)", "[b'\\n']"),
+    ("b'\\r\\n'.splitlines()", "[b'']"),
+    ("b'\\r\\n'.splitlines(True)", "[b'\\r\\n']"),
+
+    ("b'a\\nb\\nc'.splitlines()", "[b'a', b'b', b'c']"),
+    ("b'a\\nb\\nc'.splitlines(True)", "[b'a\\n', b'b\\n', b'c']"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

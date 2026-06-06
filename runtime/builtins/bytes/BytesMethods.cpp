@@ -883,6 +883,32 @@ namespace {
         );
     }
 
+    Value makeSplitLinesMethod(
+    const Value& obj
+) {
+
+        return makeBuiltin(
+            "splitlines",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "splitlines");
+
+                bool keepends = false;
+
+                if (!args.empty()) {
+                    keepends = args[0].toBool();
+                }
+
+                return obj.asBytes()
+                    ->splitlines(keepends);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -927,7 +953,8 @@ namespace {
         REGISTER_METHOD("removeprefix", makeRemovePrefixMethod),
         REGISTER_METHOD("removesuffix", makeRemoveSuffixMethod),
         REGISTER_METHOD("partition", makePartitionMethod),
-        REGISTER_METHOD("rpartition", makeRPartitionMethod)
+        REGISTER_METHOD("rpartition", makeRPartitionMethod),
+        REGISTER_METHOD("splitlines",makeSplitLinesMethod)
     };
 }
 

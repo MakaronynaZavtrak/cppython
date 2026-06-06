@@ -1367,8 +1367,7 @@ Value BytesValue::rpartition(const Value& sep) const {
         );
     }
 
-    const QByteArray& separator =
-        sep.asBytes()->bytes();
+    const QByteArray& separator = sep.asBytes()->bytes();
 
     if (separator.isEmpty()) {
         throw std::runtime_error(
@@ -1426,6 +1425,78 @@ Value BytesValue::rpartition(const Value& sep) const {
     return Value(
         std::make_shared<TupleValue>(
             std::move(items)
+        )
+    );
+}
+
+Value BytesValue::splitlines(const bool keepends) const {
+
+    std::vector<Value> result;
+
+    qsizetype start = 0;
+    qsizetype i = 0;
+
+    while (i < data.size()) {
+
+        const qsizetype lineEnd = i;
+        qsizetype separatorLength = 0;
+
+        const unsigned char ch = data[i];
+
+        if (ch == '\n') {
+
+            separatorLength = 1;
+
+        } else if (ch == '\r') {
+
+            if (
+                i + 1 < data.size() &&
+                data[i + 1] == '\n'
+            ) {
+
+                separatorLength = 2;
+
+            } else {
+
+                separatorLength = 1;
+            }
+
+        }
+
+        if (separatorLength != 0) {
+
+            const qsizetype length =
+                keepends
+                ? (lineEnd - start + separatorLength)
+                : (lineEnd - start);
+
+            result.emplace_back(
+                std::make_shared<BytesValue>(
+                    data.mid(start, length)
+                )
+            );
+
+            i += separatorLength;
+            start = i;
+
+            continue;
+        }
+
+        ++i;
+    }
+
+    if (start < data.size()) {
+
+        result.emplace_back(
+            std::make_shared<BytesValue>(
+                data.mid(start)
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<ListValue>(
+            std::move(result)
         )
     );
 }

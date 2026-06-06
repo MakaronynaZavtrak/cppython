@@ -134,5 +134,7 @@ public:
 
     [[nodiscard]] Value rpartition(const Value& sep) const;
 
+    [[nodiscard]] Value splitlines(bool keepends = false) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
