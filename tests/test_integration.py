@@ -2067,6 +2067,26 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'a\\nb\\nc'.splitlines()", "[b'a', b'b', b'c']"),
     ("b'a\\nb\\nc'.splitlines(True)", "[b'a\\n', b'b\\n', b'c']"),
 
+    # expandtabs
+    ("b''.expandtabs()", "b''"),
+    ("b'\\t'.expandtabs()", "b'        '"),
+    ("b'a\\t'.expandtabs()", "b'a       '"),
+    ("b'ab\\t'.expandtabs()", "b'ab      '"),
+    ("b'abc\\t'.expandtabs()", "b'abc     '"),
+    ("b'abcd\\t'.expandtabs()", "b'abcd    '"),
+    ("b'abcdefgh\\t'.expandtabs()", "b'abcdefgh        '"),
+
+    ("b'a\\tb'.expandtabs()", "b'a       b'"),
+    ("b'a\\tb'.expandtabs(4)", "b'a   b'"),
+    ("b'ab\\tb'.expandtabs(4)", "b'ab  b'"),
+    ("b'abc\\tb'.expandtabs(4)", "b'abc b'"),
+    ("b'abcd\\tb'.expandtabs(4)", "b'abcd    b'"),
+
+    ("b'a\\t\\nb\\t'.expandtabs()", "b'a       \\nb       '"),
+    ("b'1\\t2\\t3'.expandtabs(4)", "b'1   2   3'"),
+
+    ("b'1234\\t5'.expandtabs(4)", "b'1234    5'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

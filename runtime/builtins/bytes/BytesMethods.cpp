@@ -909,6 +909,29 @@ namespace {
         );
     }
 
+    Value makeExpandTabsMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "expandtabs",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "expandtabs");
+
+                int tabsize = 8;
+
+                if (!args.empty()) {
+                    tabsize =static_cast<int>(args[0].toBigInt());
+                }
+
+                return obj.asBytes()->expandTabs(tabsize);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -954,7 +977,8 @@ namespace {
         REGISTER_METHOD("removesuffix", makeRemoveSuffixMethod),
         REGISTER_METHOD("partition", makePartitionMethod),
         REGISTER_METHOD("rpartition", makeRPartitionMethod),
-        REGISTER_METHOD("splitlines",makeSplitLinesMethod)
+        REGISTER_METHOD("splitlines",makeSplitLinesMethod),
+        REGISTER_METHOD("expandtabs", makeExpandTabsMethod)
     };
 }
 

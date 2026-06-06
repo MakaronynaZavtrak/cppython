@@ -1501,6 +1501,47 @@ Value BytesValue::splitlines(const bool keepends) const {
     );
 }
 
+Value BytesValue::expandTabs(const int tabsize) const {
+
+    QByteArray result;
+
+    int column = 0;
+
+    for (unsigned char ch : data) {
+
+        if (ch == '\t') {
+
+            const int spaces =
+                tabsize - (column % tabsize);
+
+            result.append(
+                QByteArray(spaces, ' ')
+            );
+
+            column += spaces;
+
+            continue;
+        }
+
+        result.append(ch);
+
+        if (ch == '\n' || ch == '\r') {
+
+            column = 0;
+
+        } else {
+
+            ++column;
+        }
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

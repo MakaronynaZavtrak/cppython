@@ -136,5 +136,7 @@ public:
 
     [[nodiscard]] Value splitlines(bool keepends = false) const;
 
+    [[nodiscard]] Value expandTabs(int tabsize = 8) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
