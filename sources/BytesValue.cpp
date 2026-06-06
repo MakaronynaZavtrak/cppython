@@ -1044,6 +1044,15 @@ Value BytesValue::rstrip(
     );
 }
 
+Value BytesValue::strip(const std::optional<Value>& chars) const {
+
+    const auto leftStripped =
+        lstrip(chars)
+            .asBytes();
+
+    return leftStripped->rstrip(chars);
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

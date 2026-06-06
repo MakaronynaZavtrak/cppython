@@ -689,6 +689,27 @@ namespace {
         );
     }
 
+    Value makeStripMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "strip",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "strip");
+
+                if (args.empty()) {
+                    return obj.asBytes()->strip();
+                }
+
+                return obj.asBytes()->strip(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -724,7 +745,8 @@ namespace {
         REGISTER_METHOD("title", makeTitleMethod),
         REGISTER_METHOD("istitle", makeIsTitleMethod),
         REGISTER_METHOD("lstrip", makeLStripMethod),
-        REGISTER_METHOD("rstrip", makeRStripMethod)
+        REGISTER_METHOD("rstrip", makeRStripMethod),
+        REGISTER_METHOD("strip", makeStripMethod)
     };
 }
 
