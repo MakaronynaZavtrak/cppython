@@ -5,6 +5,7 @@
 
 #include "IteratorValue.h"
 #include "ListValue.h"
+#include "StrValue.h"
 #include "TupleValue.h"
 
 QString BytesValue::repr() const {
@@ -1595,6 +1596,77 @@ Value BytesValue::fromHex(const QString& text) {
         std::make_shared<BytesValue>(
             std::move(result)
         )
+    );
+}
+
+Value BytesValue::decode(
+    const QString& encoding,
+    const QString& errors
+) const {
+
+    QString result;
+
+    if (encoding == "utf-8" || encoding == "utf8") {
+
+        QStringDecoder decoder(QStringDecoder::Utf8);
+
+        result = decoder.decode(data);
+
+        if (decoder.hasError()) {
+
+            if (errors == "ignore") {
+
+                QStringDecoder ignoreDecoder(
+                    QStringDecoder::Utf8,
+                    QStringConverter::Flag::ConvertInvalidToNull
+                );
+
+                result = ignoreDecoder.decode(data);
+
+            } else {
+
+                throw std::runtime_error(
+                    "UnicodeDecodeError: invalid utf-8 sequence"
+                );
+            }
+        }
+
+    } else if (encoding == "ascii") {
+
+        for (const unsigned char ch : data) {
+
+            if (ch > 127) {
+
+                if (errors == "ignore") {
+                    continue;
+                }
+
+                throw std::runtime_error(
+                    "UnicodeDecodeError: ordinal not in range(128)"
+                );
+            }
+
+            result += QChar(ch);
+        }
+
+    } else if (encoding == "latin-1" ||
+               encoding == "latin1") {
+
+        for (unsigned char ch : data) {
+            result += QChar(ch);
+        }
+
+    } else {
+
+        throw std::runtime_error(
+            QString(
+                "LookupError: unknown encoding '%1'"
+            ).arg(encoding).toStdString()
+        );
+    }
+
+    return Value(
+        std::make_shared<StrValue>(result)
     );
 }
 

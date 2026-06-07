@@ -142,5 +142,9 @@ public:
 
     [[nodiscard]] static Value fromHex(const QString& text);
 
+    [[nodiscard]] Value decode(
+    const QString& encoding = "utf-8",
+    const QString& errors = "strict") const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

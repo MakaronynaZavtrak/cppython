@@ -966,6 +966,34 @@ namespace {
         );
     }
 
+    Value makeDecodeMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "decode",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 2, "decode");
+
+                QString encoding = "utf-8";
+                QString errors = "strict";
+
+                if (!args.empty()) {
+                    encoding = args[0].toString();
+                }
+
+                if (args.size() == 2) {
+                    errors = args[1].toString();
+                }
+
+                return obj.asBytes()->decode(encoding, errors);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -1014,7 +1042,8 @@ namespace {
         REGISTER_METHOD("splitlines",makeSplitLinesMethod),
         REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
         REGISTER_METHOD("hex", makeHexMethod),
-        REGISTER_METHOD("fromhex", makeFromHexMethod)
+        REGISTER_METHOD("fromhex", makeFromHexMethod),
+        REGISTER_METHOD("decode", makeDecodeMethod)
     };
 }
 

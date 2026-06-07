@@ -2131,7 +2131,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytes('hello', encoding='utf8')", "b'hello'"),
 
     ("bytes('Привет', encoding='utf-8')",
-     "b'\\xd0\\x9f\\xd1\\x80\\xd0\\xb8\\xd0\\xb2\\xd0\\xb5\\xd1\\x82'")
+     "b'\\xd0\\x9f\\xd1\\x80\\xd0\\xb8\\xd0\\xb2\\xd0\\xb5\\xd1\\x82'"),
+
+    # decode
+    ("b'abc'.decode()", "'abc'"),
+    ("b'abc'.decode('utf-8')", "'abc'"),
+
+    ("b'hello'.decode('ascii')", "'hello'"),
+
+    ("b'\\x41\\x42\\x43'.decode('ascii')", "'ABC'"),
+
+    ("b'\\xff'.decode('latin-1')", "'ÿ'"),
+
+    ("b''.decode()", "''"),
+
+    ("b'abc'.decode('utf8')", "'abc'"),
+    ("b'abc'.decode('latin1')", "'abc'"),
 
 ])
 
