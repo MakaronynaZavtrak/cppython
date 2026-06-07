@@ -2104,6 +2104,35 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'\\x10\\x20\\x30'.hex()", "'102030'"),
 
+    # fromhex
+    ("bytes.fromhex('')", "b''"),
+    ("bytes.fromhex('61')", "b'a'"),
+    ("bytes.fromhex('6162')", "b'ab'"),
+    ("bytes.fromhex('616263')", "b'abc'"),
+    ("bytes.fromhex('41')", "b'A'"),
+    ("bytes.fromhex('414243')", "b'ABC'"),
+    ("bytes.fromhex('68 65 6c 6c 6f')", "b'hello'"),
+
+    ("bytes.fromhex('00')", "b'\\x00'"),
+    ("bytes.fromhex('000102')", "b'\\x00\\x01\\x02'"),
+
+    ("bytes.fromhex('ff')", "b'\\xff'"),
+    ("bytes.fromhex('FF')", "b'\\xff'"),
+    ("bytes.fromhex('ff fe fd')", "b'\\xff\\xfe\\xfd'"),
+
+    # bytes constructor
+    ("bytes()", "b''"),
+    ("bytes(b'abc')", "b'abc'"),
+
+    ("bytes('abc', 'utf-8')", "b'abc'"),
+    ("bytes('hello', 'utf8')", "b'hello'"),
+
+    ("bytes('abc', encoding='utf-8')", "b'abc'"),
+    ("bytes('hello', encoding='utf8')", "b'hello'"),
+
+    ("bytes('Привет', encoding='utf-8')",
+     "b'\\xd0\\x9f\\xd1\\x80\\xd0\\xb8\\xd0\\xb2\\xd0\\xb5\\xd1\\x82'")
+
 ])
 
 def test_single_line_expressions(expr, expected):

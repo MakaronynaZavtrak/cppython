@@ -1551,6 +1551,53 @@ Value BytesValue::hex() const {
     );
 }
 
+Value BytesValue::fromHex(const QString& text) {
+
+    QString cleaned;
+
+    for (const QChar ch : text) {
+
+        if (!ch.isSpace()) {
+            cleaned += ch;
+        }
+    }
+
+    if (cleaned.size() % 2 != 0) {
+
+        throw std::runtime_error(
+            "ValueError: non-hexadecimal number found in fromhex() arg"
+        );
+    }
+
+    QByteArray result;
+
+    result.reserve(cleaned.size() / 2);
+
+    for (int i = 0; i < cleaned.size(); i += 2) {
+
+        bool ok = false;
+
+        const QString pair = cleaned.mid(i, 2);
+
+        const int value = pair.toInt(&ok, 16);
+
+        if (!ok) {
+
+            throw std::runtime_error(
+                "ValueError: non-hexadecimal number found in fromhex() arg"
+            );
+        }
+
+        result.append(static_cast<char>(value));
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

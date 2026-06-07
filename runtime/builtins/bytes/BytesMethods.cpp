@@ -949,6 +949,23 @@ namespace {
         );
     }
 
+    Value makeFromHexMethod(const Value&) {
+
+        return makeBuiltin(
+            "fromhex",
+
+            [](const std::vector<Value>& args,
+               const Kwargs&,
+               const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "fromhex");
+
+                return BytesValue::fromHex(args[0].toString());
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -996,11 +1013,29 @@ namespace {
         REGISTER_METHOD("rpartition", makeRPartitionMethod),
         REGISTER_METHOD("splitlines",makeSplitLinesMethod),
         REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
-        REGISTER_METHOD("hex", makeHexMethod)
+        REGISTER_METHOD("hex", makeHexMethod),
+        REGISTER_METHOD("fromhex", makeFromHexMethod)
     };
 }
 
 Value getBytesAttr(const Value& obj, const QString& attr) {
 
     return getBuiltinAttr(obj, attr, BYTES_METHODS, "bytes");
+}
+
+Value makeFromHexClassBuiltin() {
+
+    return makeBuiltin(
+        "fromhex",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>&)
+        -> Value {
+
+            expectArgs(args, 1, "fromhex");
+
+            return BytesValue::fromHex(args[0].toString());
+        }
+    );
 }

@@ -7,4 +7,6 @@
 #include "Value.h"
 
 Value getBytesAttr(const Value& obj, const QString& attr);
+
+Value makeFromHexClassBuiltin();
 #endif //CPPYTHON_BYTESMETHODS_H

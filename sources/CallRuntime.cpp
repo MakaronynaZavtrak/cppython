@@ -1,11 +1,13 @@
 #include "CallRuntime.h"
 
 #include "BoundMethod.h"
+#include "BytesValue.h"
 #include "ClassMethodValue.h"
 #include "Environment.h"
 #include "FunctionValue.h"
 #include "Parser.h"
 #include "StaticMethodValue.h"
+#include "StrValue.h"
 #include "Value.h"
 //
 // Created by semyo on 03.05.2026.
@@ -144,6 +146,107 @@ Value constructClass(const Value::ClassPtr& cls,
         return Value(args[0].toString());
     }
 
+    if (cls == Runtime::bytesClass) {
+
+        std::optional<QString> encoding;
+
+        //TODO: пока не поддерживается
+        std::optional<QString> errors;
+
+        for (const auto& [name, value] : kwargs) {
+
+            if (name == "encoding") {
+
+                encoding = value.asString("bytes")->toString();
+
+            } else if (name == "errors") {
+
+                //TODO: пока не поддерживается
+                errors = value.asString("bytes")->toString();
+
+            } else {
+
+                throw std::runtime_error(
+                    "Unknown keyword argument: "
+                    + name.toStdString()
+                );
+            }
+        }
+
+        if (args.empty()) {
+
+            return Value(
+                std::make_shared<BytesValue>(
+                    QByteArray()
+                )
+            );
+        }
+
+        if (args.size() > 2) {
+
+            throw std::runtime_error(
+                "bytes() takes at most 2 arguments"
+            );
+        }
+
+        const Value& obj = args[0];
+
+        if (obj.isBytes()) {
+
+            if (encoding.has_value()) {
+
+                throw std::runtime_error(
+                    "TypeError: encoding without a string argument"
+                );
+            }
+
+            return obj;
+        }
+
+        if (obj.isString()) {
+
+            QString actualEncoding;
+
+            if (args.size() >= 2) {
+
+                actualEncoding =
+                    args[1]
+                        .asString("bytes")
+                        ->toString();
+
+            } else if (encoding.has_value()) {
+
+                actualEncoding = *encoding;
+
+            } else {
+
+                throw std::runtime_error(
+                    "TypeError: string argument without an encoding"
+                );
+            }
+
+            // TODO: пока поддерживается только utf-8
+            if (
+                actualEncoding != "utf-8" &&
+                actualEncoding != "utf8"
+            ) {
+
+                throw std::runtime_error(
+                    "LookupError: unknown encoding"
+                );
+            }
+
+            return Value(
+                std::make_shared<BytesValue>(
+                    obj.toString().toUtf8()
+                )
+            );
+        }
+
+        throw std::runtime_error(
+            "TypeError: cannot convert object to bytes"
+        );
+    }
 
     const auto instance = std::make_shared<InstanceValue>(cls);
 

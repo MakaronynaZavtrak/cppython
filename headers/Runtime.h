@@ -13,5 +13,7 @@ public:
     static std::shared_ptr<ClassValue> objectClass;
 
     static std::shared_ptr<ClassValue> strClass;
+
+    static std::shared_ptr<ClassValue> bytesClass;
 };
 #endif //CPPYTHON_RUNTIME_H

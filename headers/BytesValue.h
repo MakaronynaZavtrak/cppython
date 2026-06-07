@@ -140,5 +140,7 @@ public:
 
     [[nodiscard]] Value hex() const;
 
+    [[nodiscard]] static Value fromHex(const QString& text);
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

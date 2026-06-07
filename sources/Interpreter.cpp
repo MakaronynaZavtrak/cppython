@@ -7,7 +7,7 @@
 #include <sstream>
 
 #include "Runtime.h"
-#include "../runtime/RuntimeUtils.h"
+#include "../runtime/builtins/bytes/BytesMethods.h"
 #include "../runtime/builtins/str/StrMethods.h"
 
 
@@ -110,9 +110,7 @@ void Interpreter::run(int argc, char* argv[]) {
 
 
     Runtime::strClass = std::make_shared<ClassValue>("str");
-
     Runtime::strClass->name = "str";
-
     Runtime::strClass->bases.push_back(Runtime::objectClass);
 
     auto builtin = std::get<Value::BuiltinFunctionPtr>(makeMaketransClassBuiltin().data);
@@ -124,6 +122,18 @@ void Interpreter::run(int argc, char* argv[]) {
     Runtime::strClass->attributes["__call__"] = globalEnv->get("__str_call__");
 
     globalEnv->set("__str_type__", Value(Runtime::strClass));
+
+
+
+    Runtime::bytesClass = std::make_shared<ClassValue>("bytes");
+    Runtime::bytesClass->name = "bytes";
+    Runtime::bytesClass->bases.push_back(Runtime::objectClass);
+
+    Runtime::bytesClass->attributes["fromhex"] = makeFromHexClassBuiltin();
+
+    globalEnv->set("bytes", Value(Runtime::bytesClass));
+    Runtime::bytesClass->attributes["__call__"] = globalEnv->get("__bytes_call__");
+    globalEnv->set("__bytes_type__", Value(Runtime::bytesClass));
 
     Lexer lexer;
     std::vector<std::string> buffer;
