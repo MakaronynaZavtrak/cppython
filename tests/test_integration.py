@@ -2257,6 +2257,40 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'hello'.translate(bytes.maketrans(b'helo', b'HELO'))", "b'HELLO'"),
 
+    # форматирование %, __mod__
+
+    # %s
+    ("b'%s' % b'abc'", "b'abc'"),
+    ("b'hello %s' % b'world'", "b'hello world'"),
+
+    # %b
+    ("b'%b' % b'abc'", "b'abc'"),
+
+    # %d
+    ("b'%d' % 123", "b'123'"),
+    ("b'%d' % -5", "b'-5'"),
+
+    # %i
+    ("b'%i' % 42", "b'42'"),
+
+    # %x
+    ("b'%x' % 255", "b'ff'"),
+
+    # %X
+    ("b'%X' % 255", "b'FF'"),
+
+    # %o
+    ("b'%o' % 8", "b'10'"),
+
+    # %c
+    ("b'%c' % 65", "b'A'"),
+
+    # tuple
+    ("b'%s %d' % (b'abc', 42)", "b'abc 42'"),
+
+    # escaped percent
+    ("b'100%%' % ()", "b'100%'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

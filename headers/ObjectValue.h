@@ -18,6 +18,10 @@ public:
         throw std::runtime_error("Not supported operation for this type");
     }
 
+    [[nodiscard]] virtual Value mod(const Value& other) const {
+        throw std::runtime_error("Not supported operation for this type");
+    }
+
     [[nodiscard]] virtual bool contains(const Value& value) const {
         throw std::runtime_error("Not supported operation for this type");
     }

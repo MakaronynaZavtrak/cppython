@@ -68,6 +68,25 @@ namespace {
         );
     }
 
+    Value makeModMethod(const Value& obj) {
+
+        auto bytes = extract<Value::BytesPtr>(obj);
+
+        return makeBuiltin(
+            "__mod__",
+
+            [bytes](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__mod__");
+
+                return bytes->mod(args[0]);
+            }
+        );
+    }
+
     Value makeEqualMethod(const Value& obj) {
 
         auto bytes = extract<Value::BytesPtr>(obj);
@@ -1129,6 +1148,7 @@ namespace {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
+        REGISTER_METHOD("__mod__", makeModMethod),
         REGISTER_METHOD("__eq__", makeEqualMethod),
         REGISTER_METHOD("__ne__", makeNotEqualMethod),
         REGISTER_METHOD("__lt__", makeLessMethod),

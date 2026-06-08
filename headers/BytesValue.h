@@ -166,5 +166,7 @@ public:
     const Value& table,
     const std::optional<Value>& deleteBytes = std::nullopt) const;
 
+    [[nodiscard]] Value mod(const Value& rhs) const override;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

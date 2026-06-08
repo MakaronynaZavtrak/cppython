@@ -1994,6 +1994,143 @@ Value BytesValue::translate(
     );
 }
 
+static QByteArray formatBytesArgument(
+    const char specifier,
+    const Value& value) {
+
+    switch (specifier) {
+
+        case 's':
+        case 'b':
+
+            if (!value.isBytes()) {
+                throw std::runtime_error(
+                    "%s/%b requires bytes"
+                );
+            }
+
+            return value.asBytes()->bytes();
+
+        case 'd':
+        case 'i':
+
+            return QByteArray::number(
+                value.toBigInt().convert_to<long long>()
+            );
+
+        case 'x':
+
+            return QByteArray::number(
+                value.toBigInt().convert_to<long long>(),
+                16
+            );
+
+        case 'X': {
+
+            QByteArray result =
+                QByteArray::number(
+                    value.toBigInt().convert_to<long long>(),
+                    16
+                );
+
+            return result.toUpper();
+        }
+
+        case 'o':
+
+            return QByteArray::number(
+                value.toBigInt().convert_to<long long>(),
+                8
+            );
+
+        case 'c': {
+
+            const auto code =
+                value.toBigInt();
+
+            if (code < 0 || code > 255) {
+
+                throw std::runtime_error(
+                    "%c arg not in range(256)"
+                );
+            }
+
+            return QByteArray(
+                1,
+                static_cast<char>(code)
+            );
+        }
+        default: throw std::runtime_error(
+        QString("unsupported format character '%1'")
+            .arg(specifier)
+            .toStdString());
+    }
+}
+
+Value BytesValue::mod(const Value& rhs) const {
+
+    std::vector<Value> arguments;
+
+    if (rhs.isTuple()) {
+
+        arguments = rhs.asTuple()->items;
+
+    } else {
+
+        arguments.push_back(rhs);
+    }
+
+    std::size_t argIndex = 0;
+
+    QByteArray result;
+
+    for (
+        qsizetype i = 0;
+        i < data.size();
+        ++i
+    ) {
+
+        if (data[i] != '%') {
+
+            result.append(data[i]);
+            continue;
+        }
+
+        if (i + 1 >= data.size()) {
+
+            throw std::runtime_error("incomplete format");
+        }
+
+        const char spec = data[++i];
+
+        if (spec == '%') {
+
+            result.append('%');
+            continue;
+        }
+
+        if (argIndex >= arguments.size()) {
+
+            throw std::runtime_error("not enough arguments for format string");
+        }
+
+        result += formatBytesArgument(spec, arguments[argIndex++]);
+    }
+
+    if (argIndex != arguments.size()) {
+
+        throw std::runtime_error(
+            "not all arguments converted during bytes formatting"
+        );
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {
