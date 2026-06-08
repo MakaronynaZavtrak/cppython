@@ -1998,6 +1998,7 @@ struct BytesFormatSpec {
 
     bool leftAlign = false;
     bool zeroPad = false;
+    bool showSign = false;
     int width = 0;
     char type = '\0';
 };
@@ -2008,15 +2009,27 @@ static BytesFormatSpec parseBytesFormat(
 
     BytesFormatSpec spec;
 
-    if (pos < format.size() && format[pos] == '-') {
+    while (pos < format.size()) {
 
-        spec.leftAlign = true;
-        ++pos;
-    }
+        if (format[pos] == '-') {
 
-    if (pos < format.size() && format[pos] == '0') {
-        spec.zeroPad = true;
-        ++pos;
+            spec.leftAlign = true;
+            ++pos;
+
+        } else if (format[pos] == '+') {
+
+            spec.showSign = true;
+            ++pos;
+
+        } else if (format[pos] == '0') {
+
+            spec.zeroPad = true;
+            ++pos;
+
+        } else {
+
+            break;
+        }
     }
 
     while (
@@ -2060,9 +2073,10 @@ static QByteArray applyWidth(
 
     const char fillChar = spec.zeroPad ? '0' : ' ';
 
-    if (fillChar == '0' && !value.isEmpty() && value[0] == '-') {
+    if (fillChar == '0' && !value.isEmpty() &&
+        (value[0] == '-' || value[0] == '+')) {
 
-        return "-"
+        return value[0]
             + QByteArray(padding, '0')
             + value.mid(1);
     }
@@ -2093,10 +2107,19 @@ static QByteArray formatBytesArgument(
             break;
 
         case 'd':
-        case 'i':
+        case 'i': {
 
-            result = QByteArray::fromStdString(value.toBigInt().str());
+            const auto number = value.toBigInt();
+
+            result = QByteArray::fromStdString(number.str());
+
+            if (specifier.showSign && number >= 0) {
+
+                result.prepend('+');
+            }
+
             break;
+        }
 
         case 'x':
 

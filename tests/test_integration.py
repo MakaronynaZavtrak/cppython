@@ -2320,6 +2320,20 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'%05o' % 8", "b'00010'"),
 
+    # plus sign
+    ("b'%+d' % 42", "b'+42'"),
+    ("b'%+d' % -42", "b'-42'"),
+
+    ("b'%+i' % 7", "b'+7'"),
+    ("b'%+i' % -7", "b'-7'"),
+
+    ("b'%+5d' % 42", "b'  +42'"),
+    ("b'%+05d' % 42", "b'+0042'"),
+
+    ("b'%+05d' % -42", "b'-0042'"),
+
+    ("b'%+3d' % 123", "b'+123'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
