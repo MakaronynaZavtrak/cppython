@@ -333,6 +333,60 @@ Value BytesValue::find(
     return Value(Value::BigInt(pos + startIdx));
 }
 
+Value BytesValue::rfind(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    if (!sub.isBytes()) {
+        throw std::runtime_error(
+            "rfind() argument must be bytes"
+        );
+    }
+
+    int startIdx = 0;
+    int endIdx = data.size();
+
+    if (start.has_value()) {
+        startIdx =
+            static_cast<int>(
+                start->toBigInt()
+            );
+    }
+
+    if (end.has_value()) {
+        endIdx =
+            static_cast<int>(
+                end->toBigInt()
+            );
+    }
+
+    normalizeSliceIndices(startIdx, endIdx, data.size());
+
+    const QByteArray needle = sub.asBytes()->bytes();
+
+    const QByteArray haystack =
+        data.mid(
+            startIdx,
+            endIdx - startIdx
+        );
+
+    const int pos = haystack.lastIndexOf(needle);
+
+    if (pos == -1) {
+
+        return Value(
+            Value::BigInt(-1)
+        );
+    }
+
+    return Value(
+        Value::BigInt(
+            pos + startIdx
+        )
+    );
+}
+
 Value BytesValue::index(
     const Value& sub,
     const std::optional<Value>& start,

@@ -1273,6 +1273,31 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\x00\\x01\\x02'.find(b'\\x01')", "1"),
     ("b'\\xff\\xfe\\xfd'.find(b'\\xfe')", "1"),
 
+    # rfind
+    ("b'abc'.rfind(b'a')", "0"),
+    ("b'abc'.rfind(b'b')", "1"),
+    ("b'abc'.rfind(b'c')", "2"),
+    ("b'abc'.rfind(b'd')", "-1"),
+
+    ("b'abcabc'.rfind(b'abc')", "3"),
+    ("b'abcabc'.rfind(b'bc')", "4"),
+    ("b'ababa'.rfind(b'aba')", "2"),
+
+    ("b'abcabc'.rfind(b'abc', 1)", "3"),
+    ("b'abcabc'.rfind(b'abc', 4)", "-1"),
+
+    ("b'abcabc'.rfind(b'bc', 0, 4)", "1"),
+    ("b'abcabc'.rfind(b'abc', 0, 5)", "0"),
+
+    ("b'abc'.rfind(b'')", "3"),
+    ("b'abc'.rfind(b'', 0, 2)", "2"),
+    ("b''.rfind(b'')", "0"),
+
+    ("b''.rfind(b'a')", "-1"),
+
+    ("b'\\x00\\x01\\x02\\x01'.rfind(b'\\x01')", "3"),
+    ("b'\\xff\\xfe\\xfd\\xfe'.rfind(b'\\xfe')", "3"),
+
     # index
     ("b'abc'.index(b'a')", "0"),
     ("b'abc'.index(b'b')", "1"),
