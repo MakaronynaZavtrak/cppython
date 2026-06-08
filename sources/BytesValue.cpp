@@ -1994,11 +1994,81 @@ Value BytesValue::translate(
     );
 }
 
+struct BytesFormatSpec {
+
+    bool leftAlign = false;
+    int width = 0;
+    char type = '\0';
+};
+
+static BytesFormatSpec parseBytesFormat(
+    const QByteArray& format,
+    qsizetype& pos) {
+
+    BytesFormatSpec spec;
+
+    if (
+        pos < format.size() &&
+        format[pos] == '-'
+    ) {
+
+        spec.leftAlign = true;
+        ++pos;
+    }
+
+    while (
+        pos < format.size() &&
+        std::isdigit(
+            static_cast<unsigned char>(
+                format[pos]
+            )
+        )
+    ) {
+
+        spec.width =
+            spec.width * 10 +
+            (format[pos] - '0');
+
+        ++pos;
+    }
+
+    if (pos >= format.size()) {
+
+        throw std::runtime_error(
+            "incomplete format"
+        );
+    }
+
+    spec.type = format[pos];
+
+    return spec;
+}
+
+static QByteArray applyWidth(
+    const QByteArray& value,
+    const BytesFormatSpec& spec) {
+
+    if (spec.width <= value.size()) {
+        return value;
+    }
+
+    const int padding = spec.width - value.size();
+
+    if (spec.leftAlign) {
+        return value + QByteArray(padding, ' ');
+    }
+
+    return QByteArray(padding, ' ') + value;
+}
+
+
 static QByteArray formatBytesArgument(
-    const char specifier,
+    const BytesFormatSpec& specifier,
     const Value& value) {
 
-    switch (specifier) {
+    QByteArray result;
+
+    switch (specifier.type) {
 
         case 's':
         case 'b':
@@ -2009,44 +2079,47 @@ static QByteArray formatBytesArgument(
                 );
             }
 
-            return value.asBytes()->bytes();
+            result = value.asBytes()->bytes();
+            break;
 
         case 'd':
         case 'i':
 
-            return QByteArray::number(
-                value.toBigInt().convert_to<long long>()
-            );
+            result = QByteArray::fromStdString(value.toBigInt().str());
+            break;
 
         case 'x':
 
-            return QByteArray::number(
+            result = QByteArray::number(
                 value.toBigInt().convert_to<long long>(),
                 16
             );
 
+            break;
+
         case 'X': {
 
-            QByteArray result =
+            result =
                 QByteArray::number(
                     value.toBigInt().convert_to<long long>(),
                     16
-                );
+                ).toUpper();
 
-            return result.toUpper();
+            break;
         }
 
         case 'o':
 
-            return QByteArray::number(
+            result = QByteArray::number(
                 value.toBigInt().convert_to<long long>(),
                 8
             );
 
+            break;
+
         case 'c': {
 
-            const auto code =
-                value.toBigInt();
+            const auto code = value.toBigInt();
 
             if (code < 0 || code > 255) {
 
@@ -2055,16 +2128,22 @@ static QByteArray formatBytesArgument(
                 );
             }
 
-            return QByteArray(
+            result = QByteArray(
                 1,
                 static_cast<char>(code)
             );
+
+            break;
+
         }
+
         default: throw std::runtime_error(
         QString("unsupported format character '%1'")
-            .arg(specifier)
+            .arg(specifier.type)
             .toStdString());
     }
+
+    return applyWidth(result, specifier);
 }
 
 Value BytesValue::mod(const Value& rhs) const {
@@ -2101,9 +2180,11 @@ Value BytesValue::mod(const Value& rhs) const {
             throw std::runtime_error("incomplete format");
         }
 
-        const char spec = data[++i];
+        ++i;
 
-        if (spec == '%') {
+        BytesFormatSpec spec = parseBytesFormat(data, i);
+
+        if (spec.type == '%') {
 
             result.append('%');
             continue;

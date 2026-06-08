@@ -2291,6 +2291,23 @@ def run_cppython(cmds: str | list[str]) -> str:
     # escaped percent
     ("b'100%%' % ()", "b'100%'"),
 
+    # выравнивание
+    ("b'%5d' % 42", "b'   42'"),
+    ("b'%3d' % 42", "b' 42'"),
+    ("b'%2d' % 42", "b'42'"),
+
+    ("b'%5s' % b'ab'", "b'   ab'"),
+    ("b'%3s' % b'ab'", "b' ab'"),
+    ("b'%2s' % b'ab'", "b'ab'"),
+
+    ("b'%-5s' % b'ab'", "b'ab   '"),
+    ("b'%-5d' % 42", "b'42   '"),
+
+    ("b'%5d %5d' % (1, 2)", "b'    1     2'"),
+
+    ("b'%5x' % 255", "b'   ff'"),
+    ("b'%5X' % 255", "b'   FF'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
