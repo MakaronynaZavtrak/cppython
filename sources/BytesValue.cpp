@@ -1997,6 +1997,7 @@ Value BytesValue::translate(
 struct BytesFormatSpec {
 
     bool leftAlign = false;
+    bool zeroPad = false;
     int width = 0;
     char type = '\0';
 };
@@ -2007,12 +2008,14 @@ static BytesFormatSpec parseBytesFormat(
 
     BytesFormatSpec spec;
 
-    if (
-        pos < format.size() &&
-        format[pos] == '-'
-    ) {
+    if (pos < format.size() && format[pos] == '-') {
 
         spec.leftAlign = true;
+        ++pos;
+    }
+
+    if (pos < format.size() && format[pos] == '0') {
+        spec.zeroPad = true;
         ++pos;
     }
 
@@ -2025,10 +2028,7 @@ static BytesFormatSpec parseBytesFormat(
         )
     ) {
 
-        spec.width =
-            spec.width * 10 +
-            (format[pos] - '0');
-
+        spec.width = spec.width * 10 + (format[pos] - '0');
         ++pos;
     }
 
@@ -2058,7 +2058,17 @@ static QByteArray applyWidth(
         return value + QByteArray(padding, ' ');
     }
 
-    return QByteArray(padding, ' ') + value;
+    const char fillChar = spec.zeroPad ? '0' : ' ';
+
+    if (fillChar == '0' && !value.isEmpty() && value[0] == '-') {
+
+        return "-"
+            + QByteArray(padding, '0')
+            + value.mid(1);
+    }
+
+
+    return QByteArray(padding, fillChar) + value;
 }
 
 

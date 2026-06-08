@@ -2308,6 +2308,18 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'%5x' % 255", "b'   ff'"),
     ("b'%5X' % 255", "b'   FF'"),
 
+    # zero padding
+    ("b'%05d' % 42", "b'00042'"),
+    ("b'%04d' % 7", "b'0007'"),
+    ("b'%03d' % 123", "b'123'"),
+
+    ("b'%05d' % -42", "b'-0042'"),
+
+    ("b'%05x' % 255", "b'000ff'"),
+    ("b'%05X' % 255", "b'000FF'"),
+
+    ("b'%05o' % 8", "b'00010'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
