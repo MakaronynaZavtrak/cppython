@@ -1716,6 +1716,58 @@ Value BytesValue::maketrans(const std::vector<Value>& args) {
     );
 }
 
+Value BytesValue::translate(
+    const Value& table,
+    const std::optional<Value>& deleteBytes) const {
+
+    if (!table.isBytes()) {
+        throw std::runtime_error(
+            "translate table must be bytes"
+        );
+    }
+
+    const QByteArray mapping = table.asBytes()->bytes();
+
+    if (mapping.size() != 256) {
+        throw std::runtime_error(
+            "translation table must be 256 characters long"
+        );
+    }
+
+    QByteArray deleteSet;
+
+    if (deleteBytes.has_value()) {
+
+        if (!deleteBytes->isBytes()) {
+            throw std::runtime_error(
+                "delete argument must be bytes"
+            );
+        }
+
+        deleteSet = deleteBytes->asBytes()->bytes();
+    }
+
+    QByteArray result;
+    result.reserve(data.size());
+
+    for (const unsigned char byte : data) {
+
+        if (deleteSet.contains(
+                static_cast<char>(byte)
+            )) {
+            continue;
+            }
+
+        result.append(mapping[byte]);
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(result)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

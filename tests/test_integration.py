@@ -2173,6 +2173,25 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytes.maketrans(b'\\x00', b'\\xff')[0]", "255"),
     ("bytes.maketrans(b'\\xff', b'\\x00')[255]", "0"),
 
+    # translate
+    ("b'abc'.translate(bytes.maketrans(b'', b''))", "b'abc'"),
+
+    ("b'abc'.translate(bytes.maketrans(b'a', b'x'))", "b'xbc'"),
+    ("b'abc'.translate(bytes.maketrans(b'abc', b'xyz'))", "b'xyz'"),
+
+    ("b'aaaa'.translate(bytes.maketrans(b'a', b'b'))", "b'bbbb'"),
+
+    ("b''.translate(bytes.maketrans(b'a', b'b'))", "b''"),
+
+    ("b'abc'.translate(bytes.maketrans(b'', b''), b'b')", "b'ac'"),
+    ("b'abcabc'.translate(bytes.maketrans(b'', b''), b'bc')", "b'aa'"),
+
+    ("b'abc'.translate(bytes.maketrans(b'a', b'x'), b'c')", "b'xb'"),
+
+    ("b'\\x00\\x01\\x02'.translate(bytes.maketrans(b'\\x01', b'\\xff'))", "b'\\x00\\xff\\x02'"),
+
+    ("b'hello'.translate(bytes.maketrans(b'helo', b'HELO'))", "b'HELLO'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

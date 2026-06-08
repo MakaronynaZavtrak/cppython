@@ -148,5 +148,9 @@ public:
 
     static Value maketrans(const std::vector<Value>& args);
 
+    [[nodiscard]]Value translate(
+    const Value& table,
+    const std::optional<Value>& deleteBytes = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

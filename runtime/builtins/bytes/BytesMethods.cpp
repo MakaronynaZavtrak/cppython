@@ -1010,6 +1010,30 @@ namespace {
         );
     }
 
+    Value makeTranslateMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "translate",
+
+            [obj](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&
+            ) -> Value {
+
+                expectArgsRange(args, 1, 2, "translate");
+
+                std::optional<Value> deleteBytes;
+
+                if (args.size() == 2) {
+                    deleteBytes = args[1];
+                }
+
+                return obj.asBytes()->translate(args[0], deleteBytes);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -1060,7 +1084,8 @@ namespace {
         REGISTER_METHOD("hex", makeHexMethod),
         REGISTER_METHOD("fromhex", makeFromHexMethod),
         REGISTER_METHOD("decode", makeDecodeMethod),
-        REGISTER_METHOD("maketrans", makeMakeTransMethod)
+        REGISTER_METHOD("maketrans", makeMakeTransMethod),
+        REGISTER_METHOD("translate", makeTranslateMethod)
     };
 }
 
