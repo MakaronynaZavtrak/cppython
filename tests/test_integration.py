@@ -2366,6 +2366,29 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'% #x' % 255", "b' 0xff'"),
     ("b'% #o' % 8", "b' 0o10'"),
 
+    # precision strings
+    ("b'%.3s' % b'abcdef'", "b'abc'"),
+    ("b'%.5b' % b'hello world'", "b'hello'"),
+
+    # precision int
+    ("b'%.5d' % 42", "b'00042'"),
+    ("b'%.5i' % 42", "b'00042'"),
+
+    ("b'%.4x' % 255", "b'00ff'"),
+    ("b'%.4X' % 255", "b'00FF'"),
+
+    ("b'%.5o' % 8", "b'00010'"),
+
+    # width + precision
+    ("b'%8.5d' % 42", "b'   00042'"),
+    ("b'%10.4x' % 255", "b'      00ff'"),
+
+    # precision + sign
+    ("b'%+.5d' % 42", "b'+00042'"),
+    ("b'% .5d' % 42", "b' 00042'"),
+
+    ("b'%08.5d' % 42", "b'00000042'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

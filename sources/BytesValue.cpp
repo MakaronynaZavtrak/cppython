@@ -2001,7 +2001,10 @@ struct BytesFormatSpec {
     bool showSign = false;
     bool spaceSign = false;
     bool alternate = false;
+    bool hasPrecision = false;
+
     int width = 0;
+    int precision = 0;
     char type = '\0';
 };
 
@@ -2055,6 +2058,26 @@ static BytesFormatSpec parseBytesFormat(
 
         spec.width = spec.width * 10 + (format[pos] - '0');
         ++pos;
+    }
+
+    if (pos < format.size() && format[pos] == '.') {
+
+        spec.hasPrecision = true;
+
+        ++pos;
+
+        while (
+            pos < format.size() &&
+            std::isdigit(
+                static_cast<unsigned char>(
+                    format[pos]
+                )
+            )
+        ) {
+            spec.precision = spec.precision * 10 + (format[pos] - '0');
+
+            ++pos;
+        }
     }
 
     if (pos >= format.size()) {
@@ -2132,6 +2155,66 @@ static void applySign(
     if (spec.spaceSign) {
 
         result.prepend(' ');
+    }
+}
+
+static QByteArray applyPrecision(
+    QByteArray value,
+    const BytesFormatSpec& spec) {
+
+    if (!spec.hasPrecision) {
+        return value;
+    }
+
+    switch (spec.type) {
+
+        case 's':
+        case 'b':
+
+            if (value.size() > spec.precision) {
+
+                value = value.left(spec.precision);
+            }
+
+            return value;
+
+        case 'd':
+        case 'i':
+        case 'x':
+        case 'X':
+        case 'o': {
+            QByteArray prefix;
+
+            if (
+                value.startsWith("0x") ||
+                value.startsWith("0X") ||
+                value.startsWith("0o")
+            ) {
+                prefix = value.left(2);
+                value = value.mid(2);
+            }
+            else if (
+                !value.isEmpty() &&
+                (
+                    value[0] == '+' ||
+                    value[0] == '-' ||
+                    value[0] == ' '
+                )
+            ) {
+                prefix = value.left(1);
+                value = value.mid(1);
+            }
+
+            while (value.size() < spec.precision) {
+
+                value.prepend('0');
+            }
+
+            return prefix + value;
+        }
+
+        default:
+            return value;
     }
 }
 
@@ -2246,6 +2329,8 @@ static QByteArray formatBytesArgument(
             .arg(specifier.type)
             .toStdString());
     }
+
+    result = applyPrecision(result, specifier);
 
     return applyWidth(result, specifier);
 }
