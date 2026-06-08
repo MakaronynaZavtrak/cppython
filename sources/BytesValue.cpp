@@ -1999,6 +1999,7 @@ struct BytesFormatSpec {
     bool leftAlign = false;
     bool zeroPad = false;
     bool showSign = false;
+    bool alternate = false;
     int width = 0;
     char type = '\0';
 };
@@ -2024,6 +2025,11 @@ static BytesFormatSpec parseBytesFormat(
         } else if (format[pos] == '0') {
 
             spec.zeroPad = true;
+            ++pos;
+
+        } else if (format[pos] == '#') {
+
+            spec.alternate = true;
             ++pos;
 
         } else {
@@ -2073,18 +2079,47 @@ static QByteArray applyWidth(
 
     const char fillChar = spec.zeroPad ? '0' : ' ';
 
-    if (fillChar == '0' && !value.isEmpty() &&
-        (value[0] == '-' || value[0] == '+')) {
+    if (fillChar == '0') {
 
-        return value[0]
+    if (
+        value.startsWith("-") ||
+        value.startsWith("+")
+    ) {
+
+        return value.left(1)
             + QByteArray(padding, '0')
             + value.mid(1);
     }
+
+    if (
+        value.startsWith("0x") ||
+        value.startsWith("0X") ||
+        value.startsWith("0o")
+    ) {
+
+        return value.left(2)
+            + QByteArray(padding, '0')
+            + value.mid(2);
+    }
+}
 
 
     return QByteArray(padding, fillChar) + value;
 }
 
+static void applySign(
+    QByteArray& result,
+    const BytesFormatSpec& spec,
+    const Value::BigInt& number) {
+
+    if (
+        spec.showSign &&
+        number >= 0
+    ) {
+
+        result.prepend('+');
+    }
+}
 
 static QByteArray formatBytesArgument(
     const BytesFormatSpec& specifier,
@@ -2121,34 +2156,59 @@ static QByteArray formatBytesArgument(
             break;
         }
 
-        case 'x':
+        case 'x': {
+
+            const auto number = value.toBigInt();
 
             result = QByteArray::number(
-                value.toBigInt().convert_to<long long>(),
+                number.convert_to<long long>(),
                 16
             );
 
-            break;
+            if (specifier.alternate) {
+                result.prepend("0x");
+            }
 
-        case 'X': {
-
-            result =
-                QByteArray::number(
-                    value.toBigInt().convert_to<long long>(),
-                    16
-                ).toUpper();
+            applySign(result, specifier, number);
 
             break;
         }
 
-        case 'o':
+        case 'X': {
+
+            const auto number = value.toBigInt();
+
+            result =
+                QByteArray::number(
+                    number.convert_to<long long>(),
+                    16
+                ).toUpper();
+
+            if (specifier.alternate) {
+                result.prepend("0X");
+            }
+
+            applySign(result, specifier, number);
+
+            break;
+        }
+
+        case 'o': {
+            const auto number = value.toBigInt();
 
             result = QByteArray::number(
-                value.toBigInt().convert_to<long long>(),
+                number.convert_to<long long>(),
                 8
             );
 
+            if (specifier.alternate) {
+                result.prepend("0o");
+            }
+
+            applySign(result, specifier, number);
+
             break;
+        }
 
         case 'c': {
 

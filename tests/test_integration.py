@@ -2334,6 +2334,21 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'%+3d' % 123", "b'+123'"),
 
+    # alternate form
+    ("b'%#x' % 255", "b'0xff'"),
+    ("b'%#X' % 255", "b'0XFF'"),
+    ("b'%#o' % 8", "b'0o10'"),
+
+    ("b'%#5x' % 255", "b' 0xff'"),
+    ("b'%#5o' % 8", "b' 0o10'"),
+
+    ("b'%#08x' % 255", "b'0x0000ff'"),
+    ("b'%#08X' % 255", "b'0X0000FF'"),
+    ("b'%#08o' % 8", "b'0o000010'"),
+
+    ("b'%#+x' % 255", "b'+0xff'"),
+    ("b'%#+o' % 8", "b'+0o10'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
