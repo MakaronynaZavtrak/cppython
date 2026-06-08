@@ -401,6 +401,23 @@ Value BytesValue::index(
     return result;
 }
 
+Value BytesValue::rindex(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    Value result = rfind(sub, start, end);
+
+    if (result.toBigInt() == Value::BigInt(-1)) {
+
+        throw std::runtime_error(
+            "ValueError: subsection not found"
+        );
+    }
+
+    return result;
+}
+
 Value BytesValue::count(
     const Value& sub,
     const std::optional<Value>& start,

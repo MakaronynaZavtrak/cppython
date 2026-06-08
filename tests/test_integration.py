@@ -1317,6 +1317,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\xff\\xfe\\xfd'.index(b'\\xfe')", "1"),
     ("b'\\x00\\x00\\x01'.index(b'\\x00\\x01')", "1"),
 
+    # rindex
+    ("b'abc'.rindex(b'a')", "0"),
+    ("b'abc'.rindex(b'b')", "1"),
+    ("b'abc'.rindex(b'c')", "2"),
+
+    ("b'abcabc'.rindex(b'abc')", "3"),
+    ("b'abcabc'.rindex(b'bc')", "4"),
+    ("b'ababa'.rindex(b'aba')", "2"),
+
+    ("b'abcabc'.rindex(b'abc', 1)", "3"),
+
+    ("b'abcabc'.rindex(b'bc', 0, 4)", "1"),
+
+    ("b'\\x00\\x01\\x02\\x01'.rindex(b'\\x01')", "3"),
+    ("b'\\xff\\xfe\\xfd\\xfe'.rindex(b'\\xfe')", "3"),
+
     # count
     ("b'abc'.count(b'a')", "1"),
     ("b'abc'.count(b'b')", "1"),
