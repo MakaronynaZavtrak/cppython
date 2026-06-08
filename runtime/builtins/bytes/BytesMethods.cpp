@@ -1092,6 +1092,38 @@ namespace {
         );
     }
 
+    Value makeRSplitMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "rsplit",
+
+            [obj](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+                -> Value {
+
+                expectArgsRange(args, 0, 2, "rsplit");
+
+                std::optional<Value> sep;
+                Value::BigInt maxsplit = -1;
+
+                if (args.size() >= 1) {
+
+                    if (!args[0].isNone()) {
+                        sep = args[0];
+                    }
+                }
+
+                if (args.size() == 2) {
+                    maxsplit = args[1].toBigInt();
+                }
+
+                return obj.asBytes()->rsplit(sep, maxsplit);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -1113,6 +1145,7 @@ namespace {
         REGISTER_METHOD("startswith", makeStartsWithMethod),
         REGISTER_METHOD("endswith", makeEndsWithMethod),
         REGISTER_METHOD("split", makeSplitMethod),
+        REGISTER_METHOD("rsplit", makeRSplitMethod),
         REGISTER_METHOD("join", makeJoinMethod),
         REGISTER_METHOD("replace", makeReplaceMethod),
         REGISTER_METHOD("isascii", makeIsAsciiMethod),

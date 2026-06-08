@@ -1445,6 +1445,30 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'one two three'.split(None, 1)", "[b'one', b'two three']"),
 
+    # rsplit
+    ("b'abc'.rsplit()", "[b'abc']"),
+    ("b''.rsplit()", "[]"),
+
+    ("b'a b c'.rsplit()", "[b'a', b'b', b'c']"),
+    ("b'a  b   c'.rsplit()", "[b'a', b'b', b'c']"),
+
+    ("b'a,b,c'.rsplit(b',')", "[b'a', b'b', b'c']"),
+
+    ("b'a,b,c'.rsplit(b',', 1)", "[b'a,b', b'c']"),
+    ("b'a,b,c'.rsplit(b',', 2)", "[b'a', b'b', b'c']"),
+
+    ("b'a,,b'.rsplit(b',')", "[b'a', b'', b'b']"),
+    ("b',a,'.rsplit(b',')", "[b'', b'a', b'']"),
+
+    ("b'abc'.rsplit(b'x')", "[b'abc']"),
+
+    ("b''.rsplit(b',')", "[b'']"),
+
+    ("b'one two three'.rsplit(None, 1)", "[b'one two', b'three']"),
+
+    ("b'\\x00,\\x01,\\x02'.rsplit(b',', 1)", "[b'\\x00,\\x01', b'\\x02']"),
+
+    # join
     ("b','.join([b'a', b'b', b'c'])", "b'a,b,c'"),
     ("b''.join([b'a', b'b', b'c'])", "b'abc'"),
 

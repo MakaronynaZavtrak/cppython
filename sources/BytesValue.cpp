@@ -602,6 +602,161 @@ Value BytesValue::split(
 
 }
 
+Value BytesValue::rsplit(const std::optional<Value> &sep, const Value::BigInt &maxsplit) const {
+
+    if (!sep.has_value()) {
+
+        std::vector<QByteArray> parts;
+
+        qsizetype i = data.size() - 1;
+        Value::BigInt splits = 0;
+
+        while (i >= 0) {
+
+            while (
+                i >= 0 &&
+                isAsciiWhitespace(
+                    static_cast<unsigned char>(data[i])
+                )
+            ) {
+                --i;
+            }
+
+            if (i < 0) {
+                break;
+            }
+
+            const qsizetype end = i + 1;
+
+            while (
+                i >= 0 &&
+                !isAsciiWhitespace(
+                    static_cast<unsigned char>(data[i])
+                )
+            ) {
+                --i;
+            }
+
+            const qsizetype start = i + 1;
+
+            parts.push_back(
+                data.mid(start, end - start)
+            );
+
+            ++splits;
+
+            if (
+                maxsplit >= 0 &&
+                splits >= maxsplit
+            ) {
+
+                while (
+                    i >= 0 &&
+                    isAsciiWhitespace(
+                        static_cast<unsigned char>(data[i])
+                    )
+                ) {
+                    --i;
+                }
+
+                if (i >= 0) {
+                    parts.push_back(
+                        data.left(i + 1)
+                    );
+                }
+
+                break;
+            }
+        }
+
+        std::reverse(parts.begin(), parts.end());
+
+        std::vector<Value> result;
+
+        for (const auto& part : parts) {
+
+            result.emplace_back(
+                std::make_shared<BytesValue>(
+                    part
+                )
+            );
+        }
+
+        return Value(
+            std::make_shared<ListValue>(
+                std::move(result)
+            )
+        );
+    }
+
+    const QByteArray delimiter = sep->asBytes("rsplit")->bytes();
+
+    if (delimiter.isEmpty()) {
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    std::vector<QByteArray> parts;
+
+    qsizetype end = data.size();
+    Value::BigInt splits = 0;
+
+    while (
+        maxsplit < 0 ||
+        splits < maxsplit
+    ) {
+
+        const qsizetype searchFrom = end - delimiter.size();
+
+        if (searchFrom < 0) {
+            break;
+        }
+
+        const qsizetype pos =
+            data.lastIndexOf(
+                delimiter,
+                searchFrom
+            );
+
+        if (pos == -1) {
+            break;
+        }
+
+        parts.push_back(
+            data.mid(
+                pos + delimiter.size(),
+                end - pos - delimiter.size()
+            )
+        );
+
+        end = pos;
+
+        ++splits;
+    }
+
+    parts.push_back(data.left(end));
+
+    std::reverse(parts.begin(), parts.end());
+
+    std::vector<Value> result;
+
+    for (const auto& part : parts) {
+
+        result.emplace_back(
+            std::make_shared<BytesValue>(
+                part
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<ListValue>(
+            std::move(result)
+        )
+    );
+}
+
 Value BytesValue::join(const Value& iterable) const {
 
     if (!iterable.isIterable()) {

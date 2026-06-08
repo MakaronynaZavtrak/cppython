@@ -80,6 +80,10 @@ public:
     const std::optional<Value>& sep = std::nullopt,
     const Value::BigInt &maxsplit = -1) const;
 
+    [[nodiscard]] Value rsplit(
+    const std::optional<Value>& sep = std::nullopt,
+    const Value::BigInt& maxsplit = -1) const;
+
     [[nodiscard]] Value join(const Value& iterable) const;
 
     [[nodiscard]] Value replace(
