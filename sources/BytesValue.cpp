@@ -1999,6 +1999,7 @@ struct BytesFormatSpec {
     bool leftAlign = false;
     bool zeroPad = false;
     bool showSign = false;
+    bool spaceSign = false;
     bool alternate = false;
     int width = 0;
     char type = '\0';
@@ -2030,6 +2031,11 @@ static BytesFormatSpec parseBytesFormat(
         } else if (format[pos] == '#') {
 
             spec.alternate = true;
+            ++pos;
+
+        } else if (format[pos] == ' ') {
+
+            spec.spaceSign = true;
             ++pos;
 
         } else {
@@ -2081,9 +2087,10 @@ static QByteArray applyWidth(
 
     if (fillChar == '0') {
 
-    if (
+        if (
         value.startsWith("-") ||
-        value.startsWith("+")
+        value.startsWith("+") ||
+        value.startsWith(" ")
     ) {
 
         return value.left(1)
@@ -2112,12 +2119,19 @@ static void applySign(
     const BytesFormatSpec& spec,
     const Value::BigInt& number) {
 
-    if (
-        spec.showSign &&
-        number >= 0
-    ) {
+    if (number < 0) {
+        return;
+    }
+
+    if (spec.showSign) {
 
         result.prepend('+');
+        return;
+    }
+
+    if (spec.spaceSign) {
+
+        result.prepend(' ');
     }
 }
 
@@ -2148,10 +2162,7 @@ static QByteArray formatBytesArgument(
 
             result = QByteArray::fromStdString(number.str());
 
-            if (specifier.showSign && number >= 0) {
-
-                result.prepend('+');
-            }
+            applySign(result, specifier, number);
 
             break;
         }
