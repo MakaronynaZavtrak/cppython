@@ -217,7 +217,7 @@ Value constructClass(const Value::ClassPtr& cls,
             } else if (encoding.has_value()) {
 
                 actualEncoding = *encoding;
-
+            //TODO: if (errors.has_value()) {}
             } else {
 
                 throw std::runtime_error(

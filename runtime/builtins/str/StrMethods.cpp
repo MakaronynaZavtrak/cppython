@@ -1092,7 +1092,7 @@ Value getStrAttr(const Value& obj, const QString& attr) {
     return getBuiltinAttr(obj, attr, STR_METHODS, "str");
 }
 
-Value makeMaketransClassBuiltin() {
+Value makeMakeTransStrClassBuiltin() {
     return makeBuiltin(
         "maketrans",
 

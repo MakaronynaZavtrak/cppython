@@ -113,9 +113,9 @@ void Interpreter::run(int argc, char* argv[]) {
     Runtime::strClass->name = "str";
     Runtime::strClass->bases.push_back(Runtime::objectClass);
 
-    auto builtin = std::get<Value::BuiltinFunctionPtr>(makeMaketransClassBuiltin().data);
+    auto builtin = std::get<Value::BuiltinFunctionPtr>(makeMakeTransStrClassBuiltin().data);
 
-    Runtime::strClass->attributes["maketrans"] = makeMaketransClassBuiltin();
+    Runtime::strClass->attributes["maketrans"] = makeMakeTransStrClassBuiltin();
 
     globalEnv->set("str", Value(Runtime::strClass));
 
@@ -130,6 +130,7 @@ void Interpreter::run(int argc, char* argv[]) {
     Runtime::bytesClass->bases.push_back(Runtime::objectClass);
 
     Runtime::bytesClass->attributes["fromhex"] = makeFromHexClassBuiltin();
+    Runtime::bytesClass->attributes["maketrans"] = makeMakeTransBytesClassBuiltin();
 
     globalEnv->set("bytes", Value(Runtime::bytesClass));
     Runtime::bytesClass->attributes["__call__"] = globalEnv->get("__bytes_call__");

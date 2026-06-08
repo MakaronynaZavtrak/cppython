@@ -1670,6 +1670,52 @@ Value BytesValue::decode(
     );
 }
 
+Value BytesValue::maketrans(const std::vector<Value>& args) {
+
+    if (args.size() != 2) {
+        throw std::runtime_error(
+            "maketrans expected 2 arguments"
+        );
+    }
+
+    if (
+        !args[0].isBytes() ||
+        !args[1].isBytes()
+    ) {
+        throw std::runtime_error(
+            "maketrans arguments must be bytes"
+        );
+    }
+
+    const QByteArray from = args[0].asBytes()->bytes();
+
+    const QByteArray to = args[1].asBytes()->bytes();
+
+    if (from.size() != to.size()) {
+        throw std::runtime_error(
+            "ValueError: maketrans arguments must have equal length"
+        );
+    }
+
+    QByteArray table(256, '\0');
+
+    for (int i = 0; i < 256; ++i) {
+        table[i] = static_cast<char>(i);
+    }
+
+    for (int i = 0; i < from.size(); ++i) {
+
+        const auto src = static_cast<unsigned char>(from[i]);
+        table[src] = to[i];
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(
+            std::move(table)
+        )
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

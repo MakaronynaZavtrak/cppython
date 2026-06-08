@@ -2148,6 +2148,31 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'abc'.decode('utf8')", "'abc'"),
     ("b'abc'.decode('latin1')", "'abc'"),
 
+    # maketrans создаёт таблицу длиной 256
+    ("len(bytes.maketrans(b'abc', b'xyz'))", "256"),
+
+    # замена отдельных символов
+    ("bytes.maketrans(b'a', b'x')[97]", "120"),
+    ("bytes.maketrans(b'b', b'y')[98]", "121"),
+    ("bytes.maketrans(b'c', b'z')[99]", "122"),
+
+    # остальные байты не меняются
+    ("bytes.maketrans(b'a', b'x')[100]", "100"),
+    ("bytes.maketrans(b'a', b'x')[0]", "0"),
+    ("bytes.maketrans(b'a', b'x')[255]", "255"),
+
+    # несколько замен
+    ("bytes.maketrans(b'abc', b'xyz')[97]", "120"),
+    ("bytes.maketrans(b'abc', b'xyz')[98]", "121"),
+    ("bytes.maketrans(b'abc', b'xyz')[99]", "122"),
+
+    # пустые аргументы
+    ("len(bytes.maketrans(b'', b''))", "256"),
+
+    # полное отображение одного байта
+    ("bytes.maketrans(b'\\x00', b'\\xff')[0]", "255"),
+    ("bytes.maketrans(b'\\xff', b'\\x00')[255]", "0"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

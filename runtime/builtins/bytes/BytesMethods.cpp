@@ -994,6 +994,22 @@ namespace {
         );
     }
 
+    Value makeMakeTransMethod(const Value&) {
+
+        return makeBuiltin(
+            "maketrans",
+
+            [](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+                -> Value {
+
+                return BytesValue::maketrans(args);
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -1043,7 +1059,8 @@ namespace {
         REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
         REGISTER_METHOD("hex", makeHexMethod),
         REGISTER_METHOD("fromhex", makeFromHexMethod),
-        REGISTER_METHOD("decode", makeDecodeMethod)
+        REGISTER_METHOD("decode", makeDecodeMethod),
+        REGISTER_METHOD("maketrans", makeMakeTransMethod)
     };
 }
 
@@ -1065,6 +1082,21 @@ Value makeFromHexClassBuiltin() {
             expectArgs(args, 1, "fromhex");
 
             return BytesValue::fromHex(args[0].toString());
+        }
+    );
+}
+
+Value makeMakeTransBytesClassBuiltin() {
+
+    return makeBuiltin(
+        "maketrans",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>&)
+        -> Value {
+
+            return BytesValue::maketrans(args);
         }
     );
 }

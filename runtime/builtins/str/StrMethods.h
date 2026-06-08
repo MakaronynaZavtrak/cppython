@@ -8,6 +8,6 @@
 
 Value getStrAttr(const Value& obj, const QString& attr);
 
-Value makeMaketransClassBuiltin();
+Value makeMakeTransStrClassBuiltin();
 
 #endif //CPPYTHON_STRMETHODS_H

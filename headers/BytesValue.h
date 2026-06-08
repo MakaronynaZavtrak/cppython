@@ -146,5 +146,7 @@ public:
     const QString& encoding = "utf-8",
     const QString& errors = "strict") const;
 
+    static Value maketrans(const std::vector<Value>& args);
+
 };
 #endif //CPPYTHON_BYTESVALUE_H
