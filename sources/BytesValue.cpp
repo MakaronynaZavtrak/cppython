@@ -2170,6 +2170,7 @@ static QByteArray applyPrecision(
 
         case 's':
         case 'b':
+        case 'r':
 
             if (value.size() > spec.precision) {
 
@@ -2322,6 +2323,13 @@ static QByteArray formatBytesArgument(
 
             break;
 
+        }
+
+        case 'r': {
+
+            result = value.repr().toUtf8();
+
+            break;
         }
 
         default: throw std::runtime_error(

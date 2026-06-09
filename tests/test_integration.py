@@ -2389,6 +2389,14 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("b'%08.5d' % 42", "b'00000042'"),
 
+    # %r
+    ("b'%r' % b'abc'", "b\"b'abc'\""),
+    ("b'%r' % 42", "b'42'"),
+    ("b'%r' % 'abc'", "b\"'abc'\""),
+    ("b'%.5r' % b'abcdef'", "b\"b'abc\""),
+    ("b'%10r' % 42", "b'        42'"),
+    ("b'%-10r' % 42", "b'42        '"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
