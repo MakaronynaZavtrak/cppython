@@ -2392,7 +2392,8 @@ static QByteArray formatBytesArgument(
             break;
         }
 
-        case 'f': {
+        case 'f':
+        case 'F': {
 
             const auto number = value.toBigFloat();
 
