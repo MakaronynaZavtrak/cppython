@@ -175,6 +175,10 @@ QHash<Value, Value> DictValue::getElements() const {
       return elements;
 }
 
+const QHash<Value, Value>& DictValue::getElementsRef() const {
+      return elements;
+}
+
 Value DictValue::keys(const std::shared_ptr<DictValue>& self) {
       return Value(std::make_shared<DictKeysView>(self));
 }

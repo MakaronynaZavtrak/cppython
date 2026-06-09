@@ -1195,8 +1195,7 @@ bool Value::isHashable() const {
     if (isNumeric())
         return true;
 
-    // str
-    if (std::holds_alternative<StrPtr>(data)) {
+    if (isString()) {
         return true;
     }
 
@@ -1205,19 +1204,15 @@ bool Value::isHashable() const {
     }
 
     // tuple
-    if (std::holds_alternative<TuplePtr>(data)) {
+    if (isTuple()) {
 
-        const auto& items =
-            std::get<TuplePtr>(data)->items;
+        const auto& items = asTuple()->items;
 
-        for (const auto& item : items) {
-
-            if (!item.isHashable()) {
-                return false;
-            }
-        }
-
-        return true;
+        return std::all_of(
+            items.begin(),
+            items.end(),
+            [&](const Value& item) { return item.isHashable(); }
+        );
     }
 
     return false;
@@ -1249,23 +1244,17 @@ std::size_t Value::hash() const {
 
     // str
     if (isString()) {
-
-        return qHash(
-            std::get<StrPtr>(data)->toString()
-        );
+        return qHash(asString()->toString());
     }
 
     if (isBytes()) {
-
-        return qHash(
-            std::get<BytesPtr>(data)->bytes()
-        );
+        return qHash(asBytes()->bytes());
     }
 
     // tuple
     if (isTuple()) {
 
-        const auto& items = std::get<TuplePtr>(data)->items;
+        const auto& items = asTuple()->items;
 
         std::size_t seed = 0;
 
@@ -1288,7 +1277,6 @@ bool Value::isIterable() const {
            isTuple() ||
            isString() ||
            isBytes() ||
-           isBytes() ||
            isSet() ||
            isDict() ||
            isDictKeysView() ||
@@ -1300,23 +1288,23 @@ Value::IteratorPtr Value::getIterator() const {
 
     if (isSet()) {
         return std::static_pointer_cast<IteratorValue>(
-            std::make_shared<SetIterator>(std::get<SetPtr>(data)));
+            std::make_shared<SetIterator>(asSet()));
     }
 
     if (isList()) {
         return std::static_pointer_cast<IteratorValue>(
-                std::make_shared<ListIterator>(std::get<ListPtr>(data)));
+                std::make_shared<ListIterator>(asList()));
     }
 
     if (isTuple()) {
         return std::static_pointer_cast<IteratorValue>(
-            std::make_shared<TupleIterator>(std::get<TuplePtr>(data)));
+            std::make_shared<TupleIterator>(asTuple()));
     }
 
     if (isDictKeysView()) {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<DictKeysIterator>(
-                std::get<DictKeysViewPtr>(data)->getDict()
+                asDictKeysView()->getDict()
             )
         );
     }
@@ -1324,7 +1312,7 @@ Value::IteratorPtr Value::getIterator() const {
     if (isDictItemsView()) {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<DictItemsIterator>(
-                std::get<DictItemsViewPtr>(data)->getDict()
+                asDictItemsView()->getDict()
             )
         );
     }
@@ -1332,7 +1320,7 @@ Value::IteratorPtr Value::getIterator() const {
     if (isDictValuesView()) {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<DictValuesIterator>(
-                std::get<DictValuesViewPtr>(data)->getDict()
+                asDictValuesView()->getDict()
             )
         );
     }
@@ -1340,7 +1328,7 @@ Value::IteratorPtr Value::getIterator() const {
     if (isString()) {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<StringIterator>(
-                std::get<StrPtr>(data)->toString()
+                asString()->toString()
             )
         );
     }
@@ -1348,7 +1336,7 @@ Value::IteratorPtr Value::getIterator() const {
     if (isBytes()) {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<BytesIterator>(
-                std::get<BytesPtr>(data)
+                asBytes()
             )
         );
     }
@@ -1356,7 +1344,7 @@ Value::IteratorPtr Value::getIterator() const {
     if (isDict()) {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<DictKeysIterator>(
-                std::get<DictPtr>(data)
+                asDict()
             )
         );
     }

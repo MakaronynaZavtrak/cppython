@@ -48,6 +48,8 @@ public:
 
     [[nodiscard]] QHash<Value, Value> getElements() const;
 
+    [[nodiscard]] const QHash<Value, Value>& getElementsRef() const;
+
     [[nodiscard]] static Value keys(const std::shared_ptr<DictValue>& self);
 
     [[nodiscard]] static Value values(const std::shared_ptr<DictValue>& self);

@@ -2579,6 +2579,21 @@ def run_cppython(cmds: str | list[str]) -> str:
     # отрицательный width
     ("b'%*.*d' % (-8, 5, 42)", "b'00042   '"),
     ("b'%*.*f' % (-8, 2, 3.14159)", "b'3.14    '"),
+
+    # mapping format
+    ("b'%(name)s' % {b'name': b'Alex'}", "b'Alex'"),
+
+    ("b'%(age)d' % {b'age': 42}", "b'42'"),
+
+    ("b'%(x)d %(y)d' % {b'x': 1, b'y': 2}", "b'1 2'"),
+
+    ("b'%(v)f' % {b'v': 3.14}", "b'3.140000'"),
+
+    ("b'%(v).2f' % {b'v': 3.14}", "b'3.14'"),
+
+    ("b'%(name)5s' % {b'name': b'ab'}", "b'   ab'"),
+
+    ("b'%(name)-5s' % {b'name': b'ab'}", "b'ab   '"),
 ])
 
 def test_single_line_expressions(expr, expected):

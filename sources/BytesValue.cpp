@@ -11,6 +11,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "DictValue.h"
+
 QString BytesValue::repr() const {
 
     const bool containsSingle = data.contains('\'');
@@ -2008,6 +2010,9 @@ struct BytesFormatSpec {
     bool widthFromArg = false;
     bool precisionFromArg = false;
 
+    QString mappingKey;
+    bool hasMappingKey = false;
+
     int width = 0;
     int precision = 0;
     char type = '\0';
@@ -2600,7 +2605,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
         arguments = rhs.asTuple()->items;
 
-    } else {
+    } else if (!rhs.isDict()) {
 
         arguments.push_back(rhs);
     }
@@ -2609,11 +2614,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
     QByteArray result;
 
-    for (
-        qsizetype i = 0;
-        i < data.size();
-        ++i
-    ) {
+    for (qsizetype i = 0; i < data.size(); ++i) {
 
         if (data[i] != '%') {
 
@@ -2628,7 +2629,33 @@ Value BytesValue::mod(const Value& rhs) const {
 
         ++i;
 
+        QString mappingKey;
+        bool hasMappingKey = false;
+
+        if (i < data.size() && data[i] == '(') {
+
+            hasMappingKey = true;
+
+            ++i;
+
+            while (i < data.size() && data[i] != ')') {
+
+                mappingKey += QChar(data[i]);
+                ++i;
+            }
+
+            if (i >= data.size() || data[i] != ')') {
+
+                throw std::runtime_error("incomplete format key");
+            }
+
+            ++i;
+        }
+
         BytesFormatSpec spec = parseBytesFormat(data, i);
+
+        spec.hasMappingKey = hasMappingKey;
+        spec.mappingKey = mappingKey;
 
         if (spec.type == '%') {
 
@@ -2680,12 +2707,64 @@ Value BytesValue::mod(const Value& rhs) const {
             }
         }
 
-        if (argIndex >= arguments.size()) {
+        Value currentArg;
 
-            throw std::runtime_error("not enough arguments for format string");
+        if (effectiveSpec.hasMappingKey) {
+
+            if (!rhs.isDict()) {
+
+                throw std::runtime_error(
+                    "format requires a mapping"
+                );
+            }
+
+            auto dict = rhs.asDict();
+
+            const auto& elements = dict->getElementsRef();
+
+            auto bytesKey = Value(
+                std::make_shared<BytesValue>(
+                    effectiveSpec.mappingKey.toUtf8()
+                )
+            );
+
+            auto strKey = Value(
+                std::make_shared<StrValue>(
+                    effectiveSpec.mappingKey
+                )
+            );
+
+            auto it = elements.find(bytesKey);
+
+            if (it == elements.end()) {
+                it = elements.find(strKey);
+            }
+
+            if (it == elements.end()) {
+
+                throw std::runtime_error(
+                    "missing key in mapping"
+                );
+            }
+
+            currentArg = it.value();
+
+        } else {
+
+            if (argIndex >= arguments.size()) {
+
+                throw std::runtime_error(
+                    "not enough arguments for format string"
+                );
+            }
+
+            currentArg = arguments[argIndex++];
         }
 
-        result += formatBytesArgument(effectiveSpec, arguments[argIndex++]);
+        result += formatBytesArgument(
+            effectiveSpec,
+            currentArg
+        );
     }
 
     if (argIndex != arguments.size()) {
