@@ -2375,6 +2375,73 @@ static QByteArray formatBytesArgument(
             break;
         }
 
+        case 'e': {
+
+            const auto number = value.toBigFloat();
+
+            const int precision =
+                specifier.hasPrecision
+                ? specifier.precision
+                : 6;
+
+            std::ostringstream oss;
+
+            oss << std::scientific
+                << std::setprecision(precision)
+                << number;
+
+            result = QByteArray::fromStdString(
+                oss.str()
+            );
+
+            if (number >= 0) {
+
+                if (specifier.showSign) {
+                    result.prepend('+');
+                }
+                else if (specifier.spaceSign) {
+                    result.prepend(' ');
+                }
+            }
+
+            break;
+        }
+
+        case 'E': {
+
+            const auto number = value.toBigFloat();
+
+            const int precision =
+                specifier.hasPrecision
+                ? specifier.precision
+                : 6;
+
+            std::ostringstream oss;
+
+            oss << std::scientific
+                << std::uppercase
+                << std::setprecision(precision)
+                << number;
+
+            result = QByteArray::fromStdString(
+                oss.str()
+            );
+
+            result.replace('e', 'E');
+
+            if (number >= 0) {
+
+                if (specifier.showSign) {
+                    result.prepend('+');
+                }
+                else if (specifier.spaceSign) {
+                    result.prepend(' ');
+                }
+            }
+
+            break;
+        }
+
         default: throw std::runtime_error(
         QString("unsupported format character '%1'")
             .arg(specifier.type)
