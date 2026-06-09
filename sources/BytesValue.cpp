@@ -2185,6 +2185,7 @@ static QByteArray applyPrecision(
 
         case 'd':
         case 'i':
+        case 'u':
         case 'x':
         case 'X':
         case 'o': {
@@ -2291,7 +2292,8 @@ static QByteArray formatBytesArgument(
             break;
 
         case 'd':
-        case 'i': {
+        case 'i':
+        case 'u': {
 
             const auto number = value.toBigInt();
 
