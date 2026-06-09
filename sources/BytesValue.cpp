@@ -2005,6 +2005,8 @@ struct BytesFormatSpec {
     bool spaceSign = false;
     bool alternate = false;
     bool hasPrecision = false;
+    bool widthFromArg = false;
+    bool precisionFromArg = false;
 
     int width = 0;
     int precision = 0;
@@ -2050,6 +2052,24 @@ static BytesFormatSpec parseBytesFormat(
         }
     }
 
+    if (pos < format.size() && format[pos] == '*') {
+
+        spec.widthFromArg = true;
+        ++pos;
+    } else {
+        while (
+        pos < format.size() &&
+            std::isdigit(
+                static_cast<unsigned char>(
+                    format[pos]
+                )
+            )
+        ) {
+            spec.width = spec.width * 10 + (format[pos] - '0');
+            ++pos;
+        }
+    }
+
     while (
         pos < format.size() &&
         std::isdigit(
@@ -2069,17 +2089,25 @@ static BytesFormatSpec parseBytesFormat(
 
         ++pos;
 
-        while (
-            pos < format.size() &&
-            std::isdigit(
-                static_cast<unsigned char>(
-                    format[pos]
-                )
-            )
-        ) {
-            spec.precision = spec.precision * 10 + (format[pos] - '0');
+        if (pos < format.size() && format[pos] == '*') {
 
+            spec.precisionFromArg = true;
             ++pos;
+
+        } else {
+
+            while (
+                pos < format.size() &&
+                std::isdigit(
+                    static_cast<unsigned char>(
+                        format[pos]
+                    )
+                )
+            ) {
+
+                spec.precision = spec.precision * 10 + (format[pos] - '0');
+                ++pos;
+            }
         }
     }
 
@@ -2608,12 +2636,56 @@ Value BytesValue::mod(const Value& rhs) const {
             continue;
         }
 
+        BytesFormatSpec effectiveSpec = spec;
+
+        if (effectiveSpec.widthFromArg) {
+
+            if (argIndex >= arguments.size()) {
+
+                throw std::runtime_error(
+                    "not enough arguments for format string"
+                );
+            }
+
+            effectiveSpec.width =
+                static_cast<int>(
+                    arguments[argIndex++].toBigInt()
+                );
+
+            if (effectiveSpec.width < 0) {
+
+                effectiveSpec.leftAlign = true;
+                effectiveSpec.width = -effectiveSpec.width;
+            }
+        }
+
+        if (effectiveSpec.precisionFromArg) {
+
+            if (argIndex >= arguments.size()) {
+
+                throw std::runtime_error(
+                    "not enough arguments for format string"
+                );
+            }
+
+            effectiveSpec.precision =
+                static_cast<int>(
+                    arguments[argIndex++].toBigInt()
+                );
+
+            if (effectiveSpec.precision < 0) {
+
+                effectiveSpec.hasPrecision = false;
+                effectiveSpec.precision = 0;
+            }
+        }
+
         if (argIndex >= arguments.size()) {
 
             throw std::runtime_error("not enough arguments for format string");
         }
 
-        result += formatBytesArgument(spec, arguments[argIndex++]);
+        result += formatBytesArgument(effectiveSpec, arguments[argIndex++]);
     }
 
     if (argIndex != arguments.size()) {
