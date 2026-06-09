@@ -285,6 +285,8 @@ public:
 
     [[nodiscard]] bool contains(const Value& value) const;
 
+    QString ascii() const;
+
     template<class... Ts>
     struct overloaded : Ts... {
         using Ts::operator()...;

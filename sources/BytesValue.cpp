@@ -2171,6 +2171,7 @@ static QByteArray applyPrecision(
         case 's':
         case 'b':
         case 'r':
+        case 'a':
 
             if (value.size() > spec.precision) {
 
@@ -2328,6 +2329,13 @@ static QByteArray formatBytesArgument(
         case 'r': {
 
             result = value.repr().toUtf8();
+
+            break;
+        }
+
+        case 'a': {
+
+            result = value.ascii().toUtf8();
 
             break;
         }

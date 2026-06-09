@@ -859,6 +859,33 @@ bool Value::contains(const Value &value) const {
     );
 }
 
+QString Value::ascii() const {
+
+    QString reprString = repr();
+
+    QString result;
+
+    for (const QChar ch : reprString) {
+
+        if (ch.unicode() < 128) {
+
+            result += ch;
+        }
+        else {
+
+            result += QString("\\u%1")
+                    .arg(
+                        static_cast<unsigned int>(ch.unicode()),
+                        4,
+                        16,
+                        QChar('0')
+                    );
+        }
+    }
+
+    return result;
+}
+
 
 QString Value::formatFloat(const BigFloat& num) {
     std::string s = num.str(15);
