@@ -2223,6 +2223,53 @@ static QByteArray applyPrecision(
     }
 }
 
+QByteArray stripTrailingZeros(QByteArray value) {
+
+    qsizetype expPos = value.indexOf('e');
+
+    if (expPos == -1)
+        expPos = value.indexOf('E');
+
+    QByteArray exponent;
+
+    if (expPos != -1) {
+
+        exponent = value.mid(expPos);
+        value = value.left(expPos);
+    }
+
+    while (
+        value.contains('.') &&
+        value.endsWith('0')
+    ) {
+        value.chop(1);
+    }
+
+    if (value.endsWith('.')) {
+        value.chop(1);
+    }
+
+    return value + exponent;
+}
+
+int computeExponent(const Value::BigFloat & number) {
+
+    std::ostringstream oss;
+
+    oss << std::scientific
+        << std::setprecision(1)
+        << number;
+
+
+    const int exponent = std::stoi(
+        oss.str().substr(
+            oss.str().find('e') + 1
+        )
+    );
+
+    return exponent;
+}
+
 static QByteArray formatBytesArgument(
     const BytesFormatSpec& specifier,
     const Value& value) {
@@ -2437,6 +2484,67 @@ static QByteArray formatBytesArgument(
                 else if (specifier.spaceSign) {
                     result.prepend(' ');
                 }
+            }
+
+            break;
+        }
+
+        case 'g':
+        case 'G': {
+
+            const auto number = value.toBigFloat();
+
+            int precision =
+                specifier.hasPrecision
+                ? specifier.precision
+                : 6;
+
+            if (precision == 0)
+                precision = 1;
+
+            int exponent = computeExponent(number);
+
+            std::ostringstream oss;
+
+            bool useScientific =
+                exponent < -4 ||
+                exponent >= precision;
+
+            if (useScientific) {
+
+                oss << std::scientific
+                    << std::setprecision(
+                        precision - 1
+                    );
+
+            } else {
+
+                oss << std::fixed
+                    << std::setprecision(
+                        precision - exponent - 1
+                    );
+            }
+
+            oss << number;
+
+            result =
+                QByteArray::fromStdString(
+                    oss.str()
+                );
+
+            result =
+                stripTrailingZeros(result);
+
+            if (specifier.type == 'G') {
+                result.replace('e', 'E');
+            }
+
+            if (number >= 0) {
+
+                if (specifier.showSign)
+                    result.prepend('+');
+                else if (specifier.spaceSign)
+                    result.prepend(' ');
             }
 
             break;
