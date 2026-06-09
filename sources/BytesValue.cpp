@@ -2304,6 +2304,45 @@ int computeExponent(const Value::BigFloat & number) {
     return exponent;
 }
 
+static QByteArray bigIntToBase(
+    Value::BigInt number,
+    int base,
+    bool upper = false
+) {
+
+    if (number == 0)
+        return "0";
+
+    const char* digitsLower = "0123456789abcdef";
+
+    const char* digitsUpper = "0123456789ABCDEF";
+
+    const char* digits = upper
+        ? digitsUpper
+        : digitsLower;
+
+    const bool negative = number < 0;
+
+    if (negative)
+        number = -number;
+
+    QByteArray result;
+
+    while (number > 0) {
+
+        const int digit = (number % base).convert_to<int>();
+
+        result.prepend(digits[digit]);
+
+        number /= base;
+    }
+
+    if (negative)
+        result.prepend('-');
+
+    return result;
+}
+
 static QByteArray formatBytesArgument(
     const BytesFormatSpec& specifier,
     const Value& value) {
@@ -2341,10 +2380,7 @@ static QByteArray formatBytesArgument(
 
             const auto number = value.toBigInt();
 
-            result = QByteArray::number(
-                number.convert_to<long long>(),
-                16
-            );
+            result = bigIntToBase(number, 16);
 
             if (specifier.alternate) {
                 result.prepend("0x");
@@ -2359,11 +2395,7 @@ static QByteArray formatBytesArgument(
 
             const auto number = value.toBigInt();
 
-            result =
-                QByteArray::number(
-                    number.convert_to<long long>(),
-                    16
-                ).toUpper();
+            result = bigIntToBase(number, 16, true);
 
             if (specifier.alternate) {
                 result.prepend("0X");
@@ -2377,10 +2409,7 @@ static QByteArray formatBytesArgument(
         case 'o': {
             const auto number = value.toBigInt();
 
-            result = QByteArray::number(
-                number.convert_to<long long>(),
-                8
-            );
+            result = bigIntToBase(number, 8);
 
             if (specifier.alternate) {
                 result.prepend("0o");
@@ -2469,13 +2498,46 @@ static QByteArray formatBytesArgument(
 
             std::ostringstream oss;
 
-            oss << std::scientific
-                << std::setprecision(precision)
-                << number;
+            if (precision == 0) {
 
-            result = QByteArray::fromStdString(
-                oss.str()
-            );
+                Value::BigFloat mantissa = number;
+                int exponent = 0;
+
+                if (mantissa != 0) {
+
+                    while (abs(mantissa) >= 10) {
+                        mantissa /= 10;
+                        ++exponent;
+                    }
+
+                    while (abs(mantissa) < 1) {
+                        mantissa *= 10;
+                        --exponent;
+                    }
+                }
+
+                oss << static_cast<long long>(mantissa);
+
+                oss << 'e';
+
+                oss << (exponent >= 0 ? '+' : '-');
+
+                oss << std::setw(2)
+                    << std::setfill('0')
+                    << std::abs(exponent);
+
+                result = QByteArray::fromStdString(
+                    oss.str()
+                );
+
+            } else {
+
+                oss << std::scientific
+                    << std::setprecision(precision)
+                    << number;
+
+                result = QByteArray::fromStdString(oss.str());
+            }
 
             if (number >= 0) {
 
@@ -2501,14 +2563,46 @@ static QByteArray formatBytesArgument(
 
             std::ostringstream oss;
 
-            oss << std::scientific
-                << std::uppercase
-                << std::setprecision(precision)
-                << number;
+            if (precision == 0) {
 
-            result = QByteArray::fromStdString(
-                oss.str()
-            );
+                Value::BigFloat mantissa = number;
+                int exponent = 0;
+
+                if (mantissa != 0) {
+
+                    while (abs(mantissa) >= 10) {
+                        mantissa /= 10;
+                        ++exponent;
+                    }
+
+                    while (abs(mantissa) < 1) {
+                        mantissa *= 10;
+                        --exponent;
+                    }
+                }
+
+                oss << static_cast<long long>(mantissa);
+
+                oss << 'E';
+
+                oss << (exponent >= 0 ? '+' : '-');
+
+                oss << std::setw(2)
+                    << std::setfill('0')
+                    << std::abs(exponent);
+
+                result = QByteArray::fromStdString(
+                    oss.str()
+                );
+
+            } else {
+
+                oss << std::scientific
+                    << std::setprecision(precision)
+                    << number;
+
+                result = QByteArray::fromStdString(oss.str());
+            }
 
             result.replace('e', 'E');
 
@@ -2597,6 +2691,12 @@ static QByteArray formatBytesArgument(
     return applyWidth(result, specifier);
 }
 
+//TODO: не реализован пока флаг %q
+// Когда появится нормальный механизм исключений, надо будет проверить:
+// b'%d' % b'abc'
+// b'%c' % 1000
+// b'%s' % 42
+// b'%(x)s' % {}
 Value BytesValue::mod(const Value& rhs) const {
 
     std::vector<Value> arguments;
@@ -2702,7 +2802,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
             if (effectiveSpec.precision < 0) {
 
-                effectiveSpec.hasPrecision = false;
+                effectiveSpec.hasPrecision = true;
                 effectiveSpec.precision = 0;
             }
         }
@@ -2728,17 +2828,7 @@ Value BytesValue::mod(const Value& rhs) const {
                 )
             );
 
-            auto strKey = Value(
-                std::make_shared<StrValue>(
-                    effectiveSpec.mappingKey
-                )
-            );
-
             auto it = elements.find(bytesKey);
-
-            if (it == elements.end()) {
-                it = elements.find(strKey);
-            }
 
             if (it == elements.end()) {
 
