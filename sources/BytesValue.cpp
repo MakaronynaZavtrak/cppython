@@ -8,6 +8,9 @@
 #include "StrValue.h"
 #include "TupleValue.h"
 
+#include <iomanip>
+#include <sstream>
+
 QString BytesValue::repr() const {
 
     const bool containsSingle = data.contains('\'');
@@ -2336,6 +2339,38 @@ static QByteArray formatBytesArgument(
         case 'a': {
 
             result = value.ascii().toUtf8();
+
+            break;
+        }
+
+        case 'f': {
+
+            const auto number = value.toBigFloat();
+
+            int precision =
+                specifier.hasPrecision
+                ? specifier.precision
+                : 6;
+
+            std::ostringstream oss;
+
+            oss << std::fixed
+                << std::setprecision(precision)
+                << number;
+
+            result = QByteArray::fromStdString(
+                oss.str()
+            );
+
+            if (number >= 0) {
+
+                if (specifier.showSign) {
+                    result.prepend('+');
+                }
+                else if (specifier.spaceSign) {
+                    result.prepend(' ');
+                }
+            }
 
             break;
         }
