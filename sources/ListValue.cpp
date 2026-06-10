@@ -6,6 +6,7 @@
 #include "CallRuntime.h"
 #include "IteratorValue.h"
 #include "Value.h"
+#include "../runtime/ProtocolHelpers.h"
 //
 // Created by semyo on 12.05.2026.
 //
@@ -25,6 +26,32 @@ QString ListValue::repr() const {
 }
 
 Value ListValue::getItem(const Value& index) {
+
+    if (index.isSlice()) {
+
+        const auto sliceObj = index.asSlice();
+
+        std::vector<Value> result;
+
+        iterateSlice(
+            normalizeSlice(
+                *sliceObj,
+                static_cast<long long>(elements.size())
+            ),
+            [&](const long long i) {
+
+                result.push_back(
+                    elements[static_cast<size_t>(i)]
+                );
+            }
+        );
+
+        return Value(
+            std::make_shared<ListValue>(
+                std::move(result)
+            )
+        );
+    }
 
     auto i = index.toBigInt();
 
@@ -314,7 +341,7 @@ bool ListValue::equal(const Value& other) const {
     }
 
     for (size_t i = 0; i < elements.size(); ++i) {
-        if (!(elements[i] == rhs[i])) {
+        if (elements[i] != rhs[i]) {
             return false;
         }
     }

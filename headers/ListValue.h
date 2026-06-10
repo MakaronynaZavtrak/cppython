@@ -52,7 +52,7 @@ public:
 
     void sort(const std::optional<Value>& key, bool reverse, const std::shared_ptr<Environment>& env);
 
-    [[nodiscard]] bool equal(const Value& value) const override;
+    [[nodiscard]] bool equal(const Value& other) const override;
 
     [[nodiscard]] bool notEqual(const Value& value) const override;
 
