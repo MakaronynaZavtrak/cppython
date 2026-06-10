@@ -12,6 +12,7 @@
 #include "ListValue.h"
 #include "TupleValue.h"
 #include "Value.h"
+#include "../runtime/ProtocolHelpers.h"
 
 namespace {
 
@@ -91,6 +92,26 @@ std::size_t StrValue::len() const {
 
 
 Value StrValue::getItem(const Value& index) const {
+
+    if (index.isSlice()) {
+
+        const auto sliceObj = index.asSlice();
+
+        QString result;
+
+        iterateSlice(
+            normalizeSlice(*sliceObj, value.size()),
+            [&](const long long i) {
+                result.append(
+                    value[static_cast<int>(i)]
+                );
+            }
+        );
+
+        return Value(
+            std::make_shared<StrValue>(result));
+    }
+
 
     if (!index.isBigInt()) {
         throw std::runtime_error("TypeError: string indices must be integers");

@@ -20,6 +20,7 @@
 #include "Param.h"
 #include "Runtime.h"
 #include "SetValue.h"
+#include "SliceValue.h"
 #include "StaticMethodValue.h"
 #include "StopIterationException.h"
 #include "TupleValue.h"
@@ -1125,6 +1126,7 @@ public:
           index(std::move(index)) {}
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
+
         Value obj = object->eval(env);
         Value idx = index->eval(env);
 
@@ -1454,6 +1456,87 @@ public:
     }
 };
 
+class SliceNode : public ASTNode {
+public:
+
+    std::shared_ptr<ASTNode> start;
+    std::shared_ptr<ASTNode> stop;
+    std::shared_ptr<ASTNode> step;
+
+    SliceNode(
+        std::shared_ptr<ASTNode> start,
+        std::shared_ptr<ASTNode> stop,
+        std::shared_ptr<ASTNode> step)
+        : start(std::move(start)),
+          stop(std::move(stop)),
+          step(std::move(step))
+    {}
+
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+
+        std::optional<Value> startValue;
+        std::optional<Value> stopValue;
+        std::optional<Value> stepValue;
+
+        if (start) {
+            startValue = start->eval(env);
+        }
+
+        if (stop) {
+            stopValue = stop->eval(env);
+        }
+
+        if (step) {
+            stepValue = step->eval(env);
+        }
+
+        return Value(
+            std::make_shared<SliceValue>(
+                startValue,
+                stopValue,
+                stepValue
+            )
+        );
+
+    }
+
+    [[nodiscard]] QString toString() const override {
+
+        QString result = "slice(";
+
+        if (start) {
+            result += start->toString();
+        }
+        else {
+            result += "None";
+        }
+
+        result += ", ";
+
+        if (stop) {
+            result += stop->toString();
+        }
+        else {
+            result += "None";
+        }
+
+        result += ", ";
+
+        if (step) {
+            result += step->toString();
+        }
+        else {
+            result += "None";
+        }
+
+        result += ")";
+
+        return result;
+
+    }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -1630,6 +1713,8 @@ private:
     std::shared_ptr<ASTNode> parseForStatement();
 
     std::shared_ptr<ASTNode> parseDictOrSet();
+
+    std::shared_ptr<ASTNode> parseIndexOrSlice();
 
     QString consume(TokenType type, const QString &value);
 

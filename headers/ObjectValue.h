@@ -26,6 +26,14 @@ public:
         throw std::runtime_error("Not supported operation for this type");
     }
 
+    [[nodiscard]] virtual Value slice(
+        const std::optional<Value>& start,
+        const std::optional<Value>& stop,
+        const std::optional<Value>& step) const {
+
+        throw std::runtime_error("Object is not sliceable");
+    }
+
     [[nodiscard]] virtual bool equal(const Value& other) const {
         throw std::runtime_error("Not supported operation for this type");
     }

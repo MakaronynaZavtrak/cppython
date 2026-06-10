@@ -818,7 +818,7 @@ std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
         // obj[index]
         if (matchAndAdvance(TOKEN_OP, "[")) {
 
-            auto index = parseExpression();
+            auto index = parseIndexOrSlice();
 
             consume(TOKEN_OP, "]");
 
@@ -1276,6 +1276,72 @@ std::shared_ptr<ASTNode> Parser::parseDictOrSet() {
 
     return parseSet();
 
+}
+
+std::shared_ptr<ASTNode> Parser::parseIndexOrSlice() {
+
+    // [:...]
+    if (match(TOKEN_OP, ":")) {
+
+        advance(); // :
+
+        std::shared_ptr<ASTNode> stop = nullptr;
+        std::shared_ptr<ASTNode> step = nullptr;
+
+        // [:5]
+        if (!match(TOKEN_OP, "]") &&
+            !match(TOKEN_OP, ":")) {
+
+            stop = parseExpression();
+        }
+
+        // [:5:2]
+        if (matchAndAdvance(TOKEN_OP, ":")) {
+
+            if (!match(TOKEN_OP, "]")) {
+                step = parseExpression();
+            }
+        }
+
+        return std::make_shared<SliceNode>(
+            nullptr,
+            stop,
+            step
+        );
+    }
+
+    auto first = parseExpression();
+
+    // обычный индекс
+    if (!match(TOKEN_OP, ":")) {
+        return first;
+    }
+
+    advance(); // :
+
+    std::shared_ptr<ASTNode> stop = nullptr;
+    std::shared_ptr<ASTNode> step = nullptr;
+
+    // [1:5]
+    if (!match(TOKEN_OP, "]") &&
+        !match(TOKEN_OP, ":")) {
+
+        stop = parseExpression();
+        }
+
+    // [1:5:2]
+    if (matchAndAdvance(TOKEN_OP, ":")) {
+
+        if (!match(TOKEN_OP, "]")) {
+            step = parseExpression();
+        }
+    }
+
+    return std::make_shared<SliceNode>(
+        first,
+        stop,
+        step
+    );
 }
 
 /**

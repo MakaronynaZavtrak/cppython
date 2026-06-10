@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class SliceValue;
 class BytesValue;
 class StrValue;
 class IteratorValue;
@@ -88,6 +89,8 @@ public:
 
     using BytesPtr = std::shared_ptr<BytesValue>;
 
+    using SlicePtr = std::shared_ptr<SliceValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -111,6 +114,7 @@ public:
         DictItemsViewPtr,
         SetPtr,
         IteratorPtr,
+        SlicePtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -157,6 +161,8 @@ public:
     explicit Value(const SetPtr& set) : data(set) {}
 
     explicit Value(const IteratorPtr & iter) : data(iter) {}
+
+    explicit Value(const SlicePtr & slice) : data(slice) {}
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString repr() const override;
@@ -236,6 +242,9 @@ public:
 
     [[nodiscard]] bool isBytes() const;
     [[nodiscard]] BytesPtr asBytes(const QString& = "") const;
+
+    [[nodiscard]] bool isSlice() const;
+    [[nodiscard]] SlicePtr asSlice() const;
 
     [[nodiscard]] Value operator+(const Value&) const;
 

@@ -17,6 +17,7 @@
 #include "PropertyValue.h"
 #include "SetIterator.h"
 #include "SetValue.h"
+#include "SliceValue.h"
 #include "StaticMethodValue.h"
 #include "StringIterator.h"
 #include "StrValue.h"
@@ -135,6 +136,10 @@ QString Value::toString() const {
             },
 
             [](const IteratorPtr& p) {
+                return p->toString();
+            },
+
+            [](const SlicePtr& p) {
                 return p->toString();
             },
 
@@ -1361,9 +1366,23 @@ bool Value::isBytes() const {
 }
 
 Value::BytesPtr Value::asBytes(const QString &) const {
+
     if (!isBytes()) {
         throw std::runtime_error("Value is not a bytes");
     }
 
     return std::get<BytesPtr>(data);
+}
+
+bool Value::isSlice() const {
+    return std::holds_alternative<SlicePtr>(data);
+}
+
+Value::SlicePtr Value::asSlice() const {
+
+    if (!isSlice()) {
+        throw std::runtime_error("Value is not a slice");
+    }
+
+    return std::get<SlicePtr>(data);
 }
