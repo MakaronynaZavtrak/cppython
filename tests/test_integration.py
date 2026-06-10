@@ -2648,6 +2648,46 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'abc'.__bytes__()", "b'abc'"),
     ("bytes(b'abc').__bytes__()", "b'abc'"),
 
+    # пустой bytes
+    ("bytes()", "b''"),
+
+    # bytes -> bytes
+    ("bytes(b'abc')", "b'abc'"),
+    ("bytes(b'')", "b''"),
+
+    # строка + encoding
+    ("bytes('abc', 'utf-8')", "b'abc'"),
+    ("bytes('', 'utf-8')", "b''"),
+    ("bytes('Привет', 'utf-8')", "b'\\xd0\\x9f\\xd1\\x80\\xd0\\xb8\\xd0\\xb2\\xd0\\xb5\\xd1\\x82'"),
+
+    # int -> N нулевых байтов
+    ("bytes(0)", "b''"),
+    ("bytes(1)", "b'\\x00'"),
+    ("bytes(2)", "b'\\x00\\x00'"),
+    ("bytes(5)", "b'\\x00\\x00\\x00\\x00\\x00'"),
+
+    # bool
+    ("bytes(True)", "b'\\x00'"),
+    ("bytes(False)", "b''"),
+
+    # list
+    ("bytes([65, 66, 67])", "b'ABC'"),
+    ("bytes([97, 98, 99])", "b'abc'"),
+    ("bytes([])", "b''"),
+    ("bytes([0, 255])", "b'\\x00\\xff'"),
+
+    # tuple
+    ("bytes((65, 66, 67))", "b'ABC'"),
+    ("bytes(())", "b''"),
+
+    # set
+    ("bytes({65})", "b'A'"),
+    ("bytes(set())", "b''"),
+
+    # dict (итерируется по ключам)
+    ("bytes({65: 'a'})", "b'A'"),
+    ("bytes({97: 1})", "b'a'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -5859,7 +5899,22 @@ if _result is not None:
       "    def __bytes__(self):",
       "        return b'custom'",
       "",
-      "bytes(X())"], "b'custom'")
+      "bytes(X())"], "b'custom'"),
+
+    # dict.keys()
+    (["d = {65: 'x', 66: 'y'}",
+      "bytes(d.keys())"], "b'AB'"),
+
+    # dict.values()
+    (["d = {'a': 65, 'b': 66}",
+      "bytes(d.values())"], "b'AB'"),
+
+    # iterable через пользовательский класс
+    (["class X:",
+      "    def __iter__(self):",
+      "        return [65, 66, 67].__iter__()",
+      "",
+      "bytes(X())"], "b'ABC'"),
 
 ])
 

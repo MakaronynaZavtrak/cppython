@@ -1349,6 +1349,10 @@ Value::IteratorPtr Value::getIterator() const {
         );
     }
 
+    if (std::holds_alternative<IteratorPtr>(data)) {
+        return std::get<IteratorPtr>(data);
+    }
+
     throw std::runtime_error("Object is not iterable");
 }
 

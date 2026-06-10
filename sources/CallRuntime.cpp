@@ -126,6 +126,20 @@ Value callFunction(const Value::FunctionPtr& func,
     }
 }
 
+bool supportsIter(const Value& obj) {
+
+    try {
+
+        getAttrValue(obj, "__iter__");
+
+        return true;
+
+    } catch (...) {
+
+        return false;
+    }
+}
+
 Value constructClass(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
                      const Kwargs& kwargs,
@@ -191,6 +205,22 @@ Value constructClass(const Value::ClassPtr& cls,
 
         const Value& obj = args[0];
 
+        if (obj.isBytes()) {
+
+            if (encoding.has_value()) {
+
+                throw std::runtime_error(
+                    "TypeError: encoding without a string argument"
+                );
+            }
+
+            return Value(
+                std::make_shared<BytesValue>(
+                    obj.asBytes("bytes")->bytes()
+                )
+            );
+        }
+
         try {
 
             Value bytesMethod = getAttrValue(obj, "__bytes__");
@@ -216,33 +246,18 @@ Value constructClass(const Value::ClassPtr& cls,
             }
         }
 
-        if (obj.isBytes()) {
-
-            if (encoding.has_value()) {
-
-                throw std::runtime_error(
-                    "TypeError: encoding without a string argument"
-                );
-            }
-
-            return obj;
-        }
-
         if (obj.isString()) {
 
             QString actualEncoding;
 
             if (args.size() >= 2) {
 
-                actualEncoding =
-                    args[1]
-                        .asString("bytes")
-                        ->toString();
+                actualEncoding = args[1].asString("bytes")->toString();
 
             } else if (encoding.has_value()) {
 
                 actualEncoding = *encoding;
-            //TODO: if (errors.has_value()) {}
+                //TODO: if (errors.has_value()) {}
             } else {
 
                 throw std::runtime_error(
@@ -265,6 +280,64 @@ Value constructClass(const Value::ClassPtr& cls,
                 std::make_shared<BytesValue>(
                     obj.toString().toUtf8()
                 )
+            );
+        }
+
+        if (obj.isBigInt() || obj.isBool()) {
+
+            auto count = obj.toBigInt();
+
+            if (count < 0) {
+                throw;
+            }
+
+            return Value(
+                std::make_shared<BytesValue>(
+                    QByteArray(
+                        count.convert_to<long long>(),
+                        '\0'
+                    )
+                )
+            );
+        }
+
+        if (obj.isIterable() || supportsIter(obj)) {
+
+            QByteArray result;
+
+            Value iterMethod = getAttrValue(obj, "__iter__");
+
+            Value iterObj = call(iterMethod, {}, {}, nullptr);
+
+            if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
+                throw std::runtime_error(
+                    "__iter__ returned non-iterator"
+                );
+            }
+
+            auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
+
+            while (iterator->hasNext()) {
+
+                Value item = iterator->next();
+
+                auto value = item.toBigInt();
+
+                if (value < 0 || value > 255) {
+                    throw std::runtime_error(
+                        "bytes must be in range(0, 256)"
+                    );
+                }
+
+                result.append(
+                    static_cast<char>(
+                        value.convert_to<int>()
+                    )
+                );
+            }
+
+            return Value(
+                std::make_shared<BytesValue>(result)
             );
         }
 
