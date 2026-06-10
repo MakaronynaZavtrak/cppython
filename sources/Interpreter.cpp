@@ -65,8 +65,12 @@ Value Interpreter::executeNode(
  * @param lexer Лексер, используемый для токенизации переданного кода.
  * @param env Среда, содержащая переменные и их значения, используемые во время интерпретации.
  */
-void Interpreter::executeCode(const std::string& code, Lexer& lexer, const std::shared_ptr<Environment> &env) {
+void Interpreter::executeCode(
+    const std::string& code, Lexer& lexer,
+    const std::shared_ptr<Environment> &env) {
+
     try {
+
         const QVector<Token> tokens = lexer.tokenize(QString::fromStdString(code));
         Parser parser(tokens);
         const std::shared_ptr<ASTNode> ast = parser.parse();
@@ -131,6 +135,7 @@ void Interpreter::run(int argc, char* argv[]) {
 
     Runtime::bytesClass->attributes["fromhex"] = makeFromHexClassBuiltin();
     Runtime::bytesClass->attributes["maketrans"] = makeMakeTransBytesClassBuiltin();
+    Runtime::bytesClass->attributes["__bytes__"] = make__bytes__ClassBuiltin();
 
     globalEnv->set("bytes", Value(Runtime::bytesClass));
     Runtime::bytesClass->attributes["__call__"] = globalEnv->get("__bytes_call__");

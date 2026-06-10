@@ -2880,3 +2880,10 @@ const QByteArray& BytesValue::bytes() const {
 QString BytesValue::toString() const {
     return repr();
 }
+
+Value BytesValue::__bytes__() const {
+
+    return Value(
+        std::make_shared<BytesValue>(data)
+    );
+}

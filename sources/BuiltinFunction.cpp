@@ -606,6 +606,28 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
             const Value& obj = args[0];
 
+            try {
+
+                Value method = getAttrValue(obj, "__bytes__");
+
+                Value result = call(method, {}, {}, nullptr);
+
+                if (!result.isBytes()) {
+                    throw std::runtime_error(
+                        "TypeError: __bytes__ returned non-bytes"
+                    );
+                }
+
+                return result;
+
+            } catch (const std::runtime_error &e) {
+
+                if (const std::string msg = e.what();
+                    msg.find("AttributeError") == std::string::npos) {
+                    throw;
+                }
+            }
+
             if (obj.isBytes()) {
                 return obj;
             }

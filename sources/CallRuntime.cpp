@@ -191,6 +191,31 @@ Value constructClass(const Value::ClassPtr& cls,
 
         const Value& obj = args[0];
 
+        try {
+
+            Value bytesMethod = getAttrValue(obj, "__bytes__");
+
+            Value result = call(bytesMethod, {}, {}, nullptr);
+
+            if (!result.isBytes()) {
+
+                throw std::runtime_error(
+                    "TypeError: __bytes__ returned non-bytes"
+                );
+            }
+
+            return result;
+
+        }
+        catch (const std::runtime_error& e) {
+
+            const std::string msg = e.what();
+
+            if (msg.find("AttributeError") == std::string::npos) {
+                throw;
+            }
+        }
+
         if (obj.isBytes()) {
 
             if (encoding.has_value()) {

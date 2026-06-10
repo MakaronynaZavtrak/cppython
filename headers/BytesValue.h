@@ -17,6 +17,9 @@ public:
     [[nodiscard]] const QByteArray& bytes() const;
 
     [[nodiscard]] QString toString() const override;
+
+    [[nodiscard]] Value __bytes__() const;
+
     [[nodiscard]] QString repr() const override;
 
     [[nodiscard]] Value getItem(const Value& indexValue) const;

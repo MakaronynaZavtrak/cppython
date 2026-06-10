@@ -11,4 +11,6 @@ Value getBytesAttr(const Value& obj, const QString& attr);
 Value makeFromHexClassBuiltin();
 
 Value makeMakeTransBytesClassBuiltin();
+
+Value make__bytes__ClassBuiltin();
 #endif //CPPYTHON_BYTESMETHODS_H

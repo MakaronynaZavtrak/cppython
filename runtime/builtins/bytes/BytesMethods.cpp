@@ -1143,6 +1143,23 @@ namespace {
         );
     }
 
+    Value make__bytes__Method(const Value& obj) {
+
+        return makeBuiltin(
+            "__bytes__",
+
+            [obj](const std::vector<Value> &args,
+               const Kwargs &,
+               const std::shared_ptr<Environment> &)
+               -> Value {
+
+                expectArgs(args, 0, "__bytes__");
+
+                return obj.asBytes("__bytes__")->__bytes__();
+            }
+        );
+    }
+
     const MethodMap BYTES_METHODS = {
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::BytesPtr>),
@@ -1157,6 +1174,7 @@ namespace {
         REGISTER_METHOD("__ge__", makeGreaterOrEqualMethod),
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
+        REGISTER_METHOD("__bytes__", make__bytes__Method),
         REGISTER_METHOD("find", makeFindMethod),
         REGISTER_METHOD("rfind", makeRFindMethod),
         REGISTER_METHOD("index", makeIndexMethod),
@@ -1237,4 +1255,22 @@ Value makeMakeTransBytesClassBuiltin() {
             return BytesValue::maketrans(args);
         }
     );
+}
+
+Value make__bytes__ClassBuiltin() {
+
+    return makeBuiltin(
+        "__bytes__",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>&)
+        -> Value {
+
+            expectArgs(args, 1, "bytes.__bytes__");
+
+            return args[0].asBytes("__bytes__")->__bytes__();
+        }
+    );
+
 }

@@ -2636,6 +2636,18 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'%.*E' % (-1, 3.14)", "b'3E+00'"),
     ("b'%.*g' % (-1, 3.14)", "b'3'"),
 
+    # пустой bytes
+    ("bytes()", "b''"),
+
+    # bytes -> bytes
+    ("bytes(b'abc')", "b'abc'"),
+
+    # строка + encoding
+    ("bytes('abc', 'utf-8')", "b'abc'"),
+
+    ("b'abc'.__bytes__()", "b'abc'"),
+    ("bytes(b'abc').__bytes__()", "b'abc'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -5820,7 +5832,34 @@ if _result is not None:
       "for x in b'abc':",
       "    res.append(x)",
       "",
-      "res"], "[97, 98, 99]")
+      "res"], "[97, 98, 99]"),
+
+    # пользовательский __bytes__
+    (["class X:",
+      "    def __bytes__(self):",
+      "        return b'hello'",
+      "",
+      "bytes(X())"], "b'hello'"),
+
+    # __bytes__ может возвращать существующий bytes
+    (["class X:",
+      "    def __bytes__(self):",
+      "        return b''",
+      "",
+      "bytes(X())"], "b''"),
+
+    # __bytes__ вызывается напрямую
+    (["class X:",
+      "    def __bytes__(self):",
+      "        return b'world'",
+      "",
+      "X().__bytes__()"], "b'world'"),
+
+    (["class X:",
+      "    def __bytes__(self):",
+      "        return b'custom'",
+      "",
+      "bytes(X())"], "b'custom'")
 
 ])
 
