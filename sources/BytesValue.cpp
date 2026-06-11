@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "DictValue.h"
+#include "../runtime/ProtocolHelpers.h"
 
 QString BytesValue::repr() const {
 
@@ -149,6 +150,26 @@ static bool isAsciiAlpha(unsigned char ch) {
 }
 
 Value BytesValue::getItem(const Value& indexValue) const {
+
+    if (indexValue.isSlice()) {
+
+        const auto sliceObj = indexValue.asSlice();
+
+        QByteArray result;
+
+        iterateSlice(
+            normalizeSlice(*sliceObj, data.size()),
+            [&](const long long i) {
+                result.append(
+                    data[static_cast<int>(i)]
+                );
+            }
+        );
+
+        return Value(
+            std::make_shared<BytesValue>(result)
+        );
+    }
 
     int index = indexValue.asBigInt("__getitem__").convert_to<int>();
 

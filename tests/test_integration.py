@@ -2812,6 +2812,52 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("(1,2,3,4,5)[::10]", "(1,)"),
     ("(1,2,3,4,5)[::-10]", "(5,)"),
 
+    # bytes slicing
+    ("b'abcdef'[1:4]", "b'bcd'"),
+    ("b'abcdef'[:3]", "b'abc'"),
+    ("b'abcdef'[3:]", "b'def'"),
+
+    ("b'abcdef'[::2]", "b'ace'"),
+    ("b'abcdef'[1::2]", "b'bdf'"),
+
+    ("b'abcdef'[::-1]", "b'fedcba'"),
+    ("b'abcdef'[5:1:-1]", "b'fedc'"),
+
+    ("b'abcdef'[-3:]", "b'def'"),
+    ("b'abcdef'[:-2]", "b'abcd'"),
+    ("b'abcdef'[-4:-1]", "b'cde'"),
+
+    ("b'abcdef'[100:200]", "b''"),
+    ("b'abcdef'[5:5]", "b''"),
+    ("b'abcdef'[3:1]", "b''"),
+
+    ("b'abcdef'[-100:2]", "b'ab'"),
+    ("b'abcdef'[2:100]", "b'cdef'"),
+
+    ("b'abcdef'[::10]", "b'a'"),
+    ("b'abcdef'[::-10]", "b'f'"),
+
+    ("b'abcdef'[1:5:2]", "b'bd'"),
+    ("b'abcdef'[4:0:-2]", "b'ec'"),
+
+    ("b'abcdef'[2:3]", "b'c'"),
+    ("b'abcdef'[2:2]", "b''"),
+
+    ("b'abcdef'[:]", "b'abcdef'"),
+    ("b'abcdef'[::]", "b'abcdef'"),
+
+    # reverse copy
+    ("b'abcdef'[::-1]", "b'fedcba'"),
+
+    ("b'abcdef'[-1:-6:-1]", "b'fedcb'"),
+    ("b'abcdef'[-2::-1]", "b'edcba'"),
+    ("b'abcdef'[:-7:-1]", "b'fedcba'"),
+
+    # empty bytes
+    ("b''[:]", "b''"),
+    ("b''[::-1]", "b''"),
+    ("b''[::2]", "b''"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
