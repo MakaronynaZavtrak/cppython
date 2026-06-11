@@ -352,3 +352,90 @@ Value ByteArrayValue::find(
         Value::BigInt(begin + pos)
     );
 }
+
+Value ByteArrayValue::rfind(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QByteArray needle;
+
+    if (sub.isByteArray()) {
+
+        needle = sub.asByteArray("rfind")->bytes();
+
+    } else if (sub.isBytes()) {
+
+        needle = sub.asBytes("rfind")->bytes();
+
+    } else if (sub.isBigInt()) {
+
+        auto v = sub.toBigInt();
+
+        if (v < 0 || v > 255) {
+
+            throw std::runtime_error(
+                "byte must be in range(0, 256)"
+            );
+        }
+
+        needle.append(
+            static_cast<char>(
+                v.convert_to<int>()
+            )
+        );
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: expected bytes-like object"
+        );
+    }
+
+    long long begin = 0;
+    long long finish = data.size();
+
+    if (start.has_value()) {
+        begin = start->toBigInt().convert_to<long long>();
+    }
+
+    if (end.has_value()) {
+        finish = end->toBigInt().convert_to<long long>();
+    }
+
+    if (begin < 0) {
+        begin += data.size();
+    }
+
+    if (finish < 0) {
+        finish += data.size();
+    }
+
+    begin = std::clamp(
+        begin,
+        0LL,
+        static_cast<long long>(data.size())
+    );
+
+    finish = std::clamp(
+        finish,
+        0LL,
+        static_cast<long long>(data.size())
+    );
+
+    QByteArray slice =
+        data.mid(
+            static_cast<int>(begin),
+            static_cast<int>(finish - begin)
+        );
+
+    const int pos = slice.lastIndexOf(needle);
+
+    if (pos == -1) {
+        return Value(Value::BigInt(-1));
+    }
+
+    return Value(
+        Value::BigInt(begin + pos)
+    );
+}
