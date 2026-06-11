@@ -2985,6 +2985,27 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'a') in bytearray()", "False"),
     ("b'' in bytearray()", "True"),
 
+    # __eq__
+    ("bytearray(b'abc') == bytearray(b'abc')", "True"),
+    ("bytearray(b'abc') == bytearray(b'abc')", "True"),
+    ("bytearray(b'abc') == bytearray(b'abd')", "False"),
+
+    ("bytearray(b'abc') == b'abc'", "True"),
+    ("bytearray(b'abc') == b'abd'", "False"),
+
+    ("bytearray() == bytearray()", "True"),
+    ("bytearray() == b''", "True"),
+
+    ("bytearray(b'abc') == bytearray(b'ab')", "False"),
+    ("bytearray(b'ab') == bytearray(b'abc')", "False"),
+
+    ("bytearray([0,1,2]) == bytearray([0,1,2])", "True"),
+    ("bytearray([0,1,2]) == bytearray([0,1,3])", "False"),
+
+    ("bytearray(b'abc') == 'abc'", "False"),
+    ("bytearray(b'abc') == [97,98,99]", "False"),
+    ("bytearray(b'abc') == 123", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

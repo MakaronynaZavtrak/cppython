@@ -364,6 +364,10 @@ bool Value::operator==(const Value& other) const {
         return asBytes()->equal(other);
     }
 
+    if (isByteArray()) {
+        return asByteArray()->equal(other);
+    }
+
     if (isList()) {
         return asList()->equal(other);
     }

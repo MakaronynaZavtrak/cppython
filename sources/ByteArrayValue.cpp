@@ -178,3 +178,18 @@ bool ByteArrayValue::contains(const Value& value) const {
         "TypeError: a bytes-like object or integer is required"
     );
 }
+
+bool ByteArrayValue::equal(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return data == other.asByteArray("bytearray")->bytes();
+    }
+
+    if (other.isBytes()) {
+
+        return data == other.asBytes("bytes")->bytes();
+    }
+
+    return false;
+}
