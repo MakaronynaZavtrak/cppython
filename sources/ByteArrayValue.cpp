@@ -79,3 +79,28 @@ Value ByteArrayValue::__bytes__() const {
         std::make_shared<ByteArrayValue>(data)
     );
 }
+
+Value ByteArrayValue::add(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data + other.asByteArray()->bytes()
+            )
+        );
+    }
+
+    if (other.isBytes()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data + other.asBytes()->bytes()
+            )
+        );
+    }
+
+    throw std::runtime_error(
+        "TypeError: can't concat bytearray with non-bytes-like object"
+    );
+}

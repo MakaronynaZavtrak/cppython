@@ -34,5 +34,7 @@ public:
     [[nodiscard]] QString toString() const override;
 
     Value __bytes__() const;
+
+    [[nodiscard]] Value add(const Value& other) const override;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

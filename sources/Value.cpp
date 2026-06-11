@@ -540,6 +540,10 @@ Value Value::operator+(const Value& other) const {
         return asBytes()->add(other);
     }
 
+    if (isByteArray()) {
+        return asByteArray()->add(other);
+    }
+
     if (isString()) {
         return asString()->add(other);
     }

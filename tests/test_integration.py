@@ -2919,6 +2919,21 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abcdef')[-2::-1]", "bytearray(b'edcba')"),
     ("bytearray(b'abcdef')[:-7:-1]", "bytearray(b'fedcba')"),
 
+    # bytearray __add__
+    ("bytearray(b'abc') + bytearray(b'def')", "bytearray(b'abcdef')"),
+    ("bytearray(b'') + bytearray(b'abc')", "bytearray(b'abc')"),
+    ("bytearray(b'abc') + bytearray(b'')", "bytearray(b'abc')"),
+    ("bytearray(b'a') + bytearray(b'b')", "bytearray(b'ab')"),
+    ("bytearray([97,98]) + bytearray([99,100])", "bytearray(b'abcd')"),
+
+    # bytearray + bytes
+    ("bytearray(b'abc') + b'def'", "bytearray(b'abcdef')"),
+    ("bytearray(b'') + b'xyz'", "bytearray(b'xyz')"),
+    ("bytearray(b'xyz') + b''", "bytearray(b'xyz')"),
+
+    # chaining
+    ("bytearray(b'a') + bytearray(b'b') + bytearray(b'c')", "bytearray(b'abc')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
