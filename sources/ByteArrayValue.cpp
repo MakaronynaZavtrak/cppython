@@ -456,3 +456,107 @@ Value ByteArrayValue::index(
 
     return result;
 }
+
+Value ByteArrayValue::count(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QByteArray needle;
+
+    if (sub.isByteArray()) {
+
+        needle = sub.asByteArray("count")->bytes();
+
+    } else if (sub.isBytes()) {
+
+        needle = sub.asBytes("count")->bytes();
+
+    } else if (sub.isBigInt()) {
+
+        auto v = sub.toBigInt();
+
+        if (v < 0 || v > 255) {
+            throw std::runtime_error(
+                "byte must be in range(0, 256)"
+            );
+        }
+
+        needle.append(
+            static_cast<char>(
+                v.convert_to<int>()
+            )
+        );
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: expected bytes-like object"
+        );
+    }
+
+    long long begin = 0;
+    long long finish = data.size();
+
+    if (start.has_value()) {
+        begin = start->toBigInt().convert_to<long long>();
+    }
+
+    if (end.has_value()) {
+        finish = end->toBigInt().convert_to<long long>();
+    }
+
+    if (begin < 0) {
+        begin += data.size();
+    }
+
+    if (finish < 0) {
+        finish += data.size();
+    }
+
+    begin = std::clamp(
+        begin,
+        0LL,
+        data.size()
+    );
+
+    finish = std::clamp(
+        finish,
+        0LL,
+        data.size()
+    );
+
+    QByteArray haystack =
+        data.mid(
+            static_cast<int>(begin),
+            static_cast<int>(finish - begin)
+        );
+
+    if (needle.isEmpty()) {
+        return Value(
+            Value::BigInt(
+                haystack.size() + 1
+            )
+        );
+    }
+
+    int occurrences = 0;
+    int pos = 0;
+
+    while (true) {
+
+        pos = haystack.indexOf(needle, pos);
+
+        if (pos == -1) {
+            break;
+        }
+
+        ++occurrences;
+
+        pos += needle.size();
+    }
+
+    return Value(
+        Value::BigInt(occurrences)
+    );
+}

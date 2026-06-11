@@ -3192,6 +3192,36 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abcdef').index(b'cd', 2)", "2"),
     ("bytearray(b'abcdef').index(b'de', 0, 5)", "3"),
 
+    # count
+    ("bytearray(b'abcdef').count(b'a')", "1"),
+    ("bytearray(b'abcdef').count(b'f')", "1"),
+    ("bytearray(b'abcdef').count(b'x')", "0"),
+
+    ("bytearray(b'aaaaaa').count(b'a')", "6"),
+    ("bytearray(b'aaaaaa').count(b'aa')", "3"),
+    ("bytearray(b'aaaaaa').count(b'aaa')", "2"),
+
+    ("bytearray(b'abababa').count(b'aba')", "2"),
+
+    ("bytearray(b'abcabcabc').count(b'abc')", "3"),
+    ("bytearray(b'abcabcabc').count(b'bc')", "3"),
+
+    ("bytearray(b'abcdef').count(99)", "1"),
+    ("bytearray(b'abcdef').count(120)", "0"),
+
+    ("bytearray(b'abcdef').count(b'cd', 2)", "1"),
+    ("bytearray(b'abcdef').count(b'cd', 3)", "0"),
+
+    ("bytearray(b'abcabcabc').count(b'abc', 1)", "2"),
+    ("bytearray(b'abcabcabc').count(b'abc', 1, 7)", "1"),
+
+    ("bytearray(b'').count(b'a')", "0"),
+    ("bytearray(b'').count(b'')", "1"),
+
+    ("bytearray(b'abc').count(b'')", "4"),
+    ("bytearray(b'abc').count(b'', 1)", "3"),
+    ("bytearray(b'abc').count(b'', 1, 2)", "2"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
