@@ -38,5 +38,7 @@ public:
     [[nodiscard]] Value add(const Value& other) const override;
 
     [[nodiscard]] Value multiply(const Value& other) const override;
+
+    [[nodiscard]] bool contains(const Value& value) const override;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

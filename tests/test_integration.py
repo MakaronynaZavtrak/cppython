@@ -2954,6 +2954,37 @@ def run_cppython(cmds: str | list[str]) -> str:
     # chaining
     ("(bytearray(b'ab') * 2) * 2", "bytearray(b'abababab')"),
 
+    # bytearray __contains__
+    ("97 in bytearray(b'abc')", "True"),
+    ("98 in bytearray(b'abc')", "True"),
+    ("99 in bytearray(b'abc')", "True"),
+    ("100 in bytearray(b'abc')", "False"),
+
+    ("True in bytearray([0,1,2])", "True"),
+    ("False in bytearray([0,1,2])", "True"),
+
+    ("0 in bytearray([0,255])", "True"),
+    ("255 in bytearray([0,255])", "True"),
+    ("254 in bytearray([0,255])", "False"),
+
+    ("b'a' in bytearray(b'abc')", "True"),
+    ("b'ab' in bytearray(b'abc')", "True"),
+    ("b'bc' in bytearray(b'abc')", "True"),
+    ("b'abc' in bytearray(b'abc')", "True"),
+    ("b'ac' in bytearray(b'abc')", "False"),
+    ("b'' in bytearray(b'abc')", "True"),
+
+    ("bytearray(b'a') in bytearray(b'abc')", "True"),
+    ("bytearray(b'ab') in bytearray(b'abc')", "True"),
+    ("bytearray(b'bc') in bytearray(b'abc')", "True"),
+    ("bytearray(b'ac') in bytearray(b'abc')", "False"),
+    ("bytearray(b'') in bytearray(b'abc')", "True"),
+
+    ("97 in bytearray()", "False"),
+    ("b'a' in bytearray()", "False"),
+    ("bytearray(b'a') in bytearray()", "False"),
+    ("b'' in bytearray()", "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

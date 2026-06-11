@@ -872,6 +872,10 @@ bool Value::contains(const Value &value) const {
         return asBytes()->contains(value);
     }
 
+    if (isByteArray()) {
+        return asByteArray()->contains(value);
+    }
+
     throw std::runtime_error("TypeError: argument of type '" +
        toString().toStdString() + "' is not iterable"
     );

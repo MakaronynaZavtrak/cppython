@@ -139,3 +139,42 @@ Value ByteArrayValue::multiply(const Value& other) const {
         )
     );
 }
+
+bool ByteArrayValue::contains(const Value& value) const {
+
+    // int / bool
+    if (value.isBigInt() || value.isBool()) {
+
+        const auto v = value.toBigInt();
+
+        if (v < 0 || v > 255) {
+            return false;
+        }
+
+        return data.contains(
+            static_cast<unsigned char>(
+                v.convert_to<int>()
+            )
+        );
+    }
+
+    // bytes
+    if (value.isBytes()) {
+
+        return data.contains(
+            value.asBytes()->bytes()
+        );
+    }
+
+    // bytearray
+    if (value.isByteArray()) {
+
+        return data.contains(
+            value.asByteArray()->bytes()
+        );
+    }
+
+    throw std::runtime_error(
+        "TypeError: a bytes-like object or integer is required"
+    );
+}
