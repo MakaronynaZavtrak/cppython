@@ -512,6 +512,10 @@ bool Value::operator>(const Value &other) const {
         return asBytes()->greater(other);
     }
 
+    if (isByteArray()) {
+        return asByteArray()->greater(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for >: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }

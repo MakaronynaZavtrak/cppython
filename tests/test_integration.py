@@ -3072,6 +3072,29 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray([0,1]) <= bytearray([0,1,0])", "True"),
     ("bytearray([0,1,0]) <= bytearray([0,1])", "False"),
 
+    # bytearray __gt__
+    ("bytearray(b'abd') > bytearray(b'abc')", "True"),
+    ("bytearray(b'abc') > bytearray(b'abd')", "False"),
+
+    ("bytearray(b'abc') > bytearray(b'abc')", "False"),
+
+    ("bytearray(b'abc') > bytearray(b'ab')", "True"),
+    ("bytearray(b'ab') > bytearray(b'abc')", "False"),
+
+    ("bytearray(b'a') > bytearray(b'')", "True"),
+    ("bytearray(b'') > bytearray(b'a')", "False"),
+
+    ("bytearray(b'abd') > b'abc'", "True"),
+    ("bytearray(b'abc') > b'abd'", "False"),
+
+    ("bytearray(b'abc') > b'abc'", "False"),
+
+    ("bytearray([0,1,3]) > bytearray([0,1,2])", "True"),
+    ("bytearray([0,1,2]) > bytearray([0,1,3])", "False"),
+
+    ("bytearray([0,1,0]) > bytearray([0,1])", "True"),
+    ("bytearray([0,1]) > bytearray([0,1,0])", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
