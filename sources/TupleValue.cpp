@@ -3,6 +3,8 @@
 //
 #include "TupleValue.h"
 
+#include "../runtime/ProtocolHelpers.h"
+
 TupleValue::TupleValue(const std::vector<Value>& items)
     : items(items) {}
 
@@ -37,6 +39,34 @@ QString TupleValue::repr() const {
 
 Value TupleValue::getItem(const Value& index) const {
 
+    if (index.isSlice()) {
+
+        const auto sliceObj = index.asSlice();
+
+        std::vector<Value> result;
+
+        iterateSlice(
+            normalizeSlice(*sliceObj, items.size()),
+            [&](const long long i) {
+                result.push_back(
+                    items[static_cast<size_t>(i)]
+                );
+            }
+        );
+
+        return Value(
+            std::make_shared<TupleValue>(
+                std::move(result)
+            )
+        );
+    }
+
+    if (!index.isBigInt() && !index.isBool()) {
+        throw std::runtime_error(
+            "TypeError: tuple indices must be integers or slices"
+        );
+    }
+
     auto i = index.toBigInt();
 
     if (i < 0) {
@@ -48,6 +78,7 @@ Value TupleValue::getItem(const Value& index) const {
     }
 
     const auto idx = i.convert_to<size_t>();
+
     return items[idx];
 }
 

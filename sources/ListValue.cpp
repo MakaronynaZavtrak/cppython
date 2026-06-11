@@ -53,6 +53,12 @@ Value ListValue::getItem(const Value& index) {
         );
     }
 
+    if (!index.isBigInt() && !index.isBool()) {
+        throw std::runtime_error(
+            "TypeError: list indices must be integers or slices"
+        );
+    }
+
     auto i = index.toBigInt();
 
     if (i < 0) {
