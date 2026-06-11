@@ -2858,6 +2858,67 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b''[::-1]", "b''"),
     ("b''[::2]", "b''"),
 
+    # bytearray() constructor
+    ("bytearray()", "bytearray(b'')"),
+
+    ("bytearray(0)", "bytearray(b'')"),
+    ("bytearray(3)", "bytearray(b'\\x00\\x00\\x00')"),
+    ("bytearray(5)", "bytearray(b'\\x00\\x00\\x00\\x00\\x00')"),
+
+    ("bytearray(b'abc')", "bytearray(b'abc')"),
+    ("bytearray(bytearray(b'abc'))", "bytearray(b'abc')"),
+
+    ("bytearray('abc', 'utf8')", "bytearray(b'abc')"),
+    ("bytearray('привет', 'utf8')", "bytearray(b'\\xd0\\xbf\\xd1\\x80\\xd0\\xb8\\xd0\\xb2\\xd0\\xb5\\xd1\\x82')"),
+
+    ("bytearray([97, 98, 99])", "bytearray(b'abc')"),
+    ("bytearray((97, 98, 99))", "bytearray(b'abc')"),
+    ("bytearray({97, 98, 99})", "bytearray(b'abc')"),
+
+    # пока не поддерживается
+    # ("bytearray(range(5))", "bytearray(b'\\x00\\x01\\x02\\x03\\x04')"),
+
+    ("bytearray([0])", "bytearray(b'\\x00')"),
+    ("bytearray([255])", "bytearray(b'\\xff')"),
+
+    ("len(bytearray())", "0"),
+    ("len(bytearray(10))", "10"),
+    ("len(bytearray([97, 98, 99]))", "3"),
+    ("len(bytearray(b'abc'))", "3"),
+    ("len(bytearray('abcde', 'utf8'))", "5"),
+
+    ("bytearray(b'abcdef')[0]", "97"),
+    ("bytearray(b'abcdef')[1]", "98"),
+    ("bytearray(b'abcdef')[-1]", "102"),
+    ("bytearray(b'abcdef')[-2]", "101"),
+
+    # slicing
+    ("bytearray(b'abcdef')[1:4]", "bytearray(b'bcd')"),
+    ("bytearray(b'abcdef')[:3]", "bytearray(b'abc')"),
+    ("bytearray(b'abcdef')[3:]", "bytearray(b'def')"),
+
+    ("bytearray(b'abcdef')[::2]", "bytearray(b'ace')"),
+    ("bytearray(b'abcdef')[1::2]", "bytearray(b'bdf')"),
+
+    ("bytearray(b'abcdef')[::-1]", "bytearray(b'fedcba')"),
+    ("bytearray(b'abcdef')[5:1:-1]", "bytearray(b'fedc')"),
+
+    ("bytearray(b'abcdef')[-3:]", "bytearray(b'def')"),
+    ("bytearray(b'abcdef')[:-2]", "bytearray(b'abcd')"),
+    ("bytearray(b'abcdef')[-4:-1]", "bytearray(b'cde')"),
+
+    ("bytearray(b'abcdef')[100:200]", "bytearray(b'')"),
+    ("bytearray(b'abcdef')[5:5]", "bytearray(b'')"),
+    ("bytearray(b'abcdef')[3:1]", "bytearray(b'')"),
+
+    ("bytearray(b'abcdef')[::10]", "bytearray(b'a')"),
+    ("bytearray(b'abcdef')[::-10]", "bytearray(b'f')"),
+
+    # отрицательные индексы + reverse slicing
+    ("bytearray(b'abcdef')[-1:-6:-1]", "bytearray(b'fedcb')"),
+    ("bytearray(b'abcdef')[-2::-1]", "bytearray(b'edcba')"),
+    ("bytearray(b'abcdef')[:-7:-1]", "bytearray(b'fedcba')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

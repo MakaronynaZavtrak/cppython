@@ -44,6 +44,10 @@ inline Value::BytesPtr extract<Value::BytesPtr>(const Value& obj) {
     return std::get<Value::BytesPtr>(obj.data);
 }
 
+template<>
+inline Value::ByteArrayPtr extract<Value::ByteArrayPtr>(const Value& obj) {
+    return std::get<Value::ByteArrayPtr>(obj.data);
+}
 
 template<typename Fn>
 Value makeBuiltin(const QString& name, Fn&& fn) {

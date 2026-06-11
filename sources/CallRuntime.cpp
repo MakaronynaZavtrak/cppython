@@ -1,6 +1,7 @@
 #include "CallRuntime.h"
 
 #include "BoundMethod.h"
+#include "ByteArrayValue.h"
 #include "BytesValue.h"
 #include "ClassMethodValue.h"
 #include "Environment.h"
@@ -15,8 +16,7 @@
 Value call(const Value& callee,
            const std::vector<Value>& args,
            const Kwargs& kwargs,
-           const std::shared_ptr<Environment>& env)
-{
+           const std::shared_ptr<Environment>& env) {
 
     if (std::holds_alternative<Value::BuiltinFunctionPtr>(callee.data)) {
         const auto fn = std::get<Value::BuiltinFunctionPtr>(callee.data);
@@ -49,8 +49,7 @@ Value call(const Value& callee,
 Value callFunction(const Value::FunctionPtr& func,
                    const std::vector<Value>& args,
                    const Kwargs& kwargs,
-                   const std::shared_ptr<Environment>& envOverride = nullptr)
-{
+                   const std::shared_ptr<Environment>& envOverride = nullptr) {
 
     const auto local = std::make_shared<Environment>(func->closure);
 
@@ -162,187 +161,20 @@ Value constructClass(const Value::ClassPtr& cls,
 
     if (cls == Runtime::bytesClass) {
 
-        std::optional<QString> encoding;
+        return Value(
+            std::make_shared<BytesValue>(
+                constructBytesData(args, kwargs)
+            )
+        );
 
-        //TODO: пока не поддерживается
-        std::optional<QString> errors;
+    }
 
-        for (const auto& [name, value] : kwargs) {
+    if (cls == Runtime::bytearrayClass) {
 
-            if (name == "encoding") {
-
-                encoding = value.asString("bytes")->toString();
-
-            } else if (name == "errors") {
-
-                //TODO: пока не поддерживается
-                errors = value.asString("bytes")->toString();
-
-            } else {
-
-                throw std::runtime_error(
-                    "Unknown keyword argument: "
-                    + name.toStdString()
-                );
-            }
-        }
-
-        if (args.empty()) {
-
-            return Value(
-                std::make_shared<BytesValue>(
-                    QByteArray()
-                )
-            );
-        }
-
-        if (args.size() > 2) {
-
-            throw std::runtime_error(
-                "bytes() takes at most 2 arguments"
-            );
-        }
-
-        const Value& obj = args[0];
-
-        if (obj.isBytes()) {
-
-            if (encoding.has_value()) {
-
-                throw std::runtime_error(
-                    "TypeError: encoding without a string argument"
-                );
-            }
-
-            return Value(
-                std::make_shared<BytesValue>(
-                    obj.asBytes("bytes")->bytes()
-                )
-            );
-        }
-
-        try {
-
-            Value bytesMethod = getAttrValue(obj, "__bytes__");
-
-            Value result = call(bytesMethod, {}, {}, nullptr);
-
-            if (!result.isBytes()) {
-
-                throw std::runtime_error(
-                    "TypeError: __bytes__ returned non-bytes"
-                );
-            }
-
-            return result;
-
-        }
-        catch (const std::runtime_error& e) {
-
-            const std::string msg = e.what();
-
-            if (msg.find("AttributeError") == std::string::npos) {
-                throw;
-            }
-        }
-
-        if (obj.isString()) {
-
-            QString actualEncoding;
-
-            if (args.size() >= 2) {
-
-                actualEncoding = args[1].asString("bytes")->toString();
-
-            } else if (encoding.has_value()) {
-
-                actualEncoding = *encoding;
-                //TODO: if (errors.has_value()) {}
-            } else {
-
-                throw std::runtime_error(
-                    "TypeError: string argument without an encoding"
-                );
-            }
-
-            // TODO: пока поддерживается только utf-8
-            if (
-                actualEncoding != "utf-8" &&
-                actualEncoding != "utf8"
-            ) {
-
-                throw std::runtime_error(
-                    "LookupError: unknown encoding"
-                );
-            }
-
-            return Value(
-                std::make_shared<BytesValue>(
-                    obj.toString().toUtf8()
-                )
-            );
-        }
-
-        if (obj.isBigInt() || obj.isBool()) {
-
-            auto count = obj.toBigInt();
-
-            if (count < 0) {
-                throw;
-            }
-
-            return Value(
-                std::make_shared<BytesValue>(
-                    QByteArray(
-                        count.convert_to<long long>(),
-                        '\0'
-                    )
-                )
-            );
-        }
-
-        if (obj.isIterable() || supportsIter(obj)) {
-
-            QByteArray result;
-
-            Value iterMethod = getAttrValue(obj, "__iter__");
-
-            Value iterObj = call(iterMethod, {}, {}, nullptr);
-
-            if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
-                throw std::runtime_error(
-                    "__iter__ returned non-iterator"
-                );
-            }
-
-            auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
-
-            while (iterator->hasNext()) {
-
-                Value item = iterator->next();
-
-                auto value = item.toBigInt();
-
-                if (value < 0 || value > 255) {
-                    throw std::runtime_error(
-                        "bytes must be in range(0, 256)"
-                    );
-                }
-
-                result.append(
-                    static_cast<char>(
-                        value.convert_to<int>()
-                    )
-                );
-            }
-
-            return Value(
-                std::make_shared<BytesValue>(result)
-            );
-        }
-
-        throw std::runtime_error(
-            "TypeError: cannot convert object to bytes"
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                constructBytesData(args, kwargs)
+            )
         );
     }
 
@@ -387,4 +219,180 @@ Value callBoundMethod(const Value::BoundMethodPtr &bm,
     }
 
     throw std::runtime_error("Invalid bound method callable");
+}
+
+QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwargs) {
+
+    std::optional<QString> encoding;
+
+        //TODO: пока не поддерживается
+        std::optional<QString> errors;
+
+        for (const auto& [name, value] : kwargs) {
+
+            if (name == "encoding") {
+
+                encoding = value.asString("bytes")->toString();
+
+            } else if (name == "errors") {
+
+                //TODO: пока не поддерживается
+                errors = value.asString("bytes")->toString();
+
+            } else {
+
+                throw std::runtime_error(
+                    "Unknown keyword argument: "
+                    + name.toStdString()
+                );
+            }
+        }
+
+        if (args.empty()) {
+            return QByteArray();
+        }
+
+        if (args.size() > 2) {
+
+            throw std::runtime_error(
+                "bytes() takes at most 2 arguments"
+            );
+        }
+
+        const Value& obj = args[0];
+
+        if (obj.isBytes()) {
+
+            if (encoding.has_value()) {
+
+                throw std::runtime_error(
+                    "TypeError: encoding without a string argument"
+                );
+            }
+
+            return obj.asBytes("bytes")->bytes();
+        }
+
+        if (obj.isByteArray()) {
+
+            if (encoding.has_value()) {
+                throw std::runtime_error(
+                    "TypeError: encoding without a string argument"
+                );
+            }
+
+            return obj.asByteArray("bytes")->bytes();
+        }
+
+        try {
+
+            Value bytesMethod = getAttrValue(obj, "__bytes__");
+
+            Value result = call(bytesMethod, {}, {}, nullptr);
+
+            if (!result.isBytes()) {
+
+                throw std::runtime_error(
+                    "TypeError: __bytes__ returned non-bytes"
+                );
+            }
+
+            return result.asBytes()->bytes();
+
+        }
+        catch (const std::runtime_error& e) {
+
+            const std::string msg = e.what();
+
+            if (msg.find("AttributeError") == std::string::npos) {
+                throw;
+            }
+        }
+
+        if (obj.isString()) {
+
+            QString actualEncoding;
+
+            if (args.size() >= 2) {
+
+                actualEncoding = args[1].asString("bytes")->toString();
+
+            } else if (encoding.has_value()) {
+
+                actualEncoding = *encoding;
+                //TODO: if (errors.has_value()) {}
+            } else {
+
+                throw std::runtime_error(
+                    "TypeError: string argument without an encoding"
+                );
+            }
+
+            // TODO: пока поддерживается только utf-8
+            if (
+                actualEncoding != "utf-8" &&
+                actualEncoding != "utf8") {
+
+                throw std::runtime_error(
+                    "LookupError: unknown encoding"
+                );
+            }
+
+            return  obj.toString().toUtf8();
+        }
+
+        if (obj.isBigInt() || obj.isBool()) {
+
+            auto count = obj.toBigInt();
+
+            if (count < 0) {
+                throw;
+            }
+
+            return QByteArray(count.convert_to<long long>(), '\0');
+        }
+
+        if (obj.isIterable() || supportsIter(obj)) {
+
+            QByteArray result;
+
+            Value iterMethod = getAttrValue(obj, "__iter__");
+
+            Value iterObj = call(iterMethod, {}, {}, nullptr);
+
+            if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
+                throw std::runtime_error(
+                    "__iter__ returned non-iterator"
+                );
+            }
+
+            auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
+
+            while (iterator->hasNext()) {
+
+                Value item = iterator->next();
+
+                auto value = item.toBigInt();
+
+                if (value < 0 || value > 255) {
+                    throw std::runtime_error(
+                        "bytes must be in range(0, 256)"
+                    );
+                }
+
+                result.append(
+                    static_cast<char>(
+                        value.convert_to<int>()
+                    )
+                );
+            }
+
+            return result;
+        }
+
+        throw std::runtime_error(
+            "TypeError: cannot convert object to bytes"
+        );
+
+
 }

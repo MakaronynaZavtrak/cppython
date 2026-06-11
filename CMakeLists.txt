@@ -110,7 +110,11 @@ add_executable(cppython main.cpp
         headers/ObjectValue.h
         headers/BytesIterator.h
         sources/BytesIterator.cpp
-        headers/SliceValue.h)
+        headers/SliceValue.h
+        headers/ByteArrayValue.h
+        sources/ByteArrayValue.cpp
+        runtime/builtins/bytearray/ByteArrayMethods.h
+        runtime/builtins/bytearray/ByteArrayMethods.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

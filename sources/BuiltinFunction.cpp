@@ -1,4 +1,5 @@
 #include "BoundMethod.h"
+#include "ByteArrayValue.h"
 #include "BytesValue.h"
 #include "CallRuntime.h"
 #include "ClassMethodValue.h"
@@ -441,24 +442,6 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
-    env->set("str",
-    makeBuiltin(
-        "str",
-
-        [](const std::vector<Value>& args,
-           const Kwargs&,
-           const std::shared_ptr<Environment>&) -> Value {
-
-            expectArgsRange(args, 0, 1, "str");
-
-            if (args.empty()) {
-                return Value("");
-            }
-
-            return Value(args[0].toString());
-        }
-    ));
-
     env->set("repr",
              makeBuiltin(
                  "repr",
@@ -547,47 +530,6 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
-    //TODO: поддержка конструирования bytes пока неполноценна
-    env->set("bytes",
-    makeBuiltin(
-        "bytes",
-
-        [](const std::vector<Value>& args,
-           const Kwargs&,
-           const std::shared_ptr<Environment>&) -> Value {
-
-            expectArgsRange(args, 0, 1, "bytes");
-
-            if (args.empty()) {
-
-                return Value(
-                    std::make_shared<BytesValue>(
-                        QByteArray()
-                    )
-                );
-            }
-
-            const Value& obj = args[0];
-
-            if (obj.isBytes()) {
-                return obj;
-            }
-
-            if (obj.isString()) {
-
-                return Value(
-                    std::make_shared<BytesValue>(
-                        obj.toString().toUtf8()
-                    )
-                );
-            }
-
-            throw std::runtime_error(
-                "TypeError: cannot convert object to bytes"
-            );
-        }
-    ));
-
     env->set("__bytes_call__",
     makeBuiltin(
         "__bytes_call__",
@@ -645,6 +587,78 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                 "TypeError: cannot convert object to bytes"
             );
         }
+    ));
+
+    env->set("__bytearray_call__",
+
+     makeBuiltin(
+         "__bytearray_call__",
+
+         [](const std::vector<Value> &args,
+            const Kwargs &,
+            const std::shared_ptr<Environment> &) -> Value {
+             expectArgsRange(args, 0, 1, "bytearray");
+
+             if (args.empty()) {
+                 return Value(
+                     std::make_shared<ByteArrayValue>(
+                         QByteArray()
+                     )
+                 );
+             }
+
+             const Value &obj = args[0];
+
+             try {
+
+                Value method = getAttrValue(obj, "__bytes__");
+
+                Value result = call(method, {}, {}, nullptr);
+
+                if (!result.isBytes()) {
+                    throw std::runtime_error(
+                        "TypeError: __bytes__ returned non-bytes"
+                    );
+                }
+
+                return result;
+
+            } catch (const std::runtime_error &e) {
+
+                if (const std::string msg = e.what();
+                    msg.find("AttributeError") == std::string::npos) {
+                    throw;
+                }
+            }
+
+             if (obj.isByteArray()) {
+                 return Value(
+                     std::make_shared<ByteArrayValue>(
+                         obj.asByteArray()->bytes()
+                     )
+                 );
+             }
+
+             if (obj.isBytes()) {
+                 return Value(
+                     std::make_shared<ByteArrayValue>(
+                         obj.asBytes()->bytes()
+                     )
+                 );
+             }
+
+             if (obj.isString()) {
+                 return Value(
+                     std::make_shared<ByteArrayValue>(
+                         obj.toString().toUtf8()
+                     )
+                 );
+             }
+
+             throw std::runtime_error(
+                 "TypeError: cannot convert object to bytearray"
+             );
+         }
     ));
 
 }

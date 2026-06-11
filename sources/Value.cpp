@@ -1,6 +1,7 @@
 #include "Value.h"
 
 #include "BoundMethod.h"
+#include "ByteArrayValue.h"
 #include "BytesIterator.h"
 #include "BytesValue.h"
 #include "ClassMethodValue.h"
@@ -140,6 +141,10 @@ QString Value::toString() const {
             },
 
             [](const SlicePtr& p) {
+                return p->toString();
+            },
+
+            [](const ByteArrayPtr& p) {
                 return p->toString();
             },
 
@@ -1385,4 +1390,17 @@ Value::SlicePtr Value::asSlice() const {
     }
 
     return std::get<SlicePtr>(data);
+}
+
+bool Value::isByteArray() const {
+    return std::holds_alternative<ByteArrayPtr>(data);
+}
+
+Value::ByteArrayPtr Value::asByteArray(const QString &where) const {
+
+    if (!isByteArray()) {
+        throw std::runtime_error(where.toStdString() + "value is not a bytearray");
+    }
+
+    return std::get<ByteArrayPtr>(data);
 }

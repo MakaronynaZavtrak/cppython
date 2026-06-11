@@ -30,4 +30,8 @@ Value callBoundMethod(const Value::BoundMethodPtr&,
                       const std::vector<Value>&,
                       const Kwargs&);
 
+QByteArray constructBytesData(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs);
+
 #endif //CPPYTHON_CALLRUNTIME_H

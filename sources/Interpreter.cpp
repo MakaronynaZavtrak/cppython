@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "Runtime.h"
+#include "../runtime/builtins/bytearray/ByteArrayMethods.h"
 #include "../runtime/builtins/bytes/BytesMethods.h"
 #include "../runtime/builtins/str/StrMethods.h"
 
@@ -140,6 +141,16 @@ void Interpreter::run(int argc, char* argv[]) {
     globalEnv->set("bytes", Value(Runtime::bytesClass));
     Runtime::bytesClass->attributes["__call__"] = globalEnv->get("__bytes_call__");
     globalEnv->set("__bytes_type__", Value(Runtime::bytesClass));
+
+
+    Runtime::bytearrayClass = std::make_shared<ClassValue>("bytearray");
+    Runtime::bytearrayClass->name = "bytearray";
+    Runtime::bytearrayClass->bases.push_back(Runtime::objectClass);
+
+    globalEnv->set("bytearray", Value(Runtime::bytearrayClass));
+    Runtime::bytearrayClass->attributes["__call__"] = globalEnv->get("__bytearray_call__");
+    globalEnv->set("__bytearray_type__", Value(Runtime::bytearrayClass));
+    Runtime::bytearrayClass->attributes["__bytes__"] = make__byteArray__ClassBuiltin();
 
     Lexer lexer;
     std::vector<std::string> buffer;
