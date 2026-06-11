@@ -3146,7 +3146,7 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc').find(b'')", "0"),
     ("bytearray(b'abc').find(b'', 2)", "2"),
 
-    # bytearray.rfind()
+    # rfind
     ("bytearray(b'abcdef').rfind(b'cd')", "2"),
     ("bytearray(b'abcdef').rfind(bytearray(b'cd'))", "2"),
 
@@ -3172,6 +3172,25 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("bytearray(b'abc').rfind(b'')", "3"),
     ("bytearray(b'abc').rfind(b'', 0, 2)", "2"),
+
+    # index
+    ("bytearray(b'abcdef').index(b'cd')", "2"),
+    ("bytearray(b'abcdef').index(bytearray(b'cd'))", "2"),
+
+    ("bytearray(b'abcdef').index(b'a')", "0"),
+    ("bytearray(b'abcdef').index(b'f')", "5"),
+
+    ("bytearray(b'abcdef').index(99)", "2"),
+    ("bytearray(b'abcdef').index(102)", "5"),
+
+    ("bytearray(b'aaaaaa').index(b'aa')", "0"),
+    ("bytearray(b'aaaaaa').index(b'aa', 1)", "1"),
+
+    ("bytearray(b'abcabcabc').index(b'abc')", "0"),
+    ("bytearray(b'abcabcabc').index(b'abc', 1)", "3"),
+
+    ("bytearray(b'abcdef').index(b'cd', 2)", "2"),
+    ("bytearray(b'abcdef').index(b'de', 0, 5)", "3"),
 
 ])
 

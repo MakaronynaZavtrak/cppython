@@ -439,3 +439,20 @@ Value ByteArrayValue::rfind(
         Value::BigInt(begin + pos)
     );
 }
+
+Value ByteArrayValue::index(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    Value result = find(sub, start, end);
+
+    if (result.toBigInt() == -1) {
+
+        throw std::runtime_error(
+            "ValueError: subsection not found"
+        );
+    }
+
+    return result;
+}

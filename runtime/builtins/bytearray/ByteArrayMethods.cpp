@@ -281,6 +281,37 @@ namespace {
         );
     }
 
+    Value makeIndexMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "index",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "index");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() >= 3) {
+                    end = args[2];
+                }
+
+                return byteArray->index(args[0], start, end);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -294,7 +325,8 @@ namespace {
         REGISTER_METHOD("__gt__", makeGtMethod),
         REGISTER_METHOD("__ge__", makeGeMethod),
         REGISTER_METHOD("find", makeFindMethod),
-        REGISTER_METHOD("rfind", makeRfindMethod)
+        REGISTER_METHOD("rfind", makeRfindMethod),
+        REGISTER_METHOD("index", makeIndexMethod)
     };
 
 }
