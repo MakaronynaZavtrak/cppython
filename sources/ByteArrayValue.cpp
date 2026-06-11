@@ -193,3 +193,8 @@ bool ByteArrayValue::equal(const Value& other) const {
 
     return false;
 }
+
+bool ByteArrayValue::notEqual(const Value& other) const {
+
+    return !equal(other);
+}

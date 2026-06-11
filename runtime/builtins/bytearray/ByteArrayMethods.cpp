@@ -109,13 +109,36 @@ namespace {
         );
     }
 
+    Value makeNeMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "__ne__",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__ne__");
+
+                return Value(
+                    byteArray->notEqual(args[0])
+                );
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
         REGISTER_METHOD("__contains__", makeContainsMethod),
-        REGISTER_METHOD("__eq__", makeEqMethod)
+        REGISTER_METHOD("__eq__", makeEqMethod),
+        REGISTER_METHOD("__ne__", makeNeMethod)
     };
 
 }

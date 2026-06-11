@@ -3006,6 +3006,26 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc') == [97,98,99]", "False"),
     ("bytearray(b'abc') == 123", "False"),
 
+    # __ne__
+    ("bytearray(b'abc') != bytearray(b'abc')", "False"),
+    ("bytearray(b'abc') != bytearray(b'abd')", "True"),
+
+    ("bytearray(b'abc') != b'abc'", "False"),
+    ("bytearray(b'abc') != b'abd'", "True"),
+
+    ("bytearray() != bytearray()", "False"),
+    ("bytearray() != b''", "False"),
+
+    ("bytearray(b'abc') != bytearray(b'ab')", "True"),
+    ("bytearray(b'ab') != bytearray(b'abc')", "True"),
+
+    ("bytearray([0,1,2]) != bytearray([0,1,2])", "False"),
+    ("bytearray([0,1,2]) != bytearray([0,1,3])", "True"),
+
+    ("bytearray(b'abc') != 'abc'", "True"),
+    ("bytearray(b'abc') != [97,98,99]", "True"),
+    ("bytearray(b'abc') != 123", "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

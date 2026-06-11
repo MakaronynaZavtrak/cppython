@@ -442,6 +442,10 @@ bool Value::operator!=(const Value &other) const {
         return asBytes()->notEqual(other);
     }
 
+    if (isByteArray()) {
+        return asByteArray()->notEqual(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for !=: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
