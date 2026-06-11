@@ -52,5 +52,10 @@ public:
     [[nodiscard]] bool greater(const Value& other) const override;
 
     [[nodiscard]] bool greaterOrEqual(const Value& other) const override;
+
+    [[nodiscard]] Value find(
+    const Value& sub,
+    const std::optional<Value>& start = std::nullopt,
+    const std::optional<Value>& end = std::nullopt) const;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

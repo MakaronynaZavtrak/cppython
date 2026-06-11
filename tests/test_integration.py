@@ -3119,6 +3119,33 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray([0,1]) >= bytearray([0,1])", "True"),
     ("bytearray([0,1]) >= bytearray([0,1,0])", "False"),
 
+    # bytearray.find()
+    ("bytearray(b'abcdef').find(b'cd')", "2"),
+    ("bytearray(b'abcdef').find(bytearray(b'cd'))", "2"),
+
+    ("bytearray(b'abcdef').find(b'xx')", "-1"),
+
+    ("bytearray(b'abcdef').find(b'a')", "0"),
+    ("bytearray(b'abcdef').find(b'f')", "5"),
+
+    ("bytearray(b'abcdef').find(99)", "2"),
+    ("bytearray(b'abcdef').find(102)", "5"),
+
+    ("bytearray(b'abcdef').find(b'cd', 3)", "-1"),
+    ("bytearray(b'abcdef').find(b'cd', 2)", "2"),
+
+    ("bytearray(b'abcdef').find(b'de', 0, 5)", "3"),
+    ("bytearray(b'abcdef').find(b'de', 0, 4)", "-1"),
+
+    ("bytearray(b'aaaaaa').find(b'aa')", "0"),
+    ("bytearray(b'aaaaaa').find(b'aa', 1)", "1"),
+
+    ("bytearray(b'').find(b'a')", "-1"),
+    ("bytearray(b'').find(b'')", "0"),
+
+    ("bytearray(b'abc').find(b'')", "0"),
+    ("bytearray(b'abc').find(b'', 2)", "2"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
