@@ -198,3 +198,23 @@ bool ByteArrayValue::notEqual(const Value& other) const {
 
     return !equal(other);
 }
+
+bool ByteArrayValue::less(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return data <
+            other.asByteArray("bytearray")->bytes();
+    }
+
+    if (other.isBytes()) {
+
+        return data <
+            other.asBytes("bytes")->bytes();
+    }
+
+    throw std::runtime_error(
+        "TypeError: '<' not supported between instances of "
+        "'bytearray' and other type"
+    );
+}

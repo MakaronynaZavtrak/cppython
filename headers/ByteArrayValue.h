@@ -44,5 +44,7 @@ public:
     [[nodiscard]] bool equal(const Value& other) const override;
 
     [[nodiscard]] bool notEqual(const Value& other) const override;
+
+    [[nodiscard]] bool less(const Value& other) const override;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

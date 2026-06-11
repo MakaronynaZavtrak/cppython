@@ -2985,7 +2985,7 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'a') in bytearray()", "False"),
     ("b'' in bytearray()", "True"),
 
-    # __eq__
+    # bytearray __eq__
     ("bytearray(b'abc') == bytearray(b'abc')", "True"),
     ("bytearray(b'abc') == bytearray(b'abc')", "True"),
     ("bytearray(b'abc') == bytearray(b'abd')", "False"),
@@ -3006,7 +3006,7 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc') == [97,98,99]", "False"),
     ("bytearray(b'abc') == 123", "False"),
 
-    # __ne__
+    # bytearray __ne__
     ("bytearray(b'abc') != bytearray(b'abc')", "False"),
     ("bytearray(b'abc') != bytearray(b'abd')", "True"),
 
@@ -3025,6 +3025,29 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc') != 'abc'", "True"),
     ("bytearray(b'abc') != [97,98,99]", "True"),
     ("bytearray(b'abc') != 123", "True"),
+
+    # bytearray __lt__
+    ("bytearray(b'abc') < bytearray(b'abd')", "True"),
+    ("bytearray(b'abd') < bytearray(b'abc')", "False"),
+
+    ("bytearray(b'abc') < bytearray(b'abc')", "False"),
+
+    ("bytearray(b'ab') < bytearray(b'abc')", "True"),
+    ("bytearray(b'abc') < bytearray(b'ab')", "False"),
+
+    ("bytearray(b'') < bytearray(b'a')", "True"),
+    ("bytearray(b'a') < bytearray(b'')", "False"),
+
+    ("bytearray(b'abc') < b'abd'", "True"),
+    ("bytearray(b'abd') < b'abc'", "False"),
+
+    ("bytearray(b'abc') < b'abc'", "False"),
+
+    ("bytearray([0,1,2]) < bytearray([0,1,3])", "True"),
+    ("bytearray([0,1,3]) < bytearray([0,1,2])", "False"),
+
+    ("bytearray([0,1]) < bytearray([0,1,0])", "True"),
+    ("bytearray([0,1,0]) < bytearray([0,1])", "False"),
 
 ])
 
