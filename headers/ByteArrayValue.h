@@ -50,5 +50,7 @@ public:
     [[nodiscard]] bool lessOrEqual(const Value& other) const override;
 
     [[nodiscard]] bool greater(const Value& other) const override;
+
+    [[nodiscard]] bool greaterOrEqual(const Value& other) const override;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

@@ -543,6 +543,10 @@ bool Value::operator>=(const Value &other) const {
         return asBytes()->greaterOrEqual(other);
     }
 
+    if (isByteArray()) {
+        return asByteArray()->greaterOrEqual(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for >=: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
