@@ -36,5 +36,7 @@ public:
     Value __bytes__() const;
 
     [[nodiscard]] Value add(const Value& other) const override;
+
+    [[nodiscard]] Value multiply(const Value& other) const override;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

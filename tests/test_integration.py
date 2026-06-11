@@ -2934,6 +2934,26 @@ def run_cppython(cmds: str | list[str]) -> str:
     # chaining
     ("bytearray(b'a') + bytearray(b'b') + bytearray(b'c')", "bytearray(b'abc')"),
 
+    # bytearray __mul__
+    ("bytearray(b'abc') * 0", "bytearray(b'')"),
+    ("bytearray(b'abc') * 1", "bytearray(b'abc')"),
+    ("bytearray(b'abc') * 2", "bytearray(b'abcabc')"),
+    ("bytearray(b'abc') * 3", "bytearray(b'abcabcabc')"),
+    ("bytearray(b'') * 100", "bytearray(b'')"),
+    ("bytearray([97]) * 5", "bytearray(b'aaaaa')"),
+    ("bytearray([97,98]) * 4", "bytearray(b'abababab')"),
+
+    # отрицательные множители
+    ("bytearray(b'abc') * -1", "bytearray(b'')"),
+    ("bytearray(b'abc') * -100", "bytearray(b'')"),
+
+    # bool как int
+    ("bytearray(b'abc') * True", "bytearray(b'abc')"),
+    ("bytearray(b'abc') * False", "bytearray(b'')"),
+
+    # chaining
+    ("(bytearray(b'ab') * 2) * 2", "bytearray(b'abababab')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

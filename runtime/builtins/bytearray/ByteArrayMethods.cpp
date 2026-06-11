@@ -47,10 +47,31 @@ namespace {
         );
     }
 
+    Value makeMultiplyMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "__mul__",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__mul__");
+
+                return byteArray->multiply(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
-        REGISTER_METHOD("__add__", makeAddMethod)
+        REGISTER_METHOD("__add__", makeAddMethod),
+        REGISTER_METHOD("__mul__", makeMultiplyMethod)
     };
 
 }

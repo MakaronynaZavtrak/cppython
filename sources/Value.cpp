@@ -591,6 +591,10 @@ Value Value::operator*(const Value &other) const {
         return asBytes()->multiply(other);
     }
 
+    if (isByteArray()) {
+        return asByteArray()->multiply(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for *: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }

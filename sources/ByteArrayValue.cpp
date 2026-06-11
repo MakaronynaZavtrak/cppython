@@ -104,3 +104,38 @@ Value ByteArrayValue::add(const Value& other) const {
         "TypeError: can't concat bytearray with non-bytes-like object"
     );
 }
+
+Value ByteArrayValue::multiply(const Value& other) const {
+
+    if (!other.isBigInt() && !other.isBool()) {
+
+        throw std::runtime_error(
+            "TypeError: can't multiply bytearray by non-int"
+        );
+    }
+
+    const auto count =
+        other.toBigInt().convert_to<long long>();
+
+    if (count <= 0) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                QByteArray()
+            )
+        );
+    }
+
+    QByteArray result;
+    result.reserve(data.size() * count);
+
+    for (long long i = 0; i < count; ++i) {
+        result += data;
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
