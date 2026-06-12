@@ -797,3 +797,36 @@ const std::optional<Value>& chars) const {
         ? result->rstrip(*chars)
         : result->rstrip();
 }
+
+Value ByteArrayValue::removeprefix(const Value& prefix) const {
+
+    QByteArray prefixBytes;
+
+    if (prefix.isBytes()) {
+
+        prefixBytes = prefix.asBytes("removeprefix")->bytes();
+
+    } else if (prefix.isByteArray()) {
+
+        prefixBytes = prefix.asByteArray("removeprefix")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: removeprefix() argument must be bytes-like"
+        );
+    }
+
+    if (data.startsWith(prefixBytes)) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data.mid(prefixBytes.size())
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(data)
+    );
+}

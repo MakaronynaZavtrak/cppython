@@ -92,5 +92,7 @@ public:
 
     [[nodiscard]] Value strip(
     const std::optional<Value>& chars = std::nullopt) const;
+
+    [[nodiscard]] Value removeprefix(const Value& prefix) const;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

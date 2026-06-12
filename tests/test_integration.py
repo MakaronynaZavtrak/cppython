@@ -3348,6 +3348,18 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abcabc').strip(b'abc')", "bytearray(b'')"),
     ("bytearray(b'cabXYZbac').strip(b'abc')", "bytearray(b'XYZ')"),
 
+    # removeprefix
+    ("bytearray(b'foobar').removeprefix(b'foo')", "bytearray(b'bar')"),
+    ("bytearray(b'foobar').removeprefix(b'foobar')", "bytearray(b'')"),
+    ("bytearray(b'foobar').removeprefix(b'')", "bytearray(b'foobar')"),
+    ("bytearray(b'foobar').removeprefix(b'xxx')", "bytearray(b'foobar')"),
+    ("bytearray(b'foobar').removeprefix(b'f')", "bytearray(b'oobar')"),
+    ("bytearray(b'foobar').removeprefix(b'foobarbaz')", "bytearray(b'foobar')"),
+    ("bytearray(b'aaaaaa').removeprefix(b'aaa')", "bytearray(b'aaa')"),
+    ("bytearray(b'abcabc').removeprefix(b'abc')", "bytearray(b'abc')"),
+    ("bytearray(b'abcabc').removeprefix(b'abcabc')", "bytearray(b'')"),
+    ("bytearray(b'').removeprefix(b'abc')", "bytearray(b'')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

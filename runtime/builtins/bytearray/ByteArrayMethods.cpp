@@ -483,6 +483,25 @@ namespace {
         );
     }
 
+    Value makeRemovePrefixMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "removeprefix",
+
+            [byteArray](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "removeprefix");
+
+                return byteArray->removeprefix(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -503,7 +522,8 @@ namespace {
         REGISTER_METHOD("endswith", makeEndsWithMethod),
         REGISTER_METHOD("lstrip", makeLStripMethod),
         REGISTER_METHOD("rstrip", makeRStripMethod),
-        REGISTER_METHOD("strip", makeStripMethod)
+        REGISTER_METHOD("strip", makeStripMethod),
+        REGISTER_METHOD("removeprefix", makeRemovePrefixMethod)
     };
 
 }
