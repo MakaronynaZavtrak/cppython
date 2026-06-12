@@ -624,3 +624,67 @@ Value ByteArrayValue::startsWith(
         slice.startsWith(needle)
     );
 }
+
+Value ByteArrayValue::endsWith(
+    const Value& suffix,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QByteArray needle;
+
+    if (suffix.isByteArray()) {
+
+        needle = suffix.asByteArray("endswith")->bytes();
+
+    } else if (suffix.isBytes()) {
+
+        needle = suffix.asBytes("endswith")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: endswith first arg must be bytes-like object"
+        );
+    }
+
+    long long begin = 0;
+    long long finish = data.size();
+
+    if (start.has_value()) {
+        begin = start->toBigInt().convert_to<long long>();
+    }
+
+    if (end.has_value()) {
+        finish = end->toBigInt().convert_to<long long>();
+    }
+
+    if (begin < 0) {
+        begin += data.size();
+    }
+
+    if (finish < 0) {
+        finish += data.size();
+    }
+
+    begin = std::clamp(
+        begin,
+        0LL,
+        static_cast<long long>(data.size())
+    );
+
+    finish = std::clamp(
+        finish,
+        0LL,
+        static_cast<long long>(data.size())
+    );
+
+    QByteArray slice =
+        data.mid(
+            static_cast<int>(begin),
+            static_cast<int>(finish - begin)
+        );
+
+    return Value(
+        slice.endsWith(needle)
+    );
+}

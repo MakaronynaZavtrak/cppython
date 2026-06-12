@@ -3247,6 +3247,31 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc').startswith(b'')", "True"),
     ("bytearray(b'abc').startswith(bytearray(b''))", "True"),
 
+    # bytearray.endswith()
+    ("bytearray(b'abcdef').endswith(b'def')", "True"),
+    ("bytearray(b'abcdef').endswith(b'ef')", "True"),
+    ("bytearray(b'abcdef').endswith(b'abcdef')", "True"),
+
+    ("bytearray(b'abcdef').endswith(b'abc')", "False"),
+    ("bytearray(b'abcdef').endswith(b'cd')", "False"),
+
+    ("bytearray(b'abcdef').endswith(bytearray(b'def'))", "True"),
+
+    ("bytearray(b'abcdef').endswith(b'de', 0, 5)", "True"),
+    ("bytearray(b'abcdef').endswith(b'def', 0, 5)", "False"),
+
+    ("bytearray(b'abcdef').endswith(b'cd', 0, 4)", "True"),
+    ("bytearray(b'abcdef').endswith(b'cd', 0, 3)", "False"),
+
+    ("bytearray(b'abcdef').endswith(b'ef', -2)", "True"),
+    ("bytearray(b'abcdef').endswith(b'de', -2)", "False"),
+
+    ("bytearray(b'').endswith(b'')", "True"),
+    ("bytearray(b'').endswith(b'a')", "False"),
+
+    ("bytearray(b'abc').endswith(b'')", "True"),
+    ("bytearray(b'abc').endswith(bytearray(b''))", "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
