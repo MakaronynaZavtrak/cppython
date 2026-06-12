@@ -433,6 +433,31 @@ namespace {
         );
     }
 
+    Value makeRStripMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "rstrip",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&
+            ) -> Value {
+
+                expectArgsRange(args, 0, 1, "rstrip");
+
+                if (args.empty()) {
+                    return byteArray->rstrip();
+                }
+
+                return byteArray->rstrip(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -451,7 +476,8 @@ namespace {
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("startswith", makeStartsWithMethod),
         REGISTER_METHOD("endswith", makeEndsWithMethod),
-        REGISTER_METHOD("lstrip", makeLStripMethod)
+        REGISTER_METHOD("lstrip", makeLStripMethod),
+        REGISTER_METHOD("rstrip", makeRStripMethod),
     };
 
 }

@@ -735,3 +735,50 @@ const std::optional<Value>& chars) const {
         )
     );
 }
+
+Value ByteArrayValue::rstrip(
+const std::optional<Value>& chars) const {
+
+    QByteArray stripChars;
+
+    if (chars.has_value()) {
+
+        const Value& value = *chars;
+
+        if (value.isBytes()) {
+
+            stripChars =
+                value.asBytes("rstrip")->bytes();
+
+        } else if (value.isByteArray()) {
+
+            stripChars =
+                value.asByteArray("rstrip")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: rstrip arg must be bytes or bytearray"
+            );
+        }
+
+    } else {
+
+        stripChars = QByteArray(" \t\n\r\v\f");
+    }
+
+    int pos = data.size();
+
+    while (
+        pos > 0
+        && stripChars.contains(data[pos - 1])
+    ) {
+        --pos;
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            data.left(pos)
+        )
+    );
+}
