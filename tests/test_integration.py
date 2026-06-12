@@ -3272,6 +3272,31 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc').endswith(b'')", "True"),
     ("bytearray(b'abc').endswith(bytearray(b''))", "True"),
 
+    # bytearray.lstrip()
+    ("bytearray(b'   abc').lstrip()", "bytearray(b'abc')"),
+    ("bytearray(b'\\t\\n abc').lstrip()", "bytearray(b'abc')"),
+
+    ("bytearray(b'abc').lstrip()", "bytearray(b'abc')"),
+    ("bytearray(b'').lstrip()", "bytearray(b'')"),
+
+    ("bytearray(b'xxxabc').lstrip(b'x')", "bytearray(b'abc')"),
+    ("bytearray(b'xxxxabc').lstrip(b'x')", "bytearray(b'abc')"),
+
+    ("bytearray(b'abc').lstrip(b'ab')", "bytearray(b'c')"),
+    ("bytearray(b'aabbcc').lstrip(b'ab')", "bytearray(b'cc')"),
+
+    ("bytearray(b'abc').lstrip(b'')", "bytearray(b'abc')"),
+
+    ("bytearray(b'111222').lstrip(b'1')", "bytearray(b'222')"),
+    ("bytearray(b'111222').lstrip(b'12')", "bytearray(b'')"),
+
+    ("bytearray(b'xyzabc').lstrip(bytearray(b'xyz'))", "bytearray(b'abc')"),
+
+    ("bytearray(b'aaaa').lstrip(b'a')", "bytearray(b'')"),
+    ("bytearray(b'aaaa').lstrip(b'b')", "bytearray(b'aaaa')"),
+
+    ("bytearray(b'abcabc').lstrip(b'abc')", "bytearray(b'')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

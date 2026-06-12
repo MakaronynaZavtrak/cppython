@@ -409,6 +409,30 @@ namespace {
         );
     }
 
+    Value makeLStripMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "lstrip",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+                -> Value {
+
+                expectArgsRange(args, 0, 1, "bytearray.lstrip");
+
+                if (args.empty()) {
+                    return byteArray->lstrip();
+                }
+
+                return byteArray->lstrip(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -426,7 +450,8 @@ namespace {
         REGISTER_METHOD("index", makeIndexMethod),
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("startswith", makeStartsWithMethod),
-        REGISTER_METHOD("endswith", makeEndsWithMethod)
+        REGISTER_METHOD("endswith", makeEndsWithMethod),
+        REGISTER_METHOD("lstrip", makeLStripMethod)
     };
 
 }

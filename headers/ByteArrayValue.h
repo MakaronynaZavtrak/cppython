@@ -4,6 +4,7 @@
 
 #ifndef CPPYTHON_BYTEARRAYVALUE_H
 #define CPPYTHON_BYTEARRAYVALUE_H
+#include "BytesValue.h"
 #include "ObjectValue.h"
 #include "Value.h"
 
@@ -82,5 +83,8 @@ public:
     const Value& suffix,
     const std::optional<Value>& start = std::nullopt,
     const std::optional<Value>& end = std::nullopt) const;
+
+    [[nodiscard]] Value lstrip(
+    const std::optional<Value>& chars = std::nullopt) const;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

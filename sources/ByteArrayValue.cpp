@@ -688,3 +688,50 @@ Value ByteArrayValue::endsWith(
         slice.endsWith(needle)
     );
 }
+
+Value ByteArrayValue::lstrip(
+const std::optional<Value>& chars) const {
+
+    QByteArray stripChars;
+
+    if (chars.has_value()) {
+
+        const Value& value = *chars;
+
+        if (value.isBytes()) {
+
+            stripChars =
+                value.asBytes("lstrip")->bytes();
+
+        } else if (value.isByteArray()) {
+
+            stripChars =
+                value.asByteArray("lstrip")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: lstrip arg must be bytes or bytearray"
+            );
+        }
+
+    } else {
+
+        stripChars = QByteArray(" \t\n\r\v\f");
+    }
+
+    int pos = 0;
+
+    while (
+        pos < data.size()
+        && stripChars.contains(data[pos])
+    ) {
+        ++pos;
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            data.mid(pos)
+        )
+    );
+}
