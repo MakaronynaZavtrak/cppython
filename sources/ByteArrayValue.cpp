@@ -782,3 +782,18 @@ const std::optional<Value>& chars) const {
         )
     );
 }
+
+Value ByteArrayValue::strip(
+const std::optional<Value>& chars) const {
+
+    const auto leftStripped = chars.has_value()
+        ? lstrip(*chars)
+        : lstrip();
+
+    const auto result =
+        leftStripped.asByteArray("strip");
+
+    return chars.has_value()
+        ? result->rstrip(*chars)
+        : result->rstrip();
+}

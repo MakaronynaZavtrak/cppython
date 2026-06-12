@@ -3322,6 +3322,32 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("bytearray(b'abcabc').rstrip(b'abc')", "bytearray(b'')"),
 
+    # bytearray.strip()
+    ("bytearray(b'   abc   ').strip()", "bytearray(b'abc')"),
+    ("bytearray(b'\\t\\nabc\\r\\n').strip()", "bytearray(b'abc')"),
+
+    ("bytearray(b'abc').strip()", "bytearray(b'abc')"),
+    ("bytearray(b'').strip()", "bytearray(b'')"),
+
+    ("bytearray(b'xxxabcxxx').strip(b'x')", "bytearray(b'abc')"),
+    ("bytearray(b'xxxxabcxxxx').strip(b'x')", "bytearray(b'abc')"),
+
+    ("bytearray(b'abc').strip(b'abc')", "bytearray(b'')"),
+    ("bytearray(b'aaabcaa').strip(b'a')", "bytearray(b'bc')"),
+
+    ("bytearray(b'abc').strip(b'')", "bytearray(b'abc')"),
+
+    ("bytearray(b'111abc222').strip(b'12')", "bytearray(b'abc')"),
+    ("bytearray(b'222111').strip(b'12')", "bytearray(b'')"),
+
+    ("bytearray(b'xyzabcxyz').strip(bytearray(b'xyz'))", "bytearray(b'abc')"),
+
+    ("bytearray(b'aaaa').strip(b'a')", "bytearray(b'')"),
+    ("bytearray(b'aaaa').strip(b'b')", "bytearray(b'aaaa')"),
+
+    ("bytearray(b'abcabc').strip(b'abc')", "bytearray(b'')"),
+    ("bytearray(b'cabXYZbac').strip(b'abc')", "bytearray(b'XYZ')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
