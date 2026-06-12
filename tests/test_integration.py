@@ -3146,7 +3146,7 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc').find(b'')", "0"),
     ("bytearray(b'abc').find(b'', 2)", "2"),
 
-    # rfind
+    # bytearray.rfind()
     ("bytearray(b'abcdef').rfind(b'cd')", "2"),
     ("bytearray(b'abcdef').rfind(bytearray(b'cd'))", "2"),
 
@@ -3173,7 +3173,7 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc').rfind(b'')", "3"),
     ("bytearray(b'abc').rfind(b'', 0, 2)", "2"),
 
-    # index
+    # bytearray.index()
     ("bytearray(b'abcdef').index(b'cd')", "2"),
     ("bytearray(b'abcdef').index(bytearray(b'cd'))", "2"),
 
@@ -3192,7 +3192,7 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abcdef').index(b'cd', 2)", "2"),
     ("bytearray(b'abcdef').index(b'de', 0, 5)", "3"),
 
-    # count
+    # bytearray.count()
     ("bytearray(b'abcdef').count(b'a')", "1"),
     ("bytearray(b'abcdef').count(b'f')", "1"),
     ("bytearray(b'abcdef').count(b'x')", "0"),
@@ -3221,6 +3221,31 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc').count(b'')", "4"),
     ("bytearray(b'abc').count(b'', 1)", "3"),
     ("bytearray(b'abc').count(b'', 1, 2)", "2"),
+
+    # bytearray.startswith()
+    ("bytearray(b'abcdef').startswith(b'abc')", "True"),
+    ("bytearray(b'abcdef').startswith(b'ab')", "True"),
+    ("bytearray(b'abcdef').startswith(b'abcdef')", "True"),
+
+    ("bytearray(b'abcdef').startswith(b'bc')", "False"),
+    ("bytearray(b'abcdef').startswith(b'def')", "False"),
+
+    ("bytearray(b'abcdef').startswith(bytearray(b'abc'))", "True"),
+
+    ("bytearray(b'abcdef').startswith(b'cd', 2)", "True"),
+    ("bytearray(b'abcdef').startswith(b'cd', 3)", "False"),
+
+    ("bytearray(b'abcdef').startswith(b'cd', 2, 4)", "True"),
+    ("bytearray(b'abcdef').startswith(b'cd', 2, 3)", "False"),
+
+    ("bytearray(b'abcdef').startswith(b'ef', -2)", "True"),
+    ("bytearray(b'abcdef').startswith(b'de', -2)", "False"),
+
+    ("bytearray(b'').startswith(b'')", "True"),
+    ("bytearray(b'').startswith(b'a')", "False"),
+
+    ("bytearray(b'abc').startswith(b'')", "True"),
+    ("bytearray(b'abc').startswith(bytearray(b''))", "True"),
 
 ])
 
