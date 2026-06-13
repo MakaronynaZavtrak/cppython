@@ -1622,3 +1622,46 @@ Value ByteArrayValue::swapcase() const {
         )
     );
 }
+
+Value ByteArrayValue::capitalize() const {
+
+    if (data.isEmpty()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    QByteArray result = data;
+
+    if (
+        result[0] >= 'a' &&
+        result[0] <= 'z'
+    ) {
+
+        result[0] = static_cast<char>(
+            result[0] - 'a' + 'A'
+        );
+    }
+
+    for (int i = 1; i < result.size(); ++i) {
+
+        if (
+            result[i] >= 'A' &&
+            result[i] <= 'Z'
+        ) {
+
+            result[i] = static_cast<char>(
+                result[i] - 'A' + 'a'
+            );
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}

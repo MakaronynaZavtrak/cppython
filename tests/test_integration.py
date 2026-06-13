@@ -3522,7 +3522,20 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'!@#$').swapcase()", "bytearray(b'!@#$')"),
     ("bytearray(b'').swapcase()", "bytearray(b'')"),
     ("bytearray([255, 65, 66, 97, 98]).swapcase()", "bytearray(b'\\xffabAB')"),
-    ("bytearray(b'AbC').swapcase().swapcase()", "bytearray(b'AbC')")
+    ("bytearray(b'AbC').swapcase().swapcase()", "bytearray(b'AbC')"),
+
+    # capitalize
+    ("bytearray(b'hello').capitalize()", "bytearray(b'Hello')"),
+    ("bytearray(b'HELLO').capitalize()", "bytearray(b'Hello')"),
+    ("bytearray(b'hELLO').capitalize()", "bytearray(b'Hello')"),
+    ("bytearray(b'hello world').capitalize()", "bytearray(b'Hello world')"),
+    ("bytearray(b'HELLO WORLD').capitalize()", "bytearray(b'Hello world')"),
+    ("bytearray(b'a').capitalize()", "bytearray(b'A')"),
+    ("bytearray(b'A').capitalize()", "bytearray(b'A')"),
+    ("bytearray(b'').capitalize()", "bytearray(b'')"),
+    ("bytearray(b'123abc').capitalize()", "bytearray(b'123abc')"),
+    ("bytearray(b'!HELLO').capitalize()", "bytearray(b'!hello')"),
+    ("bytearray([255, 65, 66, 67]).capitalize()", "bytearray(b'\\xffabc')"),
 
 ])
 

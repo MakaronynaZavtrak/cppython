@@ -816,6 +816,27 @@ namespace {
         );
     }
 
+    Value makeCapitalizeMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "capitalize",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "capitalize");
+
+                return byteArray->capitalize();
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -850,7 +871,8 @@ namespace {
         REGISTER_METHOD("zfill", makeZFillMethod),
         REGISTER_METHOD("lower", makeLowerMethod),
         REGISTER_METHOD("upper", makeUpperMethod),
-        REGISTER_METHOD("swapcase", makeSwapCaseMethod)
+        REGISTER_METHOD("swapcase", makeSwapCaseMethod),
+        REGISTER_METHOD("capitalize", makeCapitalizeMethod)
     };
 
 }
