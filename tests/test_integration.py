@@ -3448,7 +3448,18 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc').center(6, b'-')", "bytearray(b'-abc--')"),
     ("bytearray(b'abc').center(7, b'-')", "bytearray(b'--abc--')"),
     ("bytearray(b'').center(4)", "bytearray(b'    ')"),
-    ("bytearray(b'').center(4, b'*')", "bytearray(b'****')")
+    ("bytearray(b'').center(4, b'*')", "bytearray(b'****')"),
+
+    # ljust
+    ("bytearray(b'abc').ljust(3)", "bytearray(b'abc')"),
+    ("bytearray(b'abc').ljust(5)", "bytearray(b'abc  ')"),
+    ("bytearray(b'abc').ljust(6)", "bytearray(b'abc   ')"),
+    ("bytearray(b'abc').ljust(7)", "bytearray(b'abc    ')"),
+    ("bytearray(b'abc').ljust(5, b'-')", "bytearray(b'abc--')"),
+    ("bytearray(b'abc').ljust(6, b'-')", "bytearray(b'abc---')"),
+    ("bytearray(b'abc').ljust(7, b'*')", "bytearray(b'abc****')"),
+    ("bytearray(b'').ljust(4)", "bytearray(b'    ')"),
+    ("bytearray(b'').ljust(4, b'*')", "bytearray(b'****')")
 
 ])
 
