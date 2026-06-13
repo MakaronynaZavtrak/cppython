@@ -133,5 +133,7 @@ public:
 
     [[nodiscard]] Value lower() const;
 
+    [[nodiscard]] Value upper() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

@@ -1586,3 +1586,12 @@ Value ByteArrayValue::lower() const {
         std::make_shared<ByteArrayValue>(result)
     );
 }
+
+Value ByteArrayValue::upper() const {
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            data.toUpper()
+        )
+    );
+}
