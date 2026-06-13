@@ -5,6 +5,7 @@
 
 #include "BytesValue.h"
 #include "ListValue.h"
+#include "TupleValue.h"
 #include "../runtime/ProtocolHelpers.h"
 
 Value ByteArrayValue::getItem(const Value& indexValue) const {
@@ -1142,6 +1143,86 @@ Value ByteArrayValue::rsplit(
     return Value(
         std::make_shared<ListValue>(
             parts
+        )
+    );
+}
+
+Value ByteArrayValue::partition(
+    const Value& sep) const {
+
+    QByteArray separator;
+
+    if (sep.isBytes()) {
+
+        separator = sep.asBytes("partition")->bytes();
+
+    } else if (sep.isByteArray()) {
+
+        separator = sep.asByteArray("partition")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: partition() separator must be bytes-like"
+        );
+    }
+
+    if (separator.isEmpty()) {
+
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const int pos = data.indexOf(separator);
+
+    if (pos < 0) {
+
+        return Value(
+            std::make_shared<TupleValue>(
+                std::vector{
+                    Value(
+                        std::make_shared<ByteArrayValue>(data)
+                    ),
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            QByteArray()
+                        )
+                    ),
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            QByteArray()
+                        )
+                    )
+                }
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::vector{
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        data.left(pos)
+                    )
+                ),
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        separator
+                    )
+                ),
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        data.mid(
+                            pos + separator.size()
+                        )
+                    )
+                )
+            }
         )
     );
 }

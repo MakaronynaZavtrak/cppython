@@ -3419,6 +3419,15 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'one--two--three').rsplit(b'--', 1)", "[bytearray(b'one--two'), bytearray(b'three')]"),
     ("bytearray(b'one--two--three').rsplit(b'--', 2)", "[bytearray(b'one'), bytearray(b'two'), bytearray(b'three')]"),
 
+    # partition
+    ("bytearray(b'abc=123').partition(b'=')", "(bytearray(b'abc'), bytearray(b'='), bytearray(b'123'))"),
+    ("bytearray(b'abc').partition(b'=')", "(bytearray(b'abc'), bytearray(b''), bytearray(b''))"),
+    ("bytearray(b'=abc').partition(b'=')", "(bytearray(b''), bytearray(b'='), bytearray(b'abc'))"),
+    ("bytearray(b'abc=').partition(b'=')", "(bytearray(b'abc'), bytearray(b'='), bytearray(b''))"),
+    ("bytearray(b'a=b=c').partition(b'=')", "(bytearray(b'a'), bytearray(b'='), bytearray(b'b=c'))"),
+    ("bytearray(b'aaaa').partition(b'aa')", "(bytearray(b''), bytearray(b'aa'), bytearray(b'aa'))"),
+    ("bytearray(b'xyz').partition(b'xyz')", "(bytearray(b''), bytearray(b'xyz'), bytearray(b''))"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

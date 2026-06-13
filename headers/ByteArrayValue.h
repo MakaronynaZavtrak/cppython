@@ -110,5 +110,8 @@ public:
     const Value& sep,
     const Value::BigInt& maxsplit = -1) const;
 
+    [[nodiscard]] Value partition(
+    const Value& sep) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

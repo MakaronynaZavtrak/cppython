@@ -604,6 +604,27 @@ namespace {
         );
     }
 
+    Value makePartitionMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "partition",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "partition");
+
+                return byteArray->partition(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -629,7 +650,8 @@ namespace {
         REGISTER_METHOD("removesuffix",makeRemoveSuffixMethod),
         REGISTER_METHOD("replace", makeReplaceMethod),
         REGISTER_METHOD("split", makeSplitMethod),
-        REGISTER_METHOD("rsplit", makeRSplitMethod)
+        REGISTER_METHOD("rsplit", makeRSplitMethod),
+        REGISTER_METHOD("partition", makePartitionMethod)
     };
 
 }
