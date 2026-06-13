@@ -868,3 +868,121 @@ Value ByteArrayValue::removesuffix(const Value& suffix) const {
         std::make_shared<ByteArrayValue>(data)
     );
 }
+
+Value ByteArrayValue::replace(
+    const Value& oldValue,
+    const Value& newValue,
+    const Value::BigInt& count) const {
+
+    QByteArray oldBytes;
+    QByteArray newBytes;
+
+    if (oldValue.isBytes()) {
+
+        oldBytes = oldValue.asBytes("replace")->bytes();
+
+    } else if (oldValue.isByteArray()) {
+
+        oldBytes = oldValue.asByteArray("replace")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: replace() argument 1 must be bytes-like"
+        );
+    }
+
+    if (newValue.isBytes()) {
+
+        newBytes = newValue.asBytes("replace")->bytes();
+
+    } else if (newValue.isByteArray()) {
+
+        newBytes = newValue.asByteArray("replace")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: replace() argument 2 must be bytes-like"
+        );
+    }
+
+    const long long maxCount = count.convert_to<long long>();
+
+    // special case: old == b""
+    if (oldBytes.isEmpty()) {
+
+        QByteArray result;
+
+        long long inserted = 0;
+
+        auto canInsert =
+            [&]() -> bool {
+
+                return  maxCount < 0 || inserted < maxCount;
+            };
+
+        if (canInsert()) {
+
+            result.append(newBytes);
+            ++inserted;
+        }
+
+        for (const char ch : data) {
+
+            result.append(ch);
+
+            if (canInsert()) {
+
+                result.append(newBytes);
+                ++inserted;
+            }
+        }
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                result
+            )
+        );
+    }
+
+    QByteArray result = data;
+
+    if (maxCount == 0) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                result
+            )
+        );
+    }
+
+    int pos = 0;
+    long long replaced = 0;
+
+    while ((pos = result.indexOf(oldBytes, pos)) != -1) {
+
+        if (
+            maxCount >= 0
+            && replaced >= maxCount
+        ) {
+            break;
+        }
+
+        result.replace(
+            pos,
+            oldBytes.size(),
+            newBytes
+        );
+
+        pos += newBytes.size();
+
+        ++replaced;
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}

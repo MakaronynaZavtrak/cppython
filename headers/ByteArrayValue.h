@@ -96,5 +96,11 @@ public:
     [[nodiscard]] Value removeprefix(const Value& prefix) const;
 
     [[nodiscard]] Value removesuffix(const Value& suffix) const;
+
+    [[nodiscard]] Value replace(
+    const Value& oldValue,
+    const Value& newValue,
+    const Value::BigInt& count = -1) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

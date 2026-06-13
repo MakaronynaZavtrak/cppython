@@ -523,6 +523,36 @@ namespace {
         );
     }
 
+    Value makeReplaceMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "replace",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 2, 3, "replace");
+
+                if (args.size() == 2) {
+
+                    return byteArray->replace(args[0], args[1]);
+                }
+
+                return byteArray->replace(
+                    args[0],
+                    args[1],
+                    args[2].toBigInt()
+                );
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -546,6 +576,7 @@ namespace {
         REGISTER_METHOD("strip", makeStripMethod),
         REGISTER_METHOD("removeprefix", makeRemovePrefixMethod),
         REGISTER_METHOD("removesuffix",makeRemoveSuffixMethod),
+        REGISTER_METHOD("replace", makeReplaceMethod)
     };
 
 }

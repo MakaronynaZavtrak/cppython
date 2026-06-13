@@ -3372,6 +3372,28 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abcabc').removesuffix(b'abcabc')", "bytearray(b'')"),
     ("bytearray(b'').removesuffix(b'abc')", "bytearray(b'')"),
 
+    # replace
+    ("bytearray(b'abcabc').replace(b'a', b'x')", "bytearray(b'xbcxbc')"),
+    ("bytearray(b'abcabc').replace(b'abc', b'X')", "bytearray(b'XX')"),
+    ("bytearray(b'abcabc').replace(b'abc', b'X', 1)", "bytearray(b'Xabc')"),
+    ("bytearray(b'abcabc').replace(b'abc', b'X', 2)", "bytearray(b'XX')"),
+    ("bytearray(b'abcabc').replace(b'abc', b'X', 0)", "bytearray(b'abcabc')"),
+    ("bytearray(b'aaaa').replace(b'aa', b'b')", "bytearray(b'bb')"),
+    ("bytearray(b'aaaa').replace(b'aa', b'b', 1)", "bytearray(b'baa')"),
+    ("bytearray(b'abcdef').replace(b'xyz', b'123')", "bytearray(b'abcdef')"),
+    ("bytearray(b'').replace(b'a', b'b')", "bytearray(b'')"),
+    ("bytearray(b'abc').replace(bytearray(b'a'), bytearray(b'z'))", "bytearray(b'zbc')"),
+
+    # replace with empty pattern
+    ("bytearray(b'abc').replace(b'', b'-')", "bytearray(b'-a-b-c-')"),
+    ("bytearray(b'').replace(b'', b'-')", "bytearray(b'-')"),
+    ("bytearray(b'abc').replace(b'', b'-', 0)", "bytearray(b'abc')"),
+    ("bytearray(b'abc').replace(b'', b'-', 1)", "bytearray(b'-abc')"),
+    ("bytearray(b'abc').replace(b'', b'-', 2)", "bytearray(b'-a-bc')"),
+    ("bytearray(b'abc').replace(b'', b'-', 3)", "bytearray(b'-a-b-c')"),
+    ("bytearray(b'abc').replace(b'', b'-', 4)", "bytearray(b'-a-b-c-')"),
+    ("bytearray(b'abc').replace(b'', b'-', 100)", "bytearray(b'-a-b-c-')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
