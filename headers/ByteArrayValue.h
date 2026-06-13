@@ -94,5 +94,7 @@ public:
     const std::optional<Value>& chars = std::nullopt) const;
 
     [[nodiscard]] Value removeprefix(const Value& prefix) const;
+
+    [[nodiscard]] Value removesuffix(const Value& suffix) const;
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

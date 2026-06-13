@@ -502,6 +502,27 @@ namespace {
         );
     }
 
+    Value makeRemoveSuffixMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "removesuffix",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "removesuffix");
+
+                return byteArray->removesuffix(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -523,7 +544,8 @@ namespace {
         REGISTER_METHOD("lstrip", makeLStripMethod),
         REGISTER_METHOD("rstrip", makeRStripMethod),
         REGISTER_METHOD("strip", makeStripMethod),
-        REGISTER_METHOD("removeprefix", makeRemovePrefixMethod)
+        REGISTER_METHOD("removeprefix", makeRemovePrefixMethod),
+        REGISTER_METHOD("removesuffix",makeRemoveSuffixMethod),
     };
 
 }

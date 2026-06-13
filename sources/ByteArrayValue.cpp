@@ -830,3 +830,41 @@ Value ByteArrayValue::removeprefix(const Value& prefix) const {
         std::make_shared<ByteArrayValue>(data)
     );
 }
+
+Value ByteArrayValue::removesuffix(const Value& suffix) const {
+
+    QByteArray suffixBytes;
+
+    if (suffix.isBytes()) {
+
+        suffixBytes = suffix.asBytes("removesuffix")->bytes();
+
+    } else if (suffix.isByteArray()) {
+
+        suffixBytes = suffix.asByteArray("removesuffix")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: removesuffix() argument must be bytes-like"
+        );
+    }
+
+    if (
+        !suffixBytes.isEmpty()
+        && data.endsWith(suffixBytes)
+    ) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data.first(
+                    data.size() - suffixBytes.size()
+                )
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(data)
+    );
+}
