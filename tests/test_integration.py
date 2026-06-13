@@ -3581,6 +3581,32 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'!@#$').isupper()", "False"),
     ("bytearray(b'ABC!@#').isupper()", "True"),
 
+    # istitle
+    ("bytearray(b'Hello').istitle()", "True"),
+    ("bytearray(b'Hello World').istitle()", "True"),
+    ("bytearray(b'Hello World Again').istitle()", "True"),
+
+    ("bytearray(b'hello').istitle()", "False"),
+    ("bytearray(b'HELLO').istitle()", "False"),
+
+    ("bytearray(b'Hello world').istitle()", "False"),
+    ("bytearray(b'Hello WORLD').istitle()", "False"),
+
+    ("bytearray(b'123 Hello').istitle()", "True"),
+    ("bytearray(b'123 hello').istitle()", "False"),
+
+    ("bytearray(b'').istitle()", "False"),
+    ("bytearray(b'123').istitle()", "False"),
+
+    ("bytearray(b'Hello-World').istitle()", "True"),
+    ("bytearray(b'Hello-World-Again').istitle()", "True"),
+
+    ("bytearray(b'A').istitle()", "True"),
+    ("bytearray(b'a').istitle()", "False"),
+
+    ("bytearray(b'They\\'Re Bill\\'S').istitle()", "True"),
+    ("bytearray(b'They\\'re Bill\\'s').istitle()", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

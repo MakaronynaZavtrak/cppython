@@ -144,5 +144,7 @@ public:
 
     [[nodiscard]] Value isUpper() const;
 
+    [[nodiscard]] Value isTitle() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

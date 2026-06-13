@@ -1810,3 +1810,43 @@ Value ByteArrayValue::isUpper() const {
 
     return Value(hasUpper);
 }
+
+Value ByteArrayValue::isTitle() const {
+
+    bool hasCasedChar = false;
+    bool newWord = true;
+
+    for (const unsigned char c : data) {
+
+        const bool isUpper = c >= 'A' && c <= 'Z';
+
+        const bool isLower = c >= 'a' && c <= 'z';
+
+        const bool isAlpha = isUpper || isLower;
+
+        if (!isAlpha) {
+
+            newWord = true;
+            continue;
+        }
+
+        hasCasedChar = true;
+
+        if (newWord) {
+
+            if (!isUpper) {
+                return Value(false);
+            }
+
+            newWord = false;
+
+        } else {
+
+            if (!isLower) {
+                return Value(false);
+            }
+        }
+    }
+
+    return Value(hasCasedChar);
+}
