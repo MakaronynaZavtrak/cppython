@@ -131,5 +131,7 @@ public:
     [[nodiscard]] Value zfill(
     const Value::BigInt& width) const;
 
+    [[nodiscard]] Value lower() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

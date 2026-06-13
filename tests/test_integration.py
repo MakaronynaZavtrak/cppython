@@ -3483,7 +3483,19 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'+42').zfill(6)", "bytearray(b'+00042')"),
     ("bytearray(b'').zfill(4)", "bytearray(b'0000')"),
     ("bytearray(b'abc').zfill(6)", "bytearray(b'000abc')"),
-    ("bytearray(b'-abc').zfill(7)", "bytearray(b'-000abc')")
+    ("bytearray(b'-abc').zfill(7)", "bytearray(b'-000abc')"),
+
+    # lower
+    ("bytearray(b'ABC').lower()", "bytearray(b'abc')"),
+    ("bytearray(b'HELLO').lower()", "bytearray(b'hello')"),
+    ("bytearray(b'abc').lower()", "bytearray(b'abc')"),
+    ("bytearray(b'AbCdEf').lower()", "bytearray(b'abcdef')"),
+    ("bytearray(b'ABC123').lower()", "bytearray(b'abc123')"),
+    ("bytearray(b'ABC!?').lower()", "bytearray(b'abc!?')"),
+    ("bytearray(b'').lower()", "bytearray(b'')"),
+    ("bytearray(b'HELLO WORLD').lower()", "bytearray(b'hello world')"),
+    ("bytearray([255, 65, 66]).lower()", "bytearray(b'\\xffab')"),
+    ("bytearray(b'A').lower()", "bytearray(b'a')"),
 
 ])
 

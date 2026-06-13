@@ -1570,3 +1570,19 @@ Value ByteArrayValue::zfill(
         )
     );
 }
+
+Value ByteArrayValue::lower() const {
+
+    QByteArray result = data;
+
+    for (char& c : result) {
+
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(result)
+    );
+}
