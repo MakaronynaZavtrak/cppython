@@ -3406,6 +3406,19 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'one--two--three').split(b'--')", "[bytearray(b'one'), bytearray(b'two'), bytearray(b'three')]"),
     ("bytearray(b'one--two--three').split(b'--', 1)", "[bytearray(b'one'), bytearray(b'two--three')]"),
 
+    # rsplit
+    ("bytearray(b'a,b,c').rsplit(b',')", "[bytearray(b'a'), bytearray(b'b'), bytearray(b'c')]"),
+    ("bytearray(b'a,b,c').rsplit(b',', 1)", "[bytearray(b'a,b'), bytearray(b'c')]"),
+    ("bytearray(b'a,b,c').rsplit(b',', 2)", "[bytearray(b'a'), bytearray(b'b'), bytearray(b'c')]"),
+    ("bytearray(b'a,b,c').rsplit(b',', 0)", "[bytearray(b'a,b,c')]"),
+    ("bytearray(b'abc').rsplit(b',')", "[bytearray(b'abc')]"),
+    ("bytearray(b'').rsplit(b',')", "[bytearray(b'')]"),
+    ("bytearray(b',a,b,').rsplit(b',')", "[bytearray(b''), bytearray(b'a'), bytearray(b'b'), bytearray(b'')]"),
+    ("bytearray(b'aaaa').rsplit(b'aa')", "[bytearray(b''), bytearray(b''), bytearray(b'')]"),
+    ("bytearray(b'one--two--three').rsplit(b'--')", "[bytearray(b'one'), bytearray(b'two'), bytearray(b'three')]"),
+    ("bytearray(b'one--two--three').rsplit(b'--', 1)", "[bytearray(b'one--two'), bytearray(b'three')]"),
+    ("bytearray(b'one--two--three').rsplit(b'--', 2)", "[bytearray(b'one'), bytearray(b'two'), bytearray(b'three')]"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

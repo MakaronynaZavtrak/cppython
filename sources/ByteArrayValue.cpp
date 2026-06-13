@@ -1060,3 +1060,88 @@ Value ByteArrayValue::split(
         std::make_shared<ListValue>(result)
     );
 }
+
+Value ByteArrayValue::rsplit(
+    const Value& sep,
+    const Value::BigInt& maxsplit) const {
+
+    QByteArray separator;
+
+    if (sep.isBytes()) {
+
+        separator = sep.asBytes("rsplit")->bytes();
+
+    } else if (sep.isByteArray()) {
+
+        separator = sep.asByteArray("rsplit")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: rsplit() separator must be bytes-like"
+        );
+    }
+
+    if (separator.isEmpty()) {
+
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const long long limit =
+        maxsplit.convert_to<long long>();
+
+    std::vector<Value> parts;
+
+    QByteArray remaining = data;
+
+    long long splits = 0;
+
+    while (true) {
+
+        if (
+            limit >= 0 &&
+            splits >= limit
+        ) {
+            break;
+        }
+
+        const int pos =
+            remaining.lastIndexOf(separator);
+
+        if (pos < 0) {
+            break;
+        }
+
+        parts.emplace_back(
+            std::make_shared<ByteArrayValue>(
+                remaining.mid(
+                    pos + separator.size()
+                )
+            )
+        );
+
+        remaining =
+            remaining.left(pos);
+
+        ++splits;
+    }
+
+    parts.emplace_back(
+        std::make_shared<ByteArrayValue>(
+            remaining
+        )
+    );
+
+    std::reverse(
+        parts.begin(),
+        parts.end()
+    );
+
+    return Value(
+        std::make_shared<ListValue>(
+            parts
+        )
+    );
+}
