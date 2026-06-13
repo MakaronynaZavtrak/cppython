@@ -1512,3 +1512,61 @@ Value ByteArrayValue::rjust(
         )
     );
 }
+
+Value ByteArrayValue::zfill(
+    const Value::BigInt& width) const {
+
+    const auto targetWidth = width.convert_to<long long>();
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    const auto padding = targetWidth - data.size();
+
+    QByteArray result;
+
+    if (
+        !data.isEmpty()
+        &&
+        (
+            data[0] == '+'
+            ||
+            data[0] == '-'
+        )
+    ) {
+
+        result.append(data[0]);
+
+        result.append(
+            QByteArray(
+                padding,
+                '0'
+            )
+        );
+
+        result.append(data.mid(1));
+
+    } else {
+
+        result.append(
+            QByteArray(
+                padding,
+                '0'
+            )
+        );
+
+        result.append(data);
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}

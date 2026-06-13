@@ -3472,6 +3472,19 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'').rjust(4)", "bytearray(b'    ')"),
     ("bytearray(b'').rjust(4, b'*')", "bytearray(b'****')"),
 
+    # zfill
+    ("bytearray(b'42').zfill(5)", "bytearray(b'00042')"),
+    ("bytearray(b'42').zfill(2)", "bytearray(b'42')"),
+    ("bytearray(b'42').zfill(1)", "bytearray(b'42')"),
+    ("bytearray(b'42').zfill(0)", "bytearray(b'42')"),
+    ("bytearray(b'-42').zfill(5)", "bytearray(b'-0042')"),
+    ("bytearray(b'+42').zfill(5)", "bytearray(b'+0042')"),
+    ("bytearray(b'-42').zfill(6)", "bytearray(b'-00042')"),
+    ("bytearray(b'+42').zfill(6)", "bytearray(b'+00042')"),
+    ("bytearray(b'').zfill(4)", "bytearray(b'0000')"),
+    ("bytearray(b'abc').zfill(6)", "bytearray(b'000abc')"),
+    ("bytearray(b'-abc').zfill(7)", "bytearray(b'-000abc')")
+
 ])
 
 def test_single_line_expressions(expr, expected):

@@ -736,6 +736,27 @@ namespace {
         );
     }
 
+    Value makeZFillMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "zfill",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "zfill");
+
+                return byteArray->zfill(args[0].toBigInt());
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -766,7 +787,8 @@ namespace {
         REGISTER_METHOD("rpartition", makeRPartitionMethod),
         REGISTER_METHOD("center", makeCenterMethod),
         REGISTER_METHOD("ljust", makeLJustMethod),
-        REGISTER_METHOD("rjust", makeRJustMethod)
+        REGISTER_METHOD("rjust", makeRJustMethod),
+        REGISTER_METHOD("zfill", makeZFillMethod)
     };
 
 }
