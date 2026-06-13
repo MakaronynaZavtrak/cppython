@@ -4,6 +4,7 @@
 #include "ByteArrayValue.h"
 
 #include "BytesValue.h"
+#include "ListValue.h"
 #include "../runtime/ProtocolHelpers.h"
 
 Value ByteArrayValue::getItem(const Value& indexValue) const {
@@ -984,5 +985,78 @@ Value ByteArrayValue::replace(
         std::make_shared<ByteArrayValue>(
             result
         )
+    );
+}
+
+Value ByteArrayValue::split(
+    const Value& sep,
+    const Value::BigInt& maxsplit) const {
+
+    QByteArray separator;
+
+    if (sep.isBytes()) {
+
+        separator = sep.asBytes("split")->bytes();
+
+    } else if (sep.isByteArray()) {
+
+        separator = sep.asByteArray("split")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: split() separator must be bytes-like"
+        );
+    }
+
+    if (separator.isEmpty()) {
+
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    std::vector<Value> result;
+
+    const long long limit = maxsplit.convert_to<long long>();
+
+    int start = 0;
+
+    long long splits = 0;
+
+    while (true) {
+
+        if (
+            limit >= 0
+            && splits >= limit
+        ) {
+            break;
+        }
+
+        const int pos = data.indexOf(separator, start);
+
+        if (pos < 0) {
+            break;
+        }
+
+        result.emplace_back(
+            std::make_shared<ByteArrayValue>(
+                data.mid(start, pos - start)
+            )
+        );
+
+        start = pos + separator.size();
+
+        ++splits;
+    }
+
+    result.emplace_back(
+        std::make_shared<ByteArrayValue>(
+            data.mid(start)
+        )
+    );
+
+    return Value(
+        std::make_shared<ListValue>(result)
     );
 }

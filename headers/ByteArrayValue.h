@@ -102,5 +102,9 @@ public:
     const Value& newValue,
     const Value::BigInt& count = -1) const;
 
+    [[nodiscard]] Value split(
+    const Value& sep,
+    const Value::BigInt& maxsplit = -1) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H
