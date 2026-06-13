@@ -3564,7 +3564,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'hello world').islower()", "True"),
     ("bytearray(b'hello World').islower()", "False"),
     ("bytearray(b'!@#$').islower()", "False"),
-    ("bytearray(b'abc!@#').islower()", "True")
+    ("bytearray(b'abc!@#').islower()", "True"),
+
+    # isupper
+    ("bytearray(b'ABC').isupper()", "True"),
+    ("bytearray(b'HELLO').isupper()", "True"),
+    ("bytearray(b'abc').isupper()", "False"),
+    ("bytearray(b'Abc').isupper()", "False"),
+    ("bytearray(b'ABc').isupper()", "False"),
+    ("bytearray(b'ABC123').isupper()", "True"),
+    ("bytearray(b'123ABC').isupper()", "True"),
+    ("bytearray(b'123').isupper()", "False"),
+    ("bytearray(b'').isupper()", "False"),
+    ("bytearray(b'HELLO WORLD').isupper()", "True"),
+    ("bytearray(b'HELLO World').isupper()", "False"),
+    ("bytearray(b'!@#$').isupper()", "False"),
+    ("bytearray(b'ABC!@#').isupper()", "True"),
 
 ])
 

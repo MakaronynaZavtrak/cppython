@@ -1792,3 +1792,21 @@ Value ByteArrayValue::isLower() const {
 
     return Value(hasLower);
 }
+
+Value ByteArrayValue::isUpper() const {
+
+    bool hasUpper = false;
+
+    for (const unsigned char c : data) {
+
+        if (c >= 'A' && c <= 'Z') {
+            hasUpper = true;
+        }
+
+        if (c >= 'a' && c <= 'z') {
+            return Value(false);
+        }
+    }
+
+    return Value(hasUpper);
+}
