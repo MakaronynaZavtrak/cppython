@@ -3549,7 +3549,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'a').title()", "bytearray(b'A')"),
     ("bytearray(b'ABC').title()", "bytearray(b'Abc')"),
     ("bytearray(b\"they're bill's\").title()", "bytearray(b\"They\\'Re Bill\\'S\")"),
-    ("bytearray([255, 104, 101, 108, 108, 111]).title()", "bytearray(b'\\xffHello')")
+    ("bytearray([255, 104, 101, 108, 108, 111]).title()", "bytearray(b'\\xffHello')"),
+
+    # islower
+    ("bytearray(b'abc').islower()", "True"),
+    ("bytearray(b'abcdef').islower()", "True"),
+    ("bytearray(b'ABC').islower()", "False"),
+    ("bytearray(b'Abc').islower()", "False"),
+    ("bytearray(b'aBc').islower()", "False"),
+    ("bytearray(b'abc123').islower()", "True"),
+    ("bytearray(b'123abc').islower()", "True"),
+    ("bytearray(b'123').islower()", "False"),
+    ("bytearray(b'').islower()", "False"),
+    ("bytearray(b'hello world').islower()", "True"),
+    ("bytearray(b'hello World').islower()", "False"),
+    ("bytearray(b'!@#$').islower()", "False"),
+    ("bytearray(b'abc!@#').islower()", "True")
 
 ])
 

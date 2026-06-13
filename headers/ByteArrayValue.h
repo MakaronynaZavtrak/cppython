@@ -4,7 +4,6 @@
 
 #ifndef CPPYTHON_BYTEARRAYVALUE_H
 #define CPPYTHON_BYTEARRAYVALUE_H
-#include "BytesValue.h"
 #include "ObjectValue.h"
 #include "Value.h"
 
@@ -22,19 +21,19 @@ public:
         return data;
     }
 
-    const QByteArray& bytes() const {
+    [[nodiscard]] const QByteArray& bytes() const {
         return data;
     }
 
-    QString repr() const override;
+    [[nodiscard]] QString repr() const override;
 
-    Value getItem(const Value& indexValue) const;
+    [[nodiscard]] Value getItem(const Value& indexValue) const;
 
     [[nodiscard]] std::size_t len() const;
 
     [[nodiscard]] QString toString() const override;
 
-    Value __bytes__() const;
+    [[nodiscard]] Value __bytes__() const;
 
     [[nodiscard]] Value add(const Value& other) const override;
 
@@ -140,6 +139,8 @@ public:
     [[nodiscard]] Value capitalize() const;
 
     [[nodiscard]] Value title() const;
+
+    [[nodiscard]] Value isLower() const;
 
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

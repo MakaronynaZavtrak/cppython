@@ -1774,3 +1774,21 @@ Value ByteArrayValue::title() const {
         )
     );
 }
+
+Value ByteArrayValue::isLower() const {
+
+    bool hasLower = false;
+
+    for (const unsigned char c : data) {
+
+        if (c >= 'a' && c <= 'z') {
+            hasLower = true;
+        }
+
+        if (c >= 'A' && c <= 'Z') {
+            return Value(false);
+        }
+    }
+
+    return Value(hasLower);
+}
