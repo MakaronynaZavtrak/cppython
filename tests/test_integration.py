@@ -3438,6 +3438,18 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'xyz').rpartition(b'xyz')", "(bytearray(b''), bytearray(b'xyz'), bytearray(b''))"),
     ("bytearray(b'one--two--three').rpartition(b'--')", "(bytearray(b'one--two'), bytearray(b'--'), bytearray(b'three'))"),
 
+    # center
+    ("bytearray(b'abc').center(3)", "bytearray(b'abc')"),
+    ("bytearray(b'abc').center(5)", "bytearray(b' abc ')"),
+    ("bytearray(b'abc').center(6)", "bytearray(b' abc  ')"),
+    ("bytearray(b'abc').center(7)", "bytearray(b'  abc  ')"),
+    ("bytearray(b'abc').center(8)", "bytearray(b'  abc   ')"),
+    ("bytearray(b'abc').center(5, b'-')", "bytearray(b'-abc-')"),
+    ("bytearray(b'abc').center(6, b'-')", "bytearray(b'-abc--')"),
+    ("bytearray(b'abc').center(7, b'-')", "bytearray(b'--abc--')"),
+    ("bytearray(b'').center(4)", "bytearray(b'    ')"),
+    ("bytearray(b'').center(4, b'*')", "bytearray(b'****')")
+
 ])
 
 def test_single_line_expressions(expr, expected):

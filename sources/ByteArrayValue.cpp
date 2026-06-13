@@ -1314,3 +1314,74 @@ Value ByteArrayValue::rpartition(
         )
     );
 }
+
+Value ByteArrayValue::center(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillByte) const {
+
+    const auto targetWidth = width.convert_to<long long>();
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    char fill = ' ';
+
+    if (fillByte.has_value()) {
+
+        QByteArray fillData;
+
+        if (fillByte->isBytes()) {
+
+            fillData = fillByte->asBytes("center")->bytes();
+
+        } else if (fillByte->isByteArray()) {
+
+            fillData = fillByte->asByteArray("center")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: center() fill byte must be bytes-like"
+            );
+        }
+
+        if (fillData.size() != 1) {
+
+            throw std::runtime_error(
+                "TypeError: center() fill byte must be length 1"
+            );
+        }
+
+        fill = fillData[0];
+    }
+
+    const auto totalPadding = targetWidth - data.size();
+
+    const auto leftPadding = totalPadding / 2;
+
+    const auto rightPadding = totalPadding - leftPadding;
+
+    QByteArray result;
+
+    result.append(
+        QByteArray(leftPadding, fill)
+    );
+
+    result.append(data);
+
+    result.append(
+        QByteArray(rightPadding, fill)
+    );
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}

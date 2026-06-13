@@ -646,6 +646,36 @@ namespace {
         );
     }
 
+    Value makeCenterMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "center",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "center");
+
+                std::optional<Value> fill;
+
+                if (args.size() == 2) {
+                    fill = args[1];
+                }
+
+                return byteArray->center(
+                    args[0].toBigInt(),
+                    fill
+                );
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -673,7 +703,8 @@ namespace {
         REGISTER_METHOD("split", makeSplitMethod),
         REGISTER_METHOD("rsplit", makeRSplitMethod),
         REGISTER_METHOD("partition", makePartitionMethod),
-        REGISTER_METHOD("rpartition", makeRPartitionMethod)
+        REGISTER_METHOD("rpartition", makeRPartitionMethod),
+        REGISTER_METHOD("center", makeCenterMethod)
     };
 
 }

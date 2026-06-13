@@ -116,5 +116,9 @@ public:
     [[nodiscard]] Value rpartition(
     const Value& sep) const;
 
+    [[nodiscard]] Value center(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillByte = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H
