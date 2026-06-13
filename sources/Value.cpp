@@ -195,6 +195,10 @@ QString Value::repr() const {
         return std::get<SetPtr>(data)->repr();
     }
 
+    if (isByteArray()) {
+        return std::get<ByteArrayPtr>(data)->repr();
+    }
+
     return toString();
 }
 

@@ -61,10 +61,71 @@ std::size_t ByteArrayValue::len() const {
 
 QString ByteArrayValue::repr() const {
 
-    return QString(
-        "bytearray(%1)").arg(
-        BytesValue(data).repr()
-    );
+    const bool containsSingle = data.contains('\'');
+
+    const QChar quote = containsSingle ? '"' : '\'';
+
+    QString result = "bytearray(b";
+    result += quote;
+
+    for (const unsigned char c : data) {
+
+        switch (c) {
+
+            case '\n':
+                result += "\\n";
+                break;
+
+            case '\r':
+                result += "\\r";
+                break;
+
+            case '\t':
+                result += "\\t";
+                break;
+
+            case '\\':
+                result += "\\\\";
+                break;
+
+            case '\'':
+                result += "\\'";
+                break;
+
+            case '"':
+
+                if (quote == '"')
+                    result += '"';
+                else
+                    result += '"';
+
+                break;
+
+            default:
+
+                if (c >= 32 && c <= 126) {
+
+                    result += QChar(c);
+
+                } else {
+
+                    result += QString("\\x%1")
+                        .arg(
+                            static_cast<int>(c),
+                            2,
+                            16,
+                            QLatin1Char('0')
+                        );
+                }
+
+                break;
+        }
+    }
+
+    result += quote;
+    result += ")";
+
+    return result;
 }
 
 QString ByteArrayValue::toString() const {
@@ -1656,6 +1717,54 @@ Value ByteArrayValue::capitalize() const {
             result[i] = static_cast<char>(
                 result[i] - 'A' + 'a'
             );
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::title() const {
+
+    QByteArray result = data;
+
+    bool newWord = true;
+
+    for (char& c : result) {
+
+        const bool isAlpha =
+            (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z');
+
+        if (isAlpha) {
+
+            if (newWord) {
+
+                if (c >= 'a' && c <= 'z') {
+
+                    c = static_cast<char>(
+                        c - 'a' + 'A'
+                    );
+                }
+
+                newWord = false;
+
+            } else {
+
+                if (c >= 'A' && c <= 'Z') {
+
+                    c = static_cast<char>(
+                        c - 'A' + 'a'
+                    );
+                }
+            }
+
+        } else {
+
+            newWord = true;
         }
     }
 

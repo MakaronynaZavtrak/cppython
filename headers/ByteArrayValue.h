@@ -139,5 +139,7 @@ public:
 
     [[nodiscard]] Value capitalize() const;
 
+    [[nodiscard]] Value title() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H
