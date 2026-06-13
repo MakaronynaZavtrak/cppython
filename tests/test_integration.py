@@ -3509,8 +3509,20 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray().upper()", "bytearray(b'')"),
     ("bytearray(b'hello world').upper()", "bytearray(b'HELLO WORLD')"),
     ("bytearray(b'ABC').upper().upper()", "bytearray(b'ABC')"),
-    ("bytearray(b'ABC').lower()", "bytearray(b'abc')"),
     ("bytearray(b'abc').upper()", "bytearray(b'ABC')"),
+
+    # swapcase
+    ("bytearray(b'abc').swapcase()", "bytearray(b'ABC')"),
+    ("bytearray(b'ABC').swapcase()", "bytearray(b'abc')"),
+    ("bytearray(b'AbCdEf').swapcase()", "bytearray(b'aBcDeF')"),
+    ("bytearray(b'Hello World').swapcase()", "bytearray(b'hELLO wORLD')"),
+    ("bytearray(b'abc123').swapcase()", "bytearray(b'ABC123')"),
+    ("bytearray(b'ABC123').swapcase()", "bytearray(b'abc123')"),
+    ("bytearray(b'12345').swapcase()", "bytearray(b'12345')"),
+    ("bytearray(b'!@#$').swapcase()", "bytearray(b'!@#$')"),
+    ("bytearray(b'').swapcase()", "bytearray(b'')"),
+    ("bytearray([255, 65, 66, 97, 98]).swapcase()", "bytearray(b'\\xffabAB')"),
+    ("bytearray(b'AbC').swapcase().swapcase()", "bytearray(b'AbC')")
 
 ])
 

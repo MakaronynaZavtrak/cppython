@@ -135,5 +135,7 @@ public:
 
     [[nodiscard]] Value upper() const;
 
+    [[nodiscard]] Value swapcase() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

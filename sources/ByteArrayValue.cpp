@@ -1595,3 +1595,30 @@ Value ByteArrayValue::upper() const {
         )
     );
 }
+
+Value ByteArrayValue::swapcase() const {
+
+    QByteArray result = data;
+
+    for (char& c : result) {
+
+        if (c >= 'a' && c <= 'z') {
+
+            c = static_cast<char>(
+                c - 'a' + 'A'
+            );
+
+        } else if (c >= 'A' && c <= 'Z') {
+
+            c = static_cast<char>(
+                c - 'A' + 'a'
+            );
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
