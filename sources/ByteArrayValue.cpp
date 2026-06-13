@@ -1226,3 +1226,91 @@ Value ByteArrayValue::partition(
         )
     );
 }
+
+Value ByteArrayValue::rpartition(
+    const Value& sep) const {
+
+    QByteArray separator;
+
+    if (sep.isBytes()) {
+
+        separator =
+            sep.asBytes("rpartition")->bytes();
+
+    } else if (sep.isByteArray()) {
+
+        separator =
+            sep.asByteArray("rpartition")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: rpartition() separator must be bytes-like"
+        );
+    }
+
+    if (separator.isEmpty()) {
+
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const int pos =
+        data.lastIndexOf(separator);
+
+    if (pos < 0) {
+
+        return Value(
+            std::make_shared<TupleValue>(
+                std::vector<Value>{
+
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            QByteArray()
+                        )
+                    ),
+
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            QByteArray()
+                        )
+                    ),
+
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            data
+                        )
+                    )
+                }
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::vector<Value>{
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        data.left(pos)
+                    )
+                ),
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        separator
+                    )
+                ),
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        data.mid(
+                            pos + separator.size()
+                        )
+                    )
+                )
+            }
+        )
+    );
+}

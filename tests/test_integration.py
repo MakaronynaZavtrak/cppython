@@ -3428,6 +3428,16 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'aaaa').partition(b'aa')", "(bytearray(b''), bytearray(b'aa'), bytearray(b'aa'))"),
     ("bytearray(b'xyz').partition(b'xyz')", "(bytearray(b''), bytearray(b'xyz'), bytearray(b''))"),
 
+    # rpartition
+    ("bytearray(b'abc=123').rpartition(b'=')", "(bytearray(b'abc'), bytearray(b'='), bytearray(b'123'))"),
+    ("bytearray(b'abc').rpartition(b'=')", "(bytearray(b''), bytearray(b''), bytearray(b'abc'))"),
+    ("bytearray(b'=abc').rpartition(b'=')", "(bytearray(b''), bytearray(b'='), bytearray(b'abc'))"),
+    ("bytearray(b'abc=').rpartition(b'=')", "(bytearray(b'abc'), bytearray(b'='), bytearray(b''))"),
+    ("bytearray(b'a=b=c').rpartition(b'=')", "(bytearray(b'a=b'), bytearray(b'='), bytearray(b'c'))"),
+    ("bytearray(b'aaaa').rpartition(b'aa')", "(bytearray(b'aa'), bytearray(b'aa'), bytearray(b''))"),
+    ("bytearray(b'xyz').rpartition(b'xyz')", "(bytearray(b''), bytearray(b'xyz'), bytearray(b''))"),
+    ("bytearray(b'one--two--three').rpartition(b'--')", "(bytearray(b'one--two'), bytearray(b'--'), bytearray(b'three'))"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
