@@ -706,6 +706,36 @@ namespace {
         );
     }
 
+    Value makeRJustMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "rjust",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "rjust");
+
+                std::optional<Value> fill;
+
+                if (args.size() == 2) {
+                    fill = args[1];
+                }
+
+                return byteArray->rjust(
+                    args[0].toBigInt(),
+                    fill
+                );
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -735,7 +765,8 @@ namespace {
         REGISTER_METHOD("partition", makePartitionMethod),
         REGISTER_METHOD("rpartition", makeRPartitionMethod),
         REGISTER_METHOD("center", makeCenterMethod),
-        REGISTER_METHOD("ljust", makeLJustMethod)
+        REGISTER_METHOD("ljust", makeLJustMethod),
+        REGISTER_METHOD("rjust", makeRJustMethod)
     };
 
 }

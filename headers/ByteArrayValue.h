@@ -124,5 +124,9 @@ public:
     const Value::BigInt& width,
     const std::optional<Value>& fillByte = std::nullopt) const;
 
+    [[nodiscard]] Value rjust(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillByte = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

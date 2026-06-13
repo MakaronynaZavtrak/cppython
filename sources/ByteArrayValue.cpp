@@ -1447,3 +1447,68 @@ Value ByteArrayValue::ljust(
         )
     );
 }
+
+Value ByteArrayValue::rjust(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillByte) const {
+
+    const auto targetWidth = width.convert_to<long long>();
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    char fill = ' ';
+
+    if (fillByte.has_value()) {
+
+        QByteArray fillData;
+
+        if (fillByte->isBytes()) {
+
+            fillData = fillByte->asBytes("rjust")->bytes();
+
+        } else if (fillByte->isByteArray()) {
+
+            fillData =
+                fillByte->asByteArray("rjust")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: rjust() fill byte must be bytes-like"
+            );
+        }
+
+        if (fillData.size() != 1) {
+
+            throw std::runtime_error(
+                "TypeError: rjust() fill byte must be length 1"
+            );
+        }
+
+        fill = fillData[0];
+    }
+
+    QByteArray result;
+
+    result.append(
+        QByteArray(
+            targetWidth - data.size(),
+            fill
+        )
+    );
+
+    result.append(data);
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
