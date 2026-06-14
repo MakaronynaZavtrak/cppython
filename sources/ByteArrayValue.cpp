@@ -1862,3 +1862,23 @@ Value ByteArrayValue::isAscii() const {
 
     return Value(true);
 }
+
+Value ByteArrayValue::isAlpha() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char c : data) {
+
+        const bool isAlpha =
+            (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z');
+
+        if (!isAlpha) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}

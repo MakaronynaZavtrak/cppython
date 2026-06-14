@@ -934,6 +934,25 @@ namespace {
         );
     }
 
+    Value makeIsAlphaMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "isalpha",
+
+            [byteArray](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isalpha");
+
+                return byteArray->isAlpha();
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -974,7 +993,8 @@ namespace {
         REGISTER_METHOD("islower", makeIsLowerMethod),
         REGISTER_METHOD("isupper", makeIsUpperMethod),
         REGISTER_METHOD("istitle", makeIsTitleMethod),
-        REGISTER_METHOD("isascii", makeIsAsciiMethod)
+        REGISTER_METHOD("isascii", makeIsAsciiMethod),
+        REGISTER_METHOD("isalpha", makeIsAlphaMethod)
     };
 
 }

@@ -3619,7 +3619,24 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'\\xff').isascii()", "False"),
     ("bytearray([65, 66, 67]).isascii()", "True"),
     ("bytearray([128]).isascii()", "False"),
-    ("bytearray([255]).isascii()", "False")
+    ("bytearray([255]).isascii()", "False"),
+
+    # isalpha
+    ("bytearray().isalpha()", "False"),
+    ("bytearray(b'a').isalpha()", "True"),
+    ("bytearray(b'abc').isalpha()", "True"),
+    ("bytearray(b'ABC').isalpha()", "True"),
+    ("bytearray(b'AbCdEf').isalpha()", "True"),
+    ("bytearray(b'abc123').isalpha()", "False"),
+    ("bytearray(b'123abc').isalpha()", "False"),
+    ("bytearray(b'123').isalpha()", "False"),
+    ("bytearray(b'abc def').isalpha()", "False"),
+    ("bytearray(b'abc-def').isalpha()", "False"),
+    ("bytearray(b'abc_def').isalpha()", "False"),
+    ("bytearray(b'!').isalpha()", "False"),
+    ("bytearray(b'abc!').isalpha()", "False"),
+    ("bytearray(b'\\xff').isalpha()", "False"),
+    ("bytearray([65, 66, 67]).isalpha()", "True")
 
 ])
 
