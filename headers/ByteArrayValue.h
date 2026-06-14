@@ -152,5 +152,7 @@ public:
 
     [[nodiscard]] Value isDigit() const;
 
+    [[nodiscard]] Value isAlnum() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

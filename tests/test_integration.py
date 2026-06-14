@@ -3653,7 +3653,26 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'123!').isdigit()", "False"),
     ("bytearray(b'\\xff').isdigit()", "False"),
     ("bytearray([48, 49, 50]).isdigit()", "True"),
-    ("bytearray([48, 49, 65]).isdigit()", "False")
+    ("bytearray([48, 49, 65]).isdigit()", "False"),
+
+    # isalnum
+    ("bytearray().isalnum()", "False"),
+    ("bytearray(b'a').isalnum()", "True"),
+    ("bytearray(b'abc').isalnum()", "True"),
+    ("bytearray(b'ABC').isalnum()", "True"),
+    ("bytearray(b'123').isalnum()", "True"),
+    ("bytearray(b'abc123').isalnum()", "True"),
+    ("bytearray(b'123abc').isalnum()", "True"),
+    ("bytearray(b'A1B2C3').isalnum()", "True"),
+    ("bytearray(b'abc 123').isalnum()", "False"),
+    ("bytearray(b'abc-123').isalnum()", "False"),
+    ("bytearray(b'abc_123').isalnum()", "False"),
+    ("bytearray(b'!').isalnum()", "False"),
+    ("bytearray(b'abc!').isalnum()", "False"),
+    ("bytearray(b'123!').isalnum()", "False"),
+    ("bytearray(b'\\xff').isalnum()", "False"),
+    ("bytearray([65, 66, 67, 49, 50, 51]).isalnum()", "True"),
+    ("bytearray([65, 66, 32]).isalnum()", "False")
 
 ])
 

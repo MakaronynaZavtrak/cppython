@@ -1898,3 +1898,26 @@ Value ByteArrayValue::isDigit() const {
 
     return Value(true);
 }
+
+Value ByteArrayValue::isAlnum() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (unsigned char c : data) {
+
+        const bool isAlpha =
+            (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z');
+
+        const bool isDigit =
+            (c >= '0' && c <= '9');
+
+        if (!(isAlpha || isDigit)) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
