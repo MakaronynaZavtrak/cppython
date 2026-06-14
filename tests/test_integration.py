@@ -3607,6 +3607,20 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'They\\'Re Bill\\'S').istitle()", "True"),
     ("bytearray(b'They\\'re Bill\\'s').istitle()", "False"),
 
+    # isascii
+    ("bytearray().isascii()", "True"),
+    ("bytearray(b'abc').isascii()", "True"),
+    ("bytearray(b'ABC').isascii()", "True"),
+    ("bytearray(b'123').isascii()", "True"),
+    ("bytearray(b'hello world').isascii()", "True"),
+    ("bytearray(b'\\x00').isascii()", "True"),
+    ("bytearray(b'\\x7f').isascii()", "True"),
+    ("bytearray(b'\\x80').isascii()", "False"),
+    ("bytearray(b'\\xff').isascii()", "False"),
+    ("bytearray([65, 66, 67]).isascii()", "True"),
+    ("bytearray([128]).isascii()", "False"),
+    ("bytearray([255]).isascii()", "False")
+
 ])
 
 def test_single_line_expressions(expr, expected):

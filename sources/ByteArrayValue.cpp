@@ -1850,3 +1850,15 @@ Value ByteArrayValue::isTitle() const {
 
     return Value(hasCasedChar);
 }
+
+Value ByteArrayValue::isAscii() const {
+
+    for (const unsigned char c : data) {
+
+        if (c > 127) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}

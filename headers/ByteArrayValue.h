@@ -146,5 +146,7 @@ public:
 
     [[nodiscard]] Value isTitle() const;
 
+    [[nodiscard]] Value isAscii() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H
