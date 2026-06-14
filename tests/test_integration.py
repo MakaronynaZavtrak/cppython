@@ -3672,7 +3672,24 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'123!').isalnum()", "False"),
     ("bytearray(b'\\xff').isalnum()", "False"),
     ("bytearray([65, 66, 67, 49, 50, 51]).isalnum()", "True"),
-    ("bytearray([65, 66, 32]).isalnum()", "False")
+    ("bytearray([65, 66, 32]).isalnum()", "False"),
+
+    # isspace
+    ("bytearray().isspace()", "False"),
+    ("bytearray(b'').isspace()", "False"),
+    ("bytearray(b' ').isspace()", "True"),
+    ("bytearray(b'   ').isspace()", "True"),
+    ("bytearray(b'\\t').isspace()", "True"),
+    ("bytearray(b'\\n').isspace()", "True"),
+    ("bytearray(b'\\r').isspace()", "True"),
+    ("bytearray(b'\\v').isspace()", "True"),
+    ("bytearray(b'\\f').isspace()", "True"),
+    ("bytearray(b' \\t\\n\\r\\v\\f').isspace()", "True"),
+    ("bytearray(b'a').isspace()", "False"),
+    ("bytearray(b' a ').isspace()", "False"),
+    ("bytearray(b'123').isspace()", "False"),
+    ("bytearray(b'abc').isspace()", "False"),
+    ("bytearray(b'\\xff').isspace()", "False"),
 
 ])
 

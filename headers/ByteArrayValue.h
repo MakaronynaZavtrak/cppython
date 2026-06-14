@@ -154,5 +154,7 @@ public:
 
     [[nodiscard]] Value isAlnum() const;
 
+    [[nodiscard]] Value isSpace() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

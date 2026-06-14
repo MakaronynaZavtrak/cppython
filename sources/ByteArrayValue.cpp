@@ -1905,7 +1905,7 @@ Value ByteArrayValue::isAlnum() const {
         return Value(false);
     }
 
-    for (unsigned char c : data) {
+    for (const unsigned char c : data) {
 
         const bool isAlpha =
             (c >= 'a' && c <= 'z') ||
@@ -1915,6 +1915,30 @@ Value ByteArrayValue::isAlnum() const {
             (c >= '0' && c <= '9');
 
         if (!(isAlpha || isDigit)) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
+Value ByteArrayValue::isSpace() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char c : data) {
+
+        const bool isSpace =
+            c == ' '  ||
+            c == '\t' ||
+            c == '\n' ||
+            c == '\r' ||
+            c == '\v' ||
+            c == '\f';
+
+        if (!isSpace) {
             return Value(false);
         }
     }
