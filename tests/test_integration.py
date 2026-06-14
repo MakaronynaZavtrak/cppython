@@ -3636,7 +3636,24 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'!').isalpha()", "False"),
     ("bytearray(b'abc!').isalpha()", "False"),
     ("bytearray(b'\\xff').isalpha()", "False"),
-    ("bytearray([65, 66, 67]).isalpha()", "True")
+    ("bytearray([65, 66, 67]).isalpha()", "True"),
+
+    # isdigit
+    ("bytearray().isdigit()", "False"),
+    ("bytearray(b'0').isdigit()", "True"),
+    ("bytearray(b'123').isdigit()", "True"),
+    ("bytearray(b'000123').isdigit()", "True"),
+    ("bytearray(b'12a').isdigit()", "False"),
+    ("bytearray(b'a12').isdigit()", "False"),
+    ("bytearray(b'abc').isdigit()", "False"),
+    ("bytearray(b'12 34').isdigit()", "False"),
+    ("bytearray(b'12-34').isdigit()", "False"),
+    ("bytearray(b'12.34').isdigit()", "False"),
+    ("bytearray(b'!').isdigit()", "False"),
+    ("bytearray(b'123!').isdigit()", "False"),
+    ("bytearray(b'\\xff').isdigit()", "False"),
+    ("bytearray([48, 49, 50]).isdigit()", "True"),
+    ("bytearray([48, 49, 65]).isdigit()", "False")
 
 ])
 

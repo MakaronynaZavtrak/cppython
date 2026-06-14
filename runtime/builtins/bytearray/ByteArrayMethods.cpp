@@ -953,6 +953,25 @@ namespace {
         );
     }
 
+    Value makeIsDigitMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "isdigit",
+
+            [byteArray](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isdigit");
+
+                return byteArray->isDigit();
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -994,7 +1013,8 @@ namespace {
         REGISTER_METHOD("isupper", makeIsUpperMethod),
         REGISTER_METHOD("istitle", makeIsTitleMethod),
         REGISTER_METHOD("isascii", makeIsAsciiMethod),
-        REGISTER_METHOD("isalpha", makeIsAlphaMethod)
+        REGISTER_METHOD("isalpha", makeIsAlphaMethod),
+        REGISTER_METHOD("isdigit", makeIsDigitMethod)
     };
 
 }

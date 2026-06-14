@@ -1882,3 +1882,19 @@ Value ByteArrayValue::isAlpha() const {
 
     return Value(true);
 }
+
+Value ByteArrayValue::isDigit() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char c : data) {
+
+        if (!(c >= '0' && c <= '9')) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
