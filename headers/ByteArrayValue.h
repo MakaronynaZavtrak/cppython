@@ -156,5 +156,8 @@ public:
 
     [[nodiscard]] Value isSpace() const;
 
+    [[nodiscard]] Value expandTabs(
+    const Value::BigInt& tabsize = 8) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

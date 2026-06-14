@@ -1010,6 +1010,32 @@ namespace {
         );
     }
 
+    Value makeExpandTabsMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "expandtabs",
+
+            [byteArray](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "bytearray.expandtabs");
+
+                Value::BigInt tabSize = 8;
+
+                if (!args.empty()) {
+                    tabSize = args[0].toBigInt();
+                }
+
+                return byteArray->expandTabs(tabSize);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1054,7 +1080,8 @@ namespace {
         REGISTER_METHOD("isalpha", makeIsAlphaMethod),
         REGISTER_METHOD("isdigit", makeIsDigitMethod),
         REGISTER_METHOD("isalnum", makeIsAlnumMethod),
-        REGISTER_METHOD("isspace", makeIsSpaceMethod)
+        REGISTER_METHOD("isspace", makeIsSpaceMethod),
+        REGISTER_METHOD("expandtabs", makeExpandTabsMethod)
     };
 
 }

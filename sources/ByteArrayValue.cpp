@@ -1945,3 +1945,58 @@ Value ByteArrayValue::isSpace() const {
 
     return Value(true);
 }
+
+Value ByteArrayValue::expandTabs(
+    const Value::BigInt& tabsize) const {
+
+    const long long tabSize =
+        tabsize.convert_to<long long>();
+
+    if (tabSize < 0) {
+
+        throw std::runtime_error(
+            "ValueError: tabsize must be >= 0"
+        );
+    }
+
+    QByteArray result;
+
+    long long column = 0;
+
+    for (const unsigned char c : data) {
+
+        if (c == '\t') {
+
+            const long long spaces =
+                tabSize == 0
+                ? 0
+                : tabSize - (column % tabSize);
+
+            result.append(
+                static_cast<int>(spaces),
+                ' '
+            );
+
+            column += spaces;
+
+            continue;
+        }
+
+        result.append(static_cast<char>(c));
+
+        if (c == '\n' || c == '\r') {
+
+            column = 0;
+
+        } else {
+
+            ++column;
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            std::move(result)
+        )
+    );
+}

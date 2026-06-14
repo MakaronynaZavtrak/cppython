@@ -3691,6 +3691,19 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abc').isspace()", "False"),
     ("bytearray(b'\\xff').isspace()", "False"),
 
+    # expandtabs
+    ("bytearray().expandtabs()", "bytearray(b'')"),
+    ("bytearray(b'abc').expandtabs()", "bytearray(b'abc')"),
+    ("bytearray(b'\\t').expandtabs()", "bytearray(b'        ')"),
+    ("bytearray(b'a\\tb').expandtabs()", "bytearray(b'a       b')"),
+    ("bytearray(b'a\\tb').expandtabs(4)", "bytearray(b'a   b')"),
+    ("bytearray(b'a\\tb').expandtabs(2)", "bytearray(b'a b')"),
+    ("bytearray(b'a\\tb\\tc').expandtabs(4)", "bytearray(b'a   b   c')"),
+    ("bytearray(b'a\\n\\tb').expandtabs(4)", "bytearray(b'a\\n    b')"),
+    ("bytearray(b'a\\tb').expandtabs(1)", "bytearray(b'a b')"),
+    ("bytearray(b'a\\tb').expandtabs(0)", "bytearray(b'ab')"),
+    ("bytearray(b'\\t\\t').expandtabs(4)", "bytearray(b'        ')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
