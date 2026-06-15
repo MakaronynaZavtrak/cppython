@@ -151,6 +151,7 @@ void Interpreter::run(int argc, char* argv[]) {
     Runtime::bytearrayClass->attributes["__call__"] = globalEnv->get("__bytearray_call__");
     globalEnv->set("__bytearray_type__", Value(Runtime::bytearrayClass));
     Runtime::bytearrayClass->attributes["__bytes__"] = make__byteArray__ClassBuiltin();
+    Runtime::bytearrayClass->attributes["fromhex"] = makeByteArrayFromHexBuiltin();
 
     Lexer lexer;
     std::vector<std::string> buffer;

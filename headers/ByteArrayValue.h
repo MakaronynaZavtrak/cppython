@@ -184,5 +184,7 @@ public:
     const std::optional<QString>& sep = std::nullopt,
     const std::optional<Value::BigInt>& bytesPerSep = std::nullopt) const;
 
+    static Value maketrans(const std::vector<Value>& args);
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

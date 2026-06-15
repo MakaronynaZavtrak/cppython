@@ -6,6 +6,7 @@
 #include "BytesValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
+#include "StrValue.h"
 #include "TupleValue.h"
 #include "../runtime/ProtocolHelpers.h"
 
@@ -2418,4 +2419,59 @@ Value ByteArrayValue::hex(
     }
 
     return Value(result);
+}
+
+Value ByteArrayValue::maketrans(const std::vector<Value> &args) {
+
+    QString text = args[0]
+                .asString("fromhex")
+                ->toString();
+
+    QByteArray cleaned;
+
+    for (QChar ch : text) {
+
+        if (!ch.isSpace()) {
+            cleaned.append(
+                ch.toLatin1()
+            );
+        }
+    }
+
+    if (cleaned.size() % 2 != 0) {
+
+        throw std::runtime_error(
+            "ValueError: non-hexadecimal "
+            "number found in fromhex() arg"
+        );
+    }
+
+    QByteArray result;
+
+    for (int i = 0; i < cleaned.size(); i += 2) {
+
+        bool ok = false;
+
+        const QByteArray pair = cleaned.mid(i, 2);
+
+        const int value = pair.toInt(&ok, 16);
+
+        if (!ok) {
+
+            throw std::runtime_error(
+                "ValueError: non-hexadecimal "
+                "number found in fromhex() arg"
+            );
+        }
+
+        result.append(
+            static_cast<char>(value)
+        );
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            std::move(result)
+        )
+    );
 }

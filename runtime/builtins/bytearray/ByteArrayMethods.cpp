@@ -1292,6 +1292,24 @@ namespace {
         );
     }
 
+    Value makeFromHexMethod(const Value&) {
+
+        return makeBuiltin(
+            "fromhex",
+
+            [](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "fromhex");
+
+                return ByteArrayValue::maketrans(args);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1349,7 +1367,8 @@ namespace {
         REGISTER_METHOD("clear", makeClearMethod),
         REGISTER_METHOD("copy", makeCopyMethod),
         REGISTER_METHOD("reverse", makeReverseMethod),
-        REGISTER_METHOD("hex", makeHexMethod)
+        REGISTER_METHOD("hex", makeHexMethod),
+        REGISTER_METHOD("fromhex", makeFromHexMethod)
     };
 
 }
@@ -1375,4 +1394,22 @@ Value make__byteArray__ClassBuiltin() {
         }
     );
 
+}
+
+Value makeByteArrayFromHexBuiltin() {
+
+    return makeBuiltin(
+        "fromhex",
+
+        [](
+            const std::vector<Value>& args,
+            const Kwargs&,
+            const std::shared_ptr<Environment>&)
+        -> Value {
+
+            expectArgs(args, 1, "fromhex");
+
+            return ByteArrayValue::maketrans(args);
+        }
+    );
 }

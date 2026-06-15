@@ -9,4 +9,6 @@
 Value getByteArrayAttr(const Value& obj, const QString& attr);
 
 Value make__byteArray__ClassBuiltin();
+
+Value makeByteArrayFromHexBuiltin();
 #endif //CPPYTHON_BYTEARRAYMETHODS_H

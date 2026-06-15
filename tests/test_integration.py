@@ -3752,6 +3752,17 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray().hex()", "''"),
     ("bytearray().hex('-')", "''"),
 
+    # fromhex
+    ("bytearray.fromhex('')", "bytearray(b'')"),
+    ("bytearray.fromhex('61')", "bytearray(b'a')"),
+    ("bytearray.fromhex('616263')", "bytearray(b'abc')"),
+    ("bytearray.fromhex('61 62 63')", "bytearray(b'abc')"),
+    ("bytearray.fromhex('  61   62   63  ')", "bytearray(b'abc')"),
+    ("bytearray.fromhex('FF')", "bytearray(b'\\xff')"),
+    ("bytearray.fromhex('AaBbCc')", "bytearray(b'\\xaa\\xbb\\xcc')"),
+    ("bytearray.fromhex('00010203')", "bytearray(b'\\x00\\x01\\x02\\x03')"),
+    ("bytearray.fromhex('48656c6c6f')", "bytearray(b'Hello')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
