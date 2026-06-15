@@ -2421,7 +2421,7 @@ Value ByteArrayValue::hex(
     return Value(result);
 }
 
-Value ByteArrayValue::maketrans(const std::vector<Value> &args) {
+Value ByteArrayValue::fromHex(const std::vector<Value> &args) {
 
     QString text = args[0]
                 .asString("fromhex")
@@ -2512,4 +2512,69 @@ Value ByteArrayValue::decode(
     }
 
     return Value(decoded);
+}
+
+Value ByteArrayValue::makeTrans(const std::vector<Value> &args) {
+
+    QByteArray from;
+    QByteArray to;
+
+    if (args[0].isBytes()) {
+        from = args[0]
+                .asBytes("maketrans")
+                ->bytes();
+
+    } else if (args[0].isByteArray()) {
+        from = args[0]
+                .asByteArray("maketrans")
+                ->bytes();
+
+    } else {
+        throw std::runtime_error(
+            "TypeError: first argument "
+            "must be bytes-like"
+        );
+    }
+
+    if (args[1].isBytes()) {
+        to = args[1]
+                .asBytes("maketrans")
+                ->bytes();
+
+    } else if (
+        args[1].isByteArray()) {
+        to = args[1]
+                .asByteArray("maketrans")
+                ->bytes();
+
+    } else {
+        throw std::runtime_error(
+            "TypeError: second argument "
+            "must be bytes-like"
+        );
+    }
+
+    if (from.size() != to.size()) {
+        throw std::runtime_error(
+            "ValueError: arguments "
+            "must have same length"
+        );
+    }
+
+    QByteArray table(256, '\0');
+
+    for (int i = 0; i < 256; ++i) {
+        table[i] = static_cast<char>(i);
+    }
+
+    for (int i = 0; i < from.size(); ++i) {
+        table[
+            static_cast<
+                unsigned char>(from[i])
+        ] = to[i];
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(table)
+    );
 }

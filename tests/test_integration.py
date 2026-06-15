@@ -3774,6 +3774,14 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray.fromhex('48656c6c6f').decode()", "'Hello'"),
     ("bytearray(b'abc\\n').decode()", "'abc\\n'"),
 
+    # maketrans
+    ("bytearray.maketrans(b'a', b'x')[97]", "120"),
+    ("bytearray.maketrans(b'abc', b'xyz')[97]", "120"),
+    ("bytearray.maketrans(b'abc', b'xyz')[98]", "121"),
+    ("bytearray.maketrans(b'abc', b'xyz')[99]", "122"),
+    ("bytearray.maketrans(b'abc', b'xyz')[100]", "100"),
+    ("len(bytearray.maketrans(b'abc', b'xyz'))", "256"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

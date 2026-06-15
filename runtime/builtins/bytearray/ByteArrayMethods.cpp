@@ -1305,7 +1305,7 @@ namespace {
 
                 expectArgs(args, 1, "fromhex");
 
-                return ByteArrayValue::maketrans(args);
+                return ByteArrayValue::makeTrans(args);
             }
         );
     }
@@ -1349,6 +1349,25 @@ namespace {
             }
         );
     }
+
+    Value makeMakeTransMethod(const Value&) {
+
+        return makeBuiltin(
+            "maketrans",
+
+            [](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 2, "maketrans");
+
+                return ByteArrayValue::makeTrans(args);
+            }
+        );
+    }
+
 
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
@@ -1409,7 +1428,8 @@ namespace {
         REGISTER_METHOD("reverse", makeReverseMethod),
         REGISTER_METHOD("hex", makeHexMethod),
         REGISTER_METHOD("fromhex", makeFromHexMethod),
-        REGISTER_METHOD("decode", makeDecodeMethod)
+        REGISTER_METHOD("decode", makeDecodeMethod),
+        REGISTER_METHOD("maketrans", makeMakeTransMethod)
     };
 
 }
@@ -1450,7 +1470,25 @@ Value makeByteArrayFromHexBuiltin() {
 
             expectArgs(args, 1, "fromhex");
 
-            return ByteArrayValue::maketrans(args);
+            return ByteArrayValue::fromHex(args);
+        }
+    );
+}
+
+Value makeByteArrayMakeTransBuiltin() {
+
+    return makeBuiltin(
+        "maketrans",
+
+        [](
+            const std::vector<Value>& args,
+            const Kwargs&,
+            const std::shared_ptr<Environment>&)
+        -> Value {
+
+            expectArgs(args, 2, "maketrans");
+
+            return ByteArrayValue::makeTrans(args);
         }
     );
 }
