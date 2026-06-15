@@ -1061,6 +1061,26 @@ namespace {
         );
     }
 
+    Value makeJoinMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "join",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "join");
+
+                return byteArray->join(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1107,7 +1127,8 @@ namespace {
         REGISTER_METHOD("isalnum", makeIsAlnumMethod),
         REGISTER_METHOD("isspace", makeIsSpaceMethod),
         REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
-        REGISTER_METHOD("splitlines", makeSplitLinesMethod)
+        REGISTER_METHOD("splitlines", makeSplitLinesMethod),
+        REGISTER_METHOD("join", makeJoinMethod)
     };
 
 }

@@ -4,6 +4,7 @@
 #include "ByteArrayValue.h"
 
 #include "BytesValue.h"
+#include "IteratorValue.h"
 #include "ListValue.h"
 #include "TupleValue.h"
 #include "../runtime/ProtocolHelpers.h"
@@ -2060,6 +2061,81 @@ Value ByteArrayValue::splitLines(
     return Value(
         std::make_shared<ListValue>(
             result
+        )
+    );
+}
+
+Value ByteArrayValue::join(
+    const Value& iterable) const {
+
+    std::vector<QByteArray> chunks;
+
+    auto appendChunk =
+        [&chunks](const Value& value) {
+
+            if (value.isByteArray()) {
+
+                chunks.push_back(
+                    value.asByteArray("join")->bytes()
+                );
+
+                return;
+            }
+
+            if (value.isBytes()) {
+
+                chunks.push_back(
+                    value.asBytes("join")->bytes()
+                );
+
+                return;
+            }
+
+            throw std::runtime_error(
+                "TypeError: sequence item "
+                "must be bytes-like"
+            );
+    };
+
+    if (iterable.isIterable() || supportsIter(iterable)) {
+
+        Value iterMethod = getAttrValue(iterable, "__iter__");
+
+        Value iterObj = call(iterMethod, {}, {}, nullptr);
+
+        if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
+            throw std::runtime_error(
+                "__iter__ returned non-iterator"
+            );
+        }
+
+        auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
+
+        while (iterator->hasNext()) {
+            appendChunk(iterator->next());
+        }
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: object is not iterable"
+        );
+    }
+
+    QByteArray result;
+
+    for (size_t i = 0; i < chunks.size(); ++i) {
+
+        if (i > 0) {
+            result += data;
+        }
+
+        result += chunks[i];
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            std::move(result)
         )
     );
 }

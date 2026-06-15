@@ -162,5 +162,7 @@ public:
     [[nodiscard]] Value splitLines(
     bool keepEnds = false) const;
 
+    [[nodiscard]] Value join(const Value& iterable) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

@@ -34,4 +34,6 @@ QByteArray constructBytesData(
     const std::vector<Value>& args,
     const Kwargs& kwargs);
 
+bool supportsIter(const Value& obj);
+
 #endif //CPPYTHON_CALLRUNTIME_H
