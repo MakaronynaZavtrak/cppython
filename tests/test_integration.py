@@ -7329,7 +7329,134 @@ if _result is not None:
 
     (["x = bytearray([1,1])",
       "x[0] = False",
-      "x"], "bytearray(b'\\x00\\x01')")
+      "x"], "bytearray(b'\\x00\\x01')"),
+
+    # bytearray.__delitem__
+    (["x = bytearray(b'abc')",
+      "x.__delitem__(0)",
+      "x"], "bytearray(b'bc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.__delitem__(1)",
+      "x"], "bytearray(b'ac')"),
+
+    (["x = bytearray(b'abc')",
+      "x.__delitem__(2)",
+      "x"], "bytearray(b'ab')"),
+
+    (["x = bytearray(b'abc')",
+      "x.__delitem__(-1)",
+      "x"], "bytearray(b'ab')"),
+
+    (["x = bytearray(b'abc')",
+      "x.__delitem__(-2)",
+      "x"], "bytearray(b'ac')"),
+
+    (["x = bytearray(b'abc')",
+      "x.__delitem__(-3)",
+      "x"], "bytearray(b'bc')"),
+
+    # del
+    # базовые
+    (["x = bytearray(b'abc')",
+      "del x[0]",
+      "x"], "bytearray(b'bc')"),
+
+    (["x = bytearray(b'abc')",
+      "del x[1]",
+      "x"], "bytearray(b'ac')"),
+
+    (["x = bytearray(b'abc')",
+      "del x[2]",
+      "x"], "bytearray(b'ab')"),
+
+    # отрицательные индексы
+    (["x = bytearray(b'abc')",
+      "del x[-1]",
+      "x"], "bytearray(b'ab')"),
+
+    (["x = bytearray(b'abc')",
+      "del x[-2]",
+      "x"], "bytearray(b'ac')"),
+
+    (["x = bytearray(b'abc')",
+      "del x[-3]",
+      "x"], "bytearray(b'bc')"),
+
+    # пустой результат
+    (["x = bytearray(b'a')",
+      "del x[0]",
+      "x"], "bytearray(b'')"),
+
+    # простые срезы
+    (["x = bytearray(b'abcdef')",
+      "del x[1:4]",
+      "x"], "bytearray(b'aef')"),
+
+    (["x = bytearray(b'abcdef')",
+      "del x[:3]",
+      "x"], "bytearray(b'def')"),
+
+    (["x = bytearray(b'abcdef')",
+      "del x[3:]",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'abcdef')",
+      "del x[:]",
+      "x"], "bytearray(b'')"),
+
+    # срезы с шагом
+    (["x = bytearray(b'abcdef')",
+      "del x[::2]",
+      "x"], "bytearray(b'bdf')"),
+
+    (["x = bytearray(b'abcdef')",
+      "del x[1::2]",
+      "x"], "bytearray(b'ace')"),
+
+    # отрицательный шаг
+    (["x = bytearray(b'abcdef')",
+      "del x[::-1]",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray(b'abcdef')",
+      "del x[5:1:-1]",
+      "x"], "bytearray(b'ab')"),
+
+    # границы за пределами массива
+    (["x = bytearray(b'abc')",
+      "del x[100:]",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'abc')",
+      "del x[:-100]",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'abc')",
+      "del x[-100:100]",
+      "x"], "bytearray(b'')"),
+
+    # валидность после удаления
+    (["x = bytearray(b'abcdef')",
+      "del x[1:4]",
+      "x.append(90)",
+      "x"], "bytearray(b'aefZ')"),
+
+    # последовательные удаления
+    (["x = bytearray(b'abcdef')",
+      "del x[0]",
+      "del x[-1]",
+      "x"], "bytearray(b'bcde')"),
+
+    (["x = bytearray(b'abcdef')",
+      "del x[1:3]",
+      "del x[2]",
+      "x"], "bytearray(b'adf')"),
+
+    # start + stop + step
+    (["x = bytearray(b'0123456789')",
+      "del x[1:9:2]",
+      "x"], "bytearray(b'024689')"),
 
 ])
 

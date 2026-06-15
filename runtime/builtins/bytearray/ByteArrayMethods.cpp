@@ -1414,10 +1414,31 @@ namespace {
         );
     }
 
+    Value makeDelItemMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "__delitem__",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__delitem__");
+
+                return byteArray->delItem(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
         REGISTER_METHOD("__setitem__", makeSetItemMethod),
+        REGISTER_METHOD("__delitem__", makeDelItemMethod),
         REGISTER_METHOD("__iter__", makeIterMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),

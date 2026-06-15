@@ -38,6 +38,7 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::CLASS:    return parseClassDef();
             case Keyword::LAMBDA:   return parseLambda();
             case Keyword::FOR:      return parseForStatement();
+            case Keyword::DEL:      return parseDelStatement();
             default:                break;
         }
     }
@@ -1085,6 +1086,25 @@ std::shared_ptr<ASTNode> Parser::parseOr()
     }
 
     return left;
+}
+
+std::shared_ptr<ASTNode>Parser::parseDelStatement() {
+
+    consume(TOKEN_KEYWORD, "del");
+
+    auto target = parseExpression();
+
+    if (
+    !std::dynamic_pointer_cast<VarNode>(target) &&
+    !std::dynamic_pointer_cast<IndexNode>(target) &&
+    !std::dynamic_pointer_cast<AttributeAccessNode>(target)) {
+
+        throw std::runtime_error(
+        "SyntaxError: cannot delete expression"
+        );
+    }
+
+    return std::make_shared<DeleteNode>(target);
 }
 
 ParsedCallArgs Parser::parseCallArguments() {

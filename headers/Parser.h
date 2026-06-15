@@ -1537,6 +1537,50 @@ public:
     }
 };
 
+//TODO: пока поддерживается только удаление содержимого в объектах
+// чуть позже добавить поддержку:
+// 1) del variable
+// 2) del obj.attr
+// 3) del a, b, c
+class DeleteNode : public ASTNode {
+
+public:
+
+    std::shared_ptr<ASTNode> target;
+
+    explicit DeleteNode(std::shared_ptr<ASTNode> target)
+    : target(std::move(target)) {}
+
+    Value eval(EnvPtr env) const override {
+
+        auto indexNode =
+            std::dynamic_pointer_cast<IndexNode>(target);
+
+        if (!indexNode) {
+
+            throw std::runtime_error(
+                "SyntaxError: invalid del target"
+            );
+        }
+
+        Value obj = indexNode->object->eval(env);
+
+        Value idx = indexNode->index->eval(env);
+
+        Value delItem = getAttrValue(obj, "__delitem__");
+
+        call(delItem, {idx}, {}, env);
+
+        return {};
+    }
+
+    QString toString() const override {
+        return "del " + target->toString();
+    }
+
+    bool shouldPrint() const override { return false; }
+};
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -1737,6 +1781,8 @@ private:
     std::shared_ptr<ASTNode> parseAnd();
 
     std::shared_ptr<ASTNode> parseOr();
+
+    std::shared_ptr<ASTNode> parseDelStatement();
 
     QVector<Token> tokens;
     int current = 0;

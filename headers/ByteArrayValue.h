@@ -31,6 +31,8 @@ public:
 
     Value setItem(const Value& indexValue, const Value& value);
 
+    Value delItem(const Value& indexValue);
+
     [[nodiscard]] std::size_t len() const;
 
     [[nodiscard]] QString toString() const override;

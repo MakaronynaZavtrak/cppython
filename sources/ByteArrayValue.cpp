@@ -99,6 +99,58 @@ Value ByteArrayValue::setItem(
     return {};
 }
 
+Value ByteArrayValue::delItem(const Value& indexValue) {
+
+    if (indexValue.isSlice()) {
+
+        const auto sliceObj = indexValue.asSlice();
+
+        const auto slice = normalizeSlice(*sliceObj, data.size());
+
+        QByteArray result;
+
+        std::vector removeMask(data.size(), false);
+
+        iterateSlice(slice,
+
+        [&](const long long i) {
+                removeMask[static_cast<std::size_t>(i)] = true;
+            }
+        );
+
+        for (int i = 0; i < data.size(); ++i) {
+
+            if (!removeMask[i]) {
+                result.append(data[i]);
+            }
+        }
+
+        data = std::move(result);
+
+        return {};
+    }
+
+    int index =
+        indexValue
+        .asBigInt("__delitem__")
+        .convert_to<int>();
+
+    if (index < 0) {
+        index += data.size();
+    }
+
+    if (index < 0 || index >= data.size()) {
+
+        throw std::runtime_error(
+            "IndexError: index out of range"
+        );
+    }
+
+    data.remove(index, 1);
+
+    return {};
+}
+
 std::size_t ByteArrayValue::len() const {
     return data.size();
 }
