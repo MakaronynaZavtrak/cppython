@@ -259,7 +259,7 @@ class LogicalOpNode : public ASTNode {
 public:
 
     LogicalOpNode(std::shared_ptr<ASTNode> left, QString op,  std::shared_ptr<ASTNode> right) :
-    left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
+    op(std::move(op)), left(std::move(left)), right(std::move(right)) {}
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
 
@@ -1551,7 +1551,7 @@ public:
     explicit DeleteNode(std::shared_ptr<ASTNode> target)
     : target(std::move(target)) {}
 
-    Value eval(EnvPtr env) const override {
+    [[nodiscard]] Value eval(EnvPtr env) const override {
 
         auto indexNode =
             std::dynamic_pointer_cast<IndexNode>(target);
@@ -1574,11 +1574,84 @@ public:
         return {};
     }
 
-    QString toString() const override {
+    [[nodiscard]] QString toString() const override {
         return "del " + target->toString();
     }
 
-    bool shouldPrint() const override { return false; }
+    [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class AugAssignNode : public ASTNode {
+
+    enum class Operation {
+        Add,
+        Subtract,
+        Multiply,
+        Divide,
+        IntDivide,
+        Modulo,
+        Power
+    };
+
+    QString name;
+    QString op;
+    std::shared_ptr<ASTNode> value;
+
+    static Operation parseOperation(const QString& op) {
+
+        static const std::unordered_map<QString, Operation> opMap = {
+            {"+=",  Operation::Add},
+            {"-=",  Operation::Subtract},
+            {"*=",  Operation::Multiply},
+            {"/=",  Operation::Divide},
+            {"//=", Operation::IntDivide},
+            {"%=",  Operation::Modulo},
+            {"**=", Operation::Power}
+        };
+
+        const auto it = opMap.find(op);
+
+        if (it == opMap.end()) {
+            throw std::runtime_error(
+                "Unsupported augmented assignment: "
+                + op.toStdString()
+            );
+        }
+
+        return it->second;
+    }
+
+public:
+
+    AugAssignNode(QString name, QString op, std::shared_ptr<ASTNode> value)
+        : name(std::move(name)), op(std::move(op)), value(std::move(value)) {}
+
+    [[nodiscard]] Value eval(EnvPtr env) const override {
+
+        Value left = env->get(name);
+        Value right = value->eval(env);
+
+        switch (parseOperation(op)) {
+            case Operation::Add:       left += right; break;
+            case Operation::Subtract:  left -= right; break;
+            case Operation::Multiply:  left *= right; break;
+            case Operation::Divide:    left /= right; break;
+            case Operation::IntDivide: left.intDivideEqual(right); break;
+            case Operation::Modulo:    left %= right; break;
+            case Operation::Power:     left.powerEqual(right); break;
+            default:                   throw std::runtime_error("Unsupported augmented assignment");
+        }
+
+        env->set(name, left);
+
+        return left;
+    }
+
+    [[nodiscard]] QString toString() const override {
+        return name + " " + op + " " + value->toString();
+    }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
 /**

@@ -7458,6 +7458,139 @@ if _result is not None:
       "del x[1:9:2]",
       "x"], "bytearray(b'024689')"),
 
+    # __iadd__
+    # int
+    (["x = 5",
+      "x += 4",
+      "x"], "9"),
+
+    (["x = 10",
+      "x -= 3",
+      "x"], "7"),
+
+    (["x = 6",
+      "x *= 7",
+      "x"], "42"),
+
+    (["x = 20",
+      "x /= 4",
+      "x"], "5.0"),
+
+    (["x = 20",
+      "x //= 3",
+      "x"], "6"),
+
+    (["x = 20",
+      "x %= 6",
+      "x"], "2"),
+
+    (["x = 2",
+      "x **= 10",
+      "x"], "1024"),
+
+    # float
+    (["x = 1.5",
+      "x += 2.5",
+      "x"], "4.0"),
+
+    (["x = 5.5",
+      "x *= 2",
+      "x"], "11.0"),
+
+    (["x = 7.0",
+      "x /= 2",
+      "x"], "3.5"),
+
+    (["x = 7.0",
+      "x //= 2",
+      "x"], "3.0"),
+
+    # str
+    (["x = 'abc'",
+      "x += 'def'",
+      "x"], "'abcdef'"),
+
+    (["x = ''",
+      "x += 'hello'",
+      "x"], "'hello'"),
+
+    # bytes
+    (["x = b'abc'",
+      "x += b'def'",
+      "x"], "b'abcdef'"),
+
+    (["x = b''",
+      "x += b'xyz'",
+      "x"], "b'xyz'"),
+
+    # bytearray
+    (["x = bytearray(b'abc')",
+      "x += bytearray(b'def')",
+      "x"], "bytearray(b'abcdef')"),
+
+    (["x = bytearray()",
+      "x += bytearray(b'xyz')",
+      "x"], "bytearray(b'xyz')"),
+
+    (["x = bytearray(b'abc')",
+      "x += b'def'",
+      "x"], "bytearray(b'abcdef')"),
+
+    # самоприсваивание
+    (["x = b'abc'",
+      "x += x",
+      "x"], "b'abcabc'"),
+
+    (["x = 'abc'",
+      "x += x",
+      "x"], "'abcabc'"),
+
+    (["x = 1",
+      "x += 2",
+      "x *= 10",
+      "x -= 5",
+      "x"], "25"),
+
+    (["x = 'a'",
+      "x += 'b'",
+      "x += 'c'",
+      "x"], "'abc'"),
+
+    (["x = bytearray(b'a')",
+      "x += bytearray(b'b')",
+      "x += bytearray(b'c')",
+      "x"], "bytearray(b'abc')"),
+
+    # приоритет вычисления правой части
+    (["x = 5",
+      "x += 2 * 3",
+      "x"], "11"),
+
+    (["x = 'abc'",
+      "x += 'd' * 3",
+      "x"], "'abcddd'"),
+
+    (["x = bytearray(b'a')",
+      "x += bytearray(b'bc')",
+      "x"], "bytearray(b'abc')"),
+
+    # степень и целочисленное деление
+    (["x = 2",
+      "x **= 3",
+      "x"], "8"),
+
+    (["x = 2",
+      "x **= 8",
+      "x"], "256"),
+
+    (["x = 17",
+      "x //= 5",
+      "x"], "3"),
+
+    (["x = -17",
+      "x //= 5",
+      "x"], "-4")
+
 ])
 
 def test_multiline_expressions(commands, expected):

@@ -70,6 +70,34 @@ std::shared_ptr<ASTNode> Parser::parseExpression() {
 
     std::shared_ptr<ASTNode> left = parseOr();
 
+    if (matchAny(
+        TOKEN_OP,
+        {
+            "+=",
+            "-=",
+            "*=",
+            "/=",
+            "//=",
+            "%=",
+            "**="
+        }
+    )) {
+
+        QString op = advance().value;
+
+        auto right = parseOr();
+
+        if (const auto var =
+            std::dynamic_pointer_cast<VarNode>(left)) {
+
+            return std::make_shared<AugAssignNode>(var->name, op, right);
+        }
+
+        throw std::runtime_error(
+            "Invalid augmented assignment target"
+        );
+    }
+
     if (matchAndAdvance(TOKEN_OP, "=")) {
 
         auto right = parseOr();

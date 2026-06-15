@@ -333,25 +333,45 @@ Token Lexer::readIdentifierOrBool(const QString& code) {
 *         строку, где он был обнаружен.
 */
 Token Lexer::readOperator(const QString& code) {
+
+    if (pos + 2 < code.length()) {
+
+        QString three = code.mid(pos, 3);
+
+        if (three == "//=" || three == "**=") {
+            pos += 3;
+            return {TOKEN_OP, three, line};
+        }
+    }
+
+    if (pos + 1 < code.length()) {
+
+        QString two = code.mid(pos, 2);
+
+        if (two == "==" ||
+            two == "!=" ||
+            two == "<=" ||
+            two == ">=" ||
+            two == "+=" ||
+            two == "-=" ||
+            two == "*=" ||
+            two == "/=" ||
+            two == "%=" ||
+            two == "//" ||
+            two == "**" ||
+            two == "->") {
+
+            pos += 2;
+            return {TOKEN_OP, two, line};
+            }
+    }
+
     const QChar op = code[pos++];
 
-    // Декораторы
     if (op == '@') {
         return {TOKEN_AT, "@", line};
     }
 
-    // Двухсимвольные операторы
-    if (pos < code.length()) {
-        const QChar next = code[pos];
-        if (QString combined = QString(op) + next; combined == "==" || combined == "+=" || combined == "!=" ||
-                                                   combined == "-=" || combined == "//" || combined == "**" ||
-                                                   combined == "<=" || combined == ">=" || combined == "->") {
-            pos++;
-            return {TOKEN_OP, combined, line};
-        }
-    }
-
-    // Обычный оператор
     return {TOKEN_OP, QString(op), line};
 }
 
