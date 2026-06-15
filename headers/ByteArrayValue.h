@@ -192,5 +192,9 @@ public:
 
     static Value makeTrans(const std::vector<Value>& args);
 
+    [[nodiscard]] Value translate(
+    const std::optional<Value>& table,
+    const std::optional<Value>& deleteBytes = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

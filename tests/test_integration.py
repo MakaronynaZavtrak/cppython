@@ -3782,6 +3782,12 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray.maketrans(b'abc', b'xyz')[100]", "100"),
     ("len(bytearray.maketrans(b'abc', b'xyz'))", "256"),
 
+    # translate
+    ("bytearray(b'abc').translate(bytearray.maketrans(b'', b''))", "bytearray(b'abc')"),
+    ("bytearray(b'abcdef').translate(None, b'bd')", "bytearray(b'acef')"),
+    ("bytearray(b'aaaa').translate(None, b'a')", "bytearray(b'')"),
+    ("bytearray().translate(None)", "bytearray(b'')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -7274,7 +7280,21 @@ if _result is not None:
     (["x = bytearray(b'abcdef')",
       "x.reverse()",
       "x.reverse()",
-      "x"], "bytearray(b'abcdef')")
+      "x"], "bytearray(b'abcdef')"),
+
+    # bytearray.translate
+    (["table = bytearray.maketrans(b'abc', b'xyz')",
+      "bytearray(b'cab').translate(table)"], "bytearray(b'zxy')"),
+
+    (["table = bytearray.maketrans(b'a', b'x')",
+      "bytearray(b'banana').translate(table)"], "bytearray(b'bxnxnx')"),
+
+    (["table = bytearray.maketrans(b'a', b'x')",
+      "bytearray(b'banana').translate(table, b'n')"], "bytearray(b'bxxx')"),
+
+    (["table = bytearray.maketrans(b'a', b'x')",
+      "bytearray(b'zzz').translate(table)"], "bytearray(b'zzz')"),
+
 
 ])
 

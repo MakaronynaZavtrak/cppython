@@ -2578,3 +2578,96 @@ Value ByteArrayValue::makeTrans(const std::vector<Value> &args) {
         std::make_shared<BytesValue>(table)
     );
 }
+
+Value ByteArrayValue::translate(
+    const std::optional<Value>& table,
+    const std::optional<Value>& deleteBytes) const {
+
+    QByteArray deletionSet;
+
+    if (deleteBytes.has_value()) {
+
+        if (const Value& del = *deleteBytes;
+            del.isBytes()) {
+
+            deletionSet = del.asBytes("translate")->bytes();
+
+        } else if (del.isByteArray()) {
+
+            deletionSet = del.asByteArray("translate")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: delete argument "
+                "must be bytes-like"
+            );
+        }
+    }
+
+    QByteArray translationTable;
+
+    bool useTranslation = table.has_value();
+
+    if (useTranslation) {
+
+        if (const Value& tbl = *table;
+            tbl.isNone()) {
+
+            useTranslation = false;
+
+        } else if (tbl.isBytes()) {
+
+            translationTable = tbl.asBytes("translate")->bytes();
+
+        } else if (tbl.isByteArray()) {
+
+            translationTable = tbl.asByteArray("translate")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: translation table "
+                "must be bytes-like"
+            );
+        }
+
+        if (useTranslation && translationTable.size() != 256) {
+
+            throw std::runtime_error(
+                "ValueError: translation table "
+                "must be 256 bytes long"
+            );
+        }
+    }
+
+    QByteArray result;
+
+    for (const unsigned char byte : data) {
+
+        if (
+            deletionSet.contains(
+                static_cast<char>(byte)
+            )
+        ) {
+            continue;
+        }
+
+        if (useTranslation) {
+
+            result.append(translationTable[byte]);
+
+        } else {
+
+            result.append(
+                static_cast<char>(byte)
+            );
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            std::move(result)
+        )
+    );
+}
