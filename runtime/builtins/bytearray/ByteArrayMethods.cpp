@@ -1210,6 +1210,27 @@ namespace {
         );
     }
 
+    Value makeCopyMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "copy",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "copy");
+
+                return byteArray->copy();
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1264,7 +1285,8 @@ namespace {
         REGISTER_METHOD("insert", makeInsertMethod),
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("remove", makeRemoveMethod),
-        REGISTER_METHOD("clear", makeClearMethod)
+        REGISTER_METHOD("clear", makeClearMethod),
+        REGISTER_METHOD("copy", makeCopyMethod)
     };
 
 }

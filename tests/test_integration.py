@@ -3730,7 +3730,12 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b',').join([bytearray(b''), bytearray(b''), bytearray(b'')])", "bytearray(b',,')"),
     ("bytearray(b',').join([bytearray(b'a'), bytearray(b''), bytearray(b'c')])", "bytearray(b'a,,c')"),
     ("bytearray(b'---').join([bytearray(b'a'), bytearray(b'b')])", "bytearray(b'a---b')"),
-    ("bytearray(b',').join([b'a', bytearray(b'b'), b'c'])", "bytearray(b'a,b,c')")
+    ("bytearray(b',').join([b'a', bytearray(b'b'), b'c'])", "bytearray(b'a,b,c')"),
+
+    # copy
+    ("bytearray().copy()", "bytearray(b'')"),
+    ("bytearray(b'abc').copy()", "bytearray(b'abc')"),
+    ("bytearray([0,1,2]).copy()", "bytearray(b'\\x00\\x01\\x02')"),
 
 ])
 
@@ -7180,6 +7185,21 @@ if _result is not None:
     (["x = bytearray(b'abc')",
       "x.clear()",
       "len(x)"], "0"),
+
+    # bytearray.copy
+    (["x = bytearray(b'abc')",
+      "y = x.copy()",
+      "x.append(100)",
+      "y"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'abc')",
+      "y = x.copy()",
+      "x.append(100)",
+      "x"], "bytearray(b'abcd')"),
+
+    (["x = bytearray(b'abc')",
+      "x.clear()",
+      "x.copy()"], "bytearray(b'')"),
 
 ])
 

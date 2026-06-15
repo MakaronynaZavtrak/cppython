@@ -2321,3 +2321,12 @@ Value ByteArrayValue::clear() {
 
     return {};
 }
+
+Value ByteArrayValue::copy() const {
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            data
+        )
+    );
+}

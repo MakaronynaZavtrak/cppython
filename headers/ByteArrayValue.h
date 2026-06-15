@@ -176,5 +176,7 @@ public:
 
     Value clear();
 
+    [[nodiscard]] Value copy() const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H
