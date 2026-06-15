@@ -172,5 +172,7 @@ public:
 
     Value pop(const std::optional<Value::BigInt>& index = std::nullopt);
 
+    Value remove(const Value& value);
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

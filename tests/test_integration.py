@@ -7120,7 +7120,44 @@ if _result is not None:
       "x.pop()"], "255"),
 
     (["x = bytearray([0])",
-      "x.pop()"], "0")
+      "x.pop()"], "0"),
+
+    # bytearray.remove
+    (["x = bytearray(b'abc')",
+      "x.remove(97)",
+      "x"], "bytearray(b'bc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.remove(98)",
+      "x"], "bytearray(b'ac')"),
+
+    (["x = bytearray(b'abc')",
+      "x.remove(99)",
+      "x"], "bytearray(b'ab')"),
+
+    (["x = bytearray(b'abca')",
+      "x.remove(97)",
+      "x"], "bytearray(b'bca')"),
+
+    (["x = bytearray(b'aaaa')",
+      "x.remove(97)",
+      "x"], "bytearray(b'aaa')"),
+
+    (["x = bytearray([0,1,2])",
+      "x.remove(0)",
+      "x"], "bytearray(b'\\x01\\x02')"),
+
+    (["x = bytearray([255,1,2])",
+      "x.remove(255)",
+      "x"], "bytearray(b'\\x01\\x02')"),
+
+    (["x = bytearray([1,2,3])",
+      "x.remove(True)",
+      "x"], "bytearray(b'\\x02\\x03')"),
+
+    (["x = bytearray([0,1])",
+      "x.remove(False)",
+      "x"], "bytearray(b'\\x01')")
 
 ])
 

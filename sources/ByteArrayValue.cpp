@@ -2284,3 +2284,33 @@ Value ByteArrayValue::pop(const std::optional<Value::BigInt>& indexValue) {
 
     return Value(Value::BigInt(result));
 }
+
+Value ByteArrayValue::remove(const Value& value) {
+
+    auto byte = value.toBigInt();
+
+    if (byte < 0 || byte > 255) {
+
+        throw std::runtime_error(
+            "ValueError: byte must be in range(0, 256)"
+        );
+    }
+
+    const char target =
+        static_cast<char>(
+            byte.convert_to<int>()
+        );
+
+    const int index = data.indexOf(target);
+
+    if (index < 0) {
+
+        throw std::runtime_error(
+            "ValueError: value not found in bytearray"
+        );
+    }
+
+    data.remove(index, 1);
+
+    return {};
+}
