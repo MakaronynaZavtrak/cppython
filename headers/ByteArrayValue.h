@@ -164,5 +164,7 @@ public:
 
     [[nodiscard]] Value join(const Value& iterable) const;
 
+    Value append(const Value& value);
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

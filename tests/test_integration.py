@@ -6960,6 +6960,32 @@ if _result is not None:
       "",
       "bytes(X())"], "b'ABC'"),
 
+    # bytearray.append
+    (["x = bytearray(b'abc')",
+      "x.append(100)",
+      "x"], "bytearray(b'abcd')"),
+
+    (["x = bytearray()",
+      "x.append(97)",
+      "x"], "bytearray(b'a')"),
+
+    (["x = bytearray([1,2,3])",
+      "x.append(255)",
+      "x"], "bytearray(b'\\x01\\x02\\x03\\xff')"),
+
+    (["x = bytearray()",
+      "x.append(True)",
+      "x"], "bytearray(b'\\x01')"),
+
+    (["x = bytearray()",
+      "x.append(False)",
+      "x"], "bytearray(b'\\x00')"),
+
+    (["x = bytearray(b'a')",
+      "x.append(98)",
+      "x.append(99)",
+      "x"], "bytearray(b'abc')"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

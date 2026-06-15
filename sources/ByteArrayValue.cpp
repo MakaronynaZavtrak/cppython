@@ -2139,3 +2139,23 @@ Value ByteArrayValue::join(
         )
     );
 }
+
+Value ByteArrayValue::append(const Value& value) {
+
+    const auto byte = value.toBigInt();
+
+    if (byte < 0 || byte > 255) {
+
+        throw std::runtime_error(
+            "ValueError: byte must be in range(0, 256)"
+        );
+    }
+
+    data.append(
+        static_cast<char>(
+            byte.convert_to<int>()
+        )
+    );
+
+    return {};
+}
