@@ -180,5 +180,9 @@ public:
 
     Value reverse();
 
+    [[nodiscard]] Value hex(
+    const std::optional<QString>& sep = std::nullopt,
+    const std::optional<Value::BigInt>& bytesPerSep = std::nullopt) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

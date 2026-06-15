@@ -2337,3 +2337,85 @@ Value ByteArrayValue::reverse() {
 
     return {};
 }
+
+Value ByteArrayValue::hex(
+    const std::optional<QString>& sep,
+    const std::optional<Value::BigInt>& bytesPerSep) const {
+
+    if (!sep.has_value()) {
+
+        QString result;
+
+        result.reserve(
+            data.size() * 2
+        );
+
+        for (unsigned char byte : data) {
+
+            result += QString("%1")
+                .arg(
+                    static_cast<int>(byte),
+                    2,
+                    16,
+                    QLatin1Char('0')
+                );
+        }
+
+        return Value(result);
+    }
+
+    const QString separator = *sep;
+
+    const long long groupSize =
+        bytesPerSep.has_value()
+        ? bytesPerSep->convert_to<long long>()
+        : 1;
+
+    if (groupSize == 0) {
+
+        throw std::runtime_error(
+            "ValueError: bytes_per_sep must not be zero"
+        );
+    }
+
+    QString result;
+
+    const bool fromRight =
+        groupSize > 0;
+
+    const long long absGroup =
+        std::llabs(groupSize);
+
+    for (int i = 0; i < data.size(); ++i) {
+
+        if (i > 0) {
+
+            bool insertSep = false;
+
+            if (fromRight) {
+
+                const int remaining = data.size() - i;
+
+                insertSep = remaining % absGroup == 0;
+
+            } else {
+
+                insertSep = i % absGroup == 0;
+            }
+
+            if (insertSep) {
+                result += separator;
+            }
+        }
+
+        result += QString("%1")
+            .arg(
+                static_cast<unsigned char>(data[i]),
+                2,
+                16,
+                QLatin1Char('0')
+            );
+    }
+
+    return Value(result);
+}

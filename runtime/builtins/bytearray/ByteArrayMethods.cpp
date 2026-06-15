@@ -2,6 +2,7 @@
 // Created by semyo on 11.06.2026.
 //
 #include "ByteArrayValue.h"
+#include "StrValue.h"
 #include "../BuiltinAttrLookup.h"
 #include "../BuiltinMethodRegistry.h"
 #include "../../ProtocolHelpers.h"
@@ -1251,6 +1252,46 @@ namespace {
         );
     }
 
+    Value makeHexMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "hex",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 2, "hex");
+
+                if (args.empty()) {
+                    return byteArray->hex();
+                }
+
+                const QString sep =
+                    args[0]
+                    .asString("hex")
+                    ->toString();
+
+                if (sep.size() != 1) {
+
+                    throw std::runtime_error(
+                        "ValueError: sep must be length 1"
+                    );
+                }
+
+                if (args.size() == 1) {
+                    return byteArray->hex(sep, std::nullopt);
+                }
+
+                return byteArray->hex(sep, args[1].toBigInt());
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1307,7 +1348,8 @@ namespace {
         REGISTER_METHOD("remove", makeRemoveMethod),
         REGISTER_METHOD("clear", makeClearMethod),
         REGISTER_METHOD("copy", makeCopyMethod),
-        REGISTER_METHOD("reverse", makeReverseMethod)
+        REGISTER_METHOD("reverse", makeReverseMethod),
+        REGISTER_METHOD("hex", makeHexMethod)
     };
 
 }
