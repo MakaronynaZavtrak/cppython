@@ -7295,6 +7295,41 @@ if _result is not None:
     (["table = bytearray.maketrans(b'a', b'x')",
       "bytearray(b'zzz').translate(table)"], "bytearray(b'zzz')"),
 
+    # bytearray.__setitem__
+    (["x = bytearray(b'abc')",
+      "x[0] = 88",
+      "x"], "bytearray(b'Xbc')"),
+
+    (["x = bytearray(b'abc')",
+      "x[1] = 88",
+      "x"], "bytearray(b'aXc')"),
+
+    (["x = bytearray(b'abc')",
+      "x[2] = 88", "x"], "bytearray(b'abX')"),
+
+    (["x = bytearray(b'abc')",
+      "x[-1] = 90",
+      "x"], "bytearray(b'abZ')"),
+
+    (["x = bytearray(b'abc')",
+      "x[-2] = 90",
+      "x"], "bytearray(b'aZc')"),
+
+    (["x = bytearray(b'abc')",
+      "x[-3] = 90",
+      "x"], "bytearray(b'Zbc')"),
+
+    (["x = bytearray([0,1,2])",
+      "x[1] = 255",
+      "x"], "bytearray(b'\\x00\\xff\\x02')"),
+
+    (["x = bytearray([0,0])",
+      "x[0] = True",
+      "x"], "bytearray(b'\\x01\\x00')"),
+
+    (["x = bytearray([1,1])",
+      "x[0] = False",
+      "x"], "bytearray(b'\\x00\\x01')")
 
 ])
 

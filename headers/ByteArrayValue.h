@@ -29,6 +29,8 @@ public:
 
     [[nodiscard]] Value getItem(const Value& indexValue) const;
 
+    Value setItem(const Value& indexValue, const Value& value);
+
     [[nodiscard]] std::size_t len() const;
 
     [[nodiscard]] QString toString() const override;

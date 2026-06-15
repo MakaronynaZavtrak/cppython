@@ -57,6 +57,48 @@ Value ByteArrayValue::getItem(const Value& indexValue) const {
     );
 }
 
+Value ByteArrayValue::setItem(
+    const Value& indexValue,
+    const Value& value) {
+
+    if (!indexValue.isBigInt()) {
+
+        throw std::runtime_error(
+            "TypeError: bytearray indices must be integers"
+        );
+    }
+
+    auto index =
+        indexValue.toBigInt()
+        .convert_to<long long>();
+
+    const auto size = data.size();
+
+    if (index < 0) {
+        index += size;
+    }
+
+    if (index < 0 || index >= size) {
+
+        throw std::runtime_error(
+            "IndexError: bytearray index out of range"
+        );
+    }
+
+    const auto byte = value.toBigInt();
+
+    if (byte < 0 || byte > 255) {
+
+        throw std::runtime_error(
+            "ValueError: byte must be in range(0, 256)"
+        );
+    }
+
+    data[index] = static_cast<char>(byte.convert_to<int>());
+
+    return {};
+}
+
 std::size_t ByteArrayValue::len() const {
     return data.size();
 }
