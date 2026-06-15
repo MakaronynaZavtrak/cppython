@@ -7201,6 +7201,36 @@ if _result is not None:
       "x.clear()",
       "x.copy()"], "bytearray(b'')"),
 
+    # bytearray.copy
+    (["x = bytearray()",
+      "x.reverse()",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray(b'a')",
+      "x.reverse()",
+      "x"], "bytearray(b'a')"),
+
+    (["x = bytearray(b'ab')",
+      "x.reverse()",
+      "x"], "bytearray(b'ba')"),
+
+    (["x = bytearray(b'abcdef')",
+      "x.reverse()",
+      "x"], "bytearray(b'fedcba')"),
+
+    (["x = bytearray([1,2,3,4])",
+      "x.reverse()",
+      "x"], "bytearray(b'\\x04\\x03\\x02\\x01')"),
+
+    (["x = bytearray(b'aba')",
+      "x.reverse()",
+      "x"], "bytearray(b'aba')"),
+
+    (["x = bytearray(b'abcdef')",
+      "x.reverse()",
+      "x.reverse()",
+      "x"], "bytearray(b'abcdef')")
+
 ])
 
 def test_multiline_expressions(commands, expected):

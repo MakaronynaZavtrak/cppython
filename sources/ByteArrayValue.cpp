@@ -2330,3 +2330,10 @@ Value ByteArrayValue::copy() const {
         )
     );
 }
+
+Value ByteArrayValue::reverse() {
+
+    std::reverse(data.begin(), data.end());
+
+    return {};
+}

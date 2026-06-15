@@ -1231,6 +1231,26 @@ namespace {
         );
     }
 
+    Value makeReverseMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "reverse",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "reverse");
+
+                return byteArray->reverse();
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1286,7 +1306,8 @@ namespace {
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("remove", makeRemoveMethod),
         REGISTER_METHOD("clear", makeClearMethod),
-        REGISTER_METHOD("copy", makeCopyMethod)
+        REGISTER_METHOD("copy", makeCopyMethod),
+        REGISTER_METHOD("reverse", makeReverseMethod)
     };
 
 }

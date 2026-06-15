@@ -178,5 +178,7 @@ public:
 
     [[nodiscard]] Value copy() const;
 
+    Value reverse();
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H
