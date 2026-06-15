@@ -7026,7 +7026,7 @@ if _result is not None:
       "",
       "res"], "[98, 99, 100]"),
 
-    # insert
+    # bytearray.insert
     (["x = bytearray(b'abc')",
       "x.insert(0, 88)",
       "x"], "bytearray(b'Xabc')"),
@@ -7070,6 +7070,57 @@ if _result is not None:
     (["x = bytearray()",
       "x.insert(0, False)",
       "x"], "bytearray(b'\\x00')"),
+
+    # bytearray.pop
+    (["x = bytearray(b'abc')",
+      "x.pop()"], "99"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop()",
+      "x"], "bytearray(b'ab')"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(0)"], "97"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(1)"], "98"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(2)"], "99"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(0)",
+      "x"], "bytearray(b'bc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(1)",
+      "x"], "bytearray(b'ac')"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(2)",
+      "x"], "bytearray(b'ab')"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(-1)"], "99"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(-2)"], "98"),
+
+    (["x = bytearray(b'abc')",
+      "x.pop(-3)"], "97"),
+
+    (["x = bytearray(b'a')",
+      "x.pop()"], "97"),
+
+    (["x = bytearray(b'a')",
+      "x.pop()",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray([255])",
+      "x.pop()"], "255"),
+
+    (["x = bytearray([0])",
+      "x.pop()"], "0")
 
 ])
 

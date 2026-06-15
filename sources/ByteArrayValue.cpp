@@ -2241,3 +2241,46 @@ Value ByteArrayValue::insert(const Value::BigInt& indexValue, const Value& value
 
     return {};
 }
+
+Value ByteArrayValue::pop(const std::optional<Value::BigInt>& indexValue) {
+
+    if (data.isEmpty()) {
+
+        throw std::runtime_error(
+            "IndexError: pop from empty bytearray"
+        );
+    }
+
+    long long index;
+
+    if (indexValue.has_value()) {
+
+        index = indexValue->convert_to<long long>();
+
+    } else {
+
+        index = data.size() - 1;
+    }
+
+    const long long size = data.size();
+
+    if (index < 0) {
+        index += size;
+    }
+
+    if (index < 0 || index >= size) {
+
+        throw std::runtime_error(
+            "IndexError: pop index out of range"
+        );
+    }
+
+    const unsigned char result =
+        static_cast<unsigned char>(
+            data[index]
+        );
+
+    data.remove(index, 1);
+
+    return Value(Value::BigInt(result));
+}

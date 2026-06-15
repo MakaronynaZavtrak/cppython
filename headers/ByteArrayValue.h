@@ -170,5 +170,7 @@ public:
 
     Value insert(const Value::BigInt& indexValue, const Value& value);
 
+    Value pop(const std::optional<Value::BigInt>& index = std::nullopt);
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

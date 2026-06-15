@@ -1142,6 +1142,34 @@ namespace {
         );
     }
 
+    Value makePopMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "pop",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "pop");
+
+                if (args.empty()) {
+
+                    return byteArray->pop();
+                }
+
+                return byteArray->pop(
+                    args[0].toBigInt()
+                );
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1193,7 +1221,8 @@ namespace {
         REGISTER_METHOD("join", makeJoinMethod),
         REGISTER_METHOD("append", makeAppendMethod),
         REGISTER_METHOD("extend", makeExtendMethod),
-        REGISTER_METHOD("insert", makeInsertMethod)
+        REGISTER_METHOD("insert", makeInsertMethod),
+        REGISTER_METHOD("pop", makePopMethod)
     };
 
 }
