@@ -168,5 +168,7 @@ public:
 
     Value extend(const Value& iterable);
 
+    Value insert(const Value::BigInt& indexValue, const Value& value);
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

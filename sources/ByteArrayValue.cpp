@@ -2204,3 +2204,40 @@ Value ByteArrayValue::extend(const Value& iterable) {
 
     return {};
 }
+
+Value ByteArrayValue::insert(const Value::BigInt& indexValue, const Value& value) {
+
+    const auto byte = value.toBigInt();
+
+    if (byte < 0 || byte > 255) {
+
+        throw std::runtime_error(
+            "ValueError: byte must be in range(0, 256)"
+        );
+    }
+
+    long long index = indexValue.convert_to<long long>();
+
+    const long long size = data.size();
+
+    if (index < 0) {
+        index += size;
+    }
+
+    if (index < 0) {
+        index = 0;
+    }
+
+    if (index > size) {
+        index = size;
+    }
+
+    data.insert(
+        index,
+        static_cast<char>(
+            byte.convert_to<int>()
+        )
+    );
+
+    return {};
+}

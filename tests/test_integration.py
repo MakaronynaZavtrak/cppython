@@ -7024,7 +7024,52 @@ if _result is not None:
       "for x in bytearray(b'abc'):",
       "    res.append(x + 1)",
       "",
-      "res"], "[98, 99, 100]")
+      "res"], "[98, 99, 100]"),
+
+    # insert
+    (["x = bytearray(b'abc')",
+      "x.insert(0, 88)",
+      "x"], "bytearray(b'Xabc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.insert(1, 88)",
+      "x"], "bytearray(b'aXbc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.insert(2, 88)",
+      "x"], "bytearray(b'abXc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.insert(3, 88)",
+      "x"], "bytearray(b'abcX')"),
+
+    (["x = bytearray(b'abc')",
+      "x.insert(100, 88)",
+      "x"], "bytearray(b'abcX')"),
+
+    (["x = bytearray(b'abc')",
+      "x.insert(-1, 88)",
+      "x"], "bytearray(b'abXc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.insert(-2, 88)",
+      "x"], "bytearray(b'aXbc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.insert(-100, 88)",
+      "x"], "bytearray(b'Xabc')"),
+
+    (["x = bytearray()",
+      "x.insert(0, 97)",
+      "x"], "bytearray(b'a')"),
+
+    (["x = bytearray()",
+      "x.insert(0, True)",
+      "x"], "bytearray(b'\\x01')"),
+
+    (["x = bytearray()",
+      "x.insert(0, False)",
+      "x"], "bytearray(b'\\x00')"),
 
 ])
 
