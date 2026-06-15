@@ -1310,6 +1310,46 @@ namespace {
         );
     }
 
+    Value makeDecodeMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "decode",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 2, "decode");
+
+                QString encoding = "utf-8";
+
+                QString errors = "strict";
+
+                if (args.size() >= 1) {
+
+                    encoding =
+                        args[0]
+                        .asString("decode")
+                        ->toString();
+                }
+
+                if (args.size() >= 2) {
+
+                    errors =
+                        args[1]
+                        .asString("decode")
+                        ->toString();
+                }
+
+                return byteArray->decode(encoding, errors);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1368,7 +1408,8 @@ namespace {
         REGISTER_METHOD("copy", makeCopyMethod),
         REGISTER_METHOD("reverse", makeReverseMethod),
         REGISTER_METHOD("hex", makeHexMethod),
-        REGISTER_METHOD("fromhex", makeFromHexMethod)
+        REGISTER_METHOD("fromhex", makeFromHexMethod),
+        REGISTER_METHOD("decode", makeDecodeMethod)
     };
 
 }

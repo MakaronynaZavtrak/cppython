@@ -186,5 +186,9 @@ public:
 
     static Value maketrans(const std::vector<Value>& args);
 
+    [[nodiscard]] Value decode(
+    const QString& encoding = "utf-8",
+    const QString& errors = "strict") const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

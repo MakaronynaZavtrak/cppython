@@ -2475,3 +2475,41 @@ Value ByteArrayValue::maketrans(const std::vector<Value> &args) {
         )
     );
 }
+
+Value ByteArrayValue::decode(
+    const QString& encoding,
+    const QString& errors) const {
+
+    const QString normalized = encoding.toLower();
+
+    if (normalized != "utf8" && normalized != "utf-8") {
+
+        throw std::runtime_error(
+            QString(
+                "LookupError: unknown encoding: %1"
+            ).arg(encoding).toStdString()
+        );
+    }
+
+    if (errors != "strict") {
+
+        throw std::runtime_error(
+            QString(
+                "LookupError: unknown error handler name '%1'"
+            ).arg(errors).toStdString()
+        );
+    }
+
+    QStringDecoder decoder(QStringDecoder::Utf8);
+
+    const QString decoded = decoder.decode(data);
+
+    if (decoder.hasError()) {
+
+        throw std::runtime_error(
+            "UnicodeDecodeError"
+        );
+    }
+
+    return Value(decoded);
+}
