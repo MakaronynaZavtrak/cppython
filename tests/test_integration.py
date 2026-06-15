@@ -3704,6 +3704,23 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'a\\tb').expandtabs(0)", "bytearray(b'ab')"),
     ("bytearray(b'\\t\\t').expandtabs(4)", "bytearray(b'        ')"),
 
+    # splitlines
+    ("bytearray().splitlines()", "[]"),
+    ("bytearray(b'').splitlines()", "[]"),
+    ("bytearray(b'a').splitlines()", "[bytearray(b'a')]"),
+    ("bytearray(b'a\\nb').splitlines()", "[bytearray(b'a'), bytearray(b'b')]"),
+    ("bytearray(b'a\\rb').splitlines()", "[bytearray(b'a'), bytearray(b'b')]"),
+    ("bytearray(b'a\\r\\nb').splitlines()", "[bytearray(b'a'), bytearray(b'b')]"),
+    ("bytearray(b'a\\vb').splitlines()", "[bytearray(b'a\\x0bb')]"),
+    ("bytearray(b'a\\fb').splitlines()", "[bytearray(b'a\\x0cb')]"),
+    ("bytearray(b'a\\nb').splitlines(True)", "[bytearray(b'a\\n'), bytearray(b'b')]"),
+    ("bytearray(b'a\\r\\nb').splitlines(True)", "[bytearray(b'a\\r\\n'), bytearray(b'b')]"),
+    ("bytearray(b'a\\rb').splitlines(True)", "[bytearray(b'a\\r'), bytearray(b'b')]"),
+    ("bytearray(b'a\\nb\\nc').splitlines()", "[bytearray(b'a'), bytearray(b'b'), bytearray(b'c')]"),
+    ("bytearray(b'a\\nb\\nc').splitlines(True)", "[bytearray(b'a\\n'), bytearray(b'b\\n'), bytearray(b'c')]"),
+    ("bytearray(b'a\\n').splitlines()", "[bytearray(b'a')]"),
+    ("bytearray(b'a\\n').splitlines(True)", "[bytearray(b'a\\n')]"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

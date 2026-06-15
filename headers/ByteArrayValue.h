@@ -159,5 +159,8 @@ public:
     [[nodiscard]] Value expandTabs(
     const Value::BigInt& tabsize = 8) const;
 
+    [[nodiscard]] Value splitLines(
+    bool keepEnds = false) const;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

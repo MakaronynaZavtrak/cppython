@@ -1036,6 +1036,31 @@ namespace {
         );
     }
 
+    Value makeSplitLinesMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "splitlines",
+
+            [byteArray](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "bytearray.splitlines");
+
+                bool keepEnds = false;
+
+                if (!args.empty()) {
+                    keepEnds = args[0].toBool();
+                }
+
+                return byteArray->splitLines(keepEnds);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1081,7 +1106,8 @@ namespace {
         REGISTER_METHOD("isdigit", makeIsDigitMethod),
         REGISTER_METHOD("isalnum", makeIsAlnumMethod),
         REGISTER_METHOD("isspace", makeIsSpaceMethod),
-        REGISTER_METHOD("expandtabs", makeExpandTabsMethod)
+        REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
+        REGISTER_METHOD("splitlines", makeSplitLinesMethod)
     };
 
 }

@@ -2000,3 +2000,66 @@ Value ByteArrayValue::expandTabs(
         )
     );
 }
+
+Value ByteArrayValue::splitLines(
+    bool keepEnds) const {
+
+    std::vector<Value> result;
+
+    int start = 0;
+    int i = 0;
+
+    while (i < data.size()) {
+
+        int lineBreakLen = 0;
+
+        if (data[i] == '\n' ||
+            data[i] == '\r') {
+
+            lineBreakLen = 1;
+
+            if (data[i] == '\r' &&
+                i + 1 < data.size() &&
+                data[i + 1] == '\n') {
+
+                lineBreakLen = 2;
+            }
+        }
+
+        if (lineBreakLen > 0) {
+
+            const int end =
+                keepEnds
+                ? i + lineBreakLen
+                : i;
+
+            result.emplace_back(
+                std::make_shared<ByteArrayValue>(
+                    data.mid(start, end - start)
+                )
+            );
+
+            i += lineBreakLen;
+            start = i;
+
+            continue;
+        }
+
+        ++i;
+    }
+
+    if (start < data.size()) {
+
+        result.emplace_back(
+            std::make_shared<ByteArrayValue>(
+                data.mid(start)
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<ListValue>(
+            result
+        )
+    );
+}
