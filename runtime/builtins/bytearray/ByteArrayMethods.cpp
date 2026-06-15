@@ -1101,9 +1101,30 @@ namespace {
         );
     }
 
+    Value makeExtendMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "extend",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "extend");
+
+                return byteArray->extend(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
+        REGISTER_METHOD("__iter__", makeIterMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
         REGISTER_METHOD("__contains__", makeContainsMethod),
@@ -1149,7 +1170,8 @@ namespace {
         REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
         REGISTER_METHOD("splitlines", makeSplitLinesMethod),
         REGISTER_METHOD("join", makeJoinMethod),
-        REGISTER_METHOD("append", makeAppendMethod)
+        REGISTER_METHOD("append", makeAppendMethod),
+        REGISTER_METHOD("extend", makeExtendMethod)
     };
 
 }

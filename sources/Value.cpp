@@ -25,6 +25,7 @@
 #include "SuperValue.h"
 #include "TupleIterator.h"
 #include "TupleValue.h"
+#include "ByteArrayIterator.h"
 
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
 
@@ -1387,6 +1388,14 @@ Value::IteratorPtr Value::getIterator() const {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<BytesIterator>(
                 asBytes()
+            )
+        );
+    }
+
+    if (isByteArray()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<ByteArrayIterator>(
+                asByteArray()->bytes()
             )
         );
     }

@@ -114,7 +114,9 @@ add_executable(cppython main.cpp
         headers/ByteArrayValue.h
         sources/ByteArrayValue.cpp
         runtime/builtins/bytearray/ByteArrayMethods.h
-        runtime/builtins/bytearray/ByteArrayMethods.cpp)
+        runtime/builtins/bytearray/ByteArrayMethods.cpp
+        headers/ByteArrayIterator.h
+        sources/ByteArrayIterator.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

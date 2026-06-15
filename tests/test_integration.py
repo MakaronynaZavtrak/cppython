@@ -6986,6 +6986,46 @@ if _result is not None:
       "x.append(99)",
       "x"], "bytearray(b'abc')"),
 
+    # bytearray.extend
+    (["x = bytearray(b'abc')",
+      "x.extend([100,101])",
+      "x"], "bytearray(b'abcde')"),
+
+    (["x = bytearray(b'a')",
+      "x.extend((98,99))",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'a')",
+      "x.extend(bytearray(b'bc'))",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'a')",
+      "x.extend(b'bc')",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.extend([])",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray()",
+      "x.extend([True, False])",
+      "x"], "bytearray(b'\\x01\\x00')"),
+
+    (["x = bytearray()",
+      "x.extend([97])",
+      "x.extend([98,99])",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'abc')",
+      "x.extend(x)",
+      "x"], "bytearray(b'abcabc')"),
+
+    (["res = []",
+      "for x in bytearray(b'abc'):",
+      "    res.append(x + 1)",
+      "",
+      "res"], "[98, 99, 100]")
+
 ])
 
 def test_multiline_expressions(commands, expected):

@@ -166,5 +166,7 @@ public:
 
     Value append(const Value& value);
 
+    Value extend(const Value& iterable);
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

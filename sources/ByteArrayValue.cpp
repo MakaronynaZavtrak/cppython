@@ -2159,3 +2159,48 @@ Value ByteArrayValue::append(const Value& value) {
 
     return {};
 }
+
+Value ByteArrayValue::extend(const Value& iterable) {
+
+    if (!iterable.isIterable() && !supportsIter(iterable)) {
+
+        throw std::runtime_error(
+            "TypeError: object is not iterable"
+        );
+    }
+
+    Value iterMethod = getAttrValue(iterable, "__iter__");
+
+    Value iterObj = call(iterMethod, {}, {}, nullptr);
+
+    if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
+
+        throw std::runtime_error(
+            "__iter__ returned non-iterator"
+        );
+    }
+
+    auto iterator =std::get<Value::IteratorPtr>(iterObj.data);
+
+    while (iterator->hasNext()) {
+
+        Value item = iterator->next();
+
+        auto byte = item.toBigInt();
+
+        if (byte < 0 || byte > 255) {
+
+            throw std::runtime_error(
+                "ValueError: byte must be in range(0, 256)"
+            );
+        }
+
+        data.append(
+            static_cast<char>(
+                byte.convert_to<int>()
+            )
+        );
+    }
+
+    return {};
+}
