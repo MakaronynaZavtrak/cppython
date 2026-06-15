@@ -7157,7 +7157,29 @@ if _result is not None:
 
     (["x = bytearray([0,1])",
       "x.remove(False)",
-      "x"], "bytearray(b'\\x01')")
+      "x"], "bytearray(b'\\x01')"),
+
+    # bytearray.clear
+    (["x = bytearray(b'abc')",
+      "x.clear()",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray()",
+      "x.clear()",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray([0,1,2,3])",
+      "x.clear()",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray(b'abc')",
+      "x.clear()",
+      "x.clear()",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray(b'abc')",
+      "x.clear()",
+      "len(x)"], "0"),
 
 ])
 

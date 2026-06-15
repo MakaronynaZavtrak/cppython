@@ -2314,3 +2314,10 @@ Value ByteArrayValue::remove(const Value& value) {
 
     return {};
 }
+
+Value ByteArrayValue::clear() {
+
+    data.clear();
+
+    return {};
+}

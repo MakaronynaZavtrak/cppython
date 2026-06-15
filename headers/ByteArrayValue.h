@@ -174,5 +174,7 @@ public:
 
     Value remove(const Value& value);
 
+    Value clear();
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H
