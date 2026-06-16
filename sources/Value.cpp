@@ -719,10 +719,15 @@ Value Value::operator%(const Value &other) const {
         try {
             return asObject()->mod(other);
         }
-        catch (const std::exception& e) {
-            qDebug() << e.what();
-            throw;
+        catch (...) {}
+    }
+
+    if (other.isObject()) {
+
+        try {
+            return other.asObject()->rmod(*this);
         }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for %: "

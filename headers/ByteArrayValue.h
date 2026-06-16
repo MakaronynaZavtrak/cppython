@@ -210,5 +210,7 @@ public:
 
     [[nodiscard]] Value mod(const Value& other) const override;
 
+    [[nodiscard]] Value rmod(const Value& other) const override;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

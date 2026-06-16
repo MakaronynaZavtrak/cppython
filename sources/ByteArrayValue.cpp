@@ -2862,3 +2862,12 @@ Value ByteArrayValue::mod(const Value& other) const {
         )
     );
 }
+
+Value ByteArrayValue::rmod(const Value& other) const {
+
+    return other % Value(
+        std::const_pointer_cast<ByteArrayValue>(
+            shared_from_this()
+        )
+    );
+}

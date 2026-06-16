@@ -1529,6 +1529,26 @@ namespace {
         );
     }
 
+    Value makeRModMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "__rmod__",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__rmod__");
+
+                return byteArray->rmod(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1538,6 +1558,7 @@ namespace {
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
         REGISTER_METHOD("__mod__", makeModMethod),
+        REGISTER_METHOD("__rmod__", makeRModMethod),
         REGISTER_METHOD("__iadd__", makeIAddMethod),
         REGISTER_METHOD("__imul__", makeIMulMethod),
         REGISTER_METHOD("__rmul__", makeRmulMethod),

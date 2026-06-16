@@ -3817,6 +3817,24 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'%r') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
     ("bytearray(b'%a') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
 
+    # bytearray.__rmod__
+    ("bytearray(b'abc').__rmod__(bytearray(b'%s'))", "bytearray(b'abc')"),
+    ("bytearray(b'abc').__rmod__(bytearray(b'%b'))", "bytearray(b'abc')"),
+    ("bytearray(b'abc').__rmod__(bytearray(b'%r'))", "bytearray(b\"bytearray(b\\'abc\\')\")"),
+    ("bytearray(b'abc').__rmod__(bytearray(b'%a'))", "bytearray(b\"bytearray(b\\'abc\\')\")"),
+    ("bytearray(b'abc').__rmod__(bytearray(b'hello %s'))", "bytearray(b'hello abc')"),
+    ("bytearray(b'abc').__rmod__(bytearray(b'%5s'))", "bytearray(b'  abc')"),
+    ("bytearray(b'abc').__rmod__(bytearray(b'%-5s'))", "bytearray(b'abc  ')"),
+
+    # __rmod__ %
+    ("bytearray(b'%s') % bytearray(b'abc')", "bytearray(b'abc')"),
+    ("bytearray(b'%b') % bytearray(b'abc')", "bytearray(b'abc')"),
+    ("bytearray(b'hello %s') % bytearray(b'abc')", "bytearray(b'hello abc')"),
+    ("bytearray(b'%5s') % bytearray(b'abc')", "bytearray(b'  abc')"),
+    ("bytearray(b'%-5s') % bytearray(b'abc')", "bytearray(b'abc  ')"),
+    ("bytearray(b'%r') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
+    ("bytearray(b'%a') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
