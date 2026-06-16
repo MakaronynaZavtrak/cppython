@@ -8,7 +8,7 @@
 
 Value getByteArrayAttr(const Value& obj, const QString& attr);
 
-Value make__byteArray__ClassBuiltin();
+Value make_byteArray_ClassBuiltin();
 
 Value makeByteArrayFromHexBuiltin();
 

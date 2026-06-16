@@ -150,7 +150,7 @@ void Interpreter::run(int argc, char* argv[]) {
     globalEnv->set("bytearray", Value(Runtime::bytearrayClass));
     Runtime::bytearrayClass->attributes["__call__"] = globalEnv->get("__bytearray_call__");
     globalEnv->set("__bytearray_type__", Value(Runtime::bytearrayClass));
-    Runtime::bytearrayClass->attributes["__bytes__"] = make__byteArray__ClassBuiltin();
+    Runtime::bytearrayClass->attributes["__bytes__"] = make_byteArray_ClassBuiltin();
     Runtime::bytearrayClass->attributes["fromhex"] = makeByteArrayFromHexBuiltin();
     Runtime::bytearrayClass->attributes["maketrans"] = makeByteArrayMakeTransBuiltin();
 

@@ -7,7 +7,7 @@
 #include "ObjectValue.h"
 #include "Value.h"
 
-class ByteArrayValue : public ObjectValue {
+class ByteArrayValue : public ObjectValue, public std::enable_shared_from_this<ByteArrayValue> {
 
     QByteArray data;
 
@@ -37,11 +37,13 @@ public:
 
     [[nodiscard]] QString toString() const override;
 
-    [[nodiscard]] Value __bytes__() const;
+    [[nodiscard]] Value _bytes_() const;
 
     [[nodiscard]] Value add(const Value& other) const override;
 
     [[nodiscard]] Value multiply(const Value& other) const override;
+
+    Value iadd(const Value& other) override;
 
     [[nodiscard]] bool contains(const Value& value) const override;
 

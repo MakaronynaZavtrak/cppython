@@ -232,7 +232,7 @@ QString ByteArrayValue::toString() const {
     );
 }
 
-Value ByteArrayValue::__bytes__() const {
+Value ByteArrayValue::_bytes_() const {
 
     return Value(
         std::make_shared<ByteArrayValue>(data)
@@ -296,6 +296,27 @@ Value ByteArrayValue::multiply(const Value& other) const {
         std::make_shared<ByteArrayValue>(
             result
         )
+    );
+}
+
+Value ByteArrayValue::iadd(const Value& other) {
+
+    if (other.isBytes()) {
+        data.append(other.asBytes()->bytes());
+
+        return Value(shared_from_this());
+    }
+
+    if (other.isByteArray()) {
+
+        data.append(other.asByteArray()->bytes());
+
+        return Value(shared_from_this());
+    }
+
+    throw std::runtime_error(
+        "TypeError: can't concat "
+         "argument to bytearray"
     );
 }
 

@@ -727,6 +727,13 @@ Value Value::intDivide(const Value& other) const {
 
 Value& Value::operator+=(const Value &other) {
 
+    if (isByteArray()) {
+
+        asByteArray()->iadd(other);
+
+        return *this;
+    }
+
     *this = *this + other;
     return *this;
 }

@@ -1621,30 +1621,121 @@ class AugAssignNode : public ASTNode {
         return it->second;
     }
 
+    static Value tryInplaceOperation(
+    const Value& left,
+    const QString& methodName,
+    const Value& right,
+    const EnvPtr& env,
+    const std::function<Value()>& fallback) {
+
+        try {
+
+            const Value method = getAttrValue(left, methodName);
+
+            return call(method, { right }, {}, env);
+
+        } catch (const std::runtime_error& e) {
+
+            if (const std::string msg = e.what();
+                msg.find("AttributeError") == std::string::npos) {
+                throw;
+            }
+        }
+
+        return fallback();
+    }
+
 public:
 
     AugAssignNode(QString name, QString op, std::shared_ptr<ASTNode> value)
         : name(std::move(name)), op(std::move(op)), value(std::move(value)) {}
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
-
         Value left = env->get(name);
         Value right = value->eval(env);
 
+        Value result;
+
         switch (parseOperation(op)) {
-            case Operation::Add:       left += right; break;
-            case Operation::Subtract:  left -= right; break;
-            case Operation::Multiply:  left *= right; break;
-            case Operation::Divide:    left /= right; break;
-            case Operation::IntDivide: left.intDivideEqual(right); break;
-            case Operation::Modulo:    left %= right; break;
-            case Operation::Power:     left.powerEqual(right); break;
-            default:                   throw std::runtime_error("Unsupported augmented assignment");
+            case Operation::Add:
+                result = tryInplaceOperation(
+                    left,
+                    "__iadd__",
+                    right,
+                    env,
+                    [&] { return left + right; }
+                );
+                break;
+
+            case Operation::Subtract:
+                result = tryInplaceOperation(
+                    left,
+                    "__isub__",
+                    right,
+                    env,
+                    [&] { return left - right; }
+                );
+                break;
+
+            case Operation::Multiply:
+                result = tryInplaceOperation(
+                    left,
+                    "__imul__",
+                    right,
+                    env,
+                    [&] { return left * right; }
+                );
+                break;
+
+            case Operation::Divide:
+                result = tryInplaceOperation(
+                    left,
+                    "__itruediv__",
+                    right,
+                    env,
+                    [&] { return left / right; }
+                );
+                break;
+
+            case Operation::IntDivide:
+                result = tryInplaceOperation(
+                    left,
+                    "__ifloordiv__",
+                    right,
+                    env,
+                    [&] { return left.intDivide(right); }
+                );
+                break;
+
+            case Operation::Modulo:
+                result = tryInplaceOperation(
+                    left,
+                    "__imod__",
+                    right,
+                    env,
+                    [&] { return left % right; }
+                );
+                break;
+
+            case Operation::Power:
+                result = tryInplaceOperation(
+                    left,
+                    "__ipow__",
+                    right,
+                    env,
+                    [&] { return left.power(right); }
+                );
+                break;
+
+            default:
+                throw std::runtime_error(
+                    "Unsupported augmented assignment"
+                );
         }
 
-        env->set(name, left);
+        env->set(name, result);
 
-        return left;
+        return result;
     }
 
     [[nodiscard]] QString toString() const override {

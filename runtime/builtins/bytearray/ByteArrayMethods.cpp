@@ -88,6 +88,23 @@ namespace {
         );
     }
 
+    Value makeIAddMethod(const Value& obj) {
+
+        return makeBuiltin(
+            "__iadd__",
+
+            [obj](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__iadd__");
+
+                return obj.asByteArray("__iadd__")->iadd(args[0]);
+            }
+        );
+    }
+
     Value makeContainsMethod(const Value& obj) {
 
         auto byteArray = extract<Value::ByteArrayPtr>(obj);
@@ -1442,6 +1459,7 @@ namespace {
         REGISTER_METHOD("__iter__", makeIterMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
+        REGISTER_METHOD("__iadd__", makeIAddMethod),
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__eq__", makeEqMethod),
         REGISTER_METHOD("__ne__", makeNeMethod),
@@ -1507,7 +1525,7 @@ Value getByteArrayAttr(const Value& obj, const QString& attr) {
     return getBuiltinAttr(obj, attr, BYTEARRAY_METHODS, "bytes");
 }
 
-Value make__byteArray__ClassBuiltin() {
+Value make_byteArray_ClassBuiltin() {
 
     return makeBuiltin(
         "__bytes__",
@@ -1519,7 +1537,7 @@ Value make__byteArray__ClassBuiltin() {
 
             expectArgs(args, 1, "bytearray.__bytes__");
 
-            return args[0].asByteArray("__bytes__")->__bytes__();
+            return args[0].asByteArray("__bytes__")->_bytes_();
         }
     );
 
