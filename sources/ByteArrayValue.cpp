@@ -2843,3 +2843,7 @@ Value ByteArrayValue::resize(const Value& newSizeValue) {
 
     return {};
 }
+
+Value ByteArrayValue::rmul(const Value& other) const {
+    return multiply(other);
+}

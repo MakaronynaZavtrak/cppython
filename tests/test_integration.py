@@ -3788,6 +3788,11 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'aaaa').translate(None, b'a')", "bytearray(b'')"),
     ("bytearray().translate(None)", "bytearray(b'')"),
 
+    # __rmul__
+    ("bytearray(b'ab').__rmul__(3)", "bytearray(b'ababab')"),
+    ("bytearray(b'abc').__rmul__(0)", "bytearray(b'')"),
+    ("bytearray(b'abc').__rmul__(1)", "bytearray(b'abc')")
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -7673,7 +7678,20 @@ if _result is not None:
 
     (["x = bytearray(b'xyz')",
       "x.resize(6)",
-      "x[5]"], "0")
+      "x[5]"], "0"),
+
+    #  bytearray.__rmul__
+    (["x = bytearray(b'ab')",
+      "3 * x"],
+     "bytearray(b'ababab')"),
+
+    (["x = bytearray(b'abc')",
+      "0 * x"],
+     "bytearray(b'')"),
+
+    (["x = bytearray(b'abc')",
+      "1 * x"],
+     "bytearray(b'abc')")
 
 ])
 

@@ -206,5 +206,7 @@ public:
 
     Value resize(const Value& newSizeValue);
 
+    [[nodiscard]] Value rmul(const Value& other) const override;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

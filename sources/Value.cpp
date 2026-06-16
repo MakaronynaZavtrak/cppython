@@ -149,6 +149,10 @@ QString Value::toString() const {
                 return p->toString();
             },
 
+            [](const ObjectPtr& p) {
+                return p->toString();
+            },
+
             [](std::monostate) {
                 return QString("None");
             }
@@ -595,6 +599,52 @@ Value Value::operator-(const Value &other) const {
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
 
+bool Value::isObject() const {
+
+    return isString()
+        || isBytes()
+        || isByteArray()
+        || isList()
+        || isTuple()
+        || isDict()
+        || isSet();
+}
+
+Value::ObjectPtr Value::asObject() const {
+
+    if (isString()) {
+        return std::static_pointer_cast<ObjectValue>(asString());
+    }
+
+    if (isBytes()) {
+        return std::static_pointer_cast<ObjectValue>(asBytes());
+    }
+
+    if (isByteArray()) {
+        return std::static_pointer_cast<ObjectValue>(asByteArray());
+    }
+
+    if (isList()) {
+        return std::static_pointer_cast<ObjectValue>(asList());
+    }
+
+    if (isTuple()) {
+        return std::static_pointer_cast<ObjectValue>(asTuple());
+    }
+
+    if (isDict()) {
+        return std::static_pointer_cast<ObjectValue>(asDict());
+    }
+
+    if (isSet()) {
+        return std::static_pointer_cast<ObjectValue>(asSet());
+    }
+
+    throw std::runtime_error(
+        "Value is not an object"
+    );
+}
+
 Value Value::operator*(const Value &other) const {
 
     if (isNumeric() && other.isNumeric()) {
@@ -604,24 +654,20 @@ Value Value::operator*(const Value &other) const {
         return applyCalculation(*this, other, isFloat, std::multiplies<>());
     }
 
-    if (isNumeric() && other.isString()) {
-        return other.asString()->multiply(*this);
+
+    if (isObject()) {
+        try {
+            return asObject()->multiply(other);
+        }
+        catch (...) {}
     }
 
-    if (isString()) {
-        return asString()->multiply(other);
-    }
+    if (other.isObject()) {
 
-    if (isNumeric() && other.isBytes()) {
-        return other.asBytes()->multiply(*this);
-    }
-
-    if (isBytes()) {
-        return asBytes()->multiply(other);
-    }
-
-    if (isByteArray()) {
-        return asByteArray()->multiply(other);
+        try {
+            return other.asObject()->rmul(*this);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for *: "

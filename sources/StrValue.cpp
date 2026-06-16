@@ -2112,3 +2112,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
         + spec.toStdString()
     );
 }
+
+Value StrValue::rmul(const Value& other) const {
+    return multiply(other);
+}

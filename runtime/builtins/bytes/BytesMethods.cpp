@@ -1155,7 +1155,7 @@ namespace {
 
                 expectArgs(args, 0, "__bytes__");
 
-                return obj.asBytes("__bytes__")->__bytes__();
+                return obj.asBytes("__bytes__")->_bytes_();
             }
         );
     }
@@ -1269,7 +1269,7 @@ Value make__bytes__ClassBuiltin() {
 
             expectArgs(args, 1, "bytes.__bytes__");
 
-            return args[0].asBytes("__bytes__")->__bytes__();
+            return args[0].asBytes("__bytes__")->_bytes_();
         }
     );
 

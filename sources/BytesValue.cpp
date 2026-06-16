@@ -2902,9 +2902,13 @@ QString BytesValue::toString() const {
     return repr();
 }
 
-Value BytesValue::__bytes__() const {
+Value BytesValue::_bytes_() const {
 
     return Value(
         std::make_shared<BytesValue>(data)
     );
+}
+
+Value BytesValue::rmul(const Value& other) const {
+    return multiply(other);
 }

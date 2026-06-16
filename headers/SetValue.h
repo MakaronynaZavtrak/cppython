@@ -7,13 +7,12 @@
 #include <QHash>
 #include <QString>
 #include <QVector>
-#include <boost/multiprecision/detail/number_base.hpp>
 
-#include "ReprMixin.h"
+#include "ObjectValue.h"
 
 class Value;
 
-class SetValue : public ReprMixin {
+class SetValue : public ObjectValue {
 public:
     QHash<Value, bool> elements;
     QVector<Value> order;
@@ -30,7 +29,7 @@ public:
 
     [[nodiscard]] std::shared_ptr<SetValue> unionWith(const std::shared_ptr<SetValue>& other) const;
 
-    [[nodiscard]] bool contains(const Value& value) const;
+    [[nodiscard]] bool contains(const Value& value) const override;
 
     [[nodiscard]] std::shared_ptr<SetValue> intersectionWith(const std::shared_ptr<SetValue>& other) const;
 

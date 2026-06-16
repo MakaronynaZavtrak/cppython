@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class ObjectValue;
 class ByteArrayValue;
 class SliceValue;
 class BytesValue;
@@ -94,6 +95,8 @@ public:
 
     using ByteArrayPtr = std::shared_ptr<ByteArrayValue>;
 
+    using ObjectPtr = std::shared_ptr<ObjectValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -119,6 +122,7 @@ public:
         IteratorPtr,
         SlicePtr,
         ByteArrayPtr,
+        ObjectPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -258,6 +262,10 @@ public:
     [[nodiscard]] Value operator+(const Value&) const;
 
     [[nodiscard]] Value operator-(const Value&) const;
+
+    [[nodiscard]] bool isObject() const;
+
+    [[nodiscard]] ObjectPtr asObject() const;
 
     [[nodiscard]] Value operator*(const Value&) const;
 

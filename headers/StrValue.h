@@ -176,6 +176,8 @@ public:
 
     [[nodiscard]] bool greater(const Value&) const override;
 
+    [[nodiscard]] Value rmul(const Value &other) const override;
+
 private:
 
     static Value resolveFormatField(

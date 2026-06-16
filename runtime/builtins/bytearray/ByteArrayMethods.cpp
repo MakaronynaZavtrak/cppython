@@ -1490,6 +1490,27 @@ namespace {
         );
     }
 
+    Value makeRmulMethod(const Value& obj) {
+
+        auto byteArray =
+            extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "__rmul__",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+                -> Value {
+
+                expectArgs(args, 1, "__rmul__");
+
+                return byteArray->rmul(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1500,6 +1521,7 @@ namespace {
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
         REGISTER_METHOD("__iadd__", makeIAddMethod),
         REGISTER_METHOD("__imul__", makeIMulMethod),
+        REGISTER_METHOD("__rmul__", makeRmulMethod),
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__eq__", makeEqMethod),
         REGISTER_METHOD("__ne__", makeNeMethod),

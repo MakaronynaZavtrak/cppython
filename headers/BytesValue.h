@@ -18,7 +18,9 @@ public:
 
     [[nodiscard]] QString toString() const override;
 
-    [[nodiscard]] Value __bytes__() const;
+    [[nodiscard]] Value _bytes_() const;
+
+    [[nodiscard]] Value rmul(const Value &other) const override;
 
     [[nodiscard]] QString repr() const override;
 

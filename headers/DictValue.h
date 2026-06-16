@@ -5,10 +5,10 @@
 #ifndef CPPYTHON_DICTVALUE_H
 #define CPPYTHON_DICTVALUE_H
 
-#include "ReprMixin.h"
+#include "ObjectValue.h"
 #include "Value.h"
 
-class DictValue : public ReprMixin {
+class DictValue : public ObjectValue {
     QHash<Value, Value> elements;
     QVector<Value> order;
 
