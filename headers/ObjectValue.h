@@ -28,6 +28,12 @@ public:
         );
     }
 
+    virtual Value imul(const Value& other) {
+        throw std::runtime_error(
+            "Not supported operation for this type"
+        );
+    }
+
     [[nodiscard]] virtual bool contains(const Value& value) const {
         throw std::runtime_error("Not supported operation for this type");
     }

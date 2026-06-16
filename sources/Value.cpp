@@ -746,6 +746,13 @@ Value& Value::operator-=(const Value &other) {
 
 Value& Value::operator*=(const Value &other) {
 
+    if (isByteArray()) {
+
+        asByteArray()->imul(other);
+
+        return *this;
+    }
+
     *this = *this * other;
     return *this;
 }

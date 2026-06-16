@@ -45,6 +45,8 @@ public:
 
     Value iadd(const Value& other) override;
 
+    Value imul(const Value& other) override;
+
     [[nodiscard]] bool contains(const Value& value) const override;
 
     [[nodiscard]] bool equal(const Value& other) const override;

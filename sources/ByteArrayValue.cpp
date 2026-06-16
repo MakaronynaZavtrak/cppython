@@ -320,6 +320,31 @@ Value ByteArrayValue::iadd(const Value& other) {
     );
 }
 
+Value ByteArrayValue::imul(const Value& other) {
+
+    if (other.isBigFloat() || !other.isNumeric()) {
+        throw std::runtime_error(
+            "TypeError: can't multiply bytearray by non-int"
+        );
+    }
+
+    const auto count = other.toBigInt();
+
+    if (count <= 0) {
+        data.clear();
+        return Value(shared_from_this());
+    }
+
+    const QByteArray original = data;
+    data.clear();
+
+    for (Value::BigInt i = 0; i < count; ++i) {
+        data += original;
+    }
+
+    return Value(shared_from_this());
+}
+
 bool ByteArrayValue::contains(const Value& value) const {
 
     // int / bool

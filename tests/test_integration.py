@@ -7589,7 +7589,54 @@ if _result is not None:
 
     (["x = -17",
       "x //= 5",
-      "x"], "-4")
+      "x"], "-4"),
+
+    # bytearray.__imul__
+    (["x = bytearray(b'ab')",
+      "x *= 3",
+      "x"], "bytearray(b'ababab')"),
+
+    (["x = bytearray(b'abc')",
+      "x *= 1",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray(b'abc')",
+      "x *= 0",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray(b'abc')",
+      "x *= -1",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray(b'abc')",
+      "x *= -10",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray()",
+      "x *= 100",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray(b'ab')",
+      "y = x",
+      "x *= 3",
+      "y"], "bytearray(b'ababab')"),
+
+    (["x = bytearray(b'a')",
+      "x *= 10",
+      "x"], "bytearray(b'aaaaaaaaaa')"),
+
+    (["x = bytearray(b'01')",
+      "x *= 5",
+      "x"], "bytearray(b'0101010101')"),
+
+    (["x = bytearray(b'ab')",
+      "x.__imul__(3)",
+      "x"], "bytearray(b'ababab')"),
+
+    (["x = bytearray(b'ab')",
+      "y = x",
+      "x *= 3",
+      "y"], "bytearray(b'ababab')")
 
 ])
 
