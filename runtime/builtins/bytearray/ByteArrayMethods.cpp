@@ -1405,7 +1405,7 @@ namespace {
 
                 QString errors = "strict";
 
-                if (args.size() >= 1) {
+                if (!args.empty()) {
 
                     encoding =
                         args[0]
@@ -1472,7 +1472,7 @@ namespace {
 
     Value makeResizeMethod(const Value& obj) {
 
-        auto byteArray =extract<Value::ByteArrayPtr>(obj);
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
 
         return makeBuiltin(
             "resize",
@@ -1492,8 +1492,7 @@ namespace {
 
     Value makeRmulMethod(const Value& obj) {
 
-        auto byteArray =
-            extract<Value::ByteArrayPtr>(obj);
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
 
         return makeBuiltin(
             "__rmul__",
@@ -1511,6 +1510,25 @@ namespace {
         );
     }
 
+    Value makeModMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "__mod__",
+
+            [byteArray](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__mod__");
+
+                return byteArray->mod(args[0]);
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1519,6 +1537,7 @@ namespace {
         REGISTER_METHOD("__iter__", makeIterMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
+        REGISTER_METHOD("__mod__", makeModMethod),
         REGISTER_METHOD("__iadd__", makeIAddMethod),
         REGISTER_METHOD("__imul__", makeIMulMethod),
         REGISTER_METHOD("__rmul__", makeRmulMethod),

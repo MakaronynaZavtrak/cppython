@@ -27,6 +27,8 @@
 #include "TupleValue.h"
 #include "ByteArrayIterator.h"
 
+#include <QDebug>
+
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
 
 Value::Value(const char *str) : data(std::make_shared<StrValue>(str)) {}
@@ -713,8 +715,14 @@ Value Value::operator%(const Value &other) const {
         return Value(remainder);
     }
 
-    if (isBytes()) {
-        return asBytes()->mod(other);
+    if (isObject()) {
+        try {
+            return asObject()->mod(other);
+        }
+        catch (const std::exception& e) {
+            qDebug() << e.what();
+            throw;
+        }
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for %: "

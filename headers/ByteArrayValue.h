@@ -208,5 +208,7 @@ public:
 
     [[nodiscard]] Value rmul(const Value& other) const override;
 
+    [[nodiscard]] Value mod(const Value& other) const override;
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

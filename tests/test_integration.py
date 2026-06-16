@@ -3791,7 +3791,31 @@ def run_cppython(cmds: str | list[str]) -> str:
     # __rmul__
     ("bytearray(b'ab').__rmul__(3)", "bytearray(b'ababab')"),
     ("bytearray(b'abc').__rmul__(0)", "bytearray(b'')"),
-    ("bytearray(b'abc').__rmul__(1)", "bytearray(b'abc')")
+    ("bytearray(b'abc').__rmul__(1)", "bytearray(b'abc')"),
+
+    # bytearray %, __mod__
+    ("bytearray(b'%s') % b'abc'", "bytearray(b'abc')"),
+    ("bytearray(b'hello %s') % b'world'", "bytearray(b'hello world')"),
+    ("bytearray(b'%d') % 123", "bytearray(b'123')"),
+    ("bytearray(b'%x') % 255", "bytearray(b'ff')"),
+    ("bytearray(b'%05d') % 42", "bytearray(b'00042')"),
+    ("bytearray(b'%+d') % 42", "bytearray(b'+42')"),
+    ("bytearray(b'%#x') % 255", "bytearray(b'0xff')"),
+    ("bytearray(b'%.3s') % b'abcdef'", "bytearray(b'abc')"),
+    ("bytearray(b'%r') % b'abc'", "bytearray(b\"b\\'abc\\'\")"),
+    ("bytearray(b'%a') % 'привет'", "bytearray(b\"\\'\\\\u043f\\\\u0440\\\\u0438\\\\u0432\\\\u0435\\\\u0442\\'\")"),
+    ("bytearray(b'%.2f') % 3.14159", "bytearray(b'3.14')"),
+    ("bytearray(b'%e') % 1234.5", "bytearray(b'1.234500e+03')"),
+    ("bytearray(b'%G') % 1234567.0", "bytearray(b'1.23457E+06')"),
+    ("bytearray(b'%u') % 42", "bytearray(b'42')"),
+    ("bytearray(b'%F') % 3.14", "bytearray(b'3.140000')"),
+    ("bytearray(b'%*d') % (5, 42)", "bytearray(b'   42')"),
+    ("bytearray(b'%(name)s') % {b'name': b'Alex'}", "bytearray(b'Alex')"),
+    ("bytearray(b'%100d') % 42", "bytearray(b'                                                                                                  42')"),
+    ("bytearray(b'%s') % bytearray(b'abc')", "bytearray(b'abc')"),
+    ("bytearray(b'%b') % bytearray(b'abc')", "bytearray(b'abc')"),
+    ("bytearray(b'%r') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
+    ("bytearray(b'%a') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
 
 ])
 

@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "ByteArrayValue.h"
 #include "DictValue.h"
 #include "../runtime/ProtocolHelpers.h"
 
@@ -2375,13 +2376,20 @@ static QByteArray formatBytesArgument(
         case 's':
         case 'b':
 
-            if (!value.isBytes()) {
+            if (value.isBytes()) {
+
+                result = value.asBytes()->bytes();
+
+            } else if (value.isByteArray()) {
+
+                result = value.asByteArray()->bytes();
+
+            } else {
+
                 throw std::runtime_error(
-                    "%s/%b requires bytes"
+                    "%s/%b requires bytes-like object"
                 );
             }
-
-            result = value.asBytes()->bytes();
             break;
 
         case 'd':

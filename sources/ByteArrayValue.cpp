@@ -2847,3 +2847,18 @@ Value ByteArrayValue::resize(const Value& newSizeValue) {
 Value ByteArrayValue::rmul(const Value& other) const {
     return multiply(other);
 }
+
+Value ByteArrayValue::mod(const Value& other) const {
+
+    const auto bytesObj = std::make_shared<BytesValue>(data);
+
+    const Value result = bytesObj->mod(other);
+
+    auto formatted = result.asBytes()->bytes();
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            formatted
+        )
+    );
+}
