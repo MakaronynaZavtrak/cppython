@@ -204,5 +204,7 @@ public:
     const std::optional<Value>& table,
     const std::optional<Value>& deleteBytes = std::nullopt) const;
 
+    Value resize(const Value& newSizeValue);
+
 };
 #endif //CPPYTHON_BYTEARRAYVALUE_H

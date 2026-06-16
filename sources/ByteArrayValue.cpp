@@ -2811,3 +2811,35 @@ Value ByteArrayValue::translate(
         )
     );
 }
+
+Value ByteArrayValue::resize(const Value& newSizeValue) {
+
+    if (!newSizeValue.isBigInt()) {
+        throw std::runtime_error(
+            "TypeError: new size must be an integer"
+        );
+    }
+
+    const auto newSize = newSizeValue.toBigInt();
+
+    if (newSize < 0) {
+        throw std::runtime_error(
+            "ValueError: negative resize value"
+        );
+    }
+
+    const qsizetype oldSize = data.size();
+    const qsizetype size = static_cast<qsizetype>(newSize);
+
+    data.resize(size);
+
+    if (size > oldSize) {
+        std::fill(
+            data.begin() + oldSize,
+            data.end(),
+            '\0'
+        );
+    }
+
+    return {};
+}

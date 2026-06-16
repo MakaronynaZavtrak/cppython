@@ -7636,7 +7636,44 @@ if _result is not None:
     (["x = bytearray(b'ab')",
       "y = x",
       "x *= 3",
-      "y"], "bytearray(b'ababab')")
+      "y"], "bytearray(b'ababab')"),
+
+    # bytearray.resize
+    (["x = bytearray(b'abc')",
+      "x.resize(5)",
+      "x"], "bytearray(b'abc\\x00\\x00')"),
+
+    (["x = bytearray(b'abcdef')",
+      "x.resize(3)",
+      "x"], "bytearray(b'abc')"),
+
+    (["x = bytearray()",
+      "x.resize(4)",
+      "x"], "bytearray(b'\\x00\\x00\\x00\\x00')"),
+
+    (["x = bytearray(b'a')",
+      "x.resize(1)",
+      "x"], "bytearray(b'a')"),
+
+    (["x = bytearray(b'abc')",
+      "x.resize(0)",
+      "x"], "bytearray(b'')"),
+
+    (["x = bytearray(b'xyz')",
+      "x.resize(6)",
+      "len(x)"], "6"),
+
+    (["x = bytearray(b'xyz')",
+      "x.resize(6)",
+      "x[3]"], "0"),
+
+    (["x = bytearray(b'xyz')",
+      "x.resize(6)",
+      "x[4]"], "0"),
+
+    (["x = bytearray(b'xyz')",
+      "x.resize(6)",
+      "x[5]"], "0")
 
 ])
 
