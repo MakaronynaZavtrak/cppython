@@ -3835,12 +3835,21 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'%r') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
     ("bytearray(b'%a') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
 
+    # frozenset 
     ("frozenset()", "frozenset()"),
     ("frozenset([])", "frozenset()"),
     ("frozenset([1, 2, 3])", "frozenset({1, 2, 3})"),
     ("len(frozenset())", "0"),
     ("len(frozenset([1,2,3]))", "3"),
-    ("frozenset([1,1,1,2,2,3])", "frozenset({1, 2, 3})")
+    ("frozenset([1,1,1,2,2,3])", "frozenset({1, 2, 3})"),
+
+    # __contains__
+    ("frozenset({1,2,3}).__contains__(1)", "True"),
+    ("frozenset({1,2,3}).__contains__(3)", "True"),
+    ("frozenset({1,2,3}).__contains__(5)", "False"),
+    ("frozenset().__contains__(1)", "False"),
+    ("frozenset({'a','b'}).__contains__('a')", "True"),
+    ("frozenset({'a','b'}).__contains__('z')", "False"),
 
 ])
 

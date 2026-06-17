@@ -9,8 +9,30 @@
 
 namespace {
 
+    Value makeContainsMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "__contains__",
+
+            [frozenSet](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__contains__");
+
+                return Value(
+                    frozenSet->contains(args[0])
+                );
+            }
+        );
+    }
+
     const MethodMap FROZENSET_METHODS = {
-        REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::FrozenSetPtr>)
+        REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::FrozenSetPtr>),
+        REGISTER_METHOD("__contains__", makeContainsMethod)
     };
 
 }

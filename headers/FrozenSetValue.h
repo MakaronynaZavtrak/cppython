@@ -30,6 +30,8 @@ public:
 
     [[nodiscard]] std::size_t len() const;
 
+    [[nodiscard]] bool contains(const Value& value) const override;
+
     [[nodiscard]] const QSet<Value>& getElements() const {
         return elements;
     }

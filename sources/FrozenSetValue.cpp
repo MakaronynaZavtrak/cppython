@@ -7,6 +7,10 @@ std::size_t FrozenSetValue::len() const {
     return elements.size();
 }
 
+bool FrozenSetValue::contains(const Value& value) const {
+    return elements.contains(value);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }
