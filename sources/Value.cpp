@@ -29,6 +29,8 @@
 
 #include <QDebug>
 
+#include "FrozenSetValue.h"
+
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
 
 Value::Value(const char *str) : data(std::make_shared<StrValue>(str)) {}
@@ -152,6 +154,10 @@ QString Value::toString() const {
             },
 
             [](const ObjectPtr& p) {
+                return p->toString();
+            },
+
+            [](const FrozenSetPtr &p) {
                 return p->toString();
             },
 
@@ -645,6 +651,20 @@ Value::ObjectPtr Value::asObject() const {
     throw std::runtime_error(
         "Value is not an object"
     );
+}
+
+bool Value::isFrozenSet() const {
+    return std::holds_alternative<FrozenSetPtr>(data);
+}
+
+Value::FrozenSetPtr Value::asFrozenSet(const QString &) const {
+
+    if (!isFrozenSet()) {
+        throw std::runtime_error("Value is not a bytes");
+    }
+
+    return std::get<FrozenSetPtr>(data);
+
 }
 
 Value Value::operator*(const Value &other) const {

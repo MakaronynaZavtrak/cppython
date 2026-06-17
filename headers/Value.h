@@ -10,6 +10,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class FrozenSetValue;
 class ObjectValue;
 class ByteArrayValue;
 class SliceValue;
@@ -97,6 +98,8 @@ public:
 
     using ObjectPtr = std::shared_ptr<ObjectValue>;
 
+    using FrozenSetPtr = std::shared_ptr<FrozenSetValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -123,6 +126,7 @@ public:
         SlicePtr,
         ByteArrayPtr,
         ObjectPtr,
+        FrozenSetPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -173,6 +177,8 @@ public:
     explicit Value(const SlicePtr & slice) : data(slice) {}
 
     explicit Value(const ByteArrayPtr& byteArray) : data(byteArray) {}
+
+    explicit Value(const FrozenSetPtr& frozenSet): data(frozenSet) {}
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString repr() const override;
@@ -264,8 +270,10 @@ public:
     [[nodiscard]] Value operator-(const Value&) const;
 
     [[nodiscard]] bool isObject() const;
-
     [[nodiscard]] ObjectPtr asObject() const;
+
+    [[nodiscard]] bool isFrozenSet() const;
+    [[nodiscard]] FrozenSetPtr asFrozenSet(const QString& = "") const;
 
     [[nodiscard]] Value operator*(const Value&) const;
 
@@ -311,7 +319,7 @@ public:
 
     [[nodiscard]] bool contains(const Value& value) const;
 
-    QString ascii() const;
+    [[nodiscard]] QString ascii() const;
 
     template<class... Ts>
     struct overloaded : Ts... {

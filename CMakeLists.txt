@@ -116,7 +116,11 @@ add_executable(cppython main.cpp
         runtime/builtins/bytearray/ByteArrayMethods.h
         runtime/builtins/bytearray/ByteArrayMethods.cpp
         headers/ByteArrayIterator.h
-        sources/ByteArrayIterator.cpp)
+        sources/ByteArrayIterator.cpp
+        headers/FrozenSetValue.h
+        sources/FrozenSetValue.cpp
+        runtime/builtins/frozenset/FrozenSetMethods.cpp
+        runtime/builtins/frozenset/FrozenSetMethods.h)
 
 target_include_directories(cppython PRIVATE headers)
 

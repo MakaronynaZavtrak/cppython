@@ -16,6 +16,7 @@
 #include "SuperValue.h"
 #include "../runtime/builtins/bytearray/ByteArrayMethods.h"
 #include "../runtime/builtins/bytes/BytesMethods.h"
+#include "../runtime/builtins/frozenset/FrozenSetMethods.h"
 #include "../runtime/builtins/tuple/TupleMethods.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
@@ -152,6 +153,10 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
     if (obj.isByteArray()) {
         return getByteArrayAttr(obj, attr);
+    }
+
+    if (obj.isFrozenSet()) {
+        return getFrozenSetAttr(obj, attr);
     }
 
     throw std::runtime_error("AttributeError: object has no attribute '" +

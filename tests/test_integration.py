@@ -3835,6 +3835,13 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'%r') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
     ("bytearray(b'%a') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
 
+    ("frozenset()", "frozenset()"),
+    ("frozenset([])", "frozenset()"),
+    ("frozenset([1, 2, 3])", "frozenset({1, 2, 3})"),
+    ("len(frozenset())", "0"),
+    ("len(frozenset([1,2,3]))", "3"),
+    ("frozenset([1,1,1,2,2,3])", "frozenset({1, 2, 3})")
+
 ])
 
 def test_single_line_expressions(expr, expected):

@@ -6,6 +6,7 @@
 #include "ClassUtils.h"
 #include "DictValue.h"
 #include "Environment.h"
+#include "FrozenSetValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
 #include "PropertyValue.h"
@@ -441,6 +442,45 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                      return Value(dict);
                  }
              ));
+
+    env->set(
+
+        "frozenset",
+
+        makeBuiltin(
+
+            "frozenset",
+
+            [](const std::vector<Value> &args,
+               const Kwargs &,
+               const std::shared_ptr<Environment> &) -> Value {
+                expectArgsRange(args, 0, 1, "frozenset");
+
+                if (args.empty()) {
+                    return Value(
+                        std::make_shared<FrozenSetValue>()
+                    );
+                }
+
+                const auto iterator =
+                        args[0].getIterator();
+
+                QSet<Value> elements;
+
+                while (iterator->hasNext()) {
+                    elements.insert(
+                        iterator->next()
+                    );
+                }
+
+                return Value(
+                    std::make_shared<FrozenSetValue>(
+                        std::move(elements)
+                    )
+                );
+            }
+        )
+    );
 
     env->set("repr",
              makeBuiltin(
