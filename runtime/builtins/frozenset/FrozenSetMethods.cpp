@@ -84,13 +84,34 @@ namespace {
         );
     }
 
+    Value makeSymmetricDifferenceMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "symmetric_difference",
+
+            [frozenSet](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "symmetric_difference");
+
+                return frozenSet->symmetricDifference(args[0]);
+            }
+        );
+    }
+
     const MethodMap FROZENSET_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::FrozenSetPtr>),
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__iter__", makeIterMethod),
         REGISTER_METHOD("union", makeUnionMethod),
         REGISTER_METHOD("intersection", makeIntersectionMethod),
-        REGISTER_METHOD("difference", makeDifferenceMethod)
+        REGISTER_METHOD("difference", makeDifferenceMethod),
+        REGISTER_METHOD("symmetric_difference", makeSymmetricDifferenceMethod)
     };
 
 }

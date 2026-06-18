@@ -3896,6 +3896,20 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset([1]).difference([1])", "frozenset()"),
     ("frozenset([1,2]).difference([1,2])", "frozenset()"),
 
+    # symmetric_difference
+    ("frozenset().symmetric_difference([])", "frozenset()"),
+    ("frozenset([1]).symmetric_difference([])", "frozenset({1})"),
+    ("frozenset([1,2,3]).symmetric_difference([3,4,5])", "frozenset({1, 2, 4, 5})"),
+    ("frozenset([1,2]).symmetric_difference([1,2])", "frozenset()"),
+    ("frozenset([1,2,3]).symmetric_difference([1,2,3])", "frozenset()"),
+    ("frozenset([1,2]).symmetric_difference([3,4])", "frozenset({1, 2, 3, 4})"),
+    ("frozenset().symmetric_difference([1,2])", "frozenset({1, 2})"),
+    ("frozenset([1,2,3]).symmetric_difference([2,3,4])", "frozenset({1, 4})"),
+    ("frozenset([1,2,3]).symmetric_difference([3,4])", "frozenset({1, 2, 4})"),
+    ("frozenset([1,2]).symmetric_difference((2,3))", "frozenset({1, 3})"),
+    ("frozenset([1,2]).symmetric_difference(set([2,3]))", "frozenset({1, 3})"),
+    ("frozenset([1,2]).symmetric_difference(frozenset([2,3]))", "frozenset({1, 3})"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

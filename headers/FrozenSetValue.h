@@ -45,5 +45,7 @@ public:
     [[nodiscard]] Value intersection(const std::vector<Value>& others) const;
 
     [[nodiscard]] Value difference(const std::vector<Value>& others) const;
+
+    [[nodiscard]] Value symmetricDifference(const Value& other) const;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

@@ -93,6 +93,31 @@ Value FrozenSetValue::difference(const std::vector<Value>& others) const {
     return Value(result);
 }
 
+Value FrozenSetValue::symmetricDifference(const Value& other) const {
+
+    const auto result = std::make_shared<FrozenSetValue>();
+
+    result->elements = elements;
+
+    const auto it = other.getIterator();
+
+    while (it->hasNext()) {
+
+        const Value value = it->next();
+
+        if (result->elements.contains(value)) {
+
+            result->elements.remove(value);
+
+        } else {
+
+            result->elements.insert(value);
+        }
+    }
+
+    return Value(result);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }
