@@ -124,6 +124,10 @@ Value FrozenSetValue::bitOr(const Value& other) const {
     return unionSet({other});
 }
 
+Value FrozenSetValue::bitAnd(const Value& other) const {
+    return intersection({other});
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

@@ -54,14 +54,6 @@ def run_cppython(cmds: str | list[str]) -> str:
     return payloads[-1] if payloads else ""
 
 @pytest.mark.parametrize("expr,expected", [
-    ("frozenset([1,2]).__or__(frozenset([3,4]))", "frozenset({1, 2, 3, 4})"),
-    ("frozenset([1,2]).__or__(frozenset([2,3]))", "frozenset({1, 2, 3})"),
-    ("frozenset().__or__(frozenset())", "frozenset()"),
-    ("frozenset([1,2]) | frozenset([3,4])", "frozenset({1, 2, 3, 4})"),
-    ("frozenset([1,2]) | frozenset([2,3])", "frozenset({1, 2, 3})"),
-    ("frozenset() | frozenset([1])", "frozenset({1})"),
-    ("frozenset([1]) | frozenset()", "frozenset({1})"),
-    ("frozenset() | frozenset()", "frozenset()"),
     # Два целых числа
     ("2 + 3",                  "5"),
     ("6 - 2",                  "4"),
@@ -3927,6 +3919,20 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset() | frozenset([1])", "frozenset({1})"),
     ("frozenset([1]) | frozenset()", "frozenset({1})"),
     ("frozenset() | frozenset()", "frozenset()"),
+
+    # __and__
+    ("frozenset([1,2,3]).__and__(frozenset([2,3,4]))", "frozenset({2, 3})"),
+    ("frozenset([1,2]).__and__(frozenset([3,4]))", "frozenset()"),
+    ("frozenset([1,2]).__and__(frozenset([1,2]))", "frozenset({1, 2})"),
+    ("frozenset().__and__(frozenset())", "frozenset()"),
+    ("frozenset([1,2,3]) & frozenset([2,3,4])", "frozenset({2, 3})"),
+    ("frozenset([1,2]) & frozenset([3,4])", "frozenset()"),
+    ("frozenset([1,2]) & frozenset([1,2])", "frozenset({1, 2})"),
+    ("frozenset() & frozenset([1])", "frozenset()"),
+    ("frozenset([1]) & frozenset()", "frozenset()"),
+    ("frozenset() & frozenset()", "frozenset()"),
+    ("frozenset([1,2,3]) & set([2,3,4])", "frozenset({2, 3})"),
+    ("frozenset([1,2,3]) & frozenset([2,3,4])", "frozenset({2, 3})"),
 
 ])
 

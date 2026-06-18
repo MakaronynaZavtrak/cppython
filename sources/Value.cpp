@@ -1018,6 +1018,16 @@ Value Value::operator|(const Value& other) const {
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
 
+Value Value::operator&(const Value& other) const {
+
+    if (isFrozenSet()) {
+        return asFrozenSet()->bitAnd(other);
+    }
+
+    throw std::runtime_error("TypeError: unsupported operand type(s) for &: "
+        + toString().toStdString() + " " + " " + other.toString().toStdString());
+}
+
 QString Value::ascii() const {
 
     QString reprString = repr();

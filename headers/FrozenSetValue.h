@@ -49,5 +49,7 @@ public:
     [[nodiscard]] Value symmetricDifference(const Value& other) const;
 
     [[nodiscard]] Value bitOr(const Value& other) const;
+
+    [[nodiscard]] Value bitAnd(const Value& other) const;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

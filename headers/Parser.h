@@ -185,6 +185,7 @@ public:
             case Operation::IntDivide:      return l.intDivide(r);
             case Operation::Is:             return Value(l.is(r));
             case Operation::BitOr:          return l | r;
+            case Operation::BitAnd:         return l & r;
 
             default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
         }
@@ -217,7 +218,8 @@ public:
         And,
         Or,
         Is,
-        BitOr
+        BitOr,
+        BitAnd
     };
 
     /**
@@ -243,13 +245,16 @@ public:
             {"and", Operation::And},
             {"or", Operation::Or},
             {"is", Operation::Is},
-            {"|", Operation::BitOr}
+            {"|", Operation::BitOr},
+            {"&", Operation::BitAnd}
         };
 
         const auto it = opMap.find(op);
+
         if (it == opMap.end()) {
             throw std::runtime_error("Unsupported operation: " + op.toStdString());
         }
+
         return it->second;
     }
 };
