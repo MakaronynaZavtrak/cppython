@@ -8,7 +8,7 @@
 
 #include "ObjectValue.h"
 
-class FrozenSetValue : public ObjectValue {
+class FrozenSetValue : public ObjectValue, public std::enable_shared_from_this<FrozenSetValue> {
 
     QSet<Value> elements;
     QList<Value> order;
@@ -73,5 +73,7 @@ public:
     [[nodiscard]] bool greater(const Value& other) const override;
 
     [[nodiscard]] bool greaterOrEqual(const Value& other) const override;
+
+    Value copy() const;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

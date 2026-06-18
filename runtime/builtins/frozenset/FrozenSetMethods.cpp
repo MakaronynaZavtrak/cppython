@@ -366,6 +366,26 @@ namespace {
         );
     }
 
+    Value makeCopyMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "copy",
+
+            [frozenSet](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "copy");
+
+                return frozenSet->copy();
+            }
+        );
+    }
+
     const MethodMap FROZENSET_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::FrozenSetPtr>),
         REGISTER_METHOD("__contains__", makeContainsMethod),
@@ -386,7 +406,8 @@ namespace {
         REGISTER_METHOD("symmetric_difference", makeSymmetricDifferenceMethod),
         REGISTER_METHOD("issubset", makeIsSubsetMethod),
         REGISTER_METHOD("issuperset", makeIsSupersetMethod),
-        REGISTER_METHOD("isdisjoint", makeIsDisjointMethod)
+        REGISTER_METHOD("isdisjoint", makeIsDisjointMethod),
+        REGISTER_METHOD("copy", makeCopyMethod)
     };
 
 }

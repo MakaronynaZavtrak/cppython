@@ -139,13 +139,13 @@ Value FrozenSetValue::bitXor(const Value& other) const {
 
 bool FrozenSetValue::isSubset(const Value& other) const {
 
-    if (!other.isFrozenSet()) {
-        throw std::runtime_error(
-            "TypeError: expected frozenset"
-        );
-    }
+    const auto it = other.getIterator();
 
-    const auto otherSet = other.asFrozenSet()->getElements();
+    QSet<Value> otherSet;
+
+    while (it->hasNext()) {
+        otherSet.insert(it->next());
+    }
 
     for (const auto& value : elements) {
 
@@ -159,17 +159,10 @@ bool FrozenSetValue::isSubset(const Value& other) const {
 
 bool FrozenSetValue::isSuperset(const Value& other) const {
 
-    if (!other.isFrozenSet()) {
-        throw std::runtime_error(
-            "TypeError: expected frozenset"
-        );
-    }
+    const auto it = other.getIterator();
 
-    const auto otherSet = other.asFrozenSet()->getElements();
-
-    for (const auto& value : otherSet) {
-
-        if (!elements.contains(value)) {
+    while (it->hasNext()) {
+        if (!elements.contains(it->next())) {
             return false;
         }
     }
@@ -239,6 +232,14 @@ bool FrozenSetValue::greater(const Value &other) const {
 
 bool FrozenSetValue::greaterOrEqual(const Value &other) const {
     return isSuperset(other);
+}
+
+Value FrozenSetValue::copy() const {
+    return Value(
+        std::const_pointer_cast<FrozenSetValue>(
+            shared_from_this()
+        )
+    );
 }
 
 QString FrozenSetValue::toString() const {

@@ -4103,6 +4103,11 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset([1]) >= frozenset([5])", "False"),
     ("frozenset([1,2]) >= frozenset([1,2,4])", "False"),
 
+    # copy
+    ("frozenset().copy()", "frozenset()"),
+    ("frozenset({1, 2, 3}).copy()", "frozenset({1, 2, 3})"),
+    ("frozenset({'a', 'b'}).copy()", "frozenset({'a', 'b'})"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -8029,6 +8034,14 @@ if _result is not None:
     (["x = frozenset([1,2,3])",
       "5 in x"],
      "False"),
+
+    # frozenset.copy()
+    (["x = frozenset({1, 2, 3})",
+      "y = x.copy()",
+      "y"], "frozenset({1, 2, 3})"),
+
+    (["x = frozenset({1, 2, 3})",
+      "x.copy() == x"], "True"),
 
 ])
 
