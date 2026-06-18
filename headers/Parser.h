@@ -186,6 +186,7 @@ public:
             case Operation::Is:             return Value(l.is(r));
             case Operation::BitOr:          return l | r;
             case Operation::BitAnd:         return l & r;
+            case Operation::BitXor:         return l ^ r;
 
             default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
         }
@@ -219,7 +220,8 @@ public:
         Or,
         Is,
         BitOr,
-        BitAnd
+        BitAnd,
+        BitXor
     };
 
     /**
@@ -246,7 +248,8 @@ public:
             {"or", Operation::Or},
             {"is", Operation::Is},
             {"|", Operation::BitOr},
-            {"&", Operation::BitAnd}
+            {"&", Operation::BitAnd},
+            {"^", Operation::BitXor}
         };
 
         const auto it = opMap.find(op);

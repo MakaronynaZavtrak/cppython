@@ -314,6 +314,8 @@ public:
 
     [[nodiscard]] Value operator&(const Value&) const;
 
+    [[nodiscard]] Value operator^(const Value&) const;
+
     [[nodiscard]] QString ascii() const;
 
     template<class... Ts>

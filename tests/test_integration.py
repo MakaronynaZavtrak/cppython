@@ -3950,6 +3950,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset([1,2,3]) - set([2])", "frozenset({1, 3})"),
     ("frozenset([1,2,3]) - frozenset([2])", "frozenset({1, 3})"),
 
+    # __xor__
+    ("frozenset([1,2,3]).__xor__(frozenset([3,4,5]))", "frozenset({1, 2, 4, 5})"),
+    ("frozenset([1,2]).__xor__(frozenset([1,2]))", "frozenset()"),
+    ("frozenset([1,2]).__xor__(frozenset([3,4]))", "frozenset({1, 2, 3, 4})"),
+    ("frozenset().__xor__(frozenset())", "frozenset()"),
+    ("frozenset([1,2,3]) ^ frozenset([3,4,5])", "frozenset({1, 2, 4, 5})"),
+    ("frozenset([1,2]) ^ frozenset([1,2])", "frozenset()"),
+    ("frozenset([1,2]) ^ frozenset([3,4])", "frozenset({1, 2, 3, 4})"),
+    ("frozenset() ^ frozenset([1])", "frozenset({1})"),
+    ("frozenset([1]) ^ frozenset()", "frozenset({1})"),
+    ("frozenset() ^ frozenset()", "frozenset()"),
+    ("frozenset([1,2,3,4]) ^ frozenset([3,4,5,6])", "frozenset({1, 2, 5, 6})"),
+    ("frozenset([1,2,3]) ^ frozenset([2,3,4])", "frozenset({1, 4})"),
+    ("frozenset([1,2,3]) ^ set([2,3,4])", "frozenset({1, 4})"),
+    ("frozenset([1,2,3]) ^ frozenset([2,3,4])", "frozenset({1, 4})"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

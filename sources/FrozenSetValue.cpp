@@ -132,6 +132,10 @@ Value FrozenSetValue::sub(const Value& other) const {
     return difference({other});
 }
 
+Value FrozenSetValue::bitXor(const Value& other) const {
+    return symmetricDifference(other);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

@@ -82,6 +82,18 @@ public:
         throw std::runtime_error("Not supported operation for this type");
     }
 
+    [[nodiscard]] virtual Value bitOr(const Value& other) const {
+        throw std::runtime_error("Not supported operation for this type");
+    }
+
+    [[nodiscard]] virtual Value bitAnd(const Value& other) const {
+        throw std::runtime_error("Not supported operation for this type");
+    }
+
+    [[nodiscard]] virtual Value bitXor(const Value& other) const {
+        throw std::runtime_error("Not supported operation for this type");
+    }
+
     ~ObjectValue() override = default;
 };
 #endif //CPPYTHON_OBJECTVALUE_H
