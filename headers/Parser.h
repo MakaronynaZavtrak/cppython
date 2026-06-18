@@ -184,6 +184,7 @@ public:
             case Operation::Modulo:         return l % r;
             case Operation::IntDivide:      return l.intDivide(r);
             case Operation::Is:             return Value(l.is(r));
+            case Operation::BitOr:          return l | r;
 
             default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
         }
@@ -215,7 +216,8 @@ public:
         IntDivide,
         And,
         Or,
-        Is
+        Is,
+        BitOr
     };
 
     /**
@@ -240,7 +242,8 @@ public:
             {"//", Operation::IntDivide},
             {"and", Operation::And},
             {"or", Operation::Or},
-            {"is", Operation::Is}
+            {"is", Operation::Is},
+            {"|", Operation::BitOr}
         };
 
         const auto it = opMap.find(op);
@@ -1950,6 +1953,14 @@ private:
     std::shared_ptr<ASTNode> parseAnd();
 
     std::shared_ptr<ASTNode> parseOr();
+
+    std::shared_ptr<ASTNode> parseBitOr();
+
+    std::shared_ptr<ASTNode> parseBitXor();
+
+    std::shared_ptr<ASTNode> parseBitAnd();
+
+    std::shared_ptr<ASTNode> parseShift();
 
     std::shared_ptr<ASTNode> parseDelStatement();
 

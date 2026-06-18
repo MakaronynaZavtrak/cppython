@@ -310,6 +310,8 @@ public:
 
     [[nodiscard]] bool contains(const Value& value) const;
 
+    [[nodiscard]] Value operator|(const Value&) const;
+
     [[nodiscard]] QString ascii() const;
 
     template<class... Ts>

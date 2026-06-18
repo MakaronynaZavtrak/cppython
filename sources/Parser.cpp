@@ -167,7 +167,7 @@ std::shared_ptr<ASTNode> Parser::parseDoubleStarredExpression() {
  */
 std::shared_ptr<ASTNode> Parser::parseComparison() {
 
-    std::shared_ptr<ASTNode> left = parseAdditionAndSubtraction();
+    std::shared_ptr<ASTNode> left = parseBitOr();
     std::vector<QString> compOps;
     std::vector<std::shared_ptr<ASTNode>> compRights;
 
@@ -1114,6 +1114,65 @@ std::shared_ptr<ASTNode> Parser::parseOr()
     }
 
     return left;
+}
+
+std::shared_ptr<ASTNode> Parser::parseBitOr() {
+
+    auto left = parseBitXor();
+
+    while (matchAndAdvance(TOKEN_OP, "|")) {
+
+        auto right = parseBitXor();
+
+        left = std::make_shared<BinOpNode>(
+            left,
+            "|",
+            right
+        );
+    }
+
+    return left;
+}
+
+std::shared_ptr<ASTNode> Parser::parseBitXor() {
+
+    auto left = parseBitAnd();
+
+    while (matchAndAdvance(TOKEN_OP, "^")) {
+
+        auto right = parseBitAnd();
+
+        left = std::make_shared<BinOpNode>(
+            left,
+            "^",
+            right
+        );
+    }
+
+    return left;
+}
+
+std::shared_ptr<ASTNode> Parser::parseBitAnd() {
+
+    auto left = parseShift();
+
+    while (matchAndAdvance(TOKEN_OP, "&")) {
+
+        auto right = parseShift();
+
+        left = std::make_shared<BinOpNode>(
+            left,
+            "&",
+            right
+        );
+    }
+
+    return left;
+}
+
+//TODO: пока это заглушка
+std::shared_ptr<ASTNode> Parser::parseShift() {
+    return parseAdditionAndSubtraction();
 }
 
 std::shared_ptr<ASTNode>Parser::parseDelStatement() {

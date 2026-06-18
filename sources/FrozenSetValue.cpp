@@ -3,6 +3,8 @@
 //
 #include "FrozenSetValue.h"
 
+#include <QDebug>
+
 #include "IteratorValue.h"
 
 std::size_t FrozenSetValue::len() const {
@@ -116,6 +118,10 @@ Value FrozenSetValue::symmetricDifference(const Value& other) const {
     }
 
     return Value(result);
+}
+
+Value FrozenSetValue::bitOr(const Value& other) const {
+    return unionSet({other});
 }
 
 QString FrozenSetValue::toString() const {
