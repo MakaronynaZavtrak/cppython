@@ -394,6 +394,10 @@ bool Value::operator==(const Value& other) const {
         return asTuple()->equal(other);
     }
 
+    if (isFrozenSet()) {
+        return asFrozenSet()->equal(other);
+    }
+
     return false;
 }
 

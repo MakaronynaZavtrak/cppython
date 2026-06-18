@@ -4001,6 +4001,21 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset({'a', 'b'}).isdisjoint(frozenset({'c'}))", "True"),
     ("frozenset({'a', 'b'}).isdisjoint(frozenset({'b'}))", "False"),
 
+    # __eq__
+    ("frozenset().__eq__(frozenset())", "True"),
+    ("frozenset([1,2,3]).__eq__(frozenset([1,2,3]))", "True"),
+    ("frozenset([1,2,3]).__eq__(frozenset([3,2,1]))", "True"),
+    ("frozenset([1,2,3]).__eq__(frozenset([1,2]))", "False"),
+    ("frozenset([1,2]).__eq__(frozenset([1,2,3]))", "False"),
+    ("frozenset([1,2,3]).__eq__(frozenset([1,2,4]))", "False"),
+    ("frozenset([1]).__eq__(set([1]))", "True"),
+    ("frozenset() == frozenset()", "True"),
+    ("frozenset([1,2,3]) == frozenset([1,2,3])", "True"),
+    ("frozenset([1,2,3]) == frozenset([3,2,1])", "True"),
+    ("frozenset([1,2,3]) == frozenset([1,2])", "False"),
+    ("frozenset([1,2]) == frozenset([1,2,3])", "False"),
+    ("frozenset([1,2,3]) == frozenset([1,2,4])", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

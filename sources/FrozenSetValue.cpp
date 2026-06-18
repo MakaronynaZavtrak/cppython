@@ -6,6 +6,7 @@
 #include <QDebug>
 
 #include "IteratorValue.h"
+#include "SetValue.h"
 
 std::size_t FrozenSetValue::len() const {
     return elements.size();
@@ -195,6 +196,29 @@ Value FrozenSetValue::isDisjoint(const Value &other) const {
 
     return Value(true);
 
+}
+
+bool FrozenSetValue::equal(const Value& other) const {
+
+    if (other.isSet()) {
+
+        const auto otherSet = other.asSet()->elements;
+
+        for (auto value : elements) {
+
+            if (!otherSet.contains(value)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    if (!other.isFrozenSet()) {
+        return false;
+    }
+
+    return elements == other.asFrozenSet()->getElements();
 }
 
 QString FrozenSetValue::toString() const {

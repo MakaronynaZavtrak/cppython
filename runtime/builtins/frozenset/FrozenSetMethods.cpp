@@ -184,6 +184,26 @@ namespace {
         );
     }
 
+    Value makeEqMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+
+            "__eq__",
+
+            [frozenSet](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__eq__");
+
+                return Value(frozenSet->equal(args[0]));
+            }
+        );
+    }
+
     Value makeIsSubsetMethod(const Value& obj) {
 
         auto frozenSet = extract<Value::FrozenSetPtr>(obj);
@@ -252,6 +272,7 @@ namespace {
         REGISTER_METHOD("__and__", makeAndMethod),
         REGISTER_METHOD("__sub__", makeSubMethod),
         REGISTER_METHOD("__xor__", makeXorMethod),
+        REGISTER_METHOD("__eq__", makeEqMethod),
         REGISTER_METHOD("union", makeUnionMethod),
         REGISTER_METHOD("intersection", makeIntersectionMethod),
         REGISTER_METHOD("difference", makeDifferenceMethod),
