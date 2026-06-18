@@ -74,6 +74,25 @@ Value FrozenSetValue::intersection(const std::vector<Value>& others) const {
     return Value(result);
 }
 
+Value FrozenSetValue::difference(const std::vector<Value>& others) const {
+
+    const auto result = std::make_shared<FrozenSetValue>();
+
+    result->elements = elements;
+
+    for (const auto& iterable : others) {
+
+        const auto it = iterable.getIterator();
+
+        while (it->hasNext()) {
+
+            result->elements.remove(it->next());
+        }
+    }
+
+    return Value(result);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

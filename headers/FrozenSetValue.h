@@ -43,5 +43,7 @@ public:
     [[nodiscard]] Value unionSet(const std::vector<Value>& others) const;
 
     [[nodiscard]] Value intersection(const std::vector<Value>& others) const;
+
+    [[nodiscard]] Value difference(const std::vector<Value>& others) const;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H
