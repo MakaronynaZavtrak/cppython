@@ -3855,6 +3855,19 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("1 in frozenset([1,2,3])", "True"),
     ("5 in frozenset([1,2,3])", "False"),
 
+    # union
+    ("frozenset().union()", "frozenset()"),
+    ("frozenset([1]).union()", "frozenset({1})"),
+    ("frozenset([1,2]).union([3,4])", "frozenset({1, 2, 3, 4})"),
+    ("frozenset([1,2]).union([2,3])", "frozenset({1, 2, 3})"),
+    ("frozenset([1]).union([2],[3])", "frozenset({1, 2, 3})"),
+    ("frozenset([1]).union([2],[3],[4])", "frozenset({1, 2, 3, 4})"),
+    ("frozenset([1,2]).union((3,4))", "frozenset({1, 2, 3, 4})"),
+    ("frozenset([1,2]).union(set([3,4]))", "frozenset({1, 2, 3, 4})"),
+    ("frozenset([1,2]).union(frozenset([3,4]))", "frozenset({1, 2, 3, 4})"),
+    ("frozenset([1,2]).union([1,2])", "frozenset({1, 2})"),
+    ("frozenset([1,2]).union([2,3])", "frozenset({1, 2, 3})"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

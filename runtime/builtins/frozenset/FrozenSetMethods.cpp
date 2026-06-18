@@ -30,10 +30,29 @@ namespace {
         );
     }
 
+    Value makeUnionMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "union",
+
+            [frozenSet](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                return frozenSet->unionSet(args);
+            }
+        );
+    }
+
     const MethodMap FROZENSET_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::FrozenSetPtr>),
         REGISTER_METHOD("__contains__", makeContainsMethod),
-        REGISTER_METHOD("__iter__", makeIterMethod)
+        REGISTER_METHOD("__iter__", makeIterMethod),
+        REGISTER_METHOD("union", makeUnionMethod)
     };
 
 }

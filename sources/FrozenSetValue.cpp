@@ -3,6 +3,8 @@
 //
 #include "FrozenSetValue.h"
 
+#include "IteratorValue.h"
+
 std::size_t FrozenSetValue::len() const {
     return elements.size();
 }
@@ -17,6 +19,27 @@ const QSet<Value> & FrozenSetValue::getElements() const {
 
 const QList<Value> & FrozenSetValue::getOrder() const {
     return order;
+}
+
+Value FrozenSetValue::unionSet(const std::vector<Value>& others) const {
+
+    const auto result = std::make_shared<FrozenSetValue>();
+
+    result->elements = elements;
+
+    for (const auto& iterable : others) {
+
+        const auto it = iterable.getIterator();
+
+        while (it->hasNext()) {
+
+            result->elements.insert(
+                it->next()
+            );
+        }
+    }
+
+    return Value(result);
 }
 
 QString FrozenSetValue::toString() const {
