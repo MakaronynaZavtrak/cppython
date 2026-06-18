@@ -237,6 +237,10 @@ bool FrozenSetValue::greater(const Value &other) const {
     return isSuperset(other) && notEqual(other);
 }
 
+bool FrozenSetValue::greaterOrEqual(const Value &other) const {
+    return isSuperset(other);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

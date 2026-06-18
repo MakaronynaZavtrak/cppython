@@ -4086,6 +4086,23 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset([1]) > frozenset([5])", "False"),
     ("frozenset([1,2]) > frozenset([1,2,4])", "False"),
 
+    # __ge__
+    ("frozenset([1,2,3]).__ge__(frozenset([1,2]))", "True"),
+    ("frozenset([1,2]).__ge__(frozenset([1,2]))", "True"),
+    ("frozenset([1,2]).__ge__(frozenset([1,2,3]))", "False"),
+    ("frozenset().__ge__(frozenset())", "True"),
+    ("frozenset([1]).__ge__(frozenset())", "True"),
+    ("frozenset().__ge__(frozenset([1]))", "False"),
+    ("frozenset([1,2,3]) >= frozenset([1,2])", "True"),
+    ("frozenset([1,2]) >= frozenset([1,2])", "True"),
+    ("frozenset([1,2]) >= frozenset([1,2,3])", "False"),
+    ("frozenset() >= frozenset()", "True"),
+    ("frozenset([1]) >= frozenset()", "True"),
+    ("frozenset() >= frozenset([1])", "False"),
+    ("frozenset([1,2]) >= frozenset([2,3])", "False"),
+    ("frozenset([1]) >= frozenset([5])", "False"),
+    ("frozenset([1,2]) >= frozenset([1,2,4])", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
