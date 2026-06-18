@@ -957,7 +957,12 @@ public:
         }
 
         // копируем всё из classEnv в attributes
-        for (const auto& [key, val] : classEnv->variables) {
+        for (auto it = classEnv->variables.cbegin();
+             it != classEnv->variables.cend();
+             ++it) {
+
+            const QString& key = it.key();
+            const Value& val = it.value();
 
             Value newVal = val;
 

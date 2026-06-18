@@ -4,6 +4,8 @@
 
 #ifndef CPPYTHON_BYTEARRAYITERATOR_H
 #define CPPYTHON_BYTEARRAYITERATOR_H
+#include <utility>
+
 #include "IteratorValue.h"
 
 class ByteArrayValue;
@@ -16,13 +18,13 @@ public:
 
     std::size_t index = 0;
 
-    explicit ByteArrayIterator(const QByteArray& bytes)
-    : snapshot(bytes) {}
+    explicit ByteArrayIterator(QByteArray  bytes)
+    : snapshot(std::move(bytes)) {}
 
     Value next() override;
 
-    bool hasNext() const override;
+    [[nodiscard]] bool hasNext() const override;
 
-    QString getTypeName() const override;
+    [[nodiscard]] QString getTypeName() const override;
 };
 #endif //CPPYTHON_BYTEARRAYITERATOR_H

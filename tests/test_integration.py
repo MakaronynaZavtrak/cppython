@@ -3851,6 +3851,10 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset({'a','b'}).__contains__('a')", "True"),
     ("frozenset({'a','b'}).__contains__('z')", "False"),
 
+    # __contains__, in
+    ("1 in frozenset([1,2,3])", "True"),
+    ("5 in frozenset([1,2,3])", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -7749,7 +7753,34 @@ if _result is not None:
 
     (["x = bytearray(b'abc')",
       "1 * x"],
-     "bytearray(b'abc')")
+     "bytearray(b'abc')"),
+
+    # frozenset.__iter__()
+    (["res = 0",
+      "for x in frozenset([1, 2, 3]):",
+      "    res += x",
+      "",
+      "res"],
+     "6"),
+
+    (["res = []",
+      "for x in frozenset():",
+      "    res.append(x)",
+      "",
+      "res"],
+     "[]"),
+
+    (["it = iter(frozenset([1]))",
+      "next(it)"],
+     "1"),
+
+    (["x = frozenset([1,2,3])",
+      "2 in x"],
+     "True"),
+
+    (["x = frozenset([1,2,3])",
+      "5 in x"],
+     "False"),
 
 ])
 

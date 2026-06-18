@@ -11,17 +11,21 @@
 class FrozenSetValue : public ObjectValue {
 
     QSet<Value> elements;
+    QList<Value> order;
 
 public:
 
     FrozenSetValue() = default;
 
     explicit FrozenSetValue(const QSet<Value>& elements)
-        : elements(elements)
+    : elements(elements),
+      order(elements.values())
     {}
 
+
     explicit FrozenSetValue(QSet<Value>&& elements)
-        : elements(std::move(elements))
+    : elements(std::move(elements)),
+      order(this->elements.values())
     {}
 
     [[nodiscard]] QString repr() const override;
@@ -32,8 +36,8 @@ public:
 
     [[nodiscard]] bool contains(const Value& value) const override;
 
-    [[nodiscard]] const QSet<Value>& getElements() const {
-        return elements;
-    }
+    [[nodiscard]] const QSet<Value>& getElements() const;
+
+    [[nodiscard]] const QList<Value>& getOrder() const;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

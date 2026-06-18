@@ -54,8 +54,10 @@ Value callFunction(const Value::FunctionPtr& func,
     const auto local = std::make_shared<Environment>(func->closure);
 
     if (envOverride) {
-        for (const auto& [k, v] : envOverride->variables) {
-            local->set(k, v);
+        for (auto it = envOverride->variables.cbegin();
+            it != envOverride->variables.cend(); ++it) {
+
+            local->set(it.key(), it.value());
         }
     }
 

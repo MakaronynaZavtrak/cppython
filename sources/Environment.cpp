@@ -8,7 +8,7 @@
  * @param value Значение, которое нужно связать с указанным именем переменной.
  */
 void Environment::set(const QString& name, const Value& value) {
-    if (globalVars.count(name)) {
+    if (globalVars.contains(name)) {
         auto global = this;
         while (global->parent) {
             global = global->parent.get();
@@ -17,7 +17,7 @@ void Environment::set(const QString& name, const Value& value) {
         return;
     }
 
-    if (nonlocalVars.count(name)) {
+    if (nonlocalVars.contains(name)) {
         auto env = parent;
         while (env) {
             if (env->variables.count(name)) {

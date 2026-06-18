@@ -29,6 +29,7 @@
 
 #include <QDebug>
 
+#include "FrozenSetIterator.h"
 #include "FrozenSetValue.h"
 
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
@@ -998,6 +999,10 @@ bool Value::contains(const Value &value) const {
         return asByteArray()->contains(value);
     }
 
+    if (isFrozenSet()) {
+        return asFrozenSet()->contains(value);
+    }
+
     throw std::runtime_error("TypeError: argument of type '" +
        toString().toStdString() + "' is not iterable"
     );
@@ -1497,6 +1502,14 @@ Value::IteratorPtr Value::getIterator() const {
         return std::static_pointer_cast<IteratorValue>(
             std::make_shared<DictKeysIterator>(
                 asDict()
+            )
+        );
+    }
+
+    if (isFrozenSet()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<FrozenSetIterator>(
+                asFrozenSet()
             )
         );
     }

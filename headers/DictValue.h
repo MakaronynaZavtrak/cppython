@@ -5,6 +5,8 @@
 #ifndef CPPYTHON_DICTVALUE_H
 #define CPPYTHON_DICTVALUE_H
 
+#include <QHash>
+
 #include "ObjectValue.h"
 #include "Value.h"
 

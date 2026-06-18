@@ -32,7 +32,8 @@ namespace {
 
     const MethodMap FROZENSET_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::FrozenSetPtr>),
-        REGISTER_METHOD("__contains__", makeContainsMethod)
+        REGISTER_METHOD("__contains__", makeContainsMethod),
+        REGISTER_METHOD("__iter__", makeIterMethod)
     };
 
 }

@@ -120,7 +120,9 @@ add_executable(cppython main.cpp
         headers/FrozenSetValue.h
         sources/FrozenSetValue.cpp
         runtime/builtins/frozenset/FrozenSetMethods.cpp
-        runtime/builtins/frozenset/FrozenSetMethods.h)
+        runtime/builtins/frozenset/FrozenSetMethods.h
+        headers/FrozenSetIterator.h
+        sources/FrozenSetIterator.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

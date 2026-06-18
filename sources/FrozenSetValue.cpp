@@ -11,6 +11,14 @@ bool FrozenSetValue::contains(const Value& value) const {
     return elements.contains(value);
 }
 
+const QSet<Value> & FrozenSetValue::getElements() const {
+    return elements;
+}
+
+const QList<Value> & FrozenSetValue::getOrder() const {
+    return order;
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

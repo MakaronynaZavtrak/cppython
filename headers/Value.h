@@ -1,9 +1,6 @@
 #ifndef VALUE_H
 #define VALUE_H
 
-#include <QHash>
-#include <QString>
-
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
@@ -73,17 +70,11 @@ public:
     using StaticMethodPtr = std::shared_ptr<StaticMethodValue>;
     using ClassMethodPtr = std::shared_ptr<ClassMethodValue>;
 
-    using ListIteratorPtr = std::shared_ptr<ListIterator>;
-    using TupleIteratorPtr = std::shared_ptr<TupleIterator>;
-
     using DictKeysViewPtr = std::shared_ptr<DictKeysView>;
-    using DictKeysIteratorPtr = std::shared_ptr<DictKeysIterator>;
 
     using DictValuesViewPtr = std::shared_ptr<DictValuesView>;
-    using DictValuesIteratorPtr = std::shared_ptr<DictValuesIterator>;
 
     using DictItemsViewPtr = std::shared_ptr<DictItemsView>;
-    using DictItemsIteratorPtr = std::shared_ptr<DictItemsIterator>;
 
     using SetPtr = std::shared_ptr<SetValue>;
     using IteratorPtr = std::shared_ptr<IteratorValue>;
