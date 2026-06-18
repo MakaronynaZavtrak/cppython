@@ -4,18 +4,21 @@
 
 #ifndef CPPYTHON_SETVALUE_H
 #define CPPYTHON_SETVALUE_H
-#include <QHash>
 #include <QString>
-#include <QVector>
+#include <qset.h>
 
 #include "ObjectValue.h"
 
 class Value;
 
-class SetValue : public ObjectValue {
+class SetValue : public ObjectValue, std::enable_shared_from_this<SetValue> {
 public:
-    QHash<Value, bool> elements;
-    QVector<Value> order;
+
+    explicit SetValue(const QSet<Value>& elements = {}, const QList<Value>& order = {})
+        : elements(elements), order(order) {}
+
+    QSet<Value> elements;
+    QList<Value> order;
 
     [[nodiscard]] QString toString() const override;
 
@@ -27,36 +30,38 @@ public:
 
     void discard(const Value& value);
 
-    [[nodiscard]] std::shared_ptr<SetValue> unionWith(const std::shared_ptr<SetValue>& other) const;
-
     [[nodiscard]] bool contains(const Value& value) const override;
 
-    [[nodiscard]] std::shared_ptr<SetValue> intersectionWith(const std::shared_ptr<SetValue>& other) const;
+    [[nodiscard]] Value unionSet(const std::vector<Value>& others) const;
 
-    [[nodiscard]] std::shared_ptr<SetValue> differenceWith(const std::shared_ptr<SetValue>& other) const;
+    [[nodiscard]] Value intersection(const std::vector<Value>& others) const;
 
-    [[nodiscard]] std::shared_ptr<SetValue> symmetricDifferenceWith(const std::shared_ptr<SetValue>& other) const;
+    [[nodiscard]] Value difference(const std::vector<Value>& others) const;
 
-    [[nodiscard]]bool isSubsetOf(const std::shared_ptr<SetValue>& other) const;
+    [[nodiscard]] Value symmetricDifference(const Value& other) const;
 
-    [[nodiscard]] bool isSupersetOf(const std::shared_ptr<SetValue>& other) const;
+    [[nodiscard]]bool isSubset(const Value& other) const;
 
-    [[nodiscard]] bool isDisjointWith(const std::shared_ptr<SetValue>& other) const;
+    [[nodiscard]] bool isSuperset(const Value& other) const;
 
-    [[nodiscard]] std::shared_ptr<SetValue> copy() const;
+    [[nodiscard]] bool isDisjoint(const Value& other) const;
+
+    [[nodiscard]] Value copy() const;
 
     void clear();
 
     Value pop();
 
-    void update(const std::shared_ptr<SetValue>& other);
+    void update(const std::vector<Value>&);
 
-    void differenceUpdate(const std::shared_ptr<SetValue>& other);
+    void differenceUpdate(const std::vector<Value>& others);
 
-    void intersectionUpdate(const std::shared_ptr<SetValue>& other);
+    void intersectionUpdate(const std::vector<Value>& others);
 
-    void symmetricDifferenceUpdate(const std::shared_ptr<SetValue>& other);
+    void symmetricDifferenceUpdate(const Value& other);
 
     [[nodiscard]] std::size_t len() const;
+
+    [[nodiscard]] Value bitOr(const Value& other) const override;
 };
 #endif //CPPYTHON_SETVALUE_H

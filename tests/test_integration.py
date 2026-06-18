@@ -4128,6 +4128,13 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("hash(frozenset({1,2,3,4,5,6,7,8,9,10})) == hash(frozenset({10,9,8,7,6,5,4,3,2,1}))", "True"),
 
+    # __ror__
+    ("set({1}) | frozenset({2})", "{1, 2}"),
+    ("set({1, 2}) | frozenset({2, 3})", "{1, 2, 3}"),
+    ("set() | frozenset({1})", "{1}"),
+    ("set({1}) | frozenset()", "{1}"),
+    ("set({1, 2}) | frozenset({1, 2})", "{1, 2}"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

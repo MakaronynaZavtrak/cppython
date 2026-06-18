@@ -2,6 +2,9 @@
 // Created by semyo on 20.05.2026.
 //
 #include "SetValue.h"
+
+#include "FrozenSetValue.h"
+#include "IteratorValue.h"
 #include "Value.h"
 
 QString SetValue::toString() const {
@@ -37,7 +40,7 @@ QString SetValue::repr() const {
 void SetValue::add(const Value& value) {
 
     if (!elements.contains(value)) {
-        elements[value] = true;
+        elements.insert(value);
         order.push_back(value);
     }
 }
@@ -67,83 +70,119 @@ void SetValue::discard(const Value& value) {
     });
 }
 
-std::shared_ptr<SetValue> SetValue::unionWith(const std::shared_ptr<SetValue>& other) const {
+Value SetValue::unionSet(const std::vector<Value>& others) const {
 
-    auto result = std::make_shared<SetValue>();
+    const auto result = std::make_shared<SetValue>();
 
-    // сначала текущий set
     for (const auto& value : order) {
         result->add(value);
     }
 
-    // потом второй
-    for (const auto& value : other->order) {
-        result->add(value);
+    for (const auto& iterable : others) {
+
+        const auto it = iterable.getIterator();
+
+        while (it->hasNext()) {
+            result->add(it->next());
+        }
+
     }
 
-    return result;
+    return Value(result);
 }
 
 bool SetValue::contains(const Value& value) const {
     return elements.contains(value);
 }
 
-std::shared_ptr<SetValue> SetValue::intersectionWith(const std::shared_ptr<SetValue>& other) const {
+Value SetValue::intersection(const std::vector<Value>& others) const {
 
-    auto result = std::make_shared<SetValue>();
+    const auto result = std::make_shared<SetValue>();
 
-    for (const auto& value : order) {
+    result->elements = elements;
+    result->order = order;
 
-        if (other->contains(value)) {
-            result->add(value);
+    for (const auto& iterable : others) {
+
+        QSet<Value> current;
+
+        const auto it = iterable.getIterator();
+
+        while (it->hasNext()) {
+            current.insert(it->next());
         }
+
+        for (auto iter = result->elements.begin();
+             iter != result->elements.end();) {
+
+            if (!current.contains(*iter)) {
+                iter = result->elements.erase(iter);
+            }
+            else {
+                ++iter;
+            }
+             }
     }
 
-    return result;
+    result->order.removeIf(
+        [&](const Value& v) {
+            return !result->elements.contains(v);
+        }
+    );
+
+    return Value(result);
 }
 
-std::shared_ptr<SetValue> SetValue::differenceWith(const std::shared_ptr<SetValue>& other) const {
+Value SetValue::difference(const std::vector<Value>& others) const {
 
-    auto result = std::make_shared<SetValue>();
+    const auto result = std::make_shared<SetValue>();
 
-    for (const auto& value : order) {
+    result->elements = elements;
+    result->order = order;
 
-        if (!other->contains(value)) {
-            result->add(value);
+    for (const auto& iterable : others) {
+
+        const auto it = iterable.getIterator();
+
+        while (it->hasNext()) {
+            result->elements.remove(it->next());
         }
     }
 
-    return result;
+    result->order.removeIf(
+        [&](const Value& v) {
+            return !result->elements.contains(v);
+        }
+    );
+
+    return Value(result);
 }
 
-std::shared_ptr<SetValue> SetValue::symmetricDifferenceWith(const std::shared_ptr<SetValue>& other) const {
+Value SetValue::symmetricDifference(const Value& other) const {
 
-    auto result = std::make_shared<SetValue>();
+    const auto result = std::make_shared<SetValue>();
 
-    // элементы только из текущего set
-    for (const auto& value : order) {
+    result->elements = elements;
+    result->order = order;
 
-        if (!other->contains(value)) {
-            result->add(value);
-        }
-    }
+    result->symmetricDifferenceUpdate(other);
 
-    // элементы только из other
-    for (const auto& value : other->order) {
-
-        if (!contains(value)) {
-            result->add(value);
-        }
-    }
-
-    return result;
+    return Value(result);
 }
 
-bool SetValue::isSubsetOf(const std::shared_ptr<SetValue>& other) const {
+bool SetValue::isSubset(const Value& other) const {
 
-    for (const auto& value : order) {
+    const auto it = other.getIterator();
 
-        if (!other->contains(value)) {
+    QSet<Value> otherSet;
+
+    while (it->hasNext()) {
+        otherSet.insert(it->next());
+    }
+
+    for (const auto& value : elements) {
+
+        if (!otherSet.contains(value)) {
             return false;
         }
     }
@@ -151,11 +190,12 @@ bool SetValue::isSubsetOf(const std::shared_ptr<SetValue>& other) const {
     return true;
 }
 
-bool SetValue::isSupersetOf(const std::shared_ptr<SetValue>& other) const {
+bool SetValue::isSuperset(const Value& other) const {
 
-    for (const auto& value : other->order) {
+    const auto it = other.getIterator();
 
-        if (!contains(value)) {
+    while (it->hasNext()) {
+        if (!elements.contains(it->next())) {
             return false;
         }
     }
@@ -163,11 +203,19 @@ bool SetValue::isSupersetOf(const std::shared_ptr<SetValue>& other) const {
     return true;
 }
 
-bool SetValue::isDisjointWith(const std::shared_ptr<SetValue>& other) const {
+bool SetValue::isDisjoint(const Value& other) const {
 
-    for (const auto& value : order) {
+    const auto it = other.getIterator();
 
-        if (other->contains(value)) {
+    QSet<Value> otherSet;
+
+    while (it->hasNext()) {
+        otherSet.insert(it->next());
+    }
+
+    for (const auto& item : elements) {
+
+        if (otherSet.contains(item)) {
             return false;
         }
     }
@@ -175,15 +223,14 @@ bool SetValue::isDisjointWith(const std::shared_ptr<SetValue>& other) const {
     return true;
 }
 
-std::shared_ptr<SetValue> SetValue::copy() const {
+Value SetValue::copy() const {
 
-    auto result = std::make_shared<SetValue>();
-
-    for (const auto& value : order) {
-        result->add(value);
-    }
-
-    return result;
+    return Value(
+    std::make_shared<SetValue>(
+        elements,
+        order
+    )
+);
 }
 
 void SetValue::clear() {
@@ -207,62 +254,105 @@ Value SetValue::pop() {
     return value;
 }
 
-void SetValue::update(const std::shared_ptr<SetValue>& other) {
+void SetValue::update(const std::vector<Value>& others) {
 
-    for (const auto& value : other->order) {
-        add(value);
+    for (const auto& iterable : others) {
+
+        const auto it = iterable.getIterator();
+
+        while (it->hasNext()) {
+            add(it->next());
+        }
+
     }
 }
 
-void SetValue::differenceUpdate(const std::shared_ptr<SetValue>& other) {
+void SetValue::differenceUpdate(const std::vector<Value>& others) {
 
-    QVector<Value> snapshot = other->order;
+    for (const auto& iterable : others) {
 
-    for (const auto& value : snapshot) {
-        discard(value);
-    }
-}
+        QList<Value> snapshot;
 
-void SetValue::intersectionUpdate(const std::shared_ptr<SetValue>& other) {
+        const auto it = iterable.getIterator();
 
-    QVector<Value> newOrder;
-    QHash<Value, bool> newElements;
+        while (it->hasNext()) {
+            snapshot.push_back(it->next());
+        }
 
-    for (const auto& value : order) {
-
-        if (other->elements.contains(value)) {
-
-            newOrder.push_back(value);
-            newElements[value] = true;
+        for (const auto& value : snapshot) {
+            discard(value);
         }
     }
-
-    order = std::move(newOrder);
-    elements = std::move(newElements);
 }
 
-void SetValue::symmetricDifferenceUpdate(const std::shared_ptr<SetValue>& other) {
+void SetValue::intersectionUpdate(const std::vector<Value>& others) {
 
-    QVector<Value> newOrder;
-    QHash<Value, bool> newElements;
+    for (const auto& iterable : others) {
+
+        QSet<Value> current;
+
+        const auto it = iterable.getIterator();
+
+        while (it->hasNext()) {
+            current.insert(it->next());
+        }
+
+        order.removeIf(
+            [&](const Value &v) {
+                return !current.contains(v);
+            });
+
+        QSet<Value> newElements;
+
+        for (const auto& value : order) {
+            newElements.insert(value);
+        }
+
+        elements = std::move(newElements);
+
+        order.removeIf(
+            [&](const Value& v) {
+                return !current.contains(v);
+            }
+        );
+    }
+}
+
+void SetValue::symmetricDifferenceUpdate(const Value& other) {
+
+    QList<Value> newOrder;
+    QSet<Value> newElements;
+
+    QSet<Value> otherSet;
+    QList<Value> otherOrder;
+
+    const auto it = other.getIterator();
+
+    while (it->hasNext()) {
+
+        Value value = it->next();
+
+        otherSet.insert(value);
+        otherOrder.push_back(value);
+    }
 
     // элементы текущего set, которых нет в other
     for (const auto& value : order) {
 
-        if (!other->elements.contains(value)) {
+        if (!otherSet.contains(value)) {
 
             newOrder.push_back(value);
-            newElements[value] = true;
+            newElements.insert(value);
         }
     }
 
     // элементы other, которых нет в текущем set
-    for (const auto& value : other->order) {
+    for (const auto& value : otherOrder) {
 
         if (!elements.contains(value)) {
 
             newOrder.push_back(value);
-            newElements[value] = true;
+            newElements.insert(value);
         }
     }
 
@@ -272,4 +362,8 @@ void SetValue::symmetricDifferenceUpdate(const std::shared_ptr<SetValue>& other)
 
 std::size_t SetValue::len() const {
     return order.size();
+}
+
+Value SetValue::bitOr(const Value &other) const {
+    return unionSet({other});
 }

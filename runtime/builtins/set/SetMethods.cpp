@@ -12,6 +12,27 @@
 
 namespace {
 
+
+    Value makeOrMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__or__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__or__");
+
+                set->add(args[0]);
+
+                return {};
+            }
+        );
+    }
+
     Value makeAddMethod(const Value& obj) {
 
         auto set = extract<Value::SetPtr>(obj);
@@ -83,19 +104,13 @@ namespace {
                   const Kwargs &,
                   const std::shared_ptr<Environment> &) -> Value {
 
-                auto result = set->copy();
+                    return set->unionSet(args);
 
-                for (const auto &arg: args) {
-
-                    result = result->unionWith(arg.asSet("union"));
-                }
-
-                return Value(result);
             }
         );
     }
 
-    Value makeIntersectionMethod(const Value& obj) {
+    Value makeIntersectionMethod(const Value &obj) {
 
         auto set = extract<Value::SetPtr>(obj);
 
@@ -105,15 +120,7 @@ namespace {
             [set](const std::vector<Value> &args,
                   const Kwargs &,
                   const std::shared_ptr<Environment> &) -> Value {
-
-                auto result = set->copy();
-
-                for (const auto &arg: args) {
-
-                    result = result->intersectionWith(arg.asSet("intersection"));
-                }
-
-                return Value(result);
+                return set->intersection(args);
             }
         );
     }
@@ -129,14 +136,7 @@ namespace {
                   const Kwargs &,
                   const std::shared_ptr<Environment> &) -> Value {
 
-                auto result = set->copy();
-
-                for (const auto &arg: args) {
-
-                    result = result->differenceWith(arg.asSet("difference"));
-                }
-
-                return Value(result);
+                return set->difference(args);
             }
         );
     }
@@ -154,10 +154,7 @@ namespace {
 
                 expectArgs(args, 1, "symmetric_difference");
 
-                return Value(set->symmetricDifferenceWith(
-                    args[0].asSet("symmetric_difference")
-                    )
-                );
+                return set->symmetricDifference(args[0]);
             }
         );
     }
@@ -175,9 +172,7 @@ namespace {
 
                 expectArgs(args, 1, "issubset");
 
-                return Value(
-                    set->isSubsetOf(args[0].asSet("issubset"))
-                );
+                return Value(set->isSubset(args[0]));
             }
         );
     }
@@ -195,9 +190,7 @@ namespace {
 
                 expectArgs(args, 1, "issuperset");
 
-                return Value(
-                    set->isSupersetOf(args[0].asSet("issuperset"))
-                );
+                return Value(set->isSuperset(args[0]));
             }
         );
     }
@@ -215,13 +208,7 @@ namespace {
 
                 expectArgs(args, 1, "isdisjoint");
 
-                if (!args[0].isSet()) {
-                    throw std::runtime_error("isdisjoint() argument must be set");
-                }
-
-                return Value(
-                    set->isDisjointWith(args[0].asSet("isdisjoint"))
-                );
+                return Value(set->isDisjoint(args[0]));
             }
         );
     }
@@ -239,7 +226,7 @@ namespace {
 
                 expectArgs(args, 0, "copy");
 
-                return Value(set->copy());
+                return set->copy();
             }
         );
     }
@@ -293,10 +280,7 @@ namespace {
                   const Kwargs &,
                   const std::shared_ptr<Environment> &) -> Value {
 
-                for (const auto &arg: args) {
-
-                    set->update(arg.asSet("update"));
-                }
+                set->update(args);
 
                 return {};
             }
@@ -314,10 +298,7 @@ namespace {
                   const Kwargs &,
                   const std::shared_ptr<Environment> &) -> Value {
 
-                for (const auto &arg: args) {
-
-                    set->differenceUpdate(arg.asSet("difference_update"));
-                }
+                set->differenceUpdate(args);
 
                 return {};
             }
@@ -335,10 +316,7 @@ namespace {
                   const Kwargs &,
                   const std::shared_ptr<Environment> &) -> Value {
 
-                for (const auto& arg : args) {
-
-                    set->intersectionUpdate(arg.asSet("intersection_update"));
-                }
+                set->intersectionUpdate(args);
 
                 return {};
             }
@@ -358,9 +336,7 @@ namespace {
 
                 expectArgs(args, 1, "symmetric_difference_update");
 
-                set->symmetricDifferenceUpdate(
-                    args[0].asSet("symmetric_difference_update")
-                );
+                set->symmetricDifferenceUpdate(args[0]);
 
                 return {};
             }
@@ -370,6 +346,7 @@ namespace {
     const MethodMap SET_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::SetPtr>),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
+        REGISTER_METHOD("__or__", makeOrMethod),
         REGISTER_METHOD("add", makeAddMethod),
         REGISTER_METHOD("remove", makeRemoveMethod),
         REGISTER_METHOD("discard", makeDiscardMethod),

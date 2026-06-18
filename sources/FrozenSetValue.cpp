@@ -172,17 +172,17 @@ bool FrozenSetValue::isSuperset(const Value& other) const {
 
 bool FrozenSetValue::isDisjoint(const Value &other) const {
 
-    if (!other.isFrozenSet()) {
-        throw std::runtime_error(
-            "TypeError: expected frozenset"
-        );
-    }
+    const auto it = other.getIterator();
 
-    const auto otherSet = other.asFrozenSet();
+    QSet<Value> otherSet;
+
+    while (it->hasNext()) {
+        otherSet.insert(it->next());
+    }
 
     for (const auto& item : elements) {
 
-        if (otherSet->contains(item)) {
+        if (otherSet.contains(item)) {
             return false;
         }
     }
@@ -253,6 +253,14 @@ std::size_t FrozenSetValue::hash() const {
     result ^= elements.size();
 
     return result;
+}
+
+Value FrozenSetValue::ror(const Value &other) const {
+    return other | Value(
+        std::const_pointer_cast<FrozenSetValue>(
+            shared_from_this()
+        )
+    );
 }
 
 QString FrozenSetValue::toString() const {

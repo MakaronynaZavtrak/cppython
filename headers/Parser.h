@@ -1442,7 +1442,7 @@ public:
 
                     if (!set->elements.contains(next)) {
 
-                        set->elements[next] = true;
+                        set->elements.insert(next);
                         set->order.push_back(next);
                     }
                 }
@@ -1453,7 +1453,7 @@ public:
 
                 if (!set->elements.contains(value)) {
 
-                    set->elements[value] = true;
+                    set->elements.insert(value);
                     set->order.push_back(value);
                 }
             }
