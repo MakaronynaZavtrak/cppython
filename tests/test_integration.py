@@ -4031,6 +4031,25 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset([1,2]) != frozenset([1,2,3])", "True"),
     ("frozenset([1,2,3]) != frozenset([1,2,4])", "True"),
 
+    # frozenset.__lt__
+    ("frozenset([1]).__lt__(frozenset([1,2]))", "True"),
+    ("frozenset([1,2]).__lt__(frozenset([1,2,3]))", "True"),
+    ("frozenset([1,2,3]).__lt__(frozenset([1,2]))", "False"),
+    ("frozenset([1,2]).__lt__(frozenset([1,2]))", "False"),
+    ("frozenset().__lt__(frozenset([1]))", "True"),
+    ("frozenset().__lt__(frozenset())", "False"),
+    ("frozenset([1]).__lt__(frozenset())", "False"),
+    ("frozenset([1]) < frozenset([1,2])", "True"),
+    ("frozenset([1,2]) < frozenset([1,2,3])", "True"),
+    ("frozenset([1,2,3]) < frozenset([1,2])", "False"),
+    ("frozenset([1,2]) < frozenset([1,2])", "False"),
+    ("frozenset() < frozenset([1])", "True"),
+    ("frozenset() < frozenset()", "False"),
+    ("frozenset([1]) < frozenset()", "False"),
+    ("frozenset([1,4]) < frozenset([1,2,3])", "False"),
+    ("frozenset([5]) < frozenset([1,2,3])", "False"),
+    ("frozenset([1,2]) < frozenset([2,3])", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

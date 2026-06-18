@@ -440,6 +440,10 @@ bool Value::operator<(const Value& other) const {
         return asTuple()->less(other);
     }
 
+    if (isFrozenSet()) {
+        return asFrozenSet()->less(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported comparison: " + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
 

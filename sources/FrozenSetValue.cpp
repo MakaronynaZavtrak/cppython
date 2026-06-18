@@ -137,7 +137,7 @@ Value FrozenSetValue::bitXor(const Value& other) const {
     return symmetricDifference(other);
 }
 
-Value FrozenSetValue::isSubset(const Value& other) const {
+bool FrozenSetValue::isSubset(const Value& other) const {
 
     if (!other.isFrozenSet()) {
         throw std::runtime_error(
@@ -150,14 +150,14 @@ Value FrozenSetValue::isSubset(const Value& other) const {
     for (const auto& value : elements) {
 
         if (!otherSet.contains(value)) {
-            return Value(false);
+            return false;
         }
     }
 
-    return Value(true);
+    return true;
 }
 
-Value FrozenSetValue::isSuperset(const Value& other) const {
+bool FrozenSetValue::isSuperset(const Value& other) const {
 
     if (!other.isFrozenSet()) {
         throw std::runtime_error(
@@ -170,14 +170,14 @@ Value FrozenSetValue::isSuperset(const Value& other) const {
     for (const auto& value : otherSet) {
 
         if (!elements.contains(value)) {
-            return Value(false);
+            return false;
         }
     }
 
-    return Value(true);
+    return true;
 }
 
-Value FrozenSetValue::isDisjoint(const Value &other) const {
+bool FrozenSetValue::isDisjoint(const Value &other) const {
 
     if (!other.isFrozenSet()) {
         throw std::runtime_error(
@@ -190,11 +190,11 @@ Value FrozenSetValue::isDisjoint(const Value &other) const {
     for (const auto& item : elements) {
 
         if (otherSet->contains(item)) {
-            return Value(false);
+            return false;
         }
     }
 
-    return Value(true);
+    return true;
 
 }
 
@@ -223,6 +223,10 @@ bool FrozenSetValue::equal(const Value& other) const {
 
 bool FrozenSetValue::notEqual(const Value& other) const {
     return !equal(other);
+}
+
+bool FrozenSetValue::less(const Value& other) const {
+    return isSubset(other) && notEqual(other);
 }
 
 QString FrozenSetValue::toString() const {

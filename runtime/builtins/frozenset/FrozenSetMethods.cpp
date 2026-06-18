@@ -224,6 +224,26 @@ namespace {
         );
     }
 
+    Value makeLtMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "__lt__",
+
+            [frozenSet](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__lt__");
+
+                return Value(frozenSet->less(args[0]));
+            }
+        );
+    }
+
     Value makeIsSubsetMethod(const Value& obj) {
 
         auto frozenSet = extract<Value::FrozenSetPtr>(obj);
@@ -239,7 +259,7 @@ namespace {
 
                 expectArgs(args, 1, "issubset");
 
-                return frozenSet->isSubset(args[0]);
+                return Value(frozenSet->isSubset(args[0]));
             }
         );
     }
@@ -294,6 +314,7 @@ namespace {
         REGISTER_METHOD("__xor__", makeXorMethod),
         REGISTER_METHOD("__eq__", makeEqMethod),
         REGISTER_METHOD("__ne__", makeNeMethod),
+        REGISTER_METHOD("__lt__", makeLtMethod),
         REGISTER_METHOD("union", makeUnionMethod),
         REGISTER_METHOD("intersection", makeIntersectionMethod),
         REGISTER_METHOD("difference", makeDifferenceMethod),

@@ -56,14 +56,16 @@ public:
 
     [[nodiscard]] Value bitXor(const Value& other) const override;
 
-    [[nodiscard]] Value isSubset(const Value& other) const;
+    [[nodiscard]] bool isSubset(const Value& other) const;
 
-    [[nodiscard]] Value isSuperset(const Value& other) const;
+    [[nodiscard]] bool isSuperset(const Value& other) const;
 
-    [[nodiscard]] Value isDisjoint(const Value& other) const;
+    [[nodiscard]] bool isDisjoint(const Value& other) const;
 
     [[nodiscard]] bool equal(const Value& other) const override;
 
     [[nodiscard]] bool notEqual(const Value& other) const override;
+
+    [[nodiscard]] bool less(const Value& other) const override;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H
