@@ -513,6 +513,10 @@ bool Value::operator<=(const Value &other) const {
         return asByteArray()->lessOrEqual(other);
     }
 
+    if (isFrozenSet()) {
+        return asFrozenSet()->lessOrEqual(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for <=: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }

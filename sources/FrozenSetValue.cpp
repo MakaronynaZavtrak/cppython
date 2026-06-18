@@ -229,6 +229,10 @@ bool FrozenSetValue::less(const Value& other) const {
     return isSubset(other) && notEqual(other);
 }
 
+bool FrozenSetValue::lessOrEqual(const Value &other) const {
+    return isSubset(other);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }
