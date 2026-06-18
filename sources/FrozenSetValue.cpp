@@ -136,6 +136,27 @@ Value FrozenSetValue::bitXor(const Value& other) const {
     return symmetricDifference(other);
 }
 
+Value FrozenSetValue::isSubset(const Value& other) const {
+
+    const auto it = other.getIterator();
+
+    QSet<Value> otherSet;
+
+    while (it->hasNext()) {
+
+        otherSet.insert(it->next());
+    }
+
+    for (const auto& value : elements) {
+
+        if (!otherSet.contains(value)) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

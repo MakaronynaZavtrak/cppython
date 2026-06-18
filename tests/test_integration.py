@@ -3966,6 +3966,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset([1,2,3]) ^ set([2,3,4])", "frozenset({1, 4})"),
     ("frozenset([1,2,3]) ^ frozenset([2,3,4])", "frozenset({1, 4})"),
 
+    # issubset
+    ("frozenset().issubset([])", "True"),
+    ("frozenset([1]).issubset([1])", "True"),
+    ("frozenset([1,2]).issubset([1,2,3])", "True"),
+    ("frozenset([1,2]).issubset([1])", "False"),
+    ("frozenset([1,2]).issubset([1,2])", "True"),
+    ("frozenset([1,2,3]).issubset([1,2,3])", "True"),
+    ("frozenset().issubset(frozenset())", "True"),
+    ("frozenset().issubset([1,2,3])", "True"),
+    ("frozenset([1]).issubset([])", "False"),
+    ("frozenset([1,2]).issubset(set([1,2,3]))", "True"),
+    ("frozenset([1,2]).issubset((1,2,3))", "True"),
+    ("frozenset([1,2]).issubset(frozenset([1,2,3]))", "True"),
+    ("frozenset([1,2]).issubset([3,4])", "False"),
+    ("frozenset([1,2,3]).issubset([1,2])", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

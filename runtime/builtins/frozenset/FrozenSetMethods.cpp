@@ -184,6 +184,26 @@ namespace {
         );
     }
 
+    Value makeIsSubsetMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "issubset",
+
+            [frozenSet](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "issubset");
+
+                return frozenSet->isSubset(args[0]);
+            }
+        );
+    }
+
     const MethodMap FROZENSET_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::FrozenSetPtr>),
         REGISTER_METHOD("__contains__", makeContainsMethod),
@@ -195,7 +215,8 @@ namespace {
         REGISTER_METHOD("union", makeUnionMethod),
         REGISTER_METHOD("intersection", makeIntersectionMethod),
         REGISTER_METHOD("difference", makeDifferenceMethod),
-        REGISTER_METHOD("symmetric_difference", makeSymmetricDifferenceMethod)
+        REGISTER_METHOD("symmetric_difference", makeSymmetricDifferenceMethod),
+        REGISTER_METHOD("issubset", makeIsSubsetMethod)
     };
 
 }
