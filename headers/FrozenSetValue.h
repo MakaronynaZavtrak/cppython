@@ -75,5 +75,7 @@ public:
     [[nodiscard]] bool greaterOrEqual(const Value& other) const override;
 
     Value copy() const;
+
+    [[nodiscard]] std::size_t hash() const override;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

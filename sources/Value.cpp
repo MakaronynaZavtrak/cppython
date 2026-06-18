@@ -1422,6 +1422,10 @@ bool Value::isHashable() const {
         );
     }
 
+    if (isFrozenSet()) {
+        return true;
+    }
+
     return false;
 }
 
@@ -1474,6 +1478,10 @@ std::size_t Value::hash() const {
         }
 
         return seed;
+    }
+
+    if (isFrozenSet()) {
+        return asFrozenSet()->hash();
     }
 
     throw std::runtime_error("TypeError: unhashable type");

@@ -242,6 +242,19 @@ Value FrozenSetValue::copy() const {
     );
 }
 
+std::size_t FrozenSetValue::hash() const {
+
+    std::size_t result = 0;
+
+    for (const auto& value : elements) {
+        result ^= qHash(value);
+    }
+
+    result ^= elements.size();
+
+    return result;
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

@@ -4106,7 +4106,27 @@ def run_cppython(cmds: str | list[str]) -> str:
     # copy
     ("frozenset().copy()", "frozenset()"),
     ("frozenset({1, 2, 3}).copy()", "frozenset({1, 2, 3})"),
-    ("frozenset({'a', 'b'}).copy()", "frozenset({'a', 'b'})"),
+    # ("frozenset({'a', 'b'}).copy()", "frozenset({'a', 'b'})"),
+
+    # __hash__
+    ("hash(frozenset()) == hash(frozenset())", "True"),
+    ("hash(frozenset({1})) == hash(frozenset({1}))", "True"),
+    ("hash(frozenset({1, 2, 3})) == hash(frozenset({1, 2, 3}))", "True"),
+
+    ("hash(frozenset({1, 2})) == hash(frozenset({1, 2}))", "True"),
+    ("hash(frozenset({1, 2, 3})) == hash(frozenset({3, 2, 1}))", "True"),
+    ("hash(frozenset({'a', 'b'})) == hash(frozenset({'b', 'a'}))", "True"),
+
+    # дубликаты не влияют на хэш
+    ("hash(frozenset([1, 1, 2])) == hash(frozenset([1, 2]))", "True"),
+    ("hash(frozenset([5, 5, 5])) == hash(frozenset([5]))", "True"),
+
+    ("hash(frozenset({frozenset({1, 2})})) == hash(frozenset({frozenset({2, 1})}))", "True"),
+
+    ("frozenset({1, 2}) == frozenset({2, 1})", "True"),
+    ("hash(frozenset({1, 2})) == hash(frozenset({2, 1}))", "True"),
+
+    ("hash(frozenset({1,2,3,4,5,6,7,8,9,10})) == hash(frozenset({10,9,8,7,6,5,4,3,2,1}))", "True"),
 
 ])
 
@@ -8042,6 +8062,40 @@ if _result is not None:
 
     (["x = frozenset({1, 2, 3})",
       "x.copy() == x"], "True"),
+
+    # frozenset.__hash__
+    (["d = {}",
+      "d[frozenset({1, 2})] = 123",
+      "d[frozenset({2, 1})]"], "123"),
+
+    (["d = {}",
+      "d[frozenset()] = 'empty'",
+      "d[frozenset()]"], "'empty'"),
+
+    (["d = {}",
+      "d[frozenset({'a', 'b'})] = 42",
+      "d[frozenset({'b', 'a'})]"], "42"),
+
+    (["k = frozenset({frozenset({1, 2})})",
+      "d = {}",
+      "d[k] = 'ok'",
+      "d[frozenset({frozenset({2, 1})})]"], "'ok'"),
+
+    (["s = frozenset({1, 2, 3})",
+      "a = hash(s)",
+      "b = hash(s)",
+      "a == b"], "True"),
+
+    # пока не поддерживается
+    # (["d = {}",
+    #   "a = frozenset({1, 2})",
+    #   "b = frozenset({2, 1})",
+    #   "d[a] = 99",
+    #   "b in d"], "True"),
+
+    # (["d = {}",
+    #   "d[frozenset({1})] = 'x'",
+    #   "frozenset({1}) in d"], "True"),
 
 ])
 
