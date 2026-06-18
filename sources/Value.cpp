@@ -604,6 +604,10 @@ Value Value::operator-(const Value &other) const {
         return applyCalculation(*this, other, isFloat, std::minus<>());
     }
 
+    if (isFrozenSet()) {
+        return asFrozenSet()->sub(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for -: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }

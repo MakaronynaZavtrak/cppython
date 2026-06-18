@@ -128,6 +128,10 @@ Value FrozenSetValue::bitAnd(const Value& other) const {
     return intersection({other});
 }
 
+Value FrozenSetValue::sub(const Value& other) const {
+    return difference({other});
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

@@ -51,5 +51,7 @@ public:
     [[nodiscard]] Value bitOr(const Value& other) const;
 
     [[nodiscard]] Value bitAnd(const Value& other) const;
+
+    [[nodiscard]] Value sub(const Value& other) const override;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H
