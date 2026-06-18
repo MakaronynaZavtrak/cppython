@@ -138,18 +138,37 @@ Value FrozenSetValue::bitXor(const Value& other) const {
 
 Value FrozenSetValue::isSubset(const Value& other) const {
 
-    const auto it = other.getIterator();
-
-    QSet<Value> otherSet;
-
-    while (it->hasNext()) {
-
-        otherSet.insert(it->next());
+    if (!other.isFrozenSet()) {
+        throw std::runtime_error(
+            "TypeError: expected frozenset"
+        );
     }
+
+    const auto otherSet = other.asFrozenSet()->getElements();
 
     for (const auto& value : elements) {
 
         if (!otherSet.contains(value)) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
+Value FrozenSetValue::isSuperset(const Value& other) const {
+
+    if (!other.isFrozenSet()) {
+        throw std::runtime_error(
+            "TypeError: expected frozenset"
+        );
+    }
+
+    const auto otherSet = other.asFrozenSet()->getElements();
+
+    for (const auto& value : otherSet) {
+
+        if (!elements.contains(value)) {
             return Value(false);
         }
     }

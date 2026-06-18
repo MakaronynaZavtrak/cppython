@@ -57,5 +57,7 @@ public:
     [[nodiscard]] Value bitXor(const Value& other) const override;
 
     [[nodiscard]] Value isSubset(const Value& other) const;
+
+    [[nodiscard]] Value isSuperset(const Value& other) const;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H
