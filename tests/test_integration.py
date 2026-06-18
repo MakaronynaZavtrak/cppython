@@ -3868,6 +3868,19 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset([1,2]).union([1,2])", "frozenset({1, 2})"),
     ("frozenset([1,2]).union([2,3])", "frozenset({1, 2, 3})"),
 
+    # intersection
+    ("frozenset().intersection()", "frozenset()"),
+    ("frozenset([1,2]).intersection()", "frozenset({1, 2})"),
+    ("frozenset([1,2,3]).intersection([2,3,4])", "frozenset({2, 3})"),
+    ("frozenset([1,2]).intersection([3,4])", "frozenset()"),
+    ("frozenset([1,2,3]).intersection([2,3],[3,4])", "frozenset({3})"),
+    ("frozenset([1,2,3,4]).intersection([2,3,4],[3,4],[4])", "frozenset({4})"),
+    ("frozenset([1,2,3]).intersection((2,3,4))", "frozenset({2, 3})"),
+    ("frozenset([1,2,3]).intersection(set([2,3,4]))", "frozenset({2, 3})"),
+    ("frozenset([1,2,3]).intersection(frozenset([2,3,4]))", "frozenset({2, 3})"),
+    ("frozenset([1]).intersection([2])", "frozenset()"),
+    ("frozenset([1,2]).intersection([3,4])", "frozenset()"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

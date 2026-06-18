@@ -42,6 +42,38 @@ Value FrozenSetValue::unionSet(const std::vector<Value>& others) const {
     return Value(result);
 }
 
+Value FrozenSetValue::intersection(const std::vector<Value>& others) const {
+
+    const auto result = std::make_shared<FrozenSetValue>();
+
+    result->elements = elements;
+
+    for (const auto& iterable : others) {
+
+        QSet<Value> current;
+
+        const auto it = iterable.getIterator();
+
+        while (it->hasNext()) {
+            current.insert(it->next());
+        }
+
+        for (auto iter = result->elements.begin();
+             iter != result->elements.end();) {
+
+            if (!current.contains(*iter)) {
+
+                iter = result->elements.erase(iter);
+
+            } else {
+                ++iter;
+            }
+        }
+    }
+
+    return Value(result);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

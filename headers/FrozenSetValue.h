@@ -41,5 +41,7 @@ public:
     [[nodiscard]] const QList<Value>& getOrder() const;
 
     [[nodiscard]] Value unionSet(const std::vector<Value>& others) const;
+
+    [[nodiscard]] Value intersection(const std::vector<Value>& others) const;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H
