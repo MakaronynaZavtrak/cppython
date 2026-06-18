@@ -224,6 +224,26 @@ namespace {
         );
     }
 
+    Value makeIsDisjointMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "isdisjoint",
+
+            [frozenSet](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "isdisjoint");
+
+                return Value(frozenSet->isDisjoint(args[0]));
+            }
+        );
+    }
+
     const MethodMap FROZENSET_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::FrozenSetPtr>),
         REGISTER_METHOD("__contains__", makeContainsMethod),
@@ -237,7 +257,8 @@ namespace {
         REGISTER_METHOD("difference", makeDifferenceMethod),
         REGISTER_METHOD("symmetric_difference", makeSymmetricDifferenceMethod),
         REGISTER_METHOD("issubset", makeIsSubsetMethod),
-        REGISTER_METHOD("issuperset", makeIsSupersetMethod)
+        REGISTER_METHOD("issuperset", makeIsSupersetMethod),
+        REGISTER_METHOD("isdisjoint", makeIsDisjointMethod)
     };
 
 }

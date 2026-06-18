@@ -176,6 +176,27 @@ Value FrozenSetValue::isSuperset(const Value& other) const {
     return Value(true);
 }
 
+Value FrozenSetValue::isDisjoint(const Value &other) const {
+
+    if (!other.isFrozenSet()) {
+        throw std::runtime_error(
+            "TypeError: expected frozenset"
+        );
+    }
+
+    const auto otherSet = other.asFrozenSet();
+
+    for (const auto& item : elements) {
+
+        if (otherSet->contains(item)) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

@@ -3992,6 +3992,15 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset({'a', 'b', 'c'}).issuperset(frozenset({'a'}))", "True"),
     ("frozenset({'a'}).issuperset(frozenset({'a', 'b'}))", "False"),
 
+    # isdisjoint
+    ("frozenset().isdisjoint(frozenset())", "True"),
+    ("frozenset({1, 2}).isdisjoint(frozenset({3, 4}))", "True"),
+    ("frozenset({1, 2}).isdisjoint(frozenset({2, 4}))", "False"),
+    ("frozenset({1}).isdisjoint(frozenset())", "True"),
+    ("frozenset().isdisjoint(frozenset({1}))", "True"),
+    ("frozenset({'a', 'b'}).isdisjoint(frozenset({'c'}))", "True"),
+    ("frozenset({'a', 'b'}).isdisjoint(frozenset({'b'}))", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

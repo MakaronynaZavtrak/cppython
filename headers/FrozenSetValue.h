@@ -59,5 +59,7 @@ public:
     [[nodiscard]] Value isSubset(const Value& other) const;
 
     [[nodiscard]] Value isSuperset(const Value& other) const;
+
+    [[nodiscard]] Value isDisjoint(const Value& other) const;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H
