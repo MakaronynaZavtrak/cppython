@@ -63,5 +63,7 @@ public:
     [[nodiscard]] Value isDisjoint(const Value& other) const;
 
     [[nodiscard]] bool equal(const Value& other) const override;
+
+    [[nodiscard]] bool notEqual(const Value& other) const override;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

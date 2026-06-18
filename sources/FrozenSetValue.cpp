@@ -221,6 +221,10 @@ bool FrozenSetValue::equal(const Value& other) const {
     return elements == other.asFrozenSet()->getElements();
 }
 
+bool FrozenSetValue::notEqual(const Value& other) const {
+    return !equal(other);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }
