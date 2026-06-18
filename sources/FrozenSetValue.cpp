@@ -233,6 +233,10 @@ bool FrozenSetValue::lessOrEqual(const Value &other) const {
     return isSubset(other);
 }
 
+bool FrozenSetValue::greater(const Value &other) const {
+    return isSuperset(other) && notEqual(other);
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

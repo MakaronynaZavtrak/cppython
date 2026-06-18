@@ -69,5 +69,7 @@ public:
     [[nodiscard]] bool less(const Value& other) const override;
 
     [[nodiscard]] bool lessOrEqual(const Value& other) const override;
+
+    [[nodiscard]] bool greater(const Value& other) const override;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

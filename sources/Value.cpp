@@ -550,6 +550,10 @@ bool Value::operator>(const Value &other) const {
         return asByteArray()->greater(other);
     }
 
+    if (isFrozenSet()) {
+        return asFrozenSet()->greater(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for >: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
