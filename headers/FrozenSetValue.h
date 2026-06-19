@@ -79,5 +79,7 @@ public:
     [[nodiscard]] std::size_t hash() const override;
 
     [[nodiscard]] Value ror(const Value& other) const override;
+
+    [[nodiscard]] Value rand(const Value& other) const override;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

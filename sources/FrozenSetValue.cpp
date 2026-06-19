@@ -263,6 +263,14 @@ Value FrozenSetValue::ror(const Value &other) const {
     );
 }
 
+Value FrozenSetValue::rand(const Value &other) const {
+    return other & Value(
+        std::const_pointer_cast<FrozenSetValue>(
+            shared_from_this()
+        )
+    );
+}
+
 QString FrozenSetValue::toString() const {
     return repr();
 }

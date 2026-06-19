@@ -4135,6 +4135,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set({1}) | frozenset()", "{1}"),
     ("set({1, 2}) | frozenset({1, 2})", "{1, 2}"),
 
+    # __rand__
+    ("frozenset({1, 2, 3}).__rand__({2, 3, 4})", "{2, 3}"),
+    ("frozenset({1, 2, 3}).__rand__({4, 5})", "set()"),
+    ("frozenset({1, 2, 3}).__rand__({1, 2, 3})", "{1, 2, 3}"),
+    ("frozenset({1, 2, 3}).__rand__(set())", "set()"),
+    ("frozenset().__rand__({1, 2, 3})", "set()"),
+    ("frozenset({1}).__rand__({1})", "{1}"),
+    ("frozenset({1}).__rand__({2})", "set()"),
+    ("frozenset({1, 2, 3, 4, 5}).__rand__({2, 4})", "{2, 4}"),
+    ("frozenset({1, 2, 3, 4, 5}).__rand__({6, 7, 8})", "set()"),
+    ("set({1, 2, 3}) & frozenset({2, 3, 4})", "{2, 3}"),
+    ("set() & frozenset({1, 2, 3})", "set()"),
+    ("set({1, 2, 3}) & frozenset()", "set()"),
+    ("set({1, 2, 3}) & frozenset({1, 2, 3})", "{1, 2, 3}"),
+    ("set({1, 2, 3}) & frozenset({4, 5, 6})", "set()"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

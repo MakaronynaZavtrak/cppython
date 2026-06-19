@@ -144,6 +144,26 @@ namespace {
         );
     }
 
+    Value makeRandMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "__rand__",
+
+            [frozenSet](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__rand__");
+
+                return frozenSet->rand(args[0]);
+            }
+        );
+    }
+
     Value makeAndMethod(const Value& obj) {
 
         auto frozenSet = extract<Value::FrozenSetPtr>(obj);
@@ -433,6 +453,7 @@ namespace {
         REGISTER_METHOD("__or__", makeOrMethod),
         REGISTER_METHOD("__ror__", makeRorMethod),
         REGISTER_METHOD("__and__", makeAndMethod),
+        REGISTER_METHOD("__rand__", makeRandMethod),
         REGISTER_METHOD("__sub__", makeSubMethod),
         REGISTER_METHOD("__xor__", makeXorMethod),
         REGISTER_METHOD("__eq__", makeEqMethod),

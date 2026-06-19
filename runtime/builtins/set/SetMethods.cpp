@@ -26,9 +26,25 @@ namespace {
 
                 expectArgs(args, 1, "__or__");
 
-                set->add(args[0]);
+                return set->bitOr(args[0]);
+            }
+        );
+    }
 
-                return {};
+    Value makeAndMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__and__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__and__");
+
+                return set->bitAnd(args[0]);
             }
         );
     }
@@ -347,6 +363,7 @@ namespace {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::SetPtr>),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__or__", makeOrMethod),
+        REGISTER_METHOD("__and__", makeAndMethod),
         REGISTER_METHOD("add", makeAddMethod),
         REGISTER_METHOD("remove", makeRemoveMethod),
         REGISTER_METHOD("discard", makeDiscardMethod),

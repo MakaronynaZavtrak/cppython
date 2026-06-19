@@ -367,3 +367,7 @@ std::size_t SetValue::len() const {
 Value SetValue::bitOr(const Value &other) const {
     return unionSet({other});
 }
+
+Value SetValue::bitAnd(const Value &other) const {
+    return intersection({other});
+}

@@ -63,5 +63,7 @@ public:
     [[nodiscard]] std::size_t len() const;
 
     [[nodiscard]] Value bitOr(const Value& other) const override;
+
+    [[nodiscard]] Value bitAnd(const Value& other) const override;
 };
 #endif //CPPYTHON_SETVALUE_H
