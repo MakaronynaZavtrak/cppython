@@ -632,6 +632,10 @@ Value Value::operator-(const Value &other) const {
         return asFrozenSet()->sub(other);
     }
 
+    if (isSet()) {
+        return asSet()->sub(other);
+    }
+
     throw std::runtime_error("TypeError: unsupported operand type(s) for -: "
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }

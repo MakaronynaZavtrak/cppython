@@ -4151,6 +4151,29 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set({1, 2, 3}) & frozenset({1, 2, 3})", "{1, 2, 3}"),
     ("set({1, 2, 3}) & frozenset({4, 5, 6})", "set()"),
 
+    # __rsub__
+    ("frozenset({2, 3}).__rsub__(set({1, 2, 3, 4}))", "{1, 4}"),
+    ("frozenset({1, 2}).__rsub__(set({1, 2}))", "set()"),
+    ("frozenset().__rsub__(set({1, 2}))", "{1, 2}"),
+    ("frozenset({1, 2}).__rsub__(set())", "set()"),
+    ("set({1, 2, 3}) - frozenset({2})", "{1, 3}"),
+    ("set({1, 2, 3}) - frozenset({1, 2})", "{3}"),
+    ("set({1, 2, 3}) - frozenset({1, 2, 3})", "set()"),
+    ("set({1, 2}) - frozenset()", "{1, 2}"),
+    ("set() - frozenset({1, 2})", "set()"),
+    ("set({1, 2, 3}) - frozenset({4, 5})", "{1, 2, 3}"),
+    ("set({1, 2, 3}) - frozenset({2, 4})", "{1, 3}"),
+    ("set({'a', 'b'}) - frozenset({'a', 'b'})", "set()"),
+    ("set({True, False}) - frozenset({False})", "{True}"),
+    ("set({True, False}) - frozenset({True})", "{False}"),
+    ("set({1}) - frozenset({1})", "set()"),
+    ("set({1}) - frozenset({2})", "{1}"),
+    ("set({1, 2, 3, 4, 5}) - frozenset({2, 4})", "{1, 3, 5}"),
+    ("set({1, 2, 3, 4, 5}) - frozenset({1, 3, 5})", "{2, 4}"),
+    ("set({(1, 2), (3, 4)}) - frozenset({(1, 2)})", "{(3, 4)}"),
+    ("set({(1, 2), (3, 4)}) - frozenset({(3, 4)})", "{(1, 2)}"),
+    ("set({frozenset({1}), frozenset({2})}) - frozenset({frozenset({1})})", "{frozenset({2})}"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

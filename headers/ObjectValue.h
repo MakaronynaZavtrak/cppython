@@ -102,6 +102,10 @@ public:
         throw std::runtime_error("Not supported operation for this type");
     }
 
+    [[nodiscard]] virtual Value rsub(const Value& other) const {
+        throw std::runtime_error("Not supported operation for this type");
+    }
+
     [[nodiscard]] virtual std::size_t hash() const {
         throw std::runtime_error("Not supported operation for this type");
     }

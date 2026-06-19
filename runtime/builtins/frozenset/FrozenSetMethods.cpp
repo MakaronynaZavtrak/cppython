@@ -204,6 +204,26 @@ namespace {
         );
     }
 
+    Value makeRsubMethod(const Value& obj) {
+
+        auto frozenSet = extract<Value::FrozenSetPtr>(obj);
+
+        return makeBuiltin(
+            "__rsub__",
+
+            [frozenSet](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__rsub__");
+
+                return frozenSet->rsub(args[0]);
+            }
+        );
+    }
+
     Value makeXorMethod(const Value& obj) {
 
         auto frozenSet = extract<Value::FrozenSetPtr>(obj);
@@ -455,6 +475,7 @@ namespace {
         REGISTER_METHOD("__and__", makeAndMethod),
         REGISTER_METHOD("__rand__", makeRandMethod),
         REGISTER_METHOD("__sub__", makeSubMethod),
+        REGISTER_METHOD("__rsub__", makeRsubMethod),
         REGISTER_METHOD("__xor__", makeXorMethod),
         REGISTER_METHOD("__eq__", makeEqMethod),
         REGISTER_METHOD("__ne__", makeNeMethod),

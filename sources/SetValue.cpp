@@ -371,3 +371,7 @@ Value SetValue::bitOr(const Value &other) const {
 Value SetValue::bitAnd(const Value &other) const {
     return intersection({other});
 }
+
+Value SetValue::sub(const Value &other) const {
+    return difference({other});
+}
