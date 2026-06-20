@@ -426,3 +426,7 @@ bool SetValue::equal(const Value& other) const {
 bool SetValue::notEqual(const Value &other) const {
     return !equal(other);
 }
+
+bool SetValue::less(const Value &other) const {
+    return isSubset(other) && notEqual(other);
+}

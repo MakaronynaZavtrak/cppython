@@ -444,6 +444,10 @@ bool Value::operator<(const Value& other) const {
         return asTuple()->less(other);
     }
 
+    if (isSet()) {
+        return asSet()->less(other);
+    }
+
     if (isFrozenSet()) {
         return asFrozenSet()->less(other);
     }
