@@ -11,7 +11,7 @@
 
 class Value;
 
-class SetValue : public ObjectValue, std::enable_shared_from_this<SetValue> {
+class SetValue : public ObjectValue, public std::enable_shared_from_this<SetValue> {
 public:
 
     explicit SetValue(const QSet<Value>& elements = {}, const QList<Value>& order = {})
@@ -81,5 +81,7 @@ public:
     bool greater(const Value& other) const override;
 
     bool greaterOrEqual(const Value& other) const override;
+
+    Value ior(const Value &other) override;
 };
 #endif //CPPYTHON_SETVALUE_H

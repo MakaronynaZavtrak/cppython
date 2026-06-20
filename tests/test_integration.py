@@ -8397,6 +8397,55 @@ if _result is not None:
     #   "d[frozenset({1})] = 'x'",
     #   "frozenset({1}) in d"], "True"),
 
+    (["a = set()",
+      "a |= set()",
+      "a"], "set()"),
+
+    (["a = {1, 2}",
+      "a |= set()",
+      "a == {1, 2}"], "True"),
+
+    (["a = set()",
+      "a |= {1, 2}",
+      "a == {1, 2}"], "True"),
+
+    (["a = {1, 2}",
+      "a |= {3, 4}",
+      "a == {1, 2, 3, 4}"], "True"),
+
+    (["a = {1, 2}",
+      "a |= {2, 3}",
+      "a == {1, 2, 3}"], "True"),
+
+    (["a = {1, 2, 3}",
+      "a |= {1, 2, 3}",
+      "a == {1, 2, 3}"], "True"),
+
+    (["a = {1}",
+      "a |= frozenset({2, 3})",
+      "a == {1, 2, 3}"], "True"),
+
+    (["a = {1, 2}",
+      "a |= frozenset()",
+      "a == {1, 2}"], "True"),
+
+    (["a = {'a'}",
+      "a |= {'b'}",
+      "a == {'a', 'b'}"], "True"),
+
+    (["a = {(1, 2)}",
+      "a |= {(3, 4)}",
+      "a == {(1, 2), (3, 4)}"], "True"),
+
+    (["a = {frozenset({1})}",
+      "a |= {frozenset({2})}",
+      "a == {frozenset({1}), frozenset({2})}"], "True"),
+
+    (["a = {1, 2}",
+      "b = a",
+      "a |= {3}",
+      "b == {1, 2, 3}"], "True"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

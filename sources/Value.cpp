@@ -1106,6 +1106,19 @@ Value Value::operator^(const Value& other) const {
         + toString().toStdString() + " " + " " + other.toString().toStdString());
 }
 
+Value& Value::operator|=(const Value& other) {
+
+    if (isSet()) {
+
+        asSet()->ior(other);
+
+        return *this;
+    }
+
+    *this = *this | other;
+    return *this;
+}
+
 QString Value::ascii() const {
 
     QString reprString = repr();

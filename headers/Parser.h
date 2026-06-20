@@ -5,7 +5,6 @@
 #include "Value.h"
 #include "Environment.h"
 #include <memory>
-#include <cmath>
 #include <utility>
 
 #include "CallRuntime.h"
@@ -1606,7 +1605,8 @@ class AugAssignNode : public ASTNode {
         Divide,
         IntDivide,
         Modulo,
-        Power
+        Power,
+        BitOr
     };
 
     QString name;
@@ -1622,7 +1622,8 @@ class AugAssignNode : public ASTNode {
             {"/=",  Operation::Divide},
             {"//=", Operation::IntDivide},
             {"%=",  Operation::Modulo},
-            {"**=", Operation::Power}
+            {"**=", Operation::Power},
+            {"|=", Operation::BitOr}
         };
 
         const auto it = opMap.find(op);
@@ -1740,6 +1741,16 @@ public:
                     right,
                     env,
                     [&] { return left.power(right); }
+                );
+                break;
+
+            case Operation::BitOr:
+                result = tryInplaceOperation(
+                    left,
+                    "__ior__",
+                    right,
+                    env,
+                    [&] { return left | right; }
                 );
                 break;
 

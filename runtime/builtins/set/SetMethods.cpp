@@ -193,6 +193,24 @@ namespace {
         );
     }
 
+    Value makeIorMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__ior__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__ior__");
+
+                return set->ior(args[0]);
+            }
+        );
+    }
+
     Value makeAddMethod(const Value& obj) {
 
         auto set = extract<Value::SetPtr>(obj);
@@ -507,6 +525,7 @@ namespace {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::SetPtr>),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__or__", makeOrMethod),
+        REGISTER_METHOD("__ior__", makeIorMethod),
         REGISTER_METHOD("__and__", makeAndMethod),
         REGISTER_METHOD("__sub__", makeSubMethod),
         REGISTER_METHOD("__xor__", makeXorMethod),

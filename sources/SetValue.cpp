@@ -442,3 +442,10 @@ bool SetValue::greater(const Value &other) const {
 bool SetValue::greaterOrEqual(const Value &other) const {
     return isSuperset(other);
 }
+
+Value SetValue::ior(const Value &other) {
+
+    update({other});
+
+    return Value(shared_from_this());
+}
