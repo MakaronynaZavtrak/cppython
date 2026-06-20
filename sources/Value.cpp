@@ -605,6 +605,10 @@ bool Value::operator>=(const Value &other) const {
         return asByteArray()->greaterOrEqual(other);
     }
 
+    if (isSet()) {
+        return asSet()->greaterOrEqual(other);
+    }
+
     if (isFrozenSet()) {
         return asFrozenSet()->greaterOrEqual(other);
     }

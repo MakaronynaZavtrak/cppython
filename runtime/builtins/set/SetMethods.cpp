@@ -175,6 +175,24 @@ namespace {
         );
     }
 
+    Value makeGeMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__ge__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__ge__");
+
+                return Value(set->greaterOrEqual(args[0]));
+            }
+        );
+    }
+
     Value makeAddMethod(const Value& obj) {
 
         auto set = extract<Value::SetPtr>(obj);
@@ -497,6 +515,7 @@ namespace {
         REGISTER_METHOD("__lt__", makeLtMethod),
         REGISTER_METHOD("__le__", makeLeMethod),
         REGISTER_METHOD("__gt__", makeGtMethod),
+        REGISTER_METHOD("__ge__", makeGeMethod),
         REGISTER_METHOD("add", makeAddMethod),
         REGISTER_METHOD("remove", makeRemoveMethod),
         REGISTER_METHOD("discard", makeDiscardMethod),

@@ -438,3 +438,7 @@ bool SetValue::lessOrEqual(const Value &other) const {
 bool SetValue::greater(const Value &other) const {
     return isSuperset(other) && notEqual(other);
 }
+
+bool SetValue::greaterOrEqual(const Value &other) const {
+    return isSuperset(other);
+}
