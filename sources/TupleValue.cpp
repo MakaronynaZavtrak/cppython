@@ -316,3 +316,7 @@ Value TupleValue::multiply(const Value& other) const {
         )
     );
 }
+
+Value TupleValue::rmul(const Value& other) const {
+    return multiply(other);
+}
