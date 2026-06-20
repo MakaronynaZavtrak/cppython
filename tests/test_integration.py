@@ -502,6 +502,35 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set({1}) >= set()", "True"),
     ("set() >= set({1})", "False"),
 
+    # set.__contains__
+    ("set().__contains__(1)", "False"),
+
+    ("set({1, 2, 3}).__contains__(1)", "True"),
+    ("set({1, 2, 3}).__contains__(4)", "False"),
+
+    ("set({'a', 'b'}).__contains__('a')", "True"),
+    ("set({'a', 'b'}).__contains__('c')", "False"),
+
+    ("set({True, False}).__contains__(True)", "True"),
+    ("set({True, False}).__contains__(False)", "True"),
+
+    ("set({(1, 2), (3, 4)}).__contains__((1, 2))", "True"),
+    ("set({(1, 2), (3, 4)}).__contains__((5, 6))", "False"),
+
+    ("set({frozenset({1}), frozenset({2})}).__contains__(frozenset({1}))", "True"),
+    ("set({frozenset({1}), frozenset({2})}).__contains__(frozenset({3}))", "False"),
+
+    ("set({1, 2, 3}).__contains__(1 + 1)", "True"),
+    ("set({1, 2, 3}).__contains__(10 - 7)", "True"),
+
+    ("set({None}).__contains__(None)", "True"),
+    ("set().__contains__(None)", "False"),
+    ("1 in set({1, 2, 3})", "True"),
+    ("set({1, 2, 3}).__contains__(1)", "True"),
+
+    ("4 in set({1, 2, 3})", "False"),
+    ("set({1, 2, 3}).__contains__(4)", "False"),
+
     # str upper
     ("'hello'.upper()", "'HELLO'"),
     ("'HeLLo'.upper()", "'HELLO'"),

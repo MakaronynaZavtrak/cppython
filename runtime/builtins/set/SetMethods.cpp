@@ -12,6 +12,23 @@
 
 namespace {
 
+    Value makeContainsMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__contains__",
+
+            [set](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__contains__");
+
+                return Value(set->contains(args[0]));
+            }
+        );
+    }
 
     Value makeOrMethod(const Value& obj) {
 
@@ -578,6 +595,7 @@ namespace {
     const MethodMap SET_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::SetPtr>),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
+        REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__or__", makeOrMethod),
         REGISTER_METHOD("__ior__", makeIorMethod),
         REGISTER_METHOD("__and__", makeAndMethod),

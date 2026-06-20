@@ -374,6 +374,10 @@ bool Value::operator==(const Value& other) const {
         return applyComparison(*this, other, isFloat, std::equal_to<>());
     }
 
+    if (isNone() && other.isNone()) {
+        return true;
+    }
+
     if (isString()) {
         return asString()->equal(other);
     }
@@ -1055,6 +1059,10 @@ bool Value::contains(const Value &value) const {
         return asByteArray()->contains(value);
     }
 
+    if (isSet()) {
+        return asSet()->contains(value);
+    }
+
     if (isFrozenSet()) {
         return asFrozenSet()->contains(value);
     }
@@ -1481,6 +1489,10 @@ bool Value::isHashable() const {
     if (isNumeric())
         return true;
 
+    if (isNone()) {
+        return true;
+    }
+
     if (isString()) {
         return true;
     }
@@ -1530,6 +1542,10 @@ std::size_t Value::hash() const {
         return std::hash<long double>{}(
             value.convert_to<long double>()
         );
+    }
+
+    if (isNone()) {
+        return 0x9e3779b97f4a7c15ULL;
     }
 
     // str

@@ -89,5 +89,7 @@ public:
     Value isub(const Value&) override;
 
     Value ixor(const Value&) override;
+
+    [[nodiscard]] bool contains(Value&) const override;
 };
 #endif //CPPYTHON_SETVALUE_H

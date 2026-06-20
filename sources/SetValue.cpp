@@ -470,3 +470,7 @@ Value SetValue::ixor(const Value &value) {
 
     return Value(shared_from_this());
 }
+
+bool SetValue::contains(Value &value) const {
+    return elements.contains(value);
+}
