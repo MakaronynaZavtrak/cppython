@@ -387,6 +387,44 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set() < set({1})", "True"),
     ("set() < set()", "False"),
 
+    # set.__le__
+    ("set().__le__(set())", "True"),
+
+    ("set().__le__(set({1}))", "True"),
+    ("set({1}).__le__(set())", "False"),
+
+    ("set({1}).__le__(set({1}))", "True"),
+    ("set({1, 2}).__le__(set({1, 2}))", "True"),
+    ("set({1, 2, 3}).__le__(set({1, 2, 3}))", "True"),
+
+    ("set({1}).__le__(set({1, 2}))", "True"),
+    ("set({1, 2}).__le__(set({1, 2, 3}))", "True"),
+    ("set({1, 2, 3}).__le__(set({1, 2, 3, 4}))", "True"),
+
+    ("set({1, 2, 3}).__le__(set({1, 2}))", "False"),
+    ("set({1, 2}).__le__(set({2, 3}))", "False"),
+    ("set({1, 2}).__le__(set({1, 3}))", "False"),
+
+    ("set({1, 2}).__le__(frozenset({1, 2}))", "True"),
+    ("set({1, 2}).__le__(frozenset({1, 2, 3}))", "True"),
+    ("set({1, 2, 3}).__le__(frozenset({1, 2}))", "False"),
+
+    ("set({(1, 2)}).__le__(set({(1, 2)}))", "True"),
+    ("set({(1, 2)}).__le__(set({(1, 2), (3, 4)}))", "True"),
+    ("set({(1, 2), (3, 4)}).__le__(set({(1, 2)}))", "False"),
+
+    ("set({frozenset({1})}).__le__(set({frozenset({1})}))", "True"),
+    ("set({frozenset({1})}).__le__(set({frozenset({1}), frozenset({2})}))", "True"),
+    ("set({frozenset({1}), frozenset({2})}).__le__(set({frozenset({1})}))", "False"),
+
+    ("set() <= set()", "True"),
+    ("set() <= set({1})", "True"),
+    ("set({1}) <= set()", "False"),
+
+    ("set({1, 2}) <= set({1, 2})", "True"),
+    ("set({1, 2}) <= set({1, 2, 3})", "True"),
+    ("set({1, 2, 3}) <= set({1, 2})", "False"),
+
     # str upper
     ("'hello'.upper()", "'HELLO'"),
     ("'HeLLo'.upper()", "'HELLO'"),
