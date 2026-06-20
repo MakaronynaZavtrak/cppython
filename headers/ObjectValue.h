@@ -26,6 +26,10 @@ public:
         throw std::runtime_error("Not supported operation for this type");
     }
 
+    [[nodiscard]] virtual Value radd(const Value& other) const {
+        throw std::runtime_error("Not supported operation for this type");
+    }
+
     [[nodiscard]] virtual Value rmod(const Value& other) const {
         throw std::runtime_error("Not supported operation for this type");
     }

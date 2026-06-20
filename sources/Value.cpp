@@ -378,32 +378,11 @@ bool Value::operator==(const Value& other) const {
         return true;
     }
 
-    if (isString()) {
-        return asString()->equal(other);
-    }
-
-    if (isBytes()) {
-        return asBytes()->equal(other);
-    }
-
-    if (isByteArray()) {
-        return asByteArray()->equal(other);
-    }
-
-    if (isList()) {
-        return asList()->equal(other);
-    }
-
-    if (isTuple()) {
-        return asTuple()->equal(other);
-    }
-
-    if (isFrozenSet()) {
-        return asFrozenSet()->equal(other);
-    }
-
-    if (isSet()) {
-        return asSet()->equal(other);
+    if (isObject()) {
+        try {
+            return asObject()->equal(other);
+        }
+        catch (...) {}
     }
 
     return false;
@@ -419,41 +398,17 @@ bool Value::operator<(const Value& other) const {
         return applyComparison(*this, other, isFloat, std::less<>());
     }
 
-    // string
-    if (isString()) {
-        return asString()->less(other);
-    }
-
     if (isBytes() && other.isBytes()) {
 
         return std::get<BytesPtr>(data)->bytes() <
                std::get<BytesPtr>(other.data)->bytes();
     }
 
-    // list
-    if (isList()) {
-        return asList()->less(other);
-    }
-
-    if (isBytes()) {
-        return asBytes()->less(other);
-    }
-
-    if (isByteArray()) {
-        return asByteArray()->less(other);
-    }
-
-    //tuple
-    if (isTuple()) {
-        return asTuple()->less(other);
-    }
-
-    if (isSet()) {
-        return asSet()->less(other);
-    }
-
-    if (isFrozenSet()) {
-        return asFrozenSet()->less(other);
+    if (isObject()) {
+        try {
+            return asObject()->less(other);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported comparison: " + toString().toStdString() + " " + " " + other.toString().toStdString());
@@ -468,32 +423,11 @@ bool Value::operator!=(const Value &other) const {
         return applyComparison(*this, other, isFloat, std::not_equal_to<>());
     }
 
-    if (isList()) {
-        return asList()->notEqual(other);
-    }
-
-    if (isTuple()) {
-        return asTuple()->notEqual(other);
-    }
-
-    if (isString()) {
-        return asString()->notEqual(other);
-    }
-
-    if (isBytes()) {
-        return asBytes()->notEqual(other);
-    }
-
-    if (isByteArray()) {
-        return asByteArray()->notEqual(other);
-    }
-
-    if (isSet()) {
-        return asSet()->notEqual(other);
-    }
-
-    if (isFrozenSet()) {
-        return asFrozenSet()->notEqual(other);
+    if (isObject()) {
+        try {
+            return asObject()->notEqual(other);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for !=: "
@@ -509,32 +443,11 @@ bool Value::operator<=(const Value &other) const {
         return applyComparison(*this, other, isFloat, std::less_equal<>());
     }
 
-    if (isList()) {
-        return asList()->lessOrEqual(other);
-    }
-
-    if (isTuple()) {
-        return asTuple()->lessOrEqual(other);
-    }
-
-    if (isString()) {
-        return asString()->lessOrEqual(other);
-    }
-
-    if (isBytes()) {
-        return asBytes()->lessOrEqual(other);
-    }
-
-    if (isByteArray()) {
-        return asByteArray()->lessOrEqual(other);
-    }
-
-    if (isSet()) {
-        return asSet()->lessOrEqual(other);
-    }
-
-    if (isFrozenSet()) {
-        return asFrozenSet()->lessOrEqual(other);
+    if (isObject()) {
+        try {
+            return asObject()->lessOrEqual(other);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for <=: "
@@ -550,32 +463,11 @@ bool Value::operator>(const Value &other) const {
         return applyComparison(*this, other, isFloat, std::greater<>());
     }
 
-    if (isList()) {
-        return asList()->greater(other);
-    }
-
-    if (isTuple()) {
-        return asTuple()->greater(other);
-    }
-
-    if (isString()) {
-        return asString()->greater(other);
-    }
-
-    if (isBytes()) {
-        return asBytes()->greater(other);
-    }
-
-    if (isByteArray()) {
-        return asByteArray()->greater(other);
-    }
-
-    if (isSet()) {
-        return asSet()->greater(other);
-    }
-
-    if (isFrozenSet()) {
-        return asFrozenSet()->greater(other);
+    if (isObject()) {
+        try {
+            return asObject()->greater(other);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for >: "
@@ -589,32 +481,11 @@ bool Value::operator>=(const Value &other) const {
         return applyComparison(*this, other, isFloat, std::greater_equal<>());
     }
 
-    if (isList()) {
-        return asList()->greaterOrEqual(other);
-    }
-
-    if (isTuple()) {
-        return asTuple()->greaterOrEqual(other);
-    }
-
-    if (isString()) {
-        return asString()->greaterOrEqual(other);
-    }
-
-    if (isBytes()) {
-        return asBytes()->greaterOrEqual(other);
-    }
-
-    if (isByteArray()) {
-        return asByteArray()->greaterOrEqual(other);
-    }
-
-    if (isSet()) {
-        return asSet()->greaterOrEqual(other);
-    }
-
-    if (isFrozenSet()) {
-        return asFrozenSet()->greaterOrEqual(other);
+    if (isObject()) {
+        try {
+            return asObject()->greaterOrEqual(other);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for >=: "
@@ -630,20 +501,19 @@ Value Value::operator+(const Value& other) const {
         return applyCalculation(*this, other, isFloat, std::plus<>());
     }
 
-    if (isTuple()) {
-        return asTuple()->add(other);
+    if (isObject()) {
+        try {
+            return asObject()->add(other);
+        }
+        catch (...) {}
     }
 
-    if (isBytes()) {
-        return asBytes()->add(other);
-    }
+    if (other.isObject()) {
 
-    if (isByteArray()) {
-        return asByteArray()->add(other);
-    }
-
-    if (isString()) {
-        return asString()->add(other);
+        try {
+            return other.asObject()->radd(*this);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for +: "
@@ -660,12 +530,19 @@ Value Value::operator-(const Value &other) const {
         return applyCalculation(*this, other, isFloat, std::minus<>());
     }
 
-    if (isFrozenSet()) {
-        return asFrozenSet()->sub(other);
+    if (isObject()) {
+        try {
+            return asObject()->sub(other);
+        }
+        catch (...) {}
     }
 
-    if (isSet()) {
-        return asSet()->sub(other);
+    if (other.isObject()) {
+
+        try {
+            return other.asObject()->rsub(*this);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for -: "
@@ -1055,20 +932,11 @@ Value Value::operator-() const {
 
 bool Value::contains(const Value &value) const {
 
-    if (isBytes()) {
-        return asBytes()->contains(value);
-    }
-
-    if (isByteArray()) {
-        return asByteArray()->contains(value);
-    }
-
-    if (isSet()) {
-        return asSet()->contains(value);
-    }
-
-    if (isFrozenSet()) {
-        return asFrozenSet()->contains(value);
+    if (isObject()) {
+        try {
+            return asObject()->contains(value);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: argument of type '" +
@@ -1078,12 +946,19 @@ bool Value::contains(const Value &value) const {
 
 Value Value::operator|(const Value& other) const {
 
-    if (isFrozenSet()) {
-        return asFrozenSet()->bitOr(other);
+    if (isObject()) {
+        try {
+            return asObject()->bitOr(other);
+        }
+        catch (...) {}
     }
 
-    if (isSet()) {
-        return asSet()->bitOr(other);
+    if (other.isObject()) {
+
+        try {
+            return other.asObject()->ror(*this);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for |: "
@@ -1092,12 +967,19 @@ Value Value::operator|(const Value& other) const {
 
 Value Value::operator&(const Value& other) const {
 
-    if (isFrozenSet()) {
-        return asFrozenSet()->bitAnd(other);
+    if (isObject()) {
+        try {
+            return asObject()->bitAnd(other);
+        }
+        catch (...) {}
     }
 
-    if (isSet()) {
-        return asSet()->bitAnd(other);
+    if (other.isObject()) {
+
+        try {
+            return other.asObject()->rand(*this);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for &: "
@@ -1106,12 +988,19 @@ Value Value::operator&(const Value& other) const {
 
 Value Value::operator^(const Value& other) const {
 
-    if (isFrozenSet()) {
-        return asFrozenSet()->bitXor(other);
+    if (isObject()) {
+        try {
+            return asObject()->bitXor(other);
+        }
+        catch (...) {}
     }
 
-    if (isSet()) {
-        return asSet()->bitXor(other);
+    if (other.isObject()) {
+
+        try {
+            return other.asObject()->rxor(*this);
+        }
+        catch (...) {}
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for &: "

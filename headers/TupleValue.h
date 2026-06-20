@@ -45,6 +45,8 @@ public:
     [[nodiscard]] bool greater(const Value &other) const override;
 
     [[nodiscard]] Value add(const Value& other) const override;
+
+    [[nodiscard]] Value multiply(const Value& other) const override;
 };
 
 #endif //CPPYTHON_TUPLEVALUE_H

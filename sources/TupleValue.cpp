@@ -280,3 +280,39 @@ Value TupleValue::add(const Value& other) const {
         )
     );
 }
+
+Value TupleValue::multiply(const Value& other) const {
+
+    if (!other.isBigInt() && !other.isBool()) {
+        throw std::runtime_error(
+            "TypeError: can't multiply sequence by non-int"
+        );
+    }
+
+    const auto count = other.toBigInt().convert_to<long long>();
+
+    if (count <= 0) {
+        return Value(
+            std::make_shared<TupleValue>()
+        );
+    }
+
+    std::vector<Value> result;
+
+    result.reserve(items.size() * static_cast<size_t>(count));
+
+    for (long long i = 0; i < count; ++i) {
+
+        result.insert(
+            result.end(),
+            items.begin(),
+            items.end()
+        );
+    }
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::move(result)
+        )
+    );
+}
