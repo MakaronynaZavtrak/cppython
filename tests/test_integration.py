@@ -4204,6 +4204,28 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set({1, 2, 3}) ^ frozenset({3, 4}) == {1, 2, 4}", "True"),
     ("frozenset({1, 2, 3}) ^ set({3, 4}) == frozenset({1, 2, 4})", "True"),
 
+    # __repr__
+    ("repr(frozenset())", "'frozenset()'"),
+    ("repr(frozenset({1}))", "'frozenset({1})'"),
+    ("repr(frozenset({1, 2}))", "'frozenset({1, 2})'"),
+    ("repr(frozenset({'a'}))", "\"frozenset({'a'})\""),
+    ("repr(frozenset({True}))", "'frozenset({True})'"),
+    ("repr(frozenset({(1, 2)}))", "'frozenset({(1, 2)})'"),
+    ("repr(frozenset({frozenset({1})}))", "'frozenset({frozenset({1})})'"),
+
+    ("frozenset().__repr__()", "'frozenset()'"),
+    ("frozenset({1}).__repr__()", "'frozenset({1})'"),
+    ("frozenset({1, 2}).__repr__()", "'frozenset({1, 2})'"),
+    ("frozenset({'a'}).__repr__()", "\"frozenset({'a'})\""),
+    ("frozenset({(1, 2)}).__repr__()", "'frozenset({(1, 2)})'"),
+    ("frozenset({frozenset({1})}).__repr__()", "'frozenset({frozenset({1})})'"),
+
+    ("repr(frozenset()) == frozenset().__repr__()", "True"),
+    ("repr(frozenset({1})) == frozenset({1}).__repr__()", "True"),
+    ("repr(frozenset({1, 2})) == frozenset({1, 2}).__repr__()", "True"),
+    ("repr(frozenset({'a'})) == frozenset({'a'}).__repr__()", "True"),
+    ("repr(frozenset({(1, 2)})) == frozenset({(1, 2)}).__repr__()", "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
