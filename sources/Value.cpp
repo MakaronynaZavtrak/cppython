@@ -480,6 +480,10 @@ bool Value::operator!=(const Value &other) const {
         return asByteArray()->notEqual(other);
     }
 
+    if (isSet()) {
+        return asSet()->notEqual(other);
+    }
+
     if (isFrozenSet()) {
         return asFrozenSet()->notEqual(other);
     }

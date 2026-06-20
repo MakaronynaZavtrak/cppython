@@ -54,6 +54,57 @@ def run_cppython(cmds: str | list[str]) -> str:
     return payloads[-1] if payloads else ""
 
 @pytest.mark.parametrize("expr,expected", [
+    ("set().__eq__(set())", "True"),
+    ("set({1}).__eq__(set({1}))", "True"),
+    ("set({1, 2, 3}).__eq__(set({3, 2, 1}))", "True"),
+    ("set({'a', 'b'}).__eq__(set({'b', 'a'}))", "True"),
+
+    ("set({1, 2}).__eq__(set({1, 2, 3}))", "False"),
+    ("set({1, 2, 3}).__eq__(set({1, 2}))", "False"),
+    ("set({1, 2, 3}).__eq__(set({1, 2, 4}))", "False"),
+
+    ("set({(1, 2), (3, 4)}).__eq__(set({(3, 4), (1, 2)}))", "True"),
+    ("set({(1, 2)}).__eq__(set({(3, 4)}))", "False"),
+
+    ("set({frozenset({1}), frozenset({2})}).__eq__(set({frozenset({2}), frozenset({1})}))", "True"),
+    ("set({frozenset({1})}).__eq__(set({frozenset({2})}))", "False"),
+
+    ("set().__eq__(frozenset())", "True"),
+    ("set({1, 2}).__eq__(frozenset({2, 1}))", "True"),
+    ("set({1, 2}).__eq__(frozenset({1, 2, 3}))", "False"),
+
+    ("set({1, 2}) == set({2, 1})", "True"),
+    ("set({1, 2}) == set({1, 2, 3})", "False"),
+    ("set() == set()", "True"),
+
+    ("set({1, 2}) == frozenset({2, 1})", "True"),
+    ("set({1, 2}) == frozenset({1, 2, 3})", "False"),
+
+    # set.__ne__
+    ("set().__ne__(set())", "False"),
+    ("set({1}).__ne__(set({1}))", "False"),
+    ("set({1, 2, 3}).__ne__(set({3, 2, 1}))", "False"),
+
+    ("set({1, 2}).__ne__(set({1, 2, 3}))", "True"),
+    ("set({1, 2, 3}).__ne__(set({1, 2}))", "True"),
+    ("set({1, 2, 3}).__ne__(set({1, 2, 4}))", "True"),
+
+    ("set({(1, 2), (3, 4)}).__ne__(set({(3, 4), (1, 2)}))", "False"),
+    ("set({(1, 2)}).__ne__(set({(3, 4)}))", "True"),
+
+    ("set({frozenset({1}), frozenset({2})}).__ne__(set({frozenset({2}), frozenset({1})}))", "False"),
+    ("set({frozenset({1})}).__ne__(set({frozenset({2})}))", "True"),
+
+    ("set().__ne__(frozenset())", "False"),
+    ("set({1, 2}).__ne__(frozenset({2, 1}))", "False"),
+    ("set({1, 2}).__ne__(frozenset({1, 2, 3}))", "True"),
+
+    ("set({1, 2}) != set({2, 1})", "False"),
+    ("set({1, 2}) != set({1, 2, 3})", "True"),
+    ("set() != set()", "False"),
+
+    ("set({1, 2}) != frozenset({2, 1})", "False"),
+    ("set({1, 2}) != frozenset({1, 2, 3})", "True"),
     # Два целых числа
     ("2 + 3",                  "5"),
     ("6 - 2",                  "4"),
@@ -299,6 +350,59 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("hash((1, 2)) == hash((1, 3))", "False"),
 
     ("hash((1, True)) == hash((1.0, 1))", "True"),
+
+    # set.__eq__
+    ("set().__eq__(set())", "True"),
+    ("set({1}).__eq__(set({1}))", "True"),
+    ("set({1, 2, 3}).__eq__(set({3, 2, 1}))", "True"),
+    ("set({'a', 'b'}).__eq__(set({'b', 'a'}))", "True"),
+
+    ("set({1, 2}).__eq__(set({1, 2, 3}))", "False"),
+    ("set({1, 2, 3}).__eq__(set({1, 2}))", "False"),
+    ("set({1, 2, 3}).__eq__(set({1, 2, 4}))", "False"),
+
+    ("set({(1, 2), (3, 4)}).__eq__(set({(3, 4), (1, 2)}))", "True"),
+    ("set({(1, 2)}).__eq__(set({(3, 4)}))", "False"),
+
+    ("set({frozenset({1}), frozenset({2})}).__eq__(set({frozenset({2}), frozenset({1})}))", "True"),
+    ("set({frozenset({1})}).__eq__(set({frozenset({2})}))", "False"),
+
+    ("set().__eq__(frozenset())", "True"),
+    ("set({1, 2}).__eq__(frozenset({2, 1}))", "True"),
+    ("set({1, 2}).__eq__(frozenset({1, 2, 3}))", "False"),
+
+    ("set({1, 2}) == set({2, 1})", "True"),
+    ("set({1, 2}) == set({1, 2, 3})", "False"),
+    ("set() == set()", "True"),
+
+    ("set({1, 2}) == frozenset({2, 1})", "True"),
+    ("set({1, 2}) == frozenset({1, 2, 3})", "False"),
+
+    # set.__ne__
+    ("set().__ne__(set())", "False"),
+    ("set({1}).__ne__(set({1}))", "False"),
+    ("set({1, 2, 3}).__ne__(set({3, 2, 1}))", "False"),
+
+    ("set({1, 2}).__ne__(set({1, 2, 3}))", "True"),
+    ("set({1, 2, 3}).__ne__(set({1, 2}))", "True"),
+    ("set({1, 2, 3}).__ne__(set({1, 2, 4}))", "True"),
+
+    ("set({(1, 2), (3, 4)}).__ne__(set({(3, 4), (1, 2)}))", "False"),
+    ("set({(1, 2)}).__ne__(set({(3, 4)}))", "True"),
+
+    ("set({frozenset({1}), frozenset({2})}).__ne__(set({frozenset({2}), frozenset({1})}))", "False"),
+    ("set({frozenset({1})}).__ne__(set({frozenset({2})}))", "True"),
+
+    ("set().__ne__(frozenset())", "False"),
+    ("set({1, 2}).__ne__(frozenset({2, 1}))", "False"),
+    ("set({1, 2}).__ne__(frozenset({1, 2, 3}))", "True"),
+
+    ("set({1, 2}) != set({2, 1})", "False"),
+    ("set({1, 2}) != set({1, 2, 3})", "True"),
+    ("set() != set()", "False"),
+
+    ("set({1, 2}) != frozenset({2, 1})", "False"),
+    ("set({1, 2}) != frozenset({1, 2, 3})", "True"),
 
     # str upper
     ("'hello'.upper()", "'HELLO'"),

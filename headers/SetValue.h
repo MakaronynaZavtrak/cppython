@@ -71,5 +71,7 @@ public:
     [[nodiscard]] Value bitXor(const Value& other) const override;
 
     bool equal(const Value &other) const override;
+
+    bool notEqual(const Value& other) const override;
 };
 #endif //CPPYTHON_SETVALUE_H

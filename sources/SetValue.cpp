@@ -382,15 +382,17 @@ Value SetValue::bitXor(const Value &other) const {
 
 bool SetValue::equal(const Value& other) const {
 
-    if (const auto setPtr = other.asSet()) {
+    if (other.isSet()) {
 
-        if (elements.size() != setPtr->elements.size()) {
+        const auto otherSet = other.asSet();
+
+        if (elements.size() != otherSet->elements.size()) {
             return false;
         }
 
         for (const auto& value : elements) {
 
-            if (!setPtr->elements.contains(value)) {
+            if (!otherSet->elements.contains(value)) {
                 return false;
             }
         }
@@ -398,7 +400,9 @@ bool SetValue::equal(const Value& other) const {
         return true;
     }
 
-    if (const auto frozenPtr = other.asFrozenSet()) {
+    if (other.isFrozenSet()) {
+
+        const auto frozenPtr = other.asFrozenSet();
 
         const auto& otherElements = frozenPtr->getElements();
 
@@ -417,4 +421,8 @@ bool SetValue::equal(const Value& other) const {
     }
 
     return false;
+}
+
+bool SetValue::notEqual(const Value &other) const {
+    return !equal(other);
 }
