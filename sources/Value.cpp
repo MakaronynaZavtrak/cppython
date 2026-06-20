@@ -1119,6 +1119,19 @@ Value& Value::operator|=(const Value& other) {
     return *this;
 }
 
+Value & Value::operator&=(const Value& other) {
+
+    if (isSet()) {
+
+        asSet()->iand(other);
+
+        return *this;
+    }
+
+    *this = *this & other;
+    return *this;
+}
+
 QString Value::ascii() const {
 
     QString reprString = repr();

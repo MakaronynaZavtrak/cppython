@@ -1606,7 +1606,8 @@ class AugAssignNode : public ASTNode {
         IntDivide,
         Modulo,
         Power,
-        BitOr
+        BitOr,
+        BitAnd
     };
 
     QString name;
@@ -1623,7 +1624,8 @@ class AugAssignNode : public ASTNode {
             {"//=", Operation::IntDivide},
             {"%=",  Operation::Modulo},
             {"**=", Operation::Power},
-            {"|=", Operation::BitOr}
+            {"|=", Operation::BitOr},
+            {"&=", Operation::BitAnd}
         };
 
         const auto it = opMap.find(op);
@@ -1751,6 +1753,16 @@ public:
                     right,
                     env,
                     [&] { return left | right; }
+                );
+                break;
+
+            case Operation::BitAnd:
+                result = tryInplaceOperation(
+                    left,
+                    "__iand__",
+                    right,
+                    env,
+                    [&] { return left & right; }
                 );
                 break;
 

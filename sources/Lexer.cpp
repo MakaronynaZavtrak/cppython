@@ -360,7 +360,8 @@ Token Lexer::readOperator(const QString& code) {
             two == "//" ||
             two == "**" ||
             two == "->" ||
-            two == "|=") {
+            two == "|=" ||
+            two == "&=") {
 
             pos += 2;
             return {TOKEN_OP, two, line};

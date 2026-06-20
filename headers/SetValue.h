@@ -82,6 +82,8 @@ public:
 
     bool greaterOrEqual(const Value& other) const override;
 
-    Value ior(const Value &other) override;
+    Value ior(const Value&) override;
+
+    Value iand(const Value&) override;
 };
 #endif //CPPYTHON_SETVALUE_H

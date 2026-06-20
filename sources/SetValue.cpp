@@ -449,3 +449,10 @@ Value SetValue::ior(const Value &other) {
 
     return Value(shared_from_this());
 }
+
+Value SetValue::iand(const Value &value) {
+
+    intersectionUpdate({value});
+
+    return Value(shared_from_this());
+}
