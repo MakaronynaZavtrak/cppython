@@ -81,7 +81,8 @@ std::shared_ptr<ASTNode> Parser::parseExpression() {
             "%=",
             "**=",
             "|=",
-            "&="
+            "&=",
+            "^="
         }
     )) {
 

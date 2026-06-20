@@ -463,3 +463,10 @@ Value SetValue::isub(const Value &value) {
 
     return Value(shared_from_this());
 }
+
+Value SetValue::ixor(const Value &value) {
+
+    symmetricDifferenceUpdate(value);
+
+    return Value(shared_from_this());
+}
