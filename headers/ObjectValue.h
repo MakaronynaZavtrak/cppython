@@ -54,6 +54,12 @@ public:
         );
     }
 
+    virtual Value isub(const Value& other) {
+        throw std::runtime_error(
+            "Not supported operation for this type"
+        );
+    }
+
     [[nodiscard]] virtual Value rmul(const Value& other) const {
         throw std::runtime_error("Not supported operation for this type");
     }

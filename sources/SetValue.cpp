@@ -456,3 +456,10 @@ Value SetValue::iand(const Value &value) {
 
     return Value(shared_from_this());
 }
+
+Value SetValue::isub(const Value &value) {
+
+    differenceUpdate({value});
+
+    return Value(shared_from_this());
+}

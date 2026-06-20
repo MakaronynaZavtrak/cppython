@@ -85,5 +85,7 @@ public:
     Value ior(const Value&) override;
 
     Value iand(const Value&) override;
+
+    Value isub(const Value&) override;
 };
 #endif //CPPYTHON_SETVALUE_H

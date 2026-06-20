@@ -85,6 +85,24 @@ namespace {
         );
     }
 
+    Value makeIsubMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__isub__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__isub__");
+
+                return set->isub(args[0]);
+            }
+        );
+    }
+
     Value makeXorMethod(const Value& obj) {
 
         auto set = extract<Value::SetPtr>(obj);
@@ -547,6 +565,7 @@ namespace {
         REGISTER_METHOD("__and__", makeAndMethod),
         REGISTER_METHOD("__iand__", makeIandMethod),
         REGISTER_METHOD("__sub__", makeSubMethod),
+        REGISTER_METHOD("__isub__", makeIsubMethod),
         REGISTER_METHOD("__xor__", makeXorMethod),
         REGISTER_METHOD("__eq__", makeEqMethod),
         REGISTER_METHOD("__ne__", makeNeMethod),
