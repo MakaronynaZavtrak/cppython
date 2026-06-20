@@ -566,6 +566,10 @@ bool Value::operator>(const Value &other) const {
         return asByteArray()->greater(other);
     }
 
+    if (isSet()) {
+        return asSet()->greater(other);
+    }
+
     if (isFrozenSet()) {
         return asFrozenSet()->greater(other);
     }

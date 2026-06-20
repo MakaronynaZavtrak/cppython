@@ -425,6 +425,44 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set({1, 2}) <= set({1, 2, 3})", "True"),
     ("set({1, 2, 3}) <= set({1, 2})", "False"),
 
+    # set.__gt__
+    ("set().__gt__(set())", "False"),
+
+    ("set({1}).__gt__(set())", "True"),
+    ("set().__gt__(set({1}))", "False"),
+
+    ("set({1}).__gt__(set({1}))", "False"),
+    ("set({1, 2}).__gt__(set({1, 2}))", "False"),
+    ("set({1, 2, 3}).__gt__(set({1, 2, 3}))", "False"),
+
+    ("set({1, 2}).__gt__(set({1}))", "True"),
+    ("set({1, 2, 3}).__gt__(set({1, 2}))", "True"),
+    ("set({1, 2, 3, 4}).__gt__(set({1, 2, 3}))", "True"),
+
+    ("set({1}).__gt__(set({1, 2}))", "False"),
+    ("set({1, 2}).__gt__(set({1, 2, 3}))", "False"),
+    ("set({1, 2}).__gt__(set({2, 3}))", "False"),
+
+    ("set({1, 2}).__gt__(frozenset({1}))", "True"),
+    ("set({1, 2, 3}).__gt__(frozenset({1, 2}))", "True"),
+    ("set({1, 2}).__gt__(frozenset({1, 2}))", "False"),
+    ("set({1}).__gt__(frozenset({1, 2}))", "False"),
+
+    ("set({(1, 2), (3, 4)}).__gt__(set({(1, 2)}))", "True"),
+    ("set({(1, 2)}).__gt__(set({(1, 2), (3, 4)}))", "False"),
+    ("set({(1, 2)}).__gt__(set({(1, 2)}))", "False"),
+
+    ("set({frozenset({1}), frozenset({2})}).__gt__(set({frozenset({1})}))", "True"),
+    ("set({frozenset({1})}).__gt__(set({frozenset({1}), frozenset({2})}))", "False"),
+    ("set({frozenset({1})}).__gt__(set({frozenset({1})}))", "False"),
+
+    ("set({1, 2}) > set({1})", "True"),
+    ("set({1}) > set({1, 2})", "False"),
+    ("set({1, 2}) > set({1, 2})", "False"),
+    ("set() > set()", "False"),
+    ("set({1}) > set()", "True"),
+    ("set() > set({1})", "False"),
+
     # str upper
     ("'hello'.upper()", "'HELLO'"),
     ("'HeLLo'.upper()", "'HELLO'"),

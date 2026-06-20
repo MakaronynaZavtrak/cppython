@@ -434,3 +434,7 @@ bool SetValue::less(const Value &other) const {
 bool SetValue::lessOrEqual(const Value &other) const {
     return isSubset(other);
 }
+
+bool SetValue::greater(const Value &other) const {
+    return isSuperset(other) && notEqual(other);
+}

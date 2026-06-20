@@ -77,5 +77,7 @@ public:
     bool less(const Value& other) const override;
 
     bool lessOrEqual(const Value& other) const override;
+
+    bool greater(const Value& other) const override;
 };
 #endif //CPPYTHON_SETVALUE_H
