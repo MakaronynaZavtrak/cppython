@@ -83,5 +83,7 @@ public:
     [[nodiscard]] Value rand(const Value& other) const override;
 
     [[nodiscard]] Value rsub(const Value& other) const override;
+
+    [[nodiscard]] Value rxor(const Value& other) const override;
 };
 #endif //CPPYTHON_FROZENSETVALUE_H

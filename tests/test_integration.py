@@ -4174,6 +4174,36 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set({(1, 2), (3, 4)}) - frozenset({(3, 4)})", "{(1, 2)}"),
     ("set({frozenset({1}), frozenset({2})}) - frozenset({frozenset({1})})", "{frozenset({2})}"),
 
+    # __rxor__
+    ("frozenset({3, 4}).__rxor__(set({1, 2, 3})) == {1, 2, 4}", "True"),
+    ("frozenset({1, 2}).__rxor__(set({1, 2})) == set()", "True"),
+    ("frozenset().__rxor__(set({1, 2})) == {1, 2}", "True"),
+    ("frozenset({1, 2}).__rxor__(set()) == {1, 2}", "True"),
+    ("frozenset({(1, 2)}).__rxor__(set({(1, 2), (3, 4)})) == {(3, 4)}", "True"),
+    ("frozenset({2}).__rxor__(frozenset({1, 2, 3})) == frozenset({1, 3})", "True"),
+
+    ("set({1, 2, 3}) ^ frozenset({3, 4}) == {1, 2, 4}", "True"),
+    ("set({1, 2}) ^ frozenset({3, 4}) == {1, 2, 3, 4}", "True"),
+    ("set({1, 2, 3}) ^ frozenset({1, 2, 3}) == set()", "True"),
+    ("set() ^ frozenset() == set()", "True"),
+    ("set({1, 2}) ^ frozenset() == {1, 2}", "True"),
+    ("set() ^ frozenset({1, 2}) == {1, 2}", "True"),
+    ("set({1, 2, 3}) ^ frozenset({2}) == {1, 3}", "True"),
+    ("set({1, 2, 3}) ^ frozenset({1, 2}) == {3}", "True"),
+    ("set({'a'}) ^ frozenset({'a'}) == set()", "True"),
+    ("set({True, False}) ^ frozenset({False}) == {True}", "True"),
+    ("set({True, False}) ^ frozenset({True}) == {False}", "True"),
+    ("set({1}) ^ frozenset({2}) == {1, 2}", "True"),
+    ("set({1}) ^ frozenset({1}) == set()", "True"),
+    ("set({1, 2, 3, 4, 5}) ^ frozenset({2, 4, 6}) == {1, 3, 5, 6}", "True"),
+    ("set({1, 2, 3}) ^ frozenset({4, 5, 6}) == {1, 2, 3, 4, 5, 6}", "True"),
+    ("set({(1, 2), (3, 4)}) ^ frozenset({(1, 2)}) == {(3, 4)}", "True"),
+    ("set({(1, 2), (3, 4)}) ^ frozenset({(5, 6)}) == {(1, 2), (3, 4), (5, 6)}", "True"),
+    ("set({frozenset({1}), frozenset({2})}) ^ frozenset({frozenset({2})}) == {frozenset({1})}", "True"),
+    ("set({frozenset({1})}) ^ frozenset({frozenset({2})}) == {frozenset({1}), frozenset({2})}", "True"),
+    ("set({1, 2, 3}) ^ frozenset({3, 4}) == {1, 2, 4}", "True"),
+    ("frozenset({1, 2, 3}) ^ set({3, 4}) == frozenset({1, 2, 4})", "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

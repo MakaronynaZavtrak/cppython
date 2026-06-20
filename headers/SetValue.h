@@ -67,5 +67,9 @@ public:
     [[nodiscard]] Value bitAnd(const Value& other) const override;
 
     [[nodiscard]] Value sub(const Value& other) const override;
+
+    [[nodiscard]] Value bitXor(const Value& other) const override;
+
+    bool equal(const Value &other) const override;
 };
 #endif //CPPYTHON_SETVALUE_H

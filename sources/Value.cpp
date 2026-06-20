@@ -398,6 +398,10 @@ bool Value::operator==(const Value& other) const {
         return asFrozenSet()->equal(other);
     }
 
+    if (isSet()) {
+        return asSet()->equal(other);
+    }
+
     return false;
 }
 
@@ -1072,6 +1076,10 @@ Value Value::operator^(const Value& other) const {
 
     if (isFrozenSet()) {
         return asFrozenSet()->bitXor(other);
+    }
+
+    if (isSet()) {
+        return asSet()->bitXor(other);
     }
 
     throw std::runtime_error("TypeError: unsupported operand type(s) for &: "

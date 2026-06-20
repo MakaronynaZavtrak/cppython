@@ -375,3 +375,46 @@ Value SetValue::bitAnd(const Value &other) const {
 Value SetValue::sub(const Value &other) const {
     return difference({other});
 }
+
+Value SetValue::bitXor(const Value &other) const {
+    return symmetricDifference(other);
+}
+
+bool SetValue::equal(const Value& other) const {
+
+    if (const auto setPtr = other.asSet()) {
+
+        if (elements.size() != setPtr->elements.size()) {
+            return false;
+        }
+
+        for (const auto& value : elements) {
+
+            if (!setPtr->elements.contains(value)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    if (const auto frozenPtr = other.asFrozenSet()) {
+
+        const auto& otherElements = frozenPtr->getElements();
+
+        if (elements.size() != otherElements.size()) {
+            return false;
+        }
+
+        for (const auto& value : elements) {
+
+            if (!otherElements.contains(value)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}

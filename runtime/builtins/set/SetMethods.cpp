@@ -67,6 +67,42 @@ namespace {
         );
     }
 
+    Value makeXorMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__xor__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__xor__");
+
+                return set->bitXor(args[0]);
+            }
+        );
+    }
+
+    Value makeEqMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__eq__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__eq__");
+
+                return Value(set->equal(args[0]));
+            }
+        );
+    }
+
     Value makeAddMethod(const Value& obj) {
 
         auto set = extract<Value::SetPtr>(obj);
@@ -383,6 +419,8 @@ namespace {
         REGISTER_METHOD("__or__", makeOrMethod),
         REGISTER_METHOD("__and__", makeAndMethod),
         REGISTER_METHOD("__sub__", makeSubMethod),
+        REGISTER_METHOD("__xor__", makeXorMethod),
+        REGISTER_METHOD("__eq__", makeEqMethod),
         REGISTER_METHOD("add", makeAddMethod),
         REGISTER_METHOD("remove", makeRemoveMethod),
         REGISTER_METHOD("discard", makeDiscardMethod),
