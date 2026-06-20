@@ -30,6 +30,24 @@ namespace {
         );
     }
 
+    Value makeAddMethod(const Value& obj) {
+
+        auto tuple = extract<Value::TuplePtr>(obj);
+
+        return makeBuiltin(
+            "__add__",
+
+            [tuple](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__add__");
+
+                return tuple->add(args[0]);
+            }
+        );
+    }
+
     Value make_setitem_Method(const Value&) {
         throw std::runtime_error("TypeError: 'tuple' object does not support item assignment");
     }
@@ -87,9 +105,10 @@ namespace {
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("__setitem__", make_setitem_Method),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
+        REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::TuplePtr>),
+        REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("count", makeCountMethod),
-        REGISTER_METHOD("index", makeIndexMethod),
-        REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::TuplePtr>)
+        REGISTER_METHOD("index", makeIndexMethod)
     };
 
 }

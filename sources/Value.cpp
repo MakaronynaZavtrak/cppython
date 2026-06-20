@@ -630,6 +630,10 @@ Value Value::operator+(const Value& other) const {
         return applyCalculation(*this, other, isFloat, std::plus<>());
     }
 
+    if (isTuple()) {
+        return asTuple()->add(other);
+    }
+
     if (isBytes()) {
         return asBytes()->add(other);
     }

@@ -246,3 +246,37 @@ bool TupleValue::greater(const Value& other) const {
 
     return items.size() > rhs.size();
 }
+
+Value TupleValue::add(const Value& other) const {
+
+    if (!other.isTuple()) {
+        throw std::runtime_error(
+            "TypeError: can only concatenate tuple to tuple"
+        );
+    }
+
+    std::vector<Value> result;
+
+    result.reserve(
+        items.size()
+        + other.asTuple()->items.size()
+    );
+
+    result.insert(
+        result.end(),
+        items.begin(),
+        items.end()
+    );
+
+    result.insert(
+        result.end(),
+        other.asTuple()->items.begin(),
+        other.asTuple()->items.end()
+    );
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::move(result)
+        )
+    );
+}
