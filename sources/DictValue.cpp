@@ -231,3 +231,22 @@ Value DictValue::fromKeys(
 
       return Value(result);
 }
+
+Value DictValue::bitOr(const Value& other) const {
+
+      if (!other.isDict()) {
+            throw std::runtime_error(
+                "TypeError: unsupported operand type(s) for |"
+            );
+      }
+
+      const auto result =
+          std::make_shared<DictValue>(
+              elements,
+              order
+          );
+
+      result->update(other.asDict());
+
+      return Value(result);
+}

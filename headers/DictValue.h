@@ -60,5 +60,7 @@ public:
 
     [[nodiscard]] static Value fromKeys(const Value& iterable, const std::optional<Value>& defaultValue);
 
+    [[nodiscard]] Value bitOr(const Value& other) const override;
+
 };
 #endif //CPPYTHON_DICTVALUE_H

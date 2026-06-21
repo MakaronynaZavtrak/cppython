@@ -52,6 +52,25 @@ namespace {
         );
     }
 
+    Value makeOrMethod(const Value& obj) {
+
+        auto dict = extract<Value::DictPtr>(obj);
+
+        return makeBuiltin(
+            "__or__",
+
+            [dict](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&)
+                -> Value {
+
+                expectArgs(args, 1, "__or__");
+
+                return dict->bitOr(args[0]);
+            }
+        );
+    }
+
     Value makeGetMethod(const Value& obj) {
 
         auto dict = extract<Value::DictPtr>(obj);
@@ -292,6 +311,7 @@ namespace {
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("__setitem__", make_setitem_Method ),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::DictPtr>),
+        REGISTER_METHOD("__or__", makeOrMethod),
         REGISTER_METHOD("get", makeGetMethod),
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("update", makeUpdateMethod),
