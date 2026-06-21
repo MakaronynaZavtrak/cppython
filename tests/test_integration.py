@@ -293,6 +293,13 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("{True: 'x'} | {False: 'y'}", "{True: 'x', False: 'y'}"),
     ("{(1,2): 10} | {(3,4): 20}", "{(1, 2): 10, (3, 4): 20}"),
 
+    # dict.__eq__
+    ("{'a': 1}.__eq__({'a': 1})", "True"),
+    ("{'a': 1}.__eq__({'a': 2})", "False"),
+    ("{}.__eq__({})", "True"),
+    ("{'a': 1, 'b': 2}.__eq__({'b': 2, 'a': 1})", "True"),
+    ("{'a': 1}.__eq__({})", "False"),
+
     # hash
     ("hash(1) == hash(1)", "True"),
     ("hash(1) == hash(1.0)", "True"),

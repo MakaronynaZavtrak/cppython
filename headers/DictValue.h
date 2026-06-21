@@ -64,5 +64,7 @@ public:
 
     Value ior(const Value& other) override;
 
+    bool equal(const Value& other) const override;
+
 };
 #endif //CPPYTHON_DICTVALUE_H

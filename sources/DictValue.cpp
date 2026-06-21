@@ -265,3 +265,29 @@ Value DictValue::ior(const Value& other) {
           shared_from_this()
       );
 }
+
+bool DictValue::equal(const Value& other) const {
+
+      if (!other.isDict()) {
+            return false;
+      }
+
+      const auto rhs = other.asDict();
+
+      if (elements.size() != rhs->elements.size()) {
+            return false;
+      }
+
+      for (const auto& key : order) {
+
+            if (!rhs->elements.contains(key)) {
+                  return false;
+            }
+
+            if (elements[key] != rhs->elements[key]) {
+                  return false;
+            }
+      }
+
+      return true;
+}

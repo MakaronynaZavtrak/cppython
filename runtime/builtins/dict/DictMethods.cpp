@@ -89,6 +89,26 @@ namespace {
         );
     }
 
+    Value makeEqualMethod(const Value& obj) {
+
+        auto dict = extract<Value::DictPtr>(obj);
+
+        return makeBuiltin(
+            "__eq__",
+
+            [dict](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__eq__");
+
+                return Value(
+                    dict->equal(args[0])
+                );
+            }
+        );
+    }
+
     Value makeGetMethod(const Value& obj) {
 
         auto dict = extract<Value::DictPtr>(obj);
@@ -331,6 +351,7 @@ namespace {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::DictPtr>),
         REGISTER_METHOD("__or__", makeOrMethod),
         REGISTER_METHOD("__ior__", makeIOrMethod),
+        REGISTER_METHOD("__eq__", makeEqualMethod),
         REGISTER_METHOD("get", makeGetMethod),
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("update", makeUpdateMethod),
