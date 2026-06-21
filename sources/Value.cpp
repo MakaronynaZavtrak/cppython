@@ -557,7 +557,8 @@ bool Value::isObject() const {
         || isList()
         || isTuple()
         || isDict()
-        || isSet();
+        || isSet()
+        || isFrozenSet();
 }
 
 Value::ObjectPtr Value::asObject() const {
@@ -588,6 +589,10 @@ Value::ObjectPtr Value::asObject() const {
 
     if (isSet()) {
         return std::static_pointer_cast<ObjectValue>(asSet());
+    }
+
+    if (isFrozenSet()) {
+        return std::static_pointer_cast<ObjectValue>(asFrozenSet());
     }
 
     throw std::runtime_error(
@@ -1450,22 +1455,8 @@ std::size_t Value::hash() const {
         return qHash(asBytes()->bytes());
     }
 
-    // tuple
     if (isTuple()) {
-
-        const auto& items = asTuple()->items;
-
-        std::size_t seed = 0;
-
-        for (const auto& item : items) {
-
-            seed ^= item.hash()
-                + 0x9e3779b9
-                + (seed << 6)
-                + (seed >> 2);
-        }
-
-        return seed;
+        return asTuple()->hash();
     }
 
     if (isFrozenSet()) {

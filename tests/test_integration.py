@@ -300,6 +300,18 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("hash((1, True)) == hash((1.0, 1))", "True"),
 
+    ("().__hash__() == ().__hash__()", "True"),
+    ("(1,).__hash__() == (1,).__hash__()", "True"),
+    ("(1, 2, 3).__hash__() == (1, 2, 3).__hash__()", "True"),
+    ("(1, 2) == (1, 2)", "True"),
+    ("(1, 2).__hash__() == (1, 2).__hash__()", "True"),
+    ("(1, 2).__hash__() != (2, 1).__hash__()", "True"),
+    ("((1, 2), (3, 4)).__hash__() == ((1, 2), (3, 4)).__hash__()", "True"),
+    ("('a', 'b').__hash__() == ('a', 'b').__hash__()", "True"),
+    ("((1, 2), 'abc', True).__hash__() == ((1, 2), 'abc', True).__hash__()", "True"),
+    ("(None,).__hash__() == (None,).__hash__()", "True"),
+    ("(frozenset({1, 2}),).__hash__() == (frozenset({1, 2}),).__hash__()", "True"),
+
     # set.__eq__
     ("set().__eq__(set())", "True"),
     ("set({1}).__eq__(set({1}))", "True"),
@@ -8719,6 +8731,15 @@ if _result is not None:
       "b = a",
       "a ^= {2}",
       "b"], "{1, 3}"),
+
+    # tuple.__hash__
+    (["d = {}",
+      "d[(1, 2)] = 'hello'",
+      "d[(1, 2)]"], "'hello'"),
+
+    (["d = {}",
+      "d[((1, 2), (3, 4))] = 123",
+      "d[((1, 2), (3, 4))]"], "123"),
 
 ])
 

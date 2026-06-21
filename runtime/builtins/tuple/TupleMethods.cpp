@@ -30,6 +30,25 @@ namespace {
         );
     }
 
+    Value makeHashMethod(const Value& obj) {
+
+        auto tuple = extract<Value::TuplePtr>(obj);
+
+        return makeBuiltin(
+            "__hash__",
+
+            [tuple](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&)
+                    -> Value {
+
+                expectArgs(args, 0, "__hash__");
+
+                return Value(Value::BigInt(tuple->hash()));
+            }
+        );
+    }
+
     Value makeAddMethod(const Value& obj) {
 
         auto tuple = extract<Value::TuplePtr>(obj);
@@ -142,6 +161,7 @@ namespace {
         REGISTER_METHOD("__setitem__", make_setitem_Method),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::TuplePtr>),
+        REGISTER_METHOD("__hash__", makeHashMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMulMethod),
         REGISTER_METHOD("__rmul__", makeRMulMethod),

@@ -49,6 +49,8 @@ public:
     [[nodiscard]] Value multiply(const Value& other) const override;
 
     [[nodiscard]] Value rmul(const Value& other) const override;
+
+    [[nodiscard]] std::size_t hash() const override;
 };
 
 #endif //CPPYTHON_TUPLEVALUE_H

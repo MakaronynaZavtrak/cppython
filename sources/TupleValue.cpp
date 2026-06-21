@@ -320,3 +320,18 @@ Value TupleValue::multiply(const Value& other) const {
 Value TupleValue::rmul(const Value& other) const {
     return multiply(other);
 }
+
+std::size_t TupleValue::hash() const {
+
+    std::size_t seed = 0;
+
+    for (const auto& item : items) {
+
+        seed ^= item.hash()
+            + 0x9e3779b9
+            + (seed << 6)
+            + (seed >> 2);
+    }
+
+    return seed;
+}
