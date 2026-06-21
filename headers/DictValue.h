@@ -10,7 +10,7 @@
 #include "ObjectValue.h"
 #include "Value.h"
 
-class DictValue : public ObjectValue {
+class DictValue : public ObjectValue, public std::enable_shared_from_this<DictValue> {
     QHash<Value, Value> elements;
     QVector<Value> order;
 
@@ -61,6 +61,8 @@ public:
     [[nodiscard]] static Value fromKeys(const Value& iterable, const std::optional<Value>& defaultValue);
 
     [[nodiscard]] Value bitOr(const Value& other) const override;
+
+    Value ior(const Value& other) override;
 
 };
 #endif //CPPYTHON_DICTVALUE_H

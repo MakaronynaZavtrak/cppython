@@ -250,3 +250,18 @@ Value DictValue::bitOr(const Value& other) const {
 
       return Value(result);
 }
+
+Value DictValue::ior(const Value& other) {
+
+      if (!other.isDict()) {
+            throw std::runtime_error(
+                "TypeError: unsupported operand type(s) for |="
+            );
+      }
+
+      update(other.asDict());
+
+      return Value(
+          shared_from_this()
+      );
+}
