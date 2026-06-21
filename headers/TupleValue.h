@@ -51,6 +51,8 @@ public:
     [[nodiscard]] Value rmul(const Value& other) const override;
 
     [[nodiscard]] std::size_t hash() const override;
+
+    [[nodiscard]] bool contains(const Value& value) const override;
 };
 
 #endif //CPPYTHON_TUPLEVALUE_H

@@ -335,3 +335,15 @@ std::size_t TupleValue::hash() const {
 
     return seed;
 }
+
+bool TupleValue::contains(const Value& value) const {
+
+    for (const auto& item : items) {
+
+        if (item == value) {
+            return true;
+        }
+    }
+
+    return false;
+}

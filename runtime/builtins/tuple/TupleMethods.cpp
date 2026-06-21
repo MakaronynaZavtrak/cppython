@@ -49,6 +49,24 @@ namespace {
         );
     }
 
+    Value makeContainsMethod(const Value& obj) {
+
+        auto tuple = extract<Value::TuplePtr>(obj);
+
+        return makeBuiltin(
+            "__contains__",
+
+            [tuple](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__contains__");
+
+                return Value(tuple->contains(args[0]));
+            }
+        );
+    }
+
     Value makeAddMethod(const Value& obj) {
 
         auto tuple = extract<Value::TuplePtr>(obj);
@@ -162,6 +180,7 @@ namespace {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::TuplePtr>),
         REGISTER_METHOD("__hash__", makeHashMethod),
+        REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMulMethod),
         REGISTER_METHOD("__rmul__", makeRMulMethod),

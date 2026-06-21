@@ -300,6 +300,7 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("hash((1, True)) == hash((1.0, 1))", "True"),
 
+    # tuple.__hash__
     ("().__hash__() == ().__hash__()", "True"),
     ("(1,).__hash__() == (1,).__hash__()", "True"),
     ("(1, 2, 3).__hash__() == (1, 2, 3).__hash__()", "True"),
@@ -311,6 +312,39 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("((1, 2), 'abc', True).__hash__() == ((1, 2), 'abc', True).__hash__()", "True"),
     ("(None,).__hash__() == (None,).__hash__()", "True"),
     ("(frozenset({1, 2}),).__hash__() == (frozenset({1, 2}),).__hash__()", "True"),
+
+    # tuple.__contains__
+    ("(1, 2, 3).__contains__(1)", "True"),
+    ("(1, 2, 3).__contains__(2)", "True"),
+    ("(1, 2, 3).__contains__(3)", "True"),
+
+    ("(1, 2, 3).__contains__(4)", "False"),
+
+    ("().__contains__(1)", "False"),
+
+    ("('a', 'b', 'c').__contains__('a')", "True"),
+    ("('a', 'b', 'c').__contains__('z')", "False"),
+
+    ("((1, 2), (3, 4)).__contains__((1, 2))", "True"),
+    ("((1, 2), (3, 4)).__contains__((5, 6))", "False"),
+
+    ("(None,).__contains__(None)", "True"),
+    ("(None,).__contains__(1)", "False"),
+
+    ("(frozenset({1}),).__contains__(frozenset({1}))", "True"),
+    ("(frozenset({1}),).__contains__(frozenset({2}))", "False"),
+
+    ("1 in (1, 2, 3)", "True"),
+    ("4 in (1, 2, 3)", "False"),
+
+    ("'a' in ('a', 'b', 'c')", "True"),
+    ("'z' in ('a', 'b', 'c')", "False"),
+
+    ("(1, 2) in ((1, 2), (3, 4))", "True"),
+    ("(5, 6) in ((1, 2), (3, 4))", "False"),
+
+    ("None in (None,)", "True"),
+    ("1 in ()", "False"),
 
     # set.__eq__
     ("set().__eq__(set())", "True"),
