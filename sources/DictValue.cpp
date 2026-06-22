@@ -9,6 +9,7 @@
 #include "DictItemsView.h"
 #include "DictKeysView.h"
 #include "DictValuesView.h"
+#include "ReversedDictIterator.h"
 #include "StopIterationException.h"
 #include "TupleValue.h"
 
@@ -336,4 +337,13 @@ void DictValue::delItem(const Value& key) {
 
       elements.remove(key);
       order.removeAll(key);
+}
+
+Value DictValue::reversed() const {
+
+      return Value(
+          std::make_shared<ReversedDictIterator>(
+                shared_from_this()
+          )
+      );
 }

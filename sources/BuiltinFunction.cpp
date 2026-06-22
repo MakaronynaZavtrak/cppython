@@ -10,6 +10,7 @@
 #include "IteratorValue.h"
 #include "ListValue.h"
 #include "PropertyValue.h"
+#include "ReversedSequenceIterator.h"
 #include "SetValue.h"
 #include "StaticMethodValue.h"
 #include "StrValue.h"
@@ -700,6 +701,56 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
              );
          }
     ));
+
+    env->set(
+    "reversed",
+
+    makeBuiltin(
+        "reversed",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>& env) -> Value {
+
+            expectArgs(args, 1, "reversed");
+
+            const Value& obj = args[0];
+
+            // 1. __reversed__
+            try {
+
+                Value method = getAttrValue(obj, "__reversed__");
+
+                return call(method, {}, {}, env);
+
+            } catch (...) {}
+
+            // 2. fallback через __len__ + __getitem__
+            try {
+
+                Value lenMethod = getAttrValue(obj, "__len__");
+
+                Value getItemMethod = getAttrValue(obj, "__getitem__");
+
+                Value lenValue = call(lenMethod, {}, {}, env);
+
+                auto len = static_cast<std::ptrdiff_t>(lenValue.toBigInt());
+
+                return Value(std::make_shared<ReversedSequenceIterator>(
+                        obj, len
+                    )
+                );
+
+            } catch (...) {}
+
+            throw std::runtime_error(
+                "TypeError: '"
+                + obj.toString().toStdString()
+                + "' object is not reversible"
+            );
+        }
+    )
+);
 
 }
 

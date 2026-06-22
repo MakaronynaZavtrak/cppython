@@ -74,5 +74,7 @@ public:
 
     void delItem(const Value& key) override;
 
+    [[nodiscard]] Value reversed() const override;
+
 };
 #endif //CPPYTHON_DICTVALUE_H

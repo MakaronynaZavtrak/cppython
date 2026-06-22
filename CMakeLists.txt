@@ -122,7 +122,11 @@ add_executable(cppython main.cpp
         runtime/builtins/frozenset/FrozenSetMethods.cpp
         runtime/builtins/frozenset/FrozenSetMethods.h
         headers/FrozenSetIterator.h
-        sources/FrozenSetIterator.cpp)
+        sources/FrozenSetIterator.cpp
+        headers/ReversedDictIterator.h
+        sources/ReversedDictIterator.cpp
+        headers/ReversedSequenceIterator.h
+        sources/ReversedSequenceIterator.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

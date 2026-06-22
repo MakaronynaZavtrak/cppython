@@ -347,6 +347,15 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset({1}) in {frozenset({1}): 'x'}", "True"),
     ("'a' in {'a': 'b'}", "True"),
 
+    # reversed
+    ("list(reversed((1, 2, 5, 10, 19)))", "[19, 10, 5, 2, 1]"),
+    ("list(reversed((42,)))", "[42]"),
+    ("list(reversed(()))", "[]"),
+    ("list(reversed('hello'))", "['o', 'l', 'l', 'e', 'h']"),
+    ("list(reversed('a'))", "['a']"),
+    ("list(reversed(''))", "[]"),
+    ("list(reversed((0, 1, 2, 3, 4)))", "[4, 3, 2, 1, 0]"),
+
     # hash
     ("hash(1) == hash(1)", "True"),
     ("hash(1) == hash(1.0)", "True"),
@@ -8941,6 +8950,34 @@ if _result is not None:
     (["d = {True: 1, False: 2}",
       "del d[False]",
       "d"], "{True: 1}"),
+
+    # dict.__reversed__
+    (["d = {1: 'one', 2: 'two', 10: 'ten'}",
+      "ri = d.__reversed__()",
+      "list(ri)"], "[10, 2, 1]"),
+
+    (["d = {1: 'one', 2: 'two', 10: 'ten'}",
+      "ri = reversed(d)",
+      "list(ri)"], "[10, 2, 1]"),
+
+    (["d = {}",
+      "list(reversed(d))"], "[]"),
+
+    (["d = {}",
+      "d[5] = 'a'",
+      "d[1] = 'b'",
+      "d[9] = 'c'",
+      "list(reversed(d))"], "[9, 1, 5]"),
+
+    (["r = reversed((1, 2, 3))",
+      "next(r)"], "3"),
+
+    (["r = reversed((1, 2, 3))",
+      "temp = next(r)",
+      "next(r)"], "2"),
+
+    (["r = reversed((1, 2, 3))",
+      "list(r)"], "[3, 2, 1]"),
 
 ])
 

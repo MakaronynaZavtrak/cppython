@@ -12,6 +12,24 @@
 
 namespace {
 
+    Value makeReversedMethod(const Value& obj) {
+
+        auto dict = extract<Value::DictPtr>(obj);
+
+        return makeBuiltin(
+            "__reversed__",
+
+            [dict](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 0, "__reversed__");
+
+                return dict->reversed();
+            }
+        );
+    }
+
     Value make_getitem_Method(const Value& obj) {
 
         auto dict = extract<Value::DictPtr>(obj);
@@ -424,6 +442,7 @@ namespace {
 
     const MethodMap DICT_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
+        REGISTER_METHOD("__reversed__", makeReversedMethod),
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("__setitem__", make_setitem_Method),
         REGISTER_METHOD("__delitem__", make_delitem_Method),
