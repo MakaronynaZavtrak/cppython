@@ -2113,6 +2113,120 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     );
 }
 
+//TODO: метод пока не полнцоценный
+// приколы наподобие таких не поддерживаются
+// "%s %s" % ("a", "b")
+// "%(name)s" % {"name": "Bob"}
+Value StrValue::mod(const Value &rhs) const {
+
+    QString text = value;
+
+    if (text == "%%") {
+        return Value("%");
+    }
+
+    if (!text.contains('%')) {
+        throw std::runtime_error(
+            "TypeError: incomplete format"
+        );
+    }
+
+    const qsizetype pos = text.indexOf('%');
+
+    if (pos + 1 >= text.size()) {
+        throw std::runtime_error(
+            "TypeError: incomplete format"
+        );
+    }
+
+    const QChar spec = text[pos + 1];
+
+    QString replacement;
+
+    if (spec == 's') {
+
+        replacement = rhs.toString();
+
+    } else if (spec == 'r') {
+
+        replacement = rhs.repr();
+
+    } else if (spec == 'd') {
+
+        if (!rhs.isBigInt()) {
+            throw std::runtime_error(
+                "%d requires integer"
+            );
+        }
+
+        replacement = rhs.toString();
+
+    } else if (spec == 'f') {
+
+        double d;
+
+        if (rhs.isBigInt()) {
+
+            d = rhs.toBigInt().convert_to<double>();
+
+        } else if (rhs.isBigFloat()) {
+
+            d = rhs.toBigFloat().convert_to<double>();
+
+        } else {
+            throw std::runtime_error(
+                "%f requires number"
+            );
+        }
+
+        replacement = QString::number(d, 'f', 6);
+
+    } else if (spec == 'x') {
+
+        if (!rhs.isBigInt()) {
+            throw std::runtime_error(
+                "%x requires integer"
+            );
+        }
+
+        replacement =
+                QString::number(
+                    rhs.toBigInt().convert_to<long long>(),
+                    16
+                );
+    }
+
+    else if (spec == 'o') {
+
+        if (!rhs.isBigInt()) {
+            throw std::runtime_error(
+                "%o requires integer"
+            );
+        }
+
+        replacement =
+            QString::number(
+                rhs.toBigInt().convert_to<long long>(),
+                8
+            );
+    }
+
+    else {
+
+        throw std::runtime_error(
+            QString(
+                "Unsupported format character '%1'"
+            )
+            .arg(spec)
+            .toStdString()
+        );
+    }
+
+    text.replace(pos, 2, replacement);
+
+    return Value(text);
+}
+
 bool StrValue::contains(const Value& val) const {
 
     if (!val.isString()) {

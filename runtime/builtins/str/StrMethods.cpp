@@ -103,6 +103,24 @@ namespace {
         );
     }
 
+    Value makeModMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__mod__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__mod__");
+
+                return str->mod(args[0]);
+            }
+        );
+    }
+
     Value makeEqualMethod(const Value& obj) {
 
         auto str = extract<Value::StrPtr>(obj);
@@ -1252,6 +1270,7 @@ namespace {
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
         REGISTER_METHOD("__rmul__", makeRmulMethod),
+        REGISTER_METHOD("__mod__", makeModMethod),
         REGISTER_METHOD("__eq__", makeEqualMethod),
         REGISTER_METHOD("__ne__", makeNotEqualMethod),
         REGISTER_METHOD("__lt__", makeLtMethod),

@@ -182,6 +182,8 @@ public:
 
     [[nodiscard]] std::size_t hash() const override;
 
+    Value mod(const Value& rhs) const override;
+
 private:
 
     static Value resolveFormatField(
