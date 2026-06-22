@@ -49,6 +49,24 @@ namespace {
         );
     }
 
+    Value makeAddMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__add__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__add__");
+
+                return str->add(args[0]);
+            }
+        );
+    }
+
     Value makeMultiplyMethod(const Value& obj) {
 
         auto str = extract<Value::StrPtr>(obj);
@@ -1097,6 +1115,7 @@ namespace {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("__contains__", makeContainsMethod),
+        REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
         REGISTER_METHOD("__rmul__", makeRmulMethod),
         REGISTER_METHOD("upper", makeUpperMethod),
