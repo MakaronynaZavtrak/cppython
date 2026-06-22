@@ -2113,6 +2113,19 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     );
 }
 
+bool StrValue::contains(const Value& val) const {
+
+    if (!val.isString()) {
+        throw std::runtime_error(
+            "TypeError: 'in <string>' requires string as left operand"
+        );
+    }
+
+    return value.contains(
+        val.toString()
+    );
+}
+
 Value StrValue::rmul(const Value& other) const {
     return multiply(other);
 }

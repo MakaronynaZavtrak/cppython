@@ -178,6 +178,8 @@ public:
 
     [[nodiscard]] Value rmul(const Value &other) const override;
 
+    [[nodiscard]] bool contains(const Value& val) const override;
+
 private:
 
     static Value resolveFormatField(

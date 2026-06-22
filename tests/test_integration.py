@@ -300,6 +300,11 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("{'a': 1, 'b': 2}.__eq__({'b': 2, 'a': 1})", "True"),
     ("{'a': 1}.__eq__({})", "False"),
 
+    ("{'a': 1, 'b': 2} == {'b': 2, 'a': 1}", "True"),
+    ("{'a': 1} == {'a': 1}", "True"),
+    ("{'a': 1} == {'a': 2}", "False"),
+    ("{'a': 1} == {}", "False"),
+
     # dict.__ne__
     ("{'a': 1}.__ne__({'a': 1})", "False"),
     ("{'a': 1}.__ne__({'a': 2})", "True"),
@@ -1436,6 +1441,26 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'{:,}'.format(1000)", "'1,000'"),
     ("'{:,}'.format(1000000)", "'1,000,000'"),
     ("'{:,}'.format(123456789)", "'123,456,789'"),
+
+    # str.__contains__
+    ("'hello'.__contains__('ell')", "True"),
+    ("'hello'.__contains__('hello')", "True"),
+    ("'hello'.__contains__('')", "True"),
+    ("'hello'.__contains__('x')", "False"),
+    ("''.__contains__('')", "True"),
+    ("''.__contains__('x')", "False"),
+
+    ("'ell' in 'hello'", "True"),
+    ("'hello' in 'hello'", "True"),
+    ("'' in 'hello'", "True"),
+    ("'x' in 'hello'", "False"),
+    ("'' in ''", "True"),
+    ("'x' in ''", "False"),
+
+    ("'123' in 'abc123xyz'", "True"),
+    ("'1234' in 'abc123xyz'", "False"),
+    ("'абв' in 'абвгд'", "True"),
+    ("'ёж' in 'ежик'", "False"),
 
     # bytes
     ("b'abc'", "b'abc'"),
