@@ -180,6 +180,7 @@ public:
 
     [[nodiscard]] bool contains(const Value& val) const override;
 
+    [[nodiscard]] std::size_t hash() const override;
 
 private:
 

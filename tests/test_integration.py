@@ -1658,6 +1658,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'abcd' > 'abc'", "True"),
     ("'abc' <= 'abcd'", "True"),
     ("'abcd' >= 'abc'", "True"),
+    
+    # __hash__
+    ("'abc'.__hash__() == 'abc'.__hash__()", "True"),
+    ("'hello'.__hash__() == 'hello'.__hash__()", "True"),
+    ("'abc'.__hash__() != 'abd'.__hash__()", "True"),
+    ("'hello'.__hash__() != 'world'.__hash__()", "True"),
+    ("''. __hash__() == ''.__hash__()", "True"),
+    ("'кот'.__hash__() == 'кот'.__hash__()", "True"),
+    ("'кот'.__hash__() != 'пёс'.__hash__()", "True"),
+
+    ("hash('abc') == hash('abc')", "True"),
+    ("hash('abc') != hash('abd')", "True"),
+    ("hash('hello') == 'hello'.__hash__()", "True"),
+    ("hash('кот') == hash('кот')", "True"),
+    ("hash('кот') != hash('пёс')", "True"),
+    ("hash('') == ''.__hash__()", "True"),
 
     # bytes.__mul__
     ("b'a' * 3", "b'aaa'"),

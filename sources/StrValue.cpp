@@ -2126,6 +2126,10 @@ bool StrValue::contains(const Value& val) const {
     );
 }
 
+std::size_t StrValue::hash() const {
+    return qHash(value);
+}
+
 Value StrValue::rmul(const Value& other) const {
     return multiply(other);
 }
