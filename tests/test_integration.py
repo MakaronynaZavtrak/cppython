@@ -300,6 +300,15 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("{'a': 1, 'b': 2}.__eq__({'b': 2, 'a': 1})", "True"),
     ("{'a': 1}.__eq__({})", "False"),
 
+    # dict.__ne__
+    ("{'a': 1}.__ne__({'a': 1})", "False"),
+    ("{'a': 1}.__ne__({'a': 2})", "True"),
+    ("{}.__ne__({})", "False"),
+
+    ("{'a': 1}.__ne__({'a': 1})", "False"),
+    ("{'a': 1} != {'a': 2}", "True"),
+    ("{} != {}", "False"),
+
     # hash
     ("hash(1) == hash(1)", "True"),
     ("hash(1) == hash(1.0)", "True"),

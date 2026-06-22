@@ -291,3 +291,7 @@ bool DictValue::equal(const Value& other) const {
 
       return true;
 }
+
+bool DictValue::notEqual(const Value& other) const {
+      return !equal(other);
+}

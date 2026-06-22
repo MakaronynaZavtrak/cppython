@@ -66,5 +66,7 @@ public:
 
     bool equal(const Value& other) const override;
 
+    bool notEqual(const Value& other) const override;
+
 };
 #endif //CPPYTHON_DICTVALUE_H
