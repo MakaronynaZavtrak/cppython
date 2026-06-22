@@ -1535,6 +1535,131 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'abc'.__mul__(-5)", "''"),
     ("'abc'.__mul__(0)", "''"),
 
+    # __rmul__
+    ("'a'.__rmul__(3)", "'aaa'"),
+    ("'abc'.__rmul__(5)", "'abcabcabcabcabc'"),
+    ("''.__rmul__(909)", "''"),
+
+    ("3 * 'a'", "'aaa'"),
+    ("2 * 'ab'", "'abab'"),
+    ("5 * ''", "''"),
+
+    ("0 * 'hello'", "''"),
+    ("-1 * 'hello'", "''"),
+
+    # __eq__
+    ("'abc'.__eq__('abc')", "True"),
+    ("'abc'.__eq__('abd')", "False"),
+    ("'hello'.__eq__('hello')", "True"),
+    ("'hello'.__eq__('Hello')", "False"),
+    ("''. __eq__('')", "True"),
+    ("''. __eq__('abc')", "False"),
+    ("'123'.__eq__('123')", "True"),
+    ("'123'.__eq__('0123')", "False"),
+    ("'абв'.__eq__('абв')", "True"),
+    ("'абв'.__eq__('Абв')", "False"),
+
+    ("'abc' == 'abc'", "True"),
+    ("'abc' == 'abd'", "False"),
+    ("'abc' == 'ab'", "False"),
+    ("'' == ''", "True"),
+    ("'Привет' == 'Привет'", "True"),
+    ("'Привет' == 'привет'", "False"),
+
+    # __ne__
+    ("'abc'.__ne__('abc')", "False"),
+    ("'abc'.__ne__('abd')", "True"),
+    ("'abc'.__ne__('ab')", "True"),
+    ("''. __ne__('')", "False"),
+    ("'Привет'.__ne__('Привет')", "False"),
+    ("'Привет'.__ne__('привет')", "True"),
+
+    ("'abc' != 'abc'", "False"),
+    ("'abc' != 'abd'", "True"),
+    ("'abc' != 'ab'", "True"),
+    ("'' != ''", "False"),
+    ("'Привет' != 'Привет'", "False"),
+    ("'Привет' != 'привет'", "True"),
+
+    # __lt__
+    ("'abc'.__lt__('abd')", "True"),
+    ("'abc'.__lt__('abc')", "False"),
+    ("'abd'.__lt__('abc')", "False"),
+    ("'ab'.__lt__('abc')", "True"),
+    ("'abc'.__lt__('ab')", "False"),
+    ("''. __lt__('a')", "True"),
+    ("'a'.__lt__('')", "False"),
+
+    ("'abc' < 'abd'", "True"),
+    ("'abc' < 'abc'", "False"),
+    ("'abd' < 'abc'", "False"),
+    ("'ab' < 'abc'", "True"),
+    ("'abc' < 'ab'", "False"),
+    ("'' < 'a'", "True"),
+    ("'a' < ''", "False"),
+
+    # __le__
+    ("'abc'.__le__('abd')", "True"),
+    ("'abc'.__le__('abc')", "True"),
+    ("'abd'.__le__('abc')", "False"),
+    ("'ab'.__le__('abc')", "True"),
+    ("''. __le__('')", "True"),
+    ("''. __le__('a')", "True"),
+
+    ("'abc' <= 'abd'", "True"),
+    ("'abc' <= 'abc'", "True"),
+    ("'abd' <= 'abc'", "False"),
+    ("'ab' <= 'abc'", "True"),
+    ("'' <= ''", "True"),
+    ("'' <= 'a'", "True"),
+
+    # __gt__
+    ("'abd'.__gt__('abc')", "True"),
+    ("'abc'.__gt__('abd')", "False"),
+    ("'abc'.__gt__('abc')", "False"),
+    ("'abc'.__gt__('ab')", "True"),
+    ("'ab'.__gt__('abc')", "False"),
+    ("'a'.__gt__('')", "True"),
+
+    ("'abd' > 'abc'", "True"),
+    ("'abc' > 'abd'", "False"),
+    ("'abc' > 'abc'", "False"),
+    ("'abc' > 'ab'", "True"),
+    ("'ab' > 'abc'", "False"),
+    ("'a' > ''", "True"),
+
+    # __ge__
+    ("'abd'.__ge__('abc')", "True"),
+    ("'abc'.__ge__('abc')", "True"),
+    ("'abc'.__ge__('abd')", "False"),
+    ("'abc'.__ge__('ab')", "True"),
+    ("'ab'.__ge__('abc')", "False"),
+    ("'a'.__ge__('')", "True"),
+    ("''. __ge__('')", "True"),
+
+    ("'abd' >= 'abc'", "True"),
+    ("'abc' >= 'abc'", "True"),
+    ("'abc' >= 'abd'", "False"),
+    ("'abc' >= 'ab'", "True"),
+    ("'ab' >= 'abc'", "False"),
+    ("'a' >= ''", "True"),
+    ("'' >= ''", "True"),
+
+    ("'абв' < 'абг'", "True"),
+    ("'абг' > 'абв'", "True"),
+    ("'ёж' > 'еж'", "True"),
+    ("'Я' < 'я'", "True"),
+    ("'кот' == 'кот'", "True"),
+    ("'кот' != 'Кот'", "True"),
+
+    ("'a' < 'aa'", "True"),
+    ("'aa' > 'a'", "True"),
+    ("'abc' < 'abcd'", "True"),
+    ("'abcd' > 'abc'", "True"),
+    ("'abc' <= 'abcd'", "True"),
+    ("'abcd' >= 'abc'", "True"),
+
+    # bytes.__mul__
     ("b'a' * 3", "b'aaa'"),
     ("b'ab' * 3", "b'ababab'"),
     ("b'hello' * 2", "b'hellohello'"),
@@ -1553,18 +1678,6 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("1 * b'abc'", "b'abc'"),
     ("b'x' * 100", "b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'"),
     ("len(b'x' * 100)", "100"),
-
-    # __rmul__
-    ("'a'.__rmul__(3)", "'aaa'"),
-    ("'abc'.__rmul__(5)", "'abcabcabcabcabc'"),
-    ("''.__rmul__(909)", "''"),
-
-    ("3 * 'a'", "'aaa'"),
-    ("2 * 'ab'", "'abab'"),
-    ("5 * ''", "''"),
-
-    ("0 * 'hello'", "''"),
-    ("-1 * 'hello'", "''"),
 
     # __eq__
     ("b'' == b''", "True"),

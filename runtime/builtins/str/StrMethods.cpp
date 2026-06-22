@@ -103,6 +103,116 @@ namespace {
         );
     }
 
+    Value makeEqualMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__eq__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__eq__");
+
+                return Value(
+                    str->equal(args[0])
+                );
+            }
+        );
+    }
+
+    Value makeNotEqualMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__ne__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__ne__");
+
+                return Value(str->notEqual(args[0]));
+            }
+        );
+    }
+
+    Value makeLtMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__lt__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__lt__");
+
+                return Value(str->less(args[0]));
+            }
+        );
+    }
+
+    Value makeLeMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__le__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__le__");
+
+                return Value(str->lessOrEqual(args[0]));
+            }
+        );
+    }
+
+    Value makeGtMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__gt__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__gt__");
+
+                return Value(str->greater(args[0]));
+            }
+        );
+    }
+
+    Value makeGeMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__ge__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__ge__");
+
+                return Value(str->greaterOrEqual(args[0]));
+            }
+        );
+    }
+
     Value makeUpperMethod(const Value& obj) {
 
         auto str = extract<Value::StrPtr>(obj);
@@ -1118,6 +1228,12 @@ namespace {
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
         REGISTER_METHOD("__rmul__", makeRmulMethod),
+        REGISTER_METHOD("__eq__", makeEqualMethod),
+        REGISTER_METHOD("__ne__", makeNotEqualMethod),
+        REGISTER_METHOD("__lt__", makeLtMethod),
+        REGISTER_METHOD("__le__", makeLeMethod),
+        REGISTER_METHOD("__gt__", makeGtMethod),
+        REGISTER_METHOD("__ge__", makeGeMethod),
         REGISTER_METHOD("upper", makeUpperMethod),
         REGISTER_METHOD("lower", makeLowerMethod),
         REGISTER_METHOD("strip", makeStripMethod),
