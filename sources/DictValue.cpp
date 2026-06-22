@@ -295,3 +295,20 @@ bool DictValue::equal(const Value& other) const {
 bool DictValue::notEqual(const Value& other) const {
       return !equal(other);
 }
+
+Value DictValue::ror(const Value& other) const {
+
+      if (!other.isDict()) {
+            throw std::runtime_error(
+                "TypeError: unsupported operand type(s) for |"
+            );
+      }
+
+      return other.asDict()->bitOr(
+          Value(
+              std::const_pointer_cast<DictValue>(
+                  shared_from_this()
+              )
+          )
+      );
+}

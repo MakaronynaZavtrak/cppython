@@ -68,5 +68,7 @@ public:
 
     bool notEqual(const Value& other) const override;
 
+    [[nodiscard]] Value ror(const Value& other) const override;
+
 };
 #endif //CPPYTHON_DICTVALUE_H
