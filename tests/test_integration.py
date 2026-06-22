@@ -319,6 +319,34 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("{'a': 1}.__ror__({'b': 2}) == ({'b': 2} | {'a': 1})", "True"),
     ("{'x': 1}.__ror__({'x': 100}) == ({'x': 100} | {'x': 1})", "True"),
 
+    # dict.__contains__
+    ("{'a': 1}.__contains__('a')", "True"),
+    ("{'a': 1}.__contains__('b')", "False"),
+
+    ("{1: 'x'}.__contains__(1)", "True"),
+    ("{1: 'x'}.__contains__(2)", "False"),
+    ("{'a': 1}.__contains__(1)", "False"),
+    ("{'a': 1}.__contains__('a')", "True"),
+
+    ("{1: 'value'}.__contains__('value')", "False"),
+    ("{'a': 1, 'b': 2}.__contains__('a')", "True"),
+    ("{'a': 1, 'b': 2}.__contains__('b')", "True"),
+    ("{'a': 1, 'b': 2}.__contains__('c')", "False"),("{(1, 2): 10}.__contains__((1, 2))", "True"),
+    ("{(1, 2): 10}.__contains__((3, 4))", "False"),
+
+    ("{frozenset({1}): 'x'}.__contains__(frozenset({1}))", "True"),
+    ("{frozenset({1}): 'x'}.__contains__(frozenset({2}))", "False"),
+
+    ("{None: 123}.__contains__(None)", "True"),
+    ("{}.__contains__(None)", "False"),
+
+    ("{}.__contains__('a')", "False"),
+    ("{}.__contains__(1)", "False"),
+
+    ("1 in {1: 'one'}", "True"),
+    ("frozenset({1}) in {frozenset({1}): 'x'}", "True"),
+    ("'a' in {'a': 'b'}", "True"),
+
     # hash
     ("hash(1) == hash(1)", "True"),
     ("hash(1) == hash(1.0)", "True"),
@@ -7431,7 +7459,7 @@ if _result is not None:
       "b = {1}",
       "a.difference_update(b)"], ""),
 
-    # difference_update самим собой (пока не поддерживается)
+    # difference_update самим собой
     (["a = {1, 2, 3}",
       "a.difference_update(a)",
       "a"], "set()"),
@@ -7449,7 +7477,7 @@ if _result is not None:
       "a.intersection_update(b, c)",
       "a"], "{3, 4}"),
 
-    # intersection_update без пересечений (пока не поддерживается)
+    # intersection_update без пересечений
     (["a = {1, 2}",
       "b = {3, 4}",
       "a.intersection_update(b)",
@@ -7488,7 +7516,7 @@ if _result is not None:
       "a.symmetric_difference_update(b)",
       "a"], "{1, 2, 3, 4}"),
 
-    # symmetric_difference_update одинаковых множеств (пока не поддерживается)
+    # symmetric_difference_update одинаковых множеств
     (["a = {1, 2}",
       "b = {1, 2}",
       "a.symmetric_difference_update(b)",
@@ -7500,13 +7528,13 @@ if _result is not None:
       "a.symmetric_difference_update(b)",
       "a"], "{1, 4}"),
 
-    # symmetric_difference_update пустого множества (пока не поддерживается)
+    # symmetric_difference_update пустого множества
     (["a = {1, 2}",
       "b = set()",
       "a.symmetric_difference_update(b)",
       "a"], "{1, 2}"),
 
-    # symmetric_difference_update с пустым self (пока не поддерживается)
+    # symmetric_difference_update с пустым self
     (["a = set()",
       "b = {1, 2}",
       "a.symmetric_difference_update(b)",
@@ -8570,16 +8598,15 @@ if _result is not None:
       "b = hash(s)",
       "a == b"], "True"),
 
-    # пока не поддерживается
-    # (["d = {}",
-    #   "a = frozenset({1, 2})",
-    #   "b = frozenset({2, 1})",
-    #   "d[a] = 99",
-    #   "b in d"], "True"),
+    (["d = {}",
+      "a = frozenset({1, 2})",
+      "b = frozenset({2, 1})",
+      "d[a] = 99",
+      "b in d"], "True"),
 
-    # (["d = {}",
-    #   "d[frozenset({1})] = 'x'",
-    #   "frozenset({1}) in d"], "True"),
+    (["d = {}",
+      "d[frozenset({1})] = 'x'",
+      "frozenset({1}) in d"], "True"),
 
     # set.__ior__
     (["a = set()",

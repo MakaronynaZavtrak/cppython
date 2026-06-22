@@ -70,15 +70,6 @@ void DictValue::setItem(const Value &key, const Value &value) {
       elements[key] = value;
 }
 
-bool DictValue::hasKey(const Value& key) const {
-
-      if (!key.isHashable()) {
-            return false;
-      }
-
-      return elements.contains(key);
-}
-
 Value DictValue::get(const Value &key, const Value &defaultValue) const {
 
       if (!key.isHashable()) {
@@ -311,4 +302,13 @@ Value DictValue::ror(const Value& other) const {
               )
           )
       );
+}
+
+bool DictValue::contains(const Value& key) const {
+
+      if (!key.isHashable()) {
+            throw std::runtime_error("TypeError: unhashable type");
+      }
+
+      return elements.contains(key);
 }

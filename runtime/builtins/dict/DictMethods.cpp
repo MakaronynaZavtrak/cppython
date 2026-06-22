@@ -52,6 +52,26 @@ namespace {
         );
     }
 
+    Value makeContainsMethod(const Value& obj) {
+
+        auto dict = extract<Value::DictPtr>(obj);
+
+        return makeBuiltin(
+            "__contains__",
+
+            [dict](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__contains__");
+
+                return Value(
+                    dict->contains(args[0])
+                );
+            }
+        );
+    }
+
     Value makeOrMethod(const Value& obj) {
 
         auto dict = extract<Value::DictPtr>(obj);
@@ -385,7 +405,8 @@ namespace {
     const MethodMap DICT_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__getitem__", make_getitem_Method),
-        REGISTER_METHOD("__setitem__", make_setitem_Method ),
+        REGISTER_METHOD("__setitem__", make_setitem_Method),
+        REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::DictPtr>),
         REGISTER_METHOD("__or__", makeOrMethod),
         REGISTER_METHOD("__ior__", makeIOrMethod),
