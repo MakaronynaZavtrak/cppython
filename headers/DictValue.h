@@ -28,6 +28,8 @@ public:
 
     void setItem(const Value& key, const Value& value);
 
+    [[nodiscard]] bool hasKey(const Value& key) const;
+
     [[nodiscard]] Value get(const Value&, const Value& = Value()) const;
 
     [[nodiscard]] std::size_t len() const;
@@ -69,6 +71,8 @@ public:
     [[nodiscard]] Value ror(const Value& other) const override;
 
     [[nodiscard]] bool contains(const Value& key) const override;
+
+    void delItem(const Value& key) override;
 
 };
 #endif //CPPYTHON_DICTVALUE_H

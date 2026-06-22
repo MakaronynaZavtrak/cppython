@@ -99,7 +99,7 @@ Value ByteArrayValue::setItem(
     return {};
 }
 
-Value ByteArrayValue::delItem(const Value& indexValue) {
+void ByteArrayValue::delItem(const Value& indexValue) {
 
     if (indexValue.isSlice()) {
 
@@ -126,8 +126,6 @@ Value ByteArrayValue::delItem(const Value& indexValue) {
         }
 
         data = std::move(result);
-
-        return {};
     }
 
     int index =
@@ -147,8 +145,6 @@ Value ByteArrayValue::delItem(const Value& indexValue) {
     }
 
     data.remove(index, 1);
-
-    return {};
 }
 
 std::size_t ByteArrayValue::len() const {

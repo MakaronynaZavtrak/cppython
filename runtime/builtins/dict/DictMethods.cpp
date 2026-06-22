@@ -52,6 +52,26 @@ namespace {
         );
     }
 
+    Value make_delitem_Method(const Value& obj) {
+
+        auto dict = extract<Value::DictPtr>(obj);
+
+        return makeBuiltin(
+            "__delitem__",
+
+            [dict](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__delitem__");
+
+                dict->delItem(args[0]);
+
+                return {};
+            }
+        );
+    }
+
     Value makeContainsMethod(const Value& obj) {
 
         auto dict = extract<Value::DictPtr>(obj);
@@ -406,6 +426,7 @@ namespace {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("__setitem__", make_setitem_Method),
+        REGISTER_METHOD("__delitem__", make_delitem_Method),
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::DictPtr>),
         REGISTER_METHOD("__or__", makeOrMethod),

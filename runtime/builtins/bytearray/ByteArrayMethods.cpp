@@ -63,7 +63,9 @@ namespace {
 
                 expectArgs(args, 1, "__delitem__");
 
-                return byteArray->delItem(args[0]);
+                byteArray->delItem(args[0]);
+
+                return {};
             }
         );
     }

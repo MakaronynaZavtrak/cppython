@@ -8892,6 +8892,56 @@ if _result is not None:
       "a |= {'b': 999}",
       "a"], "{'a': 1, 'b': 999}"),
 
+    # dict.__delitem__
+    (["d = {'a': 1}",
+      "d.__delitem__('a')",
+      "d"], "{}"),
+
+    (["d = {'a': 1, 'b': 2}",
+      "d.__delitem__('a')",
+      "d"], "{'b': 2}"),
+
+    (["d = {'a': 1, 'b': 2}",
+      "d.__delitem__('b')",
+      "d"], "{'a': 1}"),
+
+    (["d = {1: 'x', 2: 'y'}",
+      "d.__delitem__(1)",
+      "d"], "{2: 'y'}"),
+
+    (["d = {None: 123}",
+      "d.__delitem__(None)",
+      "d"], "{}"),
+
+    (["d = {True: 1, False: 2}",
+      "d.__delitem__(False)",
+      "d"], "{True: 1}"),
+
+
+    (["d = {'a': 1}",
+      "del d['a']",
+      "d"], "{}"),
+
+    (["d = {'a': 1, 'b': 2}",
+      "del d['a']",
+      "d"], "{'b': 2}"),
+
+    (["d = {'a': 1, 'b': 2}",
+      "del d['b']",
+      "d"], "{'a': 1}"),
+
+    (["d = {1: 'x', 2: 'y'}",
+      "del d[1]",
+      "d"], "{2: 'y'}"),
+
+    (["d = {None: 123}",
+      "del d[None]",
+      "d"], "{}"),
+
+    (["d = {True: 1, False: 2}",
+      "del d[False]",
+      "d"], "{True: 1}"),
+
 ])
 
 def test_multiline_expressions(commands, expected):
