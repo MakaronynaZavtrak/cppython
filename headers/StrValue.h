@@ -180,6 +180,7 @@ public:
 
     [[nodiscard]] bool contains(const Value& val) const override;
 
+
 private:
 
     static Value resolveFormatField(
