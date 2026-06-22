@@ -67,6 +67,24 @@ namespace {
         );
     }
 
+    Value makeRmulMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__rmul__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__rmul__");
+
+                return str->rmul(args[0]);
+            }
+        );
+    }
+
     Value makeUpperMethod(const Value& obj) {
 
         auto str = extract<Value::StrPtr>(obj);
@@ -1080,6 +1098,7 @@ namespace {
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__mul__", makeMultiplyMethod),
+        REGISTER_METHOD("__rmul__", makeRmulMethod),
         REGISTER_METHOD("upper", makeUpperMethod),
         REGISTER_METHOD("lower", makeLowerMethod),
         REGISTER_METHOD("strip", makeStripMethod),

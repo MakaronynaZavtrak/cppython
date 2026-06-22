@@ -164,6 +164,8 @@ public:
 
     [[nodiscard]] Value multiply(const Value&) const override;
 
+    [[nodiscard]] Value rmul(const Value&) const override;
+
     [[nodiscard]] bool equal(const Value&) const override;
 
     [[nodiscard]] bool notEqual(const Value&) const override;
@@ -175,8 +177,6 @@ public:
     [[nodiscard]] bool greaterOrEqual(const Value&) const override;
 
     [[nodiscard]] bool greater(const Value&) const override;
-
-    [[nodiscard]] Value rmul(const Value &other) const override;
 
     [[nodiscard]] bool contains(const Value& val) const override;
 

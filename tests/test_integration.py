@@ -1544,6 +1544,18 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'x' * 100", "b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'"),
     ("len(b'x' * 100)", "100"),
 
+    # __rmul__
+    ("'a'.__rmul__(3)", "'aaa'"),
+    ("'abc'.__rmul__(5)", "'abcabcabcabcabc'"),
+    ("''.__rmul__(909)", "''"),
+
+    ("3 * 'a'", "'aaa'"),
+    ("2 * 'ab'", "'abab'"),
+    ("5 * ''", "''"),
+
+    ("0 * 'hello'", "''"),
+    ("-1 * 'hello'", "''"),
+
     # __eq__
     ("b'' == b''", "True"),
     ("b'a' == b'a'", "True"),
