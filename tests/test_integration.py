@@ -4819,6 +4819,28 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("str(bytearray(b'hello'))", "\"bytearray(b'hello')\""),
     ("str(bytearray(b'\\n'))", "\"bytearray(b'\\\\n')\""),
 
+    ("bytearray(b'\\xff').__str__()", "\"bytearray(b'\\\\xff')\""),
+    ("str(bytearray(b'\\xff'))", "\"bytearray(b'\\\\xff')\""),
+
+    # __repr__
+    ("bytearray(b'abc').__repr__()", "\"bytearray(b'abc')\""),
+    ("repr(bytearray(b'abc'))", "\"bytearray(b'abc')\""),
+
+    ("bytearray(b'').__repr__()", "\"bytearray(b'')\""),
+    ("repr(bytearray(b''))", "\"bytearray(b'')\""),
+
+    ("bytearray(b'\\n').__repr__()", "\"bytearray(b'\\\\n')\""),
+    ("bytearray(b'\\t').__repr__()", "\"bytearray(b'\\\\t')\""),
+    ("bytearray(b'\\\\').__repr__()", "\"bytearray(b'\\\\\\\\')\""),
+
+    ("bytearray(b'\\xff').__repr__()", "\"bytearray(b'\\\\xff')\""),
+    ("bytearray(b'\\x00').__repr__()", "\"bytearray(b'\\\\x00')\""),
+    ("bytearray(b'\\x01').__repr__()", "\"bytearray(b'\\\\x01')\""),
+
+    ("bytearray(b\"a'b\").__repr__()", "'bytearray(b\"a\\\\\\\'b\")'"),
+    ("repr(bytearray(b\"a'b\"))", "'bytearray(b\"a\\\\\\\'b\")'"),
+    ("bytearray(b'abc\"def').__repr__()", "'bytearray(b\\\'abc\"def\\\')'"),
+
     # frozenset 
     ("frozenset()", "frozenset()"),
     ("frozenset([])", "frozenset()"),
