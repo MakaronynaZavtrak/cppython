@@ -704,6 +704,32 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set({2, 3}) & set({1, 2, 3})", "{2, 3}"),
     ("set() & set({1})", "set()"),
 
+    # set.__rsub__
+    ("set().__rsub__(set())", "set()"),
+
+    ("set({1}).__rsub__(set())", "set()"),
+    ("set().__rsub__(set({1}))", "{1}"),
+
+    ("set({1}).__rsub__(set({1}))", "set()"),
+    ("set({2}).__rsub__(set({1}))", "{1}"),
+
+    ("set({2, 3}).__rsub__(set({1, 2}))", "{1}"),
+    ("set({2, 3, 4}).__rsub__(set({1, 2, 3}))", "{1}"),
+
+    ("set({2, 3}).__rsub__(frozenset({1, 2}))", "frozenset({1})"),
+    ("set({2, 3, 4}).__rsub__(frozenset({1, 2, 3}))", "frozenset({1})"),
+
+    ("set({(1, 2)}).__rsub__(set({(1, 2)}))", "set()"),
+    ("set({(3, 4)}).__rsub__(set({(1, 2)}))", "{(1, 2)}"),
+
+    ("set({frozenset({2})}).__rsub__(set({frozenset({1})}))", "{frozenset({1})}"),
+
+    ("set({frozenset({1})}).__rsub__(set({frozenset({1})}))", "set()"),
+
+    ("set({2}) - set({1, 2})", "set()"),
+    ("set({2, 3}) - set({1, 2, 3})", "set()"),
+    ("set() - set({1})", "set()"),
+
     # tuple.__add__
     ("(1, 2).__add__((3, 4))", "(1, 2, 3, 4)"),
     ("().__add__(())", "()"),

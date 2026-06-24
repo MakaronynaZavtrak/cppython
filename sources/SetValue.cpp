@@ -394,6 +394,15 @@ Value SetValue::sub(const Value &other) const {
     return difference({other});
 }
 
+Value SetValue::rsub(const Value &other) const {
+
+    return other - Value(
+        std::const_pointer_cast<SetValue>(
+            shared_from_this()
+        )
+    );
+}
+
 Value SetValue::bitXor(const Value &other) const {
     return symmetricDifference(other);
 }
