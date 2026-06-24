@@ -381,6 +381,15 @@ Value SetValue::bitAnd(const Value &other) const {
     return intersection({other});
 }
 
+Value SetValue::rand(const Value &other) const {
+
+    return other & Value(
+        std::const_pointer_cast<SetValue>(
+            shared_from_this()
+        )
+    );
+}
+
 Value SetValue::sub(const Value &other) const {
     return difference({other});
 }

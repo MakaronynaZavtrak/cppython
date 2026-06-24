@@ -84,6 +84,24 @@ namespace {
         );
     }
 
+    Value makeRandMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__rand__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__rand__");
+
+                return set->rand(args[0]);
+            }
+        );
+    }
+
     Value makeIandMethod(const Value& obj) {
 
         auto set = extract<Value::SetPtr>(obj);
@@ -618,6 +636,7 @@ namespace {
         REGISTER_METHOD("__ror__", makeRorMethod),
         REGISTER_METHOD("__ior__", makeIorMethod),
         REGISTER_METHOD("__and__", makeAndMethod),
+        REGISTER_METHOD("__rand__", makeRandMethod),
         REGISTER_METHOD("__iand__", makeIandMethod),
         REGISTER_METHOD("__sub__", makeSubMethod),
         REGISTER_METHOD("__isub__", makeIsubMethod),
