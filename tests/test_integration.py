@@ -758,6 +758,48 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("set({2, 3}) ^ set({1, 2, 3})", "{1}"),
     ("set() ^ set({1})", "{1}"),
 
+    # set.__repr__
+    ("set().__repr__()", "'set()'"),
+    ("repr(set())", "'set()'"),
+
+    ("set({1}).__repr__()", "'{1}'"),
+    ("repr(set({1}))", "'{1}'"),
+
+    ("set({'abc'}).__repr__()", "\"{'abc'}\""),
+    ("repr(set({'abc'}))", "\"{'abc'}\""),
+
+    ("set({True}).__repr__()", "'{True}'"),
+    ("repr(set({True}))", "'{True}'"),
+
+    ("set({(1, 2)}).__repr__()", "'{(1, 2)}'"),
+    ("repr(set({(1, 2)}))", "'{(1, 2)}'"),
+
+    ("set({()}).__repr__()", "'{()}'"),
+    ("repr(set({()}))", "'{()}'"),
+
+    ("set({frozenset({1})}).__repr__()", "'{frozenset({1})}'"),
+    ("repr(set({frozenset({1})}))", "'{frozenset({1})}'"),
+
+    ("set({frozenset()}).__repr__()", "'{frozenset()}'"),
+    ("repr(set({frozenset()}))", "'{frozenset()}'"),
+
+    ("set({None}).__repr__()", "'{None}'"),
+    ("repr(set({None}))", "'{None}'"),
+
+    ("set({b'abc'}).__repr__()", "\"{b'abc'}\""),
+    ("repr(set({b'abc'}))", "\"{b'abc'}\""),
+
+    ("set().__repr__()", "'set()'"),
+    ("set({1}).__repr__()", "'{1}'"),
+    ("set({'hello'}).__repr__()", "\"{'hello'}\""),
+    ("set({(1, 2)}).__repr__()", "'{(1, 2)}'"),
+
+    ("repr(set({1, 2}))", "'{1, 2}'"),
+    ("repr(set({1, 2, 3}))", "'{1, 2, 3}'"),
+
+    ("set({1, 2}).__repr__()", "'{1, 2}'"),
+    ("set({1, 2, 3}).__repr__()", "'{1, 2, 3}'"),
+
     # tuple.__add__
     ("(1, 2).__add__((3, 4))", "(1, 2, 3, 4)"),
     ("().__add__(())", "()"),
