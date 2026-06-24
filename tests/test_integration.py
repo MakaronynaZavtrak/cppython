@@ -4804,6 +4804,21 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'%r') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
     ("bytearray(b'%a') % bytearray(b'abc')", "bytearray(b\"bytearray(b\\'abc\\')\")"),
 
+
+    # __str__
+    ("bytearray(b'abc').__str__()", "\"bytearray(b'abc')\""),
+    ("bytearray(b'').__str__()", "\"bytearray(b'')\""),
+
+    ("str(bytearray(b'abc'))", "\"bytearray(b'abc')\""),
+    ("str(bytearray(b''))", "\"bytearray(b'')\""),
+
+    ("bytearray(b'hello').__str__()", "\"bytearray(b'hello')\""),
+    ("bytearray(b'\\n').__str__()", "\"bytearray(b'\\\\n')\""),
+    ("bytearray(b'\\t').__str__()", "\"bytearray(b'\\\\t')\""),
+
+    ("str(bytearray(b'hello'))", "\"bytearray(b'hello')\""),
+    ("str(bytearray(b'\\n'))", "\"bytearray(b'\\\\n')\""),
+
     # frozenset 
     ("frozenset()", "frozenset()"),
     ("frozenset([])", "frozenset()"),

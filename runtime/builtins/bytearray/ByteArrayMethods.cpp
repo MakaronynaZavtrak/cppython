@@ -1551,6 +1551,26 @@ namespace {
         );
     }
 
+    Value makeStrMethod(const Value& obj) {
+
+        auto byteArray = extract<Value::ByteArrayPtr>(obj);
+
+        return makeBuiltin(
+            "__str__",
+
+            [byteArray](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "__str__");
+
+                return Value(byteArray->toString());
+            }
+        );
+    }
+
     const MethodMap BYTEARRAY_METHODS = {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ByteArrayPtr>),
         REGISTER_METHOD("__getitem__", makeGetItemMethod),
@@ -1571,6 +1591,7 @@ namespace {
         REGISTER_METHOD("__le__", makeLeMethod),
         REGISTER_METHOD("__gt__", makeGtMethod),
         REGISTER_METHOD("__ge__", makeGeMethod),
+        REGISTER_METHOD("__str__", makeStrMethod),
         REGISTER_METHOD("find", makeFindMethod),
         REGISTER_METHOD("rfind", makeRfindMethod),
         REGISTER_METHOD("index", makeIndexMethod),
