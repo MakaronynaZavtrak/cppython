@@ -658,6 +658,23 @@ Value ByteArrayValue::index(
     return result;
 }
 
+Value ByteArrayValue::rindex(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    Value result = rfind(sub, start, end);
+
+    if (result.toBigInt() == -1) {
+
+        throw std::runtime_error(
+            "ValueError: subsection not found"
+        );
+    }
+
+    return result;
+}
+
 Value ByteArrayValue::count(
     const Value& sub,
     const std::optional<Value>& start,

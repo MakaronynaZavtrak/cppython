@@ -4161,6 +4161,17 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytearray(b'abcdef').index(b'cd', 2)", "2"),
     ("bytearray(b'abcdef').index(b'de', 0, 5)", "3"),
 
+    # bytearray.rindex()
+    ("bytearray(b'abca').rindex(b'a')", "3"),
+    ("bytearray(b'abca').rindex(b'bc')", "1"),
+    ("bytearray(b'hello').rindex(b'l')", "3"),
+
+    ("bytearray(b'abca').rindex(b'a', 1)", "3"),
+    ("bytearray(b'abcabc').rindex(b'abc', 0, 5)", "0"),
+
+    ("bytearray(b'abca').rindex(97)", "3"),
+    ("bytearray(b'hello').rindex(108)", "3"),
+
     # bytearray.count()
     ("bytearray(b'abcdef').count(b'a')", "1"),
     ("bytearray(b'abcdef').count(b'f')", "1"),

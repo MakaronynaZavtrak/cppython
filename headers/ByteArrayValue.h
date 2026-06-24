@@ -76,6 +76,11 @@ public:
     const std::optional<Value>& start = std::nullopt,
     const std::optional<Value>& end = std::nullopt) const;
 
+    [[nodiscard]] Value rindex(
+    const Value& sub,
+    const std::optional<Value>& start = std::nullopt,
+    const std::optional<Value>& end = std::nullopt) const;
+
     [[nodiscard]] Value count(
     const Value& sub,
     const std::optional<Value>& start = std::nullopt,
