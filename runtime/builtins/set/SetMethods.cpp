@@ -192,6 +192,24 @@ namespace {
         );
     }
 
+    Value makeRxorMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__rxor__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__rxor__");
+
+                return set->rxor(args[0]);
+            }
+        );
+    }
+
     Value makeIxorMethod(const Value& obj) {
 
         auto set = extract<Value::SetPtr>(obj);
@@ -660,6 +678,7 @@ namespace {
         REGISTER_METHOD("__rsub__", makeRsubMethod),
         REGISTER_METHOD("__isub__", makeIsubMethod),
         REGISTER_METHOD("__xor__", makeXorMethod),
+        REGISTER_METHOD("__rxor__", makeRxorMethod),
         REGISTER_METHOD("__ixor__", makeIxorMethod),
         REGISTER_METHOD("__eq__", makeEqMethod),
         REGISTER_METHOD("__ne__", makeNeMethod),

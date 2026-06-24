@@ -407,6 +407,15 @@ Value SetValue::bitXor(const Value &other) const {
     return symmetricDifference(other);
 }
 
+Value SetValue::rxor(const Value &other) const {
+
+    return other ^ Value(
+        std::const_pointer_cast<SetValue>(
+            shared_from_this()
+        )
+    );
+}
+
 bool SetValue::equal(const Value& other) const {
 
     if (other.isSet()) {

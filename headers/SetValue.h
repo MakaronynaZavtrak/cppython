@@ -76,6 +76,8 @@ public:
 
     [[nodiscard]] Value bitXor(const Value& other) const override;
 
+    [[nodiscard]] Value rxor(const Value& other) const override;
+
     bool equal(const Value &other) const override;
 
     bool notEqual(const Value& other) const override;
