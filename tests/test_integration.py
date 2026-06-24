@@ -1792,6 +1792,28 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'%r' % {'x':1}", "\"{'x': 1}\""),
     ("'%a' % [1,2,3]", "'[1, 2, 3]'"),
 
+
+    # str.__format__
+    ("'abc'.__format__('')", "'abc'"),
+    ("'abc'.__format__('>10')", "'       abc'"),
+    ("'abc'.__format__('<10')", "'abc       '"),
+    ("'abc'.__format__('^10')", "'   abc    '"),
+    ("'hello'.__format__('>3')", "'hello'"),
+    ("'hello'.__format__('<3')", "'hello'"),
+    ("'hello'.__format__('^3')", "'hello'"),
+
+    ("format('abc', '')", "'abc'"),
+    ("format('abc', '>10')", "'       abc'"),
+    ("format('abc', '<10')", "'abc       '"),
+    ("format('abc', '^10')", "'   abc    '"),
+
+    # пока не поддерживается
+    # ("format(42)", "'42'"),
+    # ("format(42, '08d')", "'00000042'"),
+    # ("format(255, 'x')", "'ff'"),
+    # ("format(255, '#x')", "'0xff'"),
+    # ("format(3.14159, '.2f')", "'3.14'"),
+
     # bytes
     ("b'abc'", "b'abc'"),
     ("b\"abc\" == b\"abc\"", "True"),

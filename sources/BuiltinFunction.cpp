@@ -752,6 +752,53 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
     )
 );
 
+    env->set(
+    "format",
+
+    makeBuiltin(
+        "format",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>& env) -> Value {
+
+            if (args.empty() || args.size() > 2) {
+
+                throw std::runtime_error(
+                    "TypeError: format() takes at most 2 arguments"
+                );
+            }
+
+            if (args.size() == 2 && !args[1].isString()) {
+
+                throw std::runtime_error(
+                    "TypeError: format() argument 2 must be str"
+                );
+            }
+
+            const Value& obj = args[0];
+
+            QString formatSpec;
+
+            if (args.size() == 2) {
+
+                formatSpec = args[1].toString();
+            }
+
+            const Value method = getAttrValue(obj, "__format__");
+
+            return call(
+                method,
+                {
+                    Value(formatSpec)
+                },
+                {},
+                env
+            );
+        }
+    )
+);
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {

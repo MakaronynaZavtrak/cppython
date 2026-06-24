@@ -2776,6 +2776,100 @@ Value StrValue::mod(const Value& rhs) const {
 
 }
 
+QString StrValue::applyStringFormatSpec(
+    const QString& text,
+    const QString& spec) {
+
+    bool onlyDigits = true;
+
+    for (QChar ch : spec) {
+
+        if (!ch.isDigit()) {
+            onlyDigits = false;
+            break;
+        }
+    }
+
+    if (onlyDigits) {
+
+        const int width = spec.toInt();
+
+        return text.leftJustified(
+            width,
+            ' '
+        );
+    }
+
+
+    if (spec.isEmpty()) {
+        return text;
+    }
+
+    // >10
+    if (spec.startsWith('>')) {
+
+        const int width =
+            spec.mid(1).toInt();
+
+        return text.rightJustified(
+            width,
+            ' '
+        );
+    }
+
+    // <10
+    if (spec.startsWith('<')) {
+
+        const int width =
+            spec.mid(1).toInt();
+
+        return text.leftJustified(
+            width,
+            ' '
+        );
+    }
+
+    // ^10
+    if (spec.startsWith('^')) {
+
+        const int width = spec.mid(1).toInt();
+
+        if (width <= text.size()) {
+            return text;
+        }
+
+        const int totalPadding = width - text.size();
+
+        const int leftPadding = totalPadding / 2;
+
+        const int rightPadding = totalPadding - leftPadding;
+
+        return QString(leftPadding, ' ')
+               + text
+               + QString(rightPadding, ' ');
+    }
+
+    throw std::runtime_error(
+        "Unknown format code for str"
+    );
+
+
+}
+
+Value StrValue::formatSelf(const QString& spec) const {
+
+    if (spec.isEmpty()) {
+        return Value(value);
+    }
+
+    return Value(
+        applyFormatSpec(
+            Value(value),
+            spec
+        )
+    );
+}
+
 Value StrValue::modSingle(const Value& rhs) const {
 
     QString text = value;

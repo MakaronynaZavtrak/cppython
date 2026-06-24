@@ -184,6 +184,8 @@ public:
 
     [[nodiscard]] Value mod(const Value& rhs) const override;
 
+    [[nodiscard]] Value formatSelf(const QString& spec) const;
+
 private:
 
     static Value resolveFormatField(
@@ -215,6 +217,8 @@ private:
     bool alternateForm,
     int width,
     int precision);
+
+    static QString applyStringFormatSpec(const QString &text, const QString &spec);
 
     [[nodiscard]] Value modTuple(const std::shared_ptr<TupleValue>& tuple) const;
 

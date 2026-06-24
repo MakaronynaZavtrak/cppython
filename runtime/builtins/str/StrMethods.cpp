@@ -295,6 +295,32 @@ namespace {
         );
     }
 
+    Value makeDunderFormatMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__format__",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(
+                    args,
+                    1,
+                    "__format__"
+                );
+
+                return str->formatSelf(
+                    args[0].toString()
+                );
+            }
+        );
+    }
+
     Value makeUpperMethod(const Value& obj) {
 
         auto str = extract<Value::StrPtr>(obj);
@@ -1321,6 +1347,7 @@ namespace {
         REGISTER_METHOD("__hash__", makeHashMethod),
         REGISTER_METHOD("__repr__", makeReprMethod),
         REGISTER_METHOD("__str__", makeStrMethod),
+        REGISTER_METHOD("__format__", makeDunderFormatMethod),
         REGISTER_METHOD("upper", makeUpperMethod),
         REGISTER_METHOD("lower", makeLowerMethod),
         REGISTER_METHOD("strip", makeStripMethod),
