@@ -182,7 +182,7 @@ public:
 
     [[nodiscard]] std::size_t hash() const override;
 
-    Value mod(const Value& rhs) const override;
+    [[nodiscard]] Value mod(const Value& rhs) const override;
 
 private:
 
@@ -197,5 +197,29 @@ private:
     static QString applyFormatSpec(
     const Value& value,
     const QString& spec);
+
+    static QString asciiRepr(const Value &value);
+
+    static QString applyPercentSpec(
+    const Value& value,
+    const QString& spec,
+    int precision);
+
+    static QString formatPercentValue(
+    const Value& val,
+    const QString& spec,
+    bool leftAlign,
+    bool zeroPad,
+    bool showSign,
+    bool spaceSign,
+    bool alternateForm,
+    int width,
+    int precision);
+
+    [[nodiscard]] Value modTuple(const std::shared_ptr<TupleValue>& tuple) const;
+
+    [[nodiscard]] Value modSingle(const Value &rhs) const;
+
+    [[nodiscard]] Value modMapping(const Value::DictPtr & dict) const;
 };
 #endif //CPPYTHON_STRVALUE_H

@@ -2025,7 +2025,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
             );
         }
 
-        const long long n = value.toBigInt().convert_to<long long>();
+        const auto n = value.toBigInt().convert_to<long long>();
 
         return QString::number(n, 8);
     }
@@ -2113,118 +2113,900 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     );
 }
 
-//TODO: метод пока не полнцоценный
-// приколы наподобие таких не поддерживаются
-// "%s %s" % ("a", "b")
-// "%(name)s" % {"name": "Bob"}
-Value StrValue::mod(const Value &rhs) const {
+QString StrValue::asciiRepr(const Value& value) {
 
-    QString text = value;
+    QString text = value.repr();
 
-    if (text == "%%") {
-        return Value("%");
+    QString result;
+
+    for (QChar ch : text) {
+
+        if (ch.unicode() < 128) {
+
+            result += ch;
+        }
+        else {
+
+            result +=
+                QString("\\u%1").arg(
+                    static_cast<int>(ch.unicode()),
+                    4,
+                    16,
+                    QChar('0')
+                );
+        }
     }
 
-    if (!text.contains('%')) {
-        throw std::runtime_error(
-            "TypeError: incomplete format"
-        );
+    return result;
+}
+
+QString StrValue::applyPercentSpec(
+    const Value& value,
+    const QString& spec,
+     const int precision) {
+
+    if (spec == "s") {
+        return value.toString();
     }
 
-    const qsizetype pos = text.indexOf('%');
-
-    if (pos + 1 >= text.size()) {
-        throw std::runtime_error(
-            "TypeError: incomplete format"
-        );
+    if (spec == "r") {
+        return value.repr();
     }
 
-    const QChar spec = text[pos + 1];
+    if (spec == "a") {
 
-    QString replacement;
+        return asciiRepr(value);
+    }
 
-    if (spec == 's') {
+    if (spec == "d" ||
+    spec == "i" ||
+    spec == "u") {
 
-        replacement = rhs.toString();
-
-    } else if (spec == 'r') {
-
-        replacement = rhs.repr();
-
-    } else if (spec == 'd') {
-
-        if (!rhs.isBigInt()) {
+        if (!value.isBigInt()) {
             throw std::runtime_error(
                 "%d requires integer"
             );
         }
 
-        replacement = rhs.toString();
+        return value.toString();
+    }
 
-    } else if (spec == 'f') {
+    if (spec == "x") {
 
-        double d;
-
-        if (rhs.isBigInt()) {
-
-            d = rhs.toBigInt().convert_to<double>();
-
-        } else if (rhs.isBigFloat()) {
-
-            d = rhs.toBigFloat().convert_to<double>();
-
-        } else {
-            throw std::runtime_error(
-                "%f requires number"
-            );
-        }
-
-        replacement = QString::number(d, 'f', 6);
-
-    } else if (spec == 'x') {
-
-        if (!rhs.isBigInt()) {
+        if (!value.isBigInt()) {
             throw std::runtime_error(
                 "%x requires integer"
             );
         }
 
-        replacement =
-                QString::number(
-                    rhs.toBigInt().convert_to<long long>(),
-                    16
-                );
+        return QString::number(
+            value.toBigInt().convert_to<long long>(),
+            16
+        );
     }
 
-    else if (spec == 'o') {
+    if (spec == "X") {
 
-        if (!rhs.isBigInt()) {
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "%X requires integer"
+            );
+        }
+
+        return QString::number(
+            value.toBigInt().convert_to<long long>(),
+            16
+        ).toUpper();
+    }
+
+    if (spec == "o") {
+
+        if (!value.isBigInt()) {
             throw std::runtime_error(
                 "%o requires integer"
             );
         }
 
-        replacement =
-            QString::number(
-                rhs.toBigInt().convert_to<long long>(),
-                8
-            );
-    }
-
-    else {
-
-        throw std::runtime_error(
-            QString(
-                "Unsupported format character '%1'"
-            )
-            .arg(spec)
-            .toStdString()
+        return QString::number(
+            value.toBigInt().convert_to<long long>(),
+            8
         );
     }
 
-    text.replace(pos, 2, replacement);
+    if (spec == "b") {
+
+        if (!value.isBigInt()) {
+            throw std::runtime_error(
+                "%b requires integer"
+            );
+        }
+
+        auto n = value.toBigInt().convert_to<long long>();
+
+        if (n == 0) {
+            return "0";
+        }
+
+        QString result;
+
+        while (n > 0) {
+
+            result.prepend(
+                (n & 1) ? '1' : '0'
+            );
+
+            n >>= 1;
+        }
+
+        return result;
+    }
+
+    if (spec == "c") {
+
+        if (value.isBigInt()) {
+
+            const auto code = value.toBigInt().convert_to<long long>();
+
+            if (code < 0 || code > 0x10FFFF) {
+
+                throw std::runtime_error(
+                    "%c arg not in range(0x110000)"
+                );
+            }
+
+            const auto cp = static_cast<char32_t>(code);
+
+            return QString::fromUcs4(&cp, 1);
+        }
+
+        if (value.isString()) {
+
+            const QString s =
+                value.toString();
+
+            if (s.size() != 1) {
+
+                throw std::runtime_error(
+                    "%c requires a character"
+                );
+            }
+
+            return s;
+        }
+
+        throw std::runtime_error(
+            "%c requires int or char"
+        );
+    }
+
+    if (spec == "f") {
+
+        double d;
+
+        if (value.isBigInt()) {
+            d = value.toBigInt().convert_to<double>();
+        }
+        else if (value.isBigFloat()) {
+            d = value.toBigFloat().convert_to<double>();
+        }
+        else {
+            throw std::runtime_error(
+                "%f requires number"
+            );
+        }
+
+        const int digits = precision >= 0
+        ? precision
+        : 6;
+
+        return QString::number(
+            d,
+            'f',
+            digits
+        );
+    }
+
+    if (spec == "e") {
+
+        double d;
+
+        if (value.isBigInt()) {
+
+            d = value.toBigInt().convert_to<double>();
+
+        } else if (value.isBigFloat()) {
+
+            d = value.toBigFloat().convert_to<double>();
+
+        } else {
+
+            throw std::runtime_error(
+                "%e requires number"
+            );
+        }
+
+        const int digits = precision >= 0 ? precision : 6;
+
+        return QString::number(
+            d,
+            'e',
+            digits
+        );
+    }
+
+    if (spec == "E") {
+
+        double d;
+
+        if (value.isBigInt()) {
+
+            d = value.toBigInt().convert_to<double>();
+
+        } else if (value.isBigFloat()) {
+
+            d = value.toBigFloat().convert_to<double>();
+
+        } else {
+
+            throw std::runtime_error(
+                "%E requires number"
+            );
+        }
+
+        const int digits = precision >= 0 ? precision : 6;
+
+        return QString::number(
+            d,
+            'e',
+            digits
+        ).toUpper();
+    }
+
+    if (spec == "g") {
+
+        double d;
+
+        if (value.isBigInt()) {
+
+            d = value.toBigInt().convert_to<double>();
+
+        } else if (value.isBigFloat()) {
+
+            d = value.toBigFloat().convert_to<double>();
+
+        } else {
+
+            throw std::runtime_error(
+                "%g requires number"
+            );
+        }
+
+        const int digits = precision >= 0 ? precision : 6;
+
+        return QString::number(d, 'g', digits);
+    }
+
+    if (spec == "G") {
+
+        double d;
+
+        if (value.isBigInt()) {
+
+            d = value.toBigInt().convert_to<double>();
+
+        } else if (value.isBigFloat()) {
+
+            d = value.toBigFloat().convert_to<double>();
+
+        } else {
+
+            throw std::runtime_error(
+                "%G requires number"
+            );
+        }
+
+        const int digits = precision >= 0 ? precision : 6;
+
+        return QString::number(d, 'g', digits).toUpper();
+    }
+
+    throw std::runtime_error("unsupported format");
+}
+
+QString StrValue::formatPercentValue(
+    const Value& val,
+    const QString& spec,
+    const bool leftAlign,
+    const bool zeroPad,
+    const bool showSign,
+    const bool spaceSign,
+    const bool alternateForm,
+    const int width,
+    const int precision) {
+
+    QString replacement = applyPercentSpec(val, spec, precision);
+
+    const bool integerSpec =
+    spec == "d" ||
+    spec == "i" ||
+    spec == "u" ||
+    spec == "x" ||
+    spec == "X" ||
+    spec == "o";
+
+    if (integerSpec && precision > 0) {
+
+        const bool negative = replacement.startsWith('-');
+
+        QString digits = replacement;
+
+        if (negative) {
+            digits.remove(0, 1);
+        }
+
+        digits = digits.rightJustified(precision, '0');
+
+        replacement = negative
+        ? "-" + digits
+        : digits;
+    }
+
+    QString prefix;
+
+    if (alternateForm) {
+
+        if (spec == "x") {
+
+            prefix = "0x";
+
+        } else if (spec == "X") {
+
+            prefix = "0X";
+
+        } else if (spec == "o") {
+
+            prefix = "0o";
+        }
+    }
+
+    const bool numericSpec =
+    spec == "d" ||
+    spec == "i" ||
+    spec == "u" ||
+    spec == "f" ||
+    spec == "e" ||
+    spec == "E" ||
+    spec == "g" ||
+    spec == "G";
+
+    if (numericSpec && !replacement.startsWith('-')) {
+        if (showSign) {
+            replacement.prepend('+');
+        }
+        else if (spaceSign) {
+            replacement.prepend(' ');
+        }
+    }
+
+    if (width > 0) {
+
+        if (leftAlign) {
+
+            replacement = prefix + replacement;
+
+            replacement = replacement.leftJustified(width, ' ');
+        }
+        else if (zeroPad) {
+
+            const int padWidth = width - prefix.size() - replacement.size();
+
+            if (padWidth > 0) {
+
+                replacement =
+                    prefix +
+                    QString(padWidth, '0') +
+                    replacement;
+            }
+            else {
+
+                replacement = prefix + replacement;
+            }
+        }
+        else {
+
+            replacement = prefix + replacement;
+
+            replacement =
+                replacement.rightJustified(
+                    width,
+                    ' '
+                );
+        }
+    }
+    else {
+
+        replacement = prefix + replacement;
+    }
+
+    return replacement;
+}
+
+Value StrValue::modTuple(const std::shared_ptr<TupleValue>& tuple) const {
+
+    QString result;
+
+    qsizetype tupleIndex = 0;
+
+    for (qsizetype pos = 0; pos < value.size();) {
+
+        if (value[pos] != '%') {
+
+            result += value[pos++];
+            continue;
+        }
+
+        if (pos + 1 < value.size() && value[pos + 1] == '%') {
+
+            result += '%';
+
+            pos += 2;
+
+            continue;
+        }
+
+        bool leftAlign = false;
+        bool zeroPad = false;
+        bool showSign = false;
+        bool spaceSign = false;
+        bool alternateForm = false;
+        int width = 0;
+        int precision = -1;
+
+        qsizetype i = pos + 1;
+
+        while (i < value.size()) {
+
+            if (value[i] == '+') {
+                showSign = true;
+            }
+            else if (value[i] == ' ') {
+                spaceSign = true;
+            }
+            else if (value[i] == '#') {
+                alternateForm = true;
+            }
+            else if (value[i] == '-') {
+                leftAlign = true;
+            }
+            else if (value[i] == '0') {
+                zeroPad = true;
+            }
+            else {
+                break;
+            }
+
+            ++i;
+        }
+
+        if (i < value.size() && value[i] == '*') {
+            if (tupleIndex >= tuple->len()) {
+
+                throw std::runtime_error(
+                    "not enough arguments for format string"
+                );
+            }
+
+            Value widthValue =
+                tuple->getItem(
+                    Value(
+                        Value::BigInt(tupleIndex++)
+                    )
+                );
+
+            if (!widthValue.isBigInt()) {
+
+                throw std::runtime_error(
+                    "* wants int"
+                );
+            }
+
+            width =
+                static_cast<int>(
+                    widthValue.toBigInt()
+                    .convert_to<long long>()
+                );
+
+            if (width < 0) {
+
+                leftAlign = true;
+                width = -width;
+            }
+
+            ++i;
+        }
+        else {
+
+            while (i < value.size() && value[i].isDigit()) {
+
+                width = width * 10 + value[i].digitValue();
+
+                ++i;
+            }
+        }
+
+        if (i < value.size() && value[i] == '.') {
+
+            ++i;
+
+            if (i < value.size() && value[i] == '*') {
+
+                if (tupleIndex >= tuple->len()) {
+
+                    throw std::runtime_error(
+                        "not enough arguments for format string"
+                    );
+                }
+
+                Value precisionValue =
+                    tuple->getItem(
+                        Value(
+                            Value::BigInt(tupleIndex++)
+                        )
+                    );
+
+                if (!precisionValue.isBigInt()) {
+
+                    throw std::runtime_error(
+                        "* wants int"
+                    );
+                }
+
+                precision =
+                    static_cast<int>(
+                        precisionValue.toBigInt()
+                        .convert_to<long long>()
+                    );
+
+                ++i;
+            }
+            else {
+
+                precision = 0;
+
+                while (i < value.size() && value[i].isDigit()) {
+
+                    precision = precision * 10 + value[i].digitValue();
+
+                    ++i;
+                }
+            }
+        }
+
+        if (i >= value.size()) {
+
+            throw std::runtime_error(
+                "incomplete format"
+            );
+        }
+
+        QString spec(value[i]);
+
+        if (tupleIndex >= tuple->len()) {
+
+            throw std::runtime_error(
+                "TypeError: not enough arguments for format string"
+            );
+        }
+
+        Value current = tuple->getItem(
+            Value(
+                Value::BigInt(tupleIndex++)
+            )
+        );
+
+        result +=
+                formatPercentValue(
+                    current,
+                    spec,
+                    leftAlign,
+                    zeroPad,
+                    showSign,
+                    spaceSign,
+                    alternateForm,
+                    width,
+                    precision
+                );
+
+        pos = i + 1;
+
+    }
+
+    if (tupleIndex != tuple->len()) {
+
+        throw std::runtime_error(
+            "TypeError: not all arguments converted during string formatting"
+        );
+    }
+
+    return Value(result);
+}
+
+//TODO: метод пока не полнцоценный
+// приколы наподобие таких не поддерживаются
+// "%s %s" % ("a", "b")
+// "%(name)s" % {"name": "Bob"}
+Value StrValue::mod(const Value& rhs) const {
+
+    QString text = value;
+
+    qsizetype count = 0;
+
+    for (qsizetype i = 0; i < text.size(); ++i) {
+
+        if (text[i] == '%') {
+
+            if (i + 1 < text.size() &&
+                text[i + 1] == '%') {
+                ++i;
+                continue;
+            }
+
+            ++count;
+        }
+    }
+
+    if (rhs.isDict() && value.contains("%(")) {
+
+        return modMapping(rhs.asDict());
+    }
+
+    if (count == 1 && !rhs.isTuple()) {
+
+        return modSingle(rhs);
+    }
+
+    if (!rhs.isTuple()) {
+
+        throw std::runtime_error(
+            "TypeError: not enough arguments for format string"
+        );
+    }
+
+    return modTuple(rhs.asTuple());
+
+}
+
+Value StrValue::modSingle(const Value& rhs) const {
+
+    QString text = value;
+
+    const qsizetype pos = text.indexOf('%');
+
+    if (pos == -1) {
+        throw std::runtime_error(
+            "no format specifier"
+        );
+    }
+
+    bool leftAlign = false;
+    bool zeroPad = false;
+    int width = 0;
+    int precision = -1;
+    bool showSign = false;
+    bool spaceSign = false;
+    bool alternateForm = false;
+
+    qsizetype i = pos + 1;
+
+    while (i < value.size()) {
+
+        if (value[i] == '+') {
+            showSign = true;
+        }
+        else if (value[i] == ' ') {
+            spaceSign = true;
+        }
+        else if (value[i] == '#') {
+            alternateForm = true;
+        }
+        else if (value[i] == '-') {
+            leftAlign = true;
+        }
+        else if (value[i] == '0') {
+            zeroPad = true;
+        }
+        else {
+            break;
+        }
+
+        ++i;
+    }
+
+    while (i < text.size() && text[i].isDigit()) {
+        width = width * 10 + (text[i].digitValue());
+        ++i;
+    }
+
+    if (i < text.size() && text[i] == '.') {
+
+        ++i;
+
+        precision = 0;
+
+        while (i < text.size() && text[i].isDigit()) {
+            precision =
+                precision * 10 +
+                text[i].digitValue();
+
+            ++i;
+        }
+    }
+
+    if (i >= text.size()) {
+        throw std::runtime_error(
+            "incomplete format"
+        );
+    }
+
+    const QString spec(text[i]);
+
+    const QString replacement =
+    formatPercentValue(
+        rhs,
+        spec,
+        leftAlign,
+        zeroPad,
+        showSign,
+        spaceSign,
+        alternateForm,
+        width,
+        precision
+    );
+
+    text.replace(
+        pos,
+        i - pos + 1,
+        replacement
+    );
 
     return Value(text);
+
+}
+
+Value StrValue::modMapping(const Value::DictPtr &dict) const {
+
+    QString result;
+
+    for (qsizetype pos = 0; pos < value.size();) {
+
+        if (value[pos] != '%') {
+
+            result += value[pos++];
+            continue;
+        }
+
+        if (pos + 1 < value.size() && value[pos + 1] == '%') {
+
+            result += '%';
+
+            pos += 2;
+
+            continue;
+        }
+
+        if (pos + 1 >= value.size() ||
+            value[pos + 1] != '(')
+        {
+            throw std::runtime_error(
+                "invalid mapping format"
+            );
+        }
+
+        const qsizetype keyStart = pos + 2;
+
+        const qsizetype keyEnd = value.indexOf(')', keyStart);
+
+        if (keyEnd == -1) {
+
+            throw std::runtime_error(
+                "incomplete mapping key"
+            );
+        }
+
+        QString key = value.mid(keyStart, keyEnd - keyStart);
+
+        const qsizetype specPos = keyEnd + 1;
+
+        bool leftAlign = false;
+        bool zeroPad = false;
+        bool showSign = false;
+        bool spaceSign = false;
+        bool alternateForm = false;
+        int width = 0;
+        int precision = -1;
+
+        qsizetype i = specPos;
+
+        while (i < value.size()) {
+
+            if (value[i] == '+') {
+                showSign = true;
+            }
+            else if (value[i] == ' ') {
+                spaceSign = true;
+            }
+            else if (value[i] == '#') {
+                alternateForm = true;
+            }
+            else if (value[i] == '-') {
+                leftAlign = true;
+            }
+            else if (value[i] == '0') {
+                zeroPad = true;
+            }
+            else {
+                break;
+            }
+
+            ++i;
+        }
+
+        while (i < value.size() && value[i].isDigit()) {
+
+            width = width * 10 + value[i].digitValue();
+
+            ++i;
+        }
+
+        if (i < value.size() &&
+            value[i] == '.')
+        {
+            ++i;
+
+            precision = 0;
+
+            while (i < value.size() &&
+                   value[i].isDigit())
+            {
+                precision =
+                    precision * 10 +
+                    value[i].digitValue();
+
+                ++i;
+            }
+        }
+
+        if (i >= value.size()) {
+
+            throw std::runtime_error(
+                "missing format specifier"
+            );
+        }
+
+        QString spec(value[i]);
+
+        Value fieldValue = dict->getItem(Value(key));
+
+        const QString replacement =
+                formatPercentValue(
+                    fieldValue,
+                    spec,
+                    leftAlign,
+                    zeroPad,
+                    showSign,
+                    spaceSign,
+                    alternateForm,
+                    width,
+                    precision
+                );
+
+        result += replacement;
+
+        pos = i + 1;
+    }
+
+    return Value(result);
+
 }
 
 bool StrValue::contains(const Value& val) const {
