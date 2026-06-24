@@ -275,6 +275,26 @@ namespace {
         );
     }
 
+    Value makeStrMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__str__",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "__str__");
+
+                return Value(str->toString());
+            }
+        );
+    }
+
     Value makeUpperMethod(const Value& obj) {
 
         auto str = extract<Value::StrPtr>(obj);
@@ -1300,6 +1320,7 @@ namespace {
         REGISTER_METHOD("__ge__", makeGeMethod),
         REGISTER_METHOD("__hash__", makeHashMethod),
         REGISTER_METHOD("__repr__", makeReprMethod),
+        REGISTER_METHOD("__str__", makeStrMethod),
         REGISTER_METHOD("upper", makeUpperMethod),
         REGISTER_METHOD("lower", makeLowerMethod),
         REGISTER_METHOD("strip", makeStripMethod),

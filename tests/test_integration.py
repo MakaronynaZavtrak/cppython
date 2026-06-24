@@ -1080,6 +1080,19 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("repr('abc') == 'abc'.__repr__()", "True"),
     ("repr('Привет') == 'Привет'.__repr__()", "True"),
 
+
+    # str.__str__
+    ("'abc'.__str__()", "'abc'"),
+    ("'hello'.__str__()", "'hello'"),
+    ("''.__str__()", "''"),
+    ("'Привет'.__str__()", "'Привет'"),
+    ("'你好'.__str__()", "'你好'"),
+    ("'\\n'.__str__()", "'\\n'"),
+    ("'\\t'.__str__()", "'\\t'"),
+    ("str('abc') == 'abc'.__str__()", "True"),
+    ("str('Привет') == 'Привет'.__str__()", "True"),
+
+
     # print
     ("print()", ""),
     ("print(1)", "1"),
