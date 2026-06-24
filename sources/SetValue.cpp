@@ -368,6 +368,15 @@ Value SetValue::bitOr(const Value &other) const {
     return unionSet({other});
 }
 
+Value SetValue::ror(const Value &other) const {
+
+    return other | Value(
+        std::const_pointer_cast<SetValue>(
+            shared_from_this()
+        )
+    );
+}
+
 Value SetValue::bitAnd(const Value &other) const {
     return intersection({other});
 }

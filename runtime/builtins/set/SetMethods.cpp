@@ -48,6 +48,24 @@ namespace {
         );
     }
 
+    Value makeRorMethod(const Value& obj) {
+
+        auto set = extract<Value::SetPtr>(obj);
+
+        return makeBuiltin(
+            "__ror__",
+
+            [set](const std::vector<Value> &args,
+                  const Kwargs &,
+                  const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__ror__");
+
+                return set->ror(args[0]);
+            }
+        );
+    }
+
     Value makeAndMethod(const Value& obj) {
 
         auto set = extract<Value::SetPtr>(obj);
@@ -597,6 +615,7 @@ namespace {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__or__", makeOrMethod),
+        REGISTER_METHOD("__ror__", makeRorMethod),
         REGISTER_METHOD("__ior__", makeIorMethod),
         REGISTER_METHOD("__and__", makeAndMethod),
         REGISTER_METHOD("__iand__", makeIandMethod),

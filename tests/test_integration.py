@@ -657,6 +657,27 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("4 in set({1, 2, 3})", "False"),
     ("set({1, 2, 3}).__contains__(4)", "False"),
 
+    # set.__ror__
+    ("set({1}).__ror__(set())", "{1}"),
+    ("set().__ror__(set({1}))", "{1}"),
+
+    ("set({2}).__ror__(set({1})) == {1, 2}", "True"),
+    ("set({1, 2}).__ror__(set({2, 3})) == {1, 2, 3}", "True"),
+
+    ("set({1, 2}).__ror__(frozenset({2, 3})) == frozenset({1, 2, 3})", "True"),
+    ("set({1}).__ror__(frozenset())", "frozenset({1})"),
+
+    ("set({(3, 4)}).__ror__(set({(1, 2)})) == {(1, 2), (3, 4)}", "True"),
+
+    ("set({frozenset({2})}).__ror__(set({frozenset({1})})) == {frozenset({1}), frozenset({2})}", "True"),
+
+    ("set({1}).__ror__(set({1}))", "{1}"),
+    ("set().__ror__(set())", "set()"),
+
+    ("set({2}) | set({1}) == {1, 2}", "True"),
+    ("set({1, 2}) | set({2, 3}) == {1, 2, 3}", "True"),
+    ("set() | set({1})", "{1}"),
+
     # tuple.__add__
     ("(1, 2).__add__((3, 4))", "(1, 2, 3, 4)"),
     ("().__add__(())", "()"),
