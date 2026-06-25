@@ -175,6 +175,24 @@ namespace {
         );
     }
 
+    Value makeGreaterMethod(const Value& obj) {
+
+        auto tuple = extract<Value::TuplePtr>(obj);
+
+        return makeBuiltin(
+            "__gt__",
+
+            [tuple](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__gt__");
+
+                return Value(tuple->greater(args[0]));
+            }
+        );
+    }
+
     Value makeRMulMethod(const Value& obj) {
 
         auto tuple = extract<Value::TuplePtr>(obj);
@@ -260,6 +278,7 @@ namespace {
         REGISTER_METHOD("__ne__", makeNotEqualMethod),
         REGISTER_METHOD("__lt__", makeLessMethod),
         REGISTER_METHOD("__le__", makeLessOrEqualMethod),
+        REGISTER_METHOD("__gt__", makeGreaterMethod),
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("index", makeIndexMethod)
     };
