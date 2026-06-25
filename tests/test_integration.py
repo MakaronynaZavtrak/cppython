@@ -2188,9 +2188,7 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'a\\nb'.encode()", "b'a\\nb'"),
     ("'a\\tb'.encode()", "b'a\\tb'"),
     ("'abc'.__str__()", "'abc'"),
-
-    # пока не поддерживается
-    # ("'abc'.encode().__repr__()", "\"b'abc'\""),
+    ("'abc'.encode().__repr__()", "\"b'abc'\""),
 
     # str.removeprefix
     ("'foobar'.removeprefix('foo')", "'bar'"),
@@ -3867,6 +3865,26 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'\\x00'.__hash__() == b'\\x01'.__hash__()", "False"),
     ("b'\\xd0\\x9f'.__hash__() == b'\\xd0\\x9f'.__hash__()", "True"),
     ("b'\\xd0\\x9f'.__hash__() == b'\\xd0\\x90'.__hash__()", "False"),
+
+    # bytes.__repr__
+    ("b'abc'.__repr__()", "\"b'abc'\""),
+    ("b''.__repr__()", "\"b''\""),
+    ("b'\\n'.__repr__()", "\"b'\\\\n'\""),
+    ("b'abc\\n'.__repr__()", "\"b'abc\\\\n'\""),
+    ("b'\\t'.__repr__()", "\"b'\\\\t'\""),
+    ("b'abc\\t'.__repr__()", "\"b'abc\\\\t'\""),
+    ("b'\\r'.__repr__()", "\"b'\\\\r'\""),
+    ("b'\\\\'.__repr__()", "\"b'\\\\\\\\'\""),
+    ("b\"'\".__repr__()", "'b\"\\\'\"'"),
+    ("b'\"'.__repr__()", "'b\\\'\"\\\''"),
+    ("b'\\'\"'.__repr__()", "'b\\\'\\\\\\\'\"\\\''"),
+    ("b'\\x00'.__repr__()", "\"b'\\\\x00'\""),
+    ("b'\\x01'.__repr__()", "\"b'\\\\x01'\""),
+    ("b'\\xff'.__repr__()", "\"b'\\\\xff'\""),
+    ("b'\\x00\\xff'.__repr__()", "\"b'\\\\x00\\\\xff'\""),
+    ("b'abc\\x00def'.__repr__()", "\"b'abc\\\\x00def'\""),
+    ("b'hello'.__repr__() == b'hello'.__repr__()", "True"),
+    ("b'hello'.__repr__() == b'world'.__repr__()", "False"),
 
     # str slicing
     # базовые слайсы
