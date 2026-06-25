@@ -413,6 +413,38 @@ bool ListValue::greater(const Value& other) const {
     return elements.size() > rhs.size();
 }
 
+Value ListValue::add(const Value& other) const {
+
+    if (!other.isList()) {
+
+        throw std::runtime_error(
+            "TypeError: can only concatenate list to list"
+        );
+    }
+
+    auto result =
+        std::make_shared<ListValue>();
+
+    result->elements.reserve(
+        elements.size() +
+        other.asList()->elements.size()
+    );
+
+    result->elements.insert(
+        result->elements.end(),
+        elements.begin(),
+        elements.end()
+    );
+
+    result->elements.insert(
+        result->elements.end(),
+        other.asList()->elements.begin(),
+        other.asList()->elements.end()
+    );
+
+    return Value(result);
+}
+
 bool ListValue::greaterOrEqual(const Value& other) const {
     return !less(other);
 }
