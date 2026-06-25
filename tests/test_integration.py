@@ -352,6 +352,65 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("frozenset({1}) in {frozenset({1}): 'x'}", "True"),
     ("'a' in {'a': 'b'}", "True"),
 
+    # dict.__repr__
+    ("dict().__repr__()", "'{}'"),
+    ("repr(dict())", "'{}'"),
+
+    ("{'a': 1}.__repr__()", "\"{'a': 1}\""),
+    ("repr({'a': 1})", "\"{'a': 1}\""),
+
+    ("{1: 2}.__repr__()", "'{1: 2}'"),
+    ("repr({1: 2})", "'{1: 2}'"),
+
+    ("{True: False}.__repr__()", "'{True: False}'"),
+    ("repr({True: False})", "'{True: False}'"),
+
+    ("{None: 1}.__repr__()", "'{None: 1}'"),
+    ("repr({None: 1})", "'{None: 1}'"),
+
+    ("{'a': 1, 'b': 2}.__repr__()", "\"{'a': 1, 'b': 2}\""),
+    ("repr({'a': 1, 'b': 2})", "\"{'a': 1, 'b': 2}\""),
+
+    ("{1: 'a', 2: 'b'}.__repr__()", "\"{1: 'a', 2: 'b'}\""),
+    ("repr({1: 'a', 2: 'b'})", "\"{1: 'a', 2: 'b'}\""),
+
+    ("{'nested': {'x': 1}}.__repr__()", "\"{'nested': {'x': 1}}\""),
+    ("repr({'nested': {'x': 1}})", "\"{'nested': {'x': 1}}\""),
+
+    ("{'list': [1, 2]}.__repr__()", "\"{'list': [1, 2]}\""),
+    ("repr({'list': [1, 2]})", "\"{'list': [1, 2]}\""),
+
+    ("{'tuple': (1, 2)}.__repr__()", "\"{'tuple': (1, 2)}\""),
+    ("repr({'tuple': (1, 2)})", "\"{'tuple': (1, 2)}\""),
+
+    ("{'set': set({1, 2})}.__repr__()", "\"{'set': {1, 2}}\""),
+    ("repr({'set': set({1, 2})})", "\"{'set': {1, 2}}\""),
+
+    ("{'frozen': frozenset({1, 2})}.__repr__()", "\"{'frozen': frozenset({1, 2})}\""),
+    ("repr({'frozen': frozenset({1, 2})})", "\"{'frozen': frozenset({1, 2})}\""),
+
+    ("{'bytes': b'abc'}.__repr__()", "\"{'bytes': b'abc'}\""),
+    ("repr({'bytes': b'abc'})", "\"{'bytes': b'abc'}\""),
+
+    ("{'none': None, 'flag': True}.__repr__()", "\"{'none': None, 'flag': True}\""),
+    ("repr({'none': None, 'flag': True})", "\"{'none': None, 'flag': True}\""),
+
+    ("{'a': {'b': {'c': 1}}}.__repr__()", "\"{'a': {'b': {'c': 1}}}\""),
+    ("repr({'a': {'b': {'c': 1}}})", "\"{'a': {'b': {'c': 1}}}\""),
+
+    ("{}.__repr__() == repr({})", "True"),
+    ("{'a': 1}.__repr__() == repr({'a': 1})", "True"),
+    ("{1: 2}.__repr__() == repr({1: 2})", "True"),
+    ("{'nested': {'x': 1}}.__repr__() == repr({'nested': {'x': 1}})", "True"),
+    ("{'list': [1, 2]}.__repr__() == repr({'list': [1, 2]})", "True"),
+    ("{'tuple': (1, 2)}.__repr__() == repr({'tuple': (1, 2)})", "True"),
+
+    ("{(1, 2): 'x'}.__repr__()", "\"{(1, 2): 'x'}\""),
+    ("repr({(1, 2): 'x'})", "\"{(1, 2): 'x'}\""),
+
+    ("{frozenset({1}): 'x'}.__repr__()", "\"{frozenset({1}): 'x'}\""),
+    ("repr({frozenset({1}): 'x'})", "\"{frozenset({1}): 'x'}\""),
+
     # reversed
     ("list(reversed((1, 2, 5, 10, 19)))", "[19, 10, 5, 2, 1]"),
     ("list(reversed((42,)))", "[42]"),
