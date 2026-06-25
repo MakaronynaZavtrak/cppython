@@ -3015,6 +3015,22 @@ Value StrValue::removePrefix(const Value& prefix) const {
     return Value(value);
 }
 
+Value StrValue::removeSuffix(const Value& suffix) const {
+
+    const QString suff = suffix.toString();
+
+    if (!suff.isEmpty() && value.endsWith(suff)) {
+
+        return Value(
+            value.left(
+                value.size() - suff.size()
+            )
+        );
+    }
+
+    return Value(value);
+}
+
 Value StrValue::modSingle(const Value& rhs) const {
 
     QString text = value;

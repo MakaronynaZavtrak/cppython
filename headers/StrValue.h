@@ -192,6 +192,8 @@ public:
 
     [[nodiscard]] Value removePrefix(const Value& prefix) const;
 
+    [[nodiscard]] Value removeSuffix(const Value& suffix) const;
+
 private:
 
     static Value resolveFormatField(

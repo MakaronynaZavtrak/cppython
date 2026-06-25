@@ -1385,6 +1385,27 @@ namespace {
         );
     }
 
+    Value makeRemoveSuffixMethod(const Value& obj) {
+
+        auto str =
+            extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "removesuffix",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "removesuffix");
+
+                return str->removeSuffix(args[0]);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -1449,7 +1470,8 @@ namespace {
         REGISTER_METHOD("format_map", makeFormatMapMethod),
         REGISTER_METHOD("format", makeFormatMethod),
         REGISTER_METHOD("encode", makeEncodeMethod),
-        REGISTER_METHOD("removeprefix", makeRemovePrefixMethod)
+        REGISTER_METHOD("removeprefix", makeRemovePrefixMethod),
+        REGISTER_METHOD("removesuffix", makeRemoveSuffixMethod)
     };
 }
 

@@ -2208,6 +2208,24 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("'foobar'.removeprefix('foo')", "'bar'"),
     ("'foobar'.__str__()", "'foobar'"),
 
+    # str.removesuffix
+    ("'foobar'.removesuffix('bar')", "'foo'"),
+    ("'foobar'.removesuffix('foobar')", "''"),
+    ("'foobar'.removesuffix('')", "'foobar'"),
+    ("'foobar'.removesuffix('foo')", "'foobar'"),
+    ("'foobar'.removesuffix('baz')", "'foobar'"),
+    ("''.removesuffix('')", "''"),
+    ("''.removesuffix('abc')", "''"),
+    ("'Привет'.removesuffix('вет')", "'При'"),
+    ("'Привет'.removesuffix('мир')", "'Привет'"),
+    ("'你好世界'.removesuffix('世界')", "'你好'"),
+    ("'abc\\n'.removesuffix('\\n')", "'abc'"),
+    ("'abc\\t'.removesuffix('\\t')", "'abc'"),
+    ("'abc'.removesuffix('abc')", "''"),
+    ("'Привет'.removesuffix('Привет')", "''"),
+    ("'abcabc'.removesuffix('abc')", "'abc'"),
+    ("'aaaa'.removesuffix('aa')", "'aa'"),
+
     # bytes.__mul__
     ("b'a' * 3", "b'aaa'"),
     ("b'ab' * 3", "b'ababab'"),
