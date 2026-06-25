@@ -139,6 +139,24 @@ namespace {
         );
     }
 
+    Value makeLessMethod(const Value& obj) {
+
+        auto tuple = extract<Value::TuplePtr>(obj);
+
+        return makeBuiltin(
+            "__lt__",
+
+            [tuple](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__lt__");
+
+                return Value(tuple->less(args[0]));
+            }
+        );
+    }
+
     Value makeRMulMethod(const Value& obj) {
 
         auto tuple = extract<Value::TuplePtr>(obj);
@@ -222,6 +240,7 @@ namespace {
         REGISTER_METHOD("__rmul__", makeRMulMethod),
         REGISTER_METHOD("__eq__", makeEqualMethod),
         REGISTER_METHOD("__ne__", makeNotEqualMethod),
+        REGISTER_METHOD("__lt__", makeLessMethod),
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("index", makeIndexMethod)
     };
