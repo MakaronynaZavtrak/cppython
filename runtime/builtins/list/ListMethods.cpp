@@ -86,6 +86,24 @@ namespace {
         );
     }
 
+    Value makeLessOrEqualMethod(const Value& obj) {
+
+        auto list = extract<Value::ListPtr>(obj);
+
+        return makeBuiltin(
+            "__le__",
+
+            [list](const std::vector<Value> &args,
+                   const Kwargs &,
+                   const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__le__");
+
+                return Value(list->lessOrEqual(args[0]));
+            }
+        );
+    }
+
     Value makeAppendMethod(const Value& obj) {
 
         auto list = extract<Value::ListPtr>(obj);
@@ -352,6 +370,7 @@ namespace {
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ListPtr>),
         REGISTER_METHOD("__eq__", makeEqualMethod),
         REGISTER_METHOD("__ne__", makeNotEqualMethod),
+        REGISTER_METHOD("__le__", makeLessOrEqualMethod),
         REGISTER_METHOD("append", makeAppendMethod),
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("extend", makeExtendMethod),
