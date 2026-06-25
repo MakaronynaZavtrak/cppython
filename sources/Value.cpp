@@ -1452,7 +1452,7 @@ std::size_t Value::hash() const {
     }
 
     if (isBytes()) {
-        return qHash(asBytes()->bytes());
+        return asBytes()->hash();
     }
 
     if (isTuple()) {

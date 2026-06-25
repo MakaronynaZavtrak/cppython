@@ -2900,6 +2900,13 @@ Value BytesValue::mod(const Value& rhs) const {
     );
 }
 
+std::size_t BytesValue::hash() const {
+
+    return static_cast<long long>(
+        qHash(bytes())
+    );
+}
+
 BytesValue::BytesValue(QByteArray data) : data(std::move(data)) {}
 
 const QByteArray& BytesValue::bytes() const {

@@ -173,5 +173,7 @@ public:
 
     [[nodiscard]] Value mod(const Value& rhs) const override;
 
+    [[nodiscard]] std::size_t hash() const override;
+
 };
 #endif //CPPYTHON_BYTESVALUE_H

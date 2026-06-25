@@ -3856,6 +3856,18 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("bytes({65: 'a'})", "b'A'"),
     ("bytes({97: 1})", "b'a'"),
 
+    # bytes.__hash__
+    ("b'abc'.__hash__() == b'abc'.__hash__()", "True"),
+    ("b''. __hash__() == b''. __hash__()", "True"),
+    ("b'abc'.__hash__() == b'abd'.__hash__()", "False"),
+    ("b'abc'.__hash__() == b''.__hash__()", "False"),
+    ("b'abc' in {b'abc'}", "True"),
+    ("b'abc' in {b'abd'}", "False"),
+    ("b'\\x00'.__hash__() == b'\\x00'.__hash__()", "True"),
+    ("b'\\x00'.__hash__() == b'\\x01'.__hash__()", "False"),
+    ("b'\\xd0\\x9f'.__hash__() == b'\\xd0\\x9f'.__hash__()", "True"),
+    ("b'\\xd0\\x9f'.__hash__() == b'\\xd0\\x90'.__hash__()", "False"),
+
     # str slicing
     # базовые слайсы
     ("\"abcdef\"[:]", "'abcdef'"),
