@@ -211,6 +211,24 @@ namespace {
         );
     }
 
+    Value makeReprMethod(const Value& obj) {
+
+        auto tuple = extract<Value::TuplePtr>(obj);
+
+        return makeBuiltin(
+            "__repr__",
+
+            [tuple](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 0, "__repr__");
+
+                return Value(tuple->repr());
+            }
+        );
+    }
+
     Value makeRMulMethod(const Value& obj) {
 
         auto tuple = extract<Value::TuplePtr>(obj);
@@ -298,6 +316,7 @@ namespace {
         REGISTER_METHOD("__le__", makeLessOrEqualMethod),
         REGISTER_METHOD("__gt__", makeGreaterMethod),
         REGISTER_METHOD("__ge__", makeGreaterOrEqualMethod),
+        REGISTER_METHOD("__repr__", makeReprMethod),
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("index", makeIndexMethod)
     };
