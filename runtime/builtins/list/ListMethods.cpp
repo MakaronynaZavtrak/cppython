@@ -68,6 +68,24 @@ namespace {
         );
     }
 
+    Value makeNotEqualMethod(const Value& obj) {
+
+        auto list = extract<Value::ListPtr>(obj);
+
+        return makeBuiltin(
+            "__ne__",
+
+            [list](const std::vector<Value> &args,
+                   const Kwargs &,
+                   const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgs(args, 1, "__ne__");
+
+                return Value(list->notEqual(args[0]));
+            }
+        );
+    }
+
     Value makeAppendMethod(const Value& obj) {
 
         auto list = extract<Value::ListPtr>(obj);
@@ -333,6 +351,7 @@ namespace {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ListPtr>),
         REGISTER_METHOD("__eq__", makeEqualMethod),
+        REGISTER_METHOD("__ne__", makeNotEqualMethod),
         REGISTER_METHOD("append", makeAppendMethod),
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("extend", makeExtendMethod),
