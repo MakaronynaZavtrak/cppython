@@ -3003,6 +3003,18 @@ Value StrValue::encode(
     return Value(bytes);
 }
 
+Value StrValue::removePrefix(const Value& prefix) const {
+
+    const QString pref = prefix.toString();
+
+    if (value.startsWith(pref)) {
+
+        return Value(value.mid(pref.size()));
+    }
+
+    return Value(value);
+}
+
 Value StrValue::modSingle(const Value& rhs) const {
 
     QString text = value;

@@ -190,6 +190,8 @@ public:
     const std::optional<QString>& encoding = std::nullopt,
     const std::optional<QString>& errors = std::nullopt) const;
 
+    [[nodiscard]] Value removePrefix(const Value& prefix) const;
+
 private:
 
     static Value resolveFormatField(

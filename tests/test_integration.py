@@ -2192,6 +2192,22 @@ def run_cppython(cmds: str | list[str]) -> str:
     # пока не поддерживается
     # ("'abc'.encode().__repr__()", "\"b'abc'\""),
 
+    # str.removeprefix
+    ("'foobar'.removeprefix('foo')", "'bar'"),
+    ("'foobar'.removeprefix('foobar')", "''"),
+    ("'foobar'.removeprefix('')", "'foobar'"),
+    ("'foobar'.removeprefix('bar')", "'foobar'"),
+    ("'foobar'.removeprefix('foobarbaz')", "'foobar'"),
+    ("''.removeprefix('')", "''"),
+    ("''.removeprefix('abc')", "''"),
+    ("'Привет'.removeprefix('При')", "'вет'"),
+    ("'Привет'.removeprefix('Про')", "'Привет'"),
+    ("'你好世界'.removeprefix('你好')", "'世界'"),
+    ("'\\nabc'.removeprefix('\\n')", "'abc'"),
+    ("'\\tabc'.removeprefix('\\t')", "'abc'"),
+    ("'foobar'.removeprefix('foo')", "'bar'"),
+    ("'foobar'.__str__()", "'foobar'"),
+
     # bytes.__mul__
     ("b'a' * 3", "b'aaa'"),
     ("b'ab' * 3", "b'ababab'"),
