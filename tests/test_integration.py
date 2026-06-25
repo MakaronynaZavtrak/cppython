@@ -2170,6 +2170,28 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("hash('кот') != hash('пёс')", "True"),
     ("hash('') == ''.__hash__()", "True"),
 
+
+    # str.encode
+    ("'abc'.encode()", "b'abc'"),
+    ("'abc'.encode('utf-8')", "b'abc'"),
+    ("''.encode()", "b''"),
+    ("'Привет'.encode('utf-8')", "b'\\xd0\\x9f\\xd1\\x80\\xd0\\xb8\\xd0\\xb2\\xd0\\xb5\\xd1\\x82'"),
+    ("'你好'.encode('utf-8')", "b'\\xe4\\xbd\\xa0\\xe5\\xa5\\xbd'"),
+    ("'abc'.encode('ascii')", "b'abc'"),
+    ("'Привет'.encode('ascii', 'ignore')", "b''"),
+    ("'abcПривет'.encode('ascii', 'ignore')", "b'abc'"),
+    ("'Привет'.encode('ascii', 'replace')", "b'??????'"),
+    ("'abcПривет'.encode('ascii', 'replace')", "b'abc??????'"),
+    ("'ABC'.encode('latin-1')", "b'ABC'"),
+    ("'é'.encode('latin-1')", "b'\\xe9'"),
+    ("'Привет'.encode('latin-1', 'replace')", "b'??????'"),
+    ("'a\\nb'.encode()", "b'a\\nb'"),
+    ("'a\\tb'.encode()", "b'a\\tb'"),
+    ("'abc'.__str__()", "'abc'"),
+
+    # пока не поддерживается
+    # ("'abc'.encode().__repr__()", "\"b'abc'\""),
+
     # bytes.__mul__
     ("b'a' * 3", "b'aaa'"),
     ("b'ab' * 3", "b'ababab'"),

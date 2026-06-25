@@ -10,7 +10,7 @@
 
 class Value;
 
-class StrValue : public ObjectValue {
+class StrValue : public ObjectValue, public std::enable_shared_from_this<StrValue> {
     QString value;
 
 public:
@@ -185,6 +185,10 @@ public:
     [[nodiscard]] Value mod(const Value& rhs) const override;
 
     [[nodiscard]] Value formatSelf(const QString& spec) const;
+
+    [[nodiscard]] Value encode(
+    const std::optional<QString>& encoding = std::nullopt,
+    const std::optional<QString>& errors = std::nullopt) const;
 
 private:
 

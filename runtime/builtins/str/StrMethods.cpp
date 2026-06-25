@@ -1329,6 +1329,42 @@ namespace {
         );
     }
 
+    Value makeEncodeMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "encode",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                if (args.size() > 2) {
+
+                    throw std::runtime_error(
+                        "TypeError: encode expected at most 2 arguments"
+                    );
+                }
+
+                std::optional<QString> encoding;
+                std::optional<QString> errors;
+
+                if (!args.empty()) {
+                    encoding = args[0].toString();
+                }
+
+                if (args.size() >= 2) {
+                    errors = args[1].toString();
+                }
+
+                return str->encode(encoding, errors);
+            }
+        );
+    }
+
     const MethodMap STR_METHODS = {
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
@@ -1391,7 +1427,8 @@ namespace {
         REGISTER_METHOD("maketrans", makeMaketransMethod),
         REGISTER_METHOD("translate", makeTranslateMethod),
         REGISTER_METHOD("format_map", makeFormatMapMethod),
-        REGISTER_METHOD("format", makeFormatMethod)
+        REGISTER_METHOD("format", makeFormatMethod),
+        REGISTER_METHOD("encode", makeEncodeMethod),
     };
 }
 

@@ -6,6 +6,7 @@
 
 #include <QRegularExpression>
 
+#include "BytesValue.h"
 #include "ClassUtils.h"
 #include "DictValue.h"
 #include "IteratorValue.h"
@@ -2731,10 +2732,6 @@ Value StrValue::modTuple(const std::shared_ptr<TupleValue>& tuple) const {
     return Value(result);
 }
 
-//TODO: метод пока не полнцоценный
-// приколы наподобие таких не поддерживаются
-// "%s %s" % ("a", "b")
-// "%(name)s" % {"name": "Bob"}
 Value StrValue::mod(const Value& rhs) const {
 
     QString text = value;
@@ -2868,6 +2865,142 @@ Value StrValue::formatSelf(const QString& spec) const {
             spec
         )
     );
+}
+
+Value StrValue::encode(
+    const std::optional<QString>& encoding,
+    const std::optional<QString>& errors) const {
+
+    const QString enc = encoding.value_or("utf-8").toLower();
+
+    const QString err = errors.value_or("strict").toLower();
+
+    QByteArray result;
+
+    if (enc == "utf-8") {
+        result = value.toUtf8();
+    }
+
+    else if (enc == "latin-1" || enc == "latin1") {
+
+        if (err == "strict") {
+
+            for (QChar ch : value) {
+
+                if (ch.unicode() > 255) {
+
+                    throw std::runtime_error(
+                        "UnicodeEncodeError: latin-1 codec can't encode character"
+                    );
+                }
+            }
+
+            result = value.toLatin1();
+        }
+
+        else if (err == "ignore") {
+
+            for (QChar ch : value) {
+
+                if (ch.unicode() <= 255) {
+
+                    result.append(
+                        static_cast<char>(ch.unicode())
+                    );
+                }
+            }
+        }
+
+        else if (err == "replace") {
+
+            for (QChar ch : value) {
+
+                if (ch.unicode() <= 255) {
+
+                    result.append(
+                        static_cast<char>(ch.unicode())
+                    );
+                }
+                else {
+
+                    result.append('?');
+                }
+            }
+        }
+
+        else {
+
+            throw std::runtime_error(
+                "LookupError: unknown error handler"
+            );
+        }
+    }
+
+    else if (enc == "ascii") {
+
+        if (err == "strict") {
+
+            for (QChar ch : value) {
+
+                if (ch.unicode() > 127) {
+
+                    throw std::runtime_error(
+                        "UnicodeEncodeError: ascii codec can't encode character"
+                    );
+                }
+            }
+
+            result = value.toLatin1();
+        }
+
+        else if (err == "ignore") {
+
+            for (QChar ch : value) {
+
+                if (ch.unicode() <= 127) {
+
+                    result.append(
+                        static_cast<char>(ch.unicode())
+                    );
+                }
+            }
+        }
+
+        else if (err == "replace") {
+
+            for (QChar ch : value) {
+
+                if (ch.unicode() <= 127) {
+
+                    result.append(
+                        static_cast<char>(ch.unicode())
+                    );
+                }
+                else {
+
+                    result.append('?');
+                }
+            }
+        }
+
+        else {
+
+            throw std::runtime_error(
+                "LookupError: unknown error handler"
+            );
+        }
+    }
+
+    else {
+
+        throw std::runtime_error(
+            "LookupError: unknown encoding"
+        );
+    }
+
+    const auto bytes = std::make_shared<BytesValue>(std::move(result));
+
+    return Value(bytes);
 }
 
 Value StrValue::modSingle(const Value& rhs) const {
