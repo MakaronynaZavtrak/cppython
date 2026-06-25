@@ -3886,6 +3886,28 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("b'hello'.__repr__() == b'hello'.__repr__()", "True"),
     ("b'hello'.__repr__() == b'world'.__repr__()", "False"),
 
+    # bytes.__rmul__
+    ("b'abc'.__rmul__(0)", "b''"),
+    ("b'abc'.__rmul__(1)", "b'abc'"),
+    ("b'abc'.__rmul__(2)", "b'abcabc'"),
+    ("b'abc'.__rmul__(3)", "b'abcabcabc'"),
+    ("b''. __rmul__(5)", "b''"),
+    ("b'A'.__rmul__(10)", "b'AAAAAAAAAA'"),
+    ("b'\\x00'.__rmul__(3)", "b'\\x00\\x00\\x00'"),
+    ("0 * b'abc'", "b''"),
+    ("1 * b'abc'", "b'abc'"),
+    ("2 * b'abc'", "b'abcabc'"),
+    ("3 * b'abc'", "b'abcabcabc'"),
+    ("5 * b''", "b''"),
+    ("10 * b'A'", "b'AAAAAAAAAA'"),
+    ("3 * b'\\x00'", "b'\\x00\\x00\\x00'"),
+    ("2 * b'xyz'", "b'xyzxyz'"),
+    ("b'abc'.__rmul__(100).__len__()", "300"),
+    ("b'abc'.__rmul__(-1)", "b''"),
+    ("b'abc'.__rmul__(-5)", "b''"),
+    ("-1 * b'abc'", "b''"),
+    ("-5 * b'abc'", "b''"),
+
     # str slicing
     # базовые слайсы
     ("\"abcdef\"[:]", "'abcdef'"),
