@@ -103,6 +103,24 @@ namespace {
         );
     }
 
+    Value makeEqualMethod(const Value& obj) {
+
+        auto tuple = extract<Value::TuplePtr>(obj);
+
+        return makeBuiltin(
+            "__eq__",
+
+            [tuple](const std::vector<Value>& args,
+                    const Kwargs&,
+                    const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__eq__");
+
+                return Value(tuple->equal(args[0]));
+            }
+        );
+    }
+
     Value makeRMulMethod(const Value& obj) {
 
         auto tuple = extract<Value::TuplePtr>(obj);
@@ -184,6 +202,7 @@ namespace {
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__mul__", makeMulMethod),
         REGISTER_METHOD("__rmul__", makeRMulMethod),
+        REGISTER_METHOD("__eq__", makeEqualMethod),
         REGISTER_METHOD("count", makeCountMethod),
         REGISTER_METHOD("index", makeIndexMethod)
     };
