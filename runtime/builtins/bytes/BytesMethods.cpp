@@ -292,6 +292,26 @@ namespace {
         );
     }
 
+    Value makeStrMethod(const Value& obj) {
+
+        auto bytes = extract<Value::BytesPtr>(obj);
+
+        return makeBuiltin(
+            "__str__",
+
+            [bytes](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "__str__");
+
+                return Value(bytes->toString());
+            }
+        );
+    }
+
     Value makeFindMethod(const Value& obj) {
 
         return makeBuiltin(
@@ -1238,6 +1258,7 @@ namespace {
         REGISTER_METHOD("__bytes__", make__bytes__Method),
         REGISTER_METHOD("__hash__", makeHashMethod),
         REGISTER_METHOD("__repr__", makeReprMethod),
+        REGISTER_METHOD("__str__", makeStrMethod),
         REGISTER_METHOD("find", makeFindMethod),
         REGISTER_METHOD("rfind", makeRFindMethod),
         REGISTER_METHOD("index", makeIndexMethod),

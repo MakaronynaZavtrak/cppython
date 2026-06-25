@@ -3908,6 +3908,29 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("-1 * b'abc'", "b''"),
     ("-5 * b'abc'", "b''"),
 
+    # bytes.__str__
+    ("b''.__str__()", "\"b''\""),
+    ("b'abc'.__str__()", "\"b'abc'\""),
+    ("b'A'.__str__()", "\"b'A'\""),
+    ("b'hello world'.__str__()", "\"b'hello world'\""),
+    ("b'\\n'.__str__()", "\"b'\\\\n'\""),
+    ("b'\\t'.__str__()", "\"b'\\\\t'\""),
+    ("b'\\r'.__str__()", "\"b'\\\\r'\""),
+    ("b'\\\\'.__str__()", "\"b'\\\\\\\\'\""),
+    ("b'\\x00'.__str__()", "\"b'\\\\x00'\""),
+    ("b'\\xff'.__str__()", "\"b'\\\\xff'\""),
+    ("b'abc\\nxyz'.__str__()", "\"b'abc\\\\nxyz'\""),
+    ("str(b'abc')", "\"b'abc'\""),
+    ("str(b'')", "\"b''\""),
+    ("str(b'\\x00')", "\"b'\\\\x00'\""),
+    ("str(b'\\n')", "\"b'\\\\n'\""),
+    ("str(b'hello') == b'hello'.__str__()", "True"),
+
+    ("b'abc'.__str__() == b'abc'.__repr__()", "True"),
+    ("str(b'abc') == repr(b'abc')", "True"),
+    ("str(b'\\x00') == repr(b'\\x00')", "True"),
+    ("str(b'\\n') == repr(b'\\n')", "True"),
+
     # str slicing
     # базовые слайсы
     ("\"abcdef\"[:]", "'abcdef'"),
