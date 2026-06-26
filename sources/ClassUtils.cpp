@@ -6,8 +6,18 @@
 #include "CallRuntime.h"
 #include "ClassValue.h"
 #include "DescriptorUtils.h"
+#include "../runtime/builtins/dict/DictMethods.h"
 #include "InstanceValue.h"
+#include "../runtime/builtins/iterator/IteratorMethods.h"
+#include "../runtime/builtins/list/ListMethods.h"
+#include "ListValue.h"
+#include "../runtime/builtins/set/SetMethods.h"
+#include "../runtime/builtins/str/StrMethods.h"
 #include "SuperValue.h"
+#include "../runtime/builtins/bytearray/ByteArrayMethods.h"
+#include "../runtime/builtins/bytes/BytesMethods.h"
+#include "../runtime/builtins/frozenset/FrozenSetMethods.h"
+#include "../runtime/builtins/tuple/TupleMethods.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
     try {
@@ -22,16 +32,19 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
     // instance
     if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
+
         auto instance = std::get<Value::InstancePtr>(obj.data);
         auto cls = instance->klass;
 
         //  1. data descriptor (hasSet)
         try {
+
             Value val = findAttrInHierarchy(cls, attr);
 
             if (DescriptorUtils::hasGet(val) && DescriptorUtils::hasSet(val)) {
                 return DescriptorUtils::callGet(val, Value(instance), cls);
             }
+
         } catch (const std::runtime_error& e) {
 
             const std::string msg = e.what();
@@ -48,6 +61,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
         // 3. non-data descriptor | class attribute
         try {
+
             Value val = findAttrInHierarchy(cls, attr);
 
             if (DescriptorUtils::hasGet(val)) {
@@ -55,6 +69,7 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
             }
 
             return val;
+
         } catch (const std::runtime_error& e) {
 
             const std::string msg = e.what();
@@ -84,8 +99,89 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         return val;
     }
 
+    if (obj.isList()) {
+        return getListAttr(obj, attr);
+    }
+
+    if (obj.isDict()) {
+        return getDictAttr(obj, attr);
+    }
+
+    if (obj.isDictKeysView()) {
+
+        if (attr == "__iter__") {
+            return makeIterMethod(obj);
+        }
+
+    }
+
+    if (obj.isDictValuesView()) {
+
+        if (attr == "__iter__") {
+            return makeIterMethod(obj);
+        }
+
+    }
+
+    if (obj.isDictItemsView()) {
+
+        if (attr == "__iter__") {
+            return makeIterMethod(obj);
+        }
+    }
+
+    if (obj.isTuple()) {
+        return getTupleAttr(obj, attr);
+    }
+
+    if (obj.isSet()) {
+        return getSetAttr(obj, attr);
+    }
+
+
+    if (std::holds_alternative<Value::IteratorPtr>(obj.data)) {
+        return getIteratorAttr(obj, attr);
+    }
+
+    if (obj.isString()) {
+        return getStrAttr(obj, attr);
+    }
+
+    if (obj.isBytes()) {
+        return getBytesAttr(obj, attr);
+    }
+
+    if (obj.isByteArray()) {
+        return getByteArrayAttr(obj, attr);
+    }
+
+    if (obj.isFrozenSet()) {
+        return getFrozenSetAttr(obj, attr);
+    }
+
     throw std::runtime_error("AttributeError: object has no attribute '" +
                             attr.toStdString() + "'");
+}
+
+Value makeIterMethod(const Value& obj) {
+
+    return Value(
+        std::make_shared<BuiltinFunction>(
+            "__iter__",
+
+            [obj](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+                  -> Value {
+
+                if (!args.empty()) {
+                    throw std::runtime_error("__iter__ expects 0 args");
+                }
+
+                return Value(obj.getIterator());
+            }
+        )
+    );
 }
 
 Value getAttrValue(const Value& obj, const QString& attr) {
@@ -113,11 +209,7 @@ Value getAttrValue(const Value& obj, const QString& attr) {
         }
 
         if (!isDefault) {
-            return call(
-                getattribute,
-                { Value(attr) },
-                nullptr
-            );
+            return call(getattribute, { Value(attr) }, {}, nullptr);
         }
 
     } catch (const std::runtime_error& e) {
@@ -148,7 +240,7 @@ Value getAttrValue(const Value& obj, const QString& attr) {
 
         Value getattr = genericGetAttr(obj, "__getattr__");
 
-        return call(getattr, { Value(attr) }, nullptr);
+        return call(getattr, { Value(attr) }, {}, nullptr);
 
     } catch (const std::runtime_error& e) {
 
@@ -248,14 +340,18 @@ void genericSetAttr(const Value& obj, const QString& attr, const Value& value) {
 
         // 1. проверяем descriptor в классе
         try {
+
             const Value descr = findAttrInHierarchy(cls, attr);
 
             if (DescriptorUtils::hasSet(descr)) {
                 DescriptorUtils::callSet(descr, Value(instance), cls, value);
                 return;
             }
+
         } catch (const std::runtime_error& e) {
+
             const std::string msg = e.what();
+
             if (msg.find("Attribute not found") == std::string::npos) {
                 throw;
             }
@@ -298,20 +394,12 @@ void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
                 std::get<Value::BuiltinFunctionPtr>(
                     setattr.data);
 
-            isDefault =
-                (builtin->name == "__object_setattr__");
+            isDefault = builtin->name == "__object_setattr__";
                 }
 
         if (!isDefault) {
 
-            call(
-                setattr,
-                {
-                    Value(attr),
-                    value
-                },
-                nullptr
-            );
+            call(setattr, { Value(attr), value }, {}, nullptr);
 
             return;
         }
@@ -320,10 +408,9 @@ void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
 
         const std::string msg = e.what();
 
-        if (msg.find("AttributeError")
-            == std::string::npos) {
+        if (msg.find("AttributeError") == std::string::npos) {
             throw;
-            }
+        }
     }
 
     genericSetAttr(obj, attr, value);

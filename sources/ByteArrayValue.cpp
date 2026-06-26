@@ -1,0 +1,2882 @@
+//
+// Created by semyo on 11.06.2026.
+//
+#include "ByteArrayValue.h"
+
+#include "BytesValue.h"
+#include "IteratorValue.h"
+#include "ListValue.h"
+#include "StrValue.h"
+#include "TupleValue.h"
+#include "../runtime/ProtocolHelpers.h"
+
+Value ByteArrayValue::getItem(const Value& indexValue) const {
+
+    if (indexValue.isSlice()) {
+
+        const auto sliceObj = indexValue.asSlice();
+
+        QByteArray result;
+
+        iterateSlice(
+            normalizeSlice(*sliceObj, data.size()),
+            [&](const long long i) {
+                result.append(
+                    data[static_cast<int>(i)]
+                );
+            }
+        );
+
+        return Value(
+            std::make_shared<ByteArrayValue>(result)
+        );
+    }
+
+    int index = indexValue.asBigInt("__getitem__").convert_to<int>();
+
+    if (data.isEmpty()) {
+        throw std::runtime_error(
+            "IndexError: index out of range"
+        );
+    }
+
+    if (index < 0) {
+        index += data.size();
+    }
+
+    if (index < 0 || index >= data.size()) {
+        throw std::runtime_error(
+            "IndexError: index out of range"
+        );
+    }
+
+    return Value(
+        Value::BigInt(
+            static_cast<unsigned char>(data[index])
+        )
+    );
+}
+
+void ByteArrayValue::setItem(
+    const Value& indexValue,
+    const Value& value) {
+
+    if (!indexValue.isBigInt()) {
+
+        throw std::runtime_error(
+            "TypeError: bytearray indices must be integers"
+        );
+    }
+
+    auto index =
+        indexValue.toBigInt()
+        .convert_to<long long>();
+
+    const auto size = data.size();
+
+    if (index < 0) {
+        index += size;
+    }
+
+    if (index < 0 || index >= size) {
+
+        throw std::runtime_error(
+            "IndexError: bytearray index out of range"
+        );
+    }
+
+    const auto byte = value.toBigInt();
+
+    if (byte < 0 || byte > 255) {
+
+        throw std::runtime_error(
+            "ValueError: byte must be in range(0, 256)"
+        );
+    }
+
+    data[index] = static_cast<char>(byte.convert_to<int>());
+}
+
+void ByteArrayValue::delItem(const Value& indexValue) {
+
+    if (indexValue.isSlice()) {
+
+        const auto sliceObj = indexValue.asSlice();
+
+        const auto slice = normalizeSlice(*sliceObj, data.size());
+
+        QByteArray result;
+
+        std::vector removeMask(data.size(), false);
+
+        iterateSlice(slice,
+
+        [&](const long long i) {
+                removeMask[static_cast<std::size_t>(i)] = true;
+            }
+        );
+
+        for (int i = 0; i < data.size(); ++i) {
+
+            if (!removeMask[i]) {
+                result.append(data[i]);
+            }
+        }
+
+        data = std::move(result);
+    }
+
+    int index =
+        indexValue
+        .asBigInt("__delitem__")
+        .convert_to<int>();
+
+    if (index < 0) {
+        index += data.size();
+    }
+
+    if (index < 0 || index >= data.size()) {
+
+        throw std::runtime_error(
+            "IndexError: index out of range"
+        );
+    }
+
+    data.remove(index, 1);
+}
+
+std::size_t ByteArrayValue::len() const {
+    return data.size();
+}
+
+QString ByteArrayValue::repr() const {
+
+    const bool containsSingle = data.contains('\'');
+
+    const QChar quote = containsSingle ? '"' : '\'';
+
+    QString result = "bytearray(b";
+    result += quote;
+
+    for (const unsigned char c : data) {
+
+        switch (c) {
+
+            case '\n':
+                result += "\\n";
+                break;
+
+            case '\r':
+                result += "\\r";
+                break;
+
+            case '\t':
+                result += "\\t";
+                break;
+
+            case '\\':
+                result += "\\\\";
+                break;
+
+            case '\'':
+                result += "\\'";
+                break;
+
+            case '"':
+
+                if (quote == '"')
+                    result += '"';
+                else
+                    result += '"';
+
+                break;
+
+            default:
+
+                if (c >= 32 && c <= 126) {
+
+                    result += QChar(c);
+
+                } else {
+
+                    result += QString("\\x%1")
+                        .arg(
+                            static_cast<int>(c),
+                            2,
+                            16,
+                            QLatin1Char('0')
+                        );
+                }
+
+                break;
+        }
+    }
+
+    result += quote;
+    result += ")";
+
+    return result;
+}
+
+QString ByteArrayValue::toString() const {
+
+    return QString(
+        "bytearray(%1)").arg(
+        BytesValue(data).toString()
+    );
+}
+
+Value ByteArrayValue::_bytes_() const {
+
+    return Value(
+        std::make_shared<ByteArrayValue>(data)
+    );
+}
+
+Value ByteArrayValue::add(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data + other.asByteArray()->bytes()
+            )
+        );
+    }
+
+    if (other.isBytes()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data + other.asBytes()->bytes()
+            )
+        );
+    }
+
+    throw std::runtime_error(
+        "TypeError: can't concat bytearray with non-bytes-like object"
+    );
+}
+
+Value ByteArrayValue::multiply(const Value& other) const {
+
+    if (!other.isBigInt() && !other.isBool()) {
+
+        throw std::runtime_error(
+            "TypeError: can't multiply bytearray by non-int"
+        );
+    }
+
+    const auto count =
+        other.toBigInt().convert_to<long long>();
+
+    if (count <= 0) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                QByteArray()
+            )
+        );
+    }
+
+    QByteArray result;
+    result.reserve(data.size() * count);
+
+    for (long long i = 0; i < count; ++i) {
+        result += data;
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::iadd(const Value& other) {
+
+    if (other.isBytes()) {
+        data.append(other.asBytes()->bytes());
+
+        return Value(shared_from_this());
+    }
+
+    if (other.isByteArray()) {
+
+        data.append(other.asByteArray()->bytes());
+
+        return Value(shared_from_this());
+    }
+
+    throw std::runtime_error(
+        "TypeError: can't concat "
+         "argument to bytearray"
+    );
+}
+
+Value ByteArrayValue::imul(const Value& other) {
+
+    if (other.isBigFloat() || !other.isNumeric()) {
+        throw std::runtime_error(
+            "TypeError: can't multiply bytearray by non-int"
+        );
+    }
+
+    const auto count = other.toBigInt();
+
+    if (count <= 0) {
+        data.clear();
+        return Value(shared_from_this());
+    }
+
+    const QByteArray original = data;
+    data.clear();
+
+    for (Value::BigInt i = 0; i < count; ++i) {
+        data += original;
+    }
+
+    return Value(shared_from_this());
+}
+
+bool ByteArrayValue::contains(const Value& value) const {
+
+    // int / bool
+    if (value.isBigInt() || value.isBool()) {
+
+        const auto v = value.toBigInt();
+
+        if (v < 0 || v > 255) {
+            return false;
+        }
+
+        return data.contains(
+            static_cast<unsigned char>(
+                v.convert_to<int>()
+            )
+        );
+    }
+
+    // bytes
+    if (value.isBytes()) {
+
+        return data.contains(
+            value.asBytes()->bytes()
+        );
+    }
+
+    // bytearray
+    if (value.isByteArray()) {
+
+        return data.contains(
+            value.asByteArray()->bytes()
+        );
+    }
+
+    throw std::runtime_error(
+        "TypeError: a bytes-like object or integer is required"
+    );
+}
+
+bool ByteArrayValue::equal(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return data == other.asByteArray("bytearray")->bytes();
+    }
+
+    if (other.isBytes()) {
+
+        return data == other.asBytes("bytes")->bytes();
+    }
+
+    return false;
+}
+
+bool ByteArrayValue::notEqual(const Value& other) const {
+
+    return !equal(other);
+}
+
+bool ByteArrayValue::less(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return data <
+            other.asByteArray("bytearray")->bytes();
+    }
+
+    if (other.isBytes()) {
+
+        return data <
+            other.asBytes("bytes")->bytes();
+    }
+
+    throw std::runtime_error(
+        "TypeError: '<' not supported between instances of "
+        "'bytearray' and other type"
+    );
+}
+
+bool ByteArrayValue::lessOrEqual(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return data <= other.asByteArray("bytearray")->bytes();
+    }
+
+    if (other.isBytes()) {
+
+        return data <= other.asBytes("bytes")->bytes();
+    }
+
+    throw std::runtime_error(
+        "TypeError: '<=' not supported between instances of "
+        "'bytearray' and other type"
+    );
+}
+
+bool ByteArrayValue::greater(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return data >
+            other.asByteArray("bytearray")->bytes();
+    }
+
+    if (other.isBytes()) {
+
+        return data >
+            other.asBytes("bytes")->bytes();
+    }
+
+    throw std::runtime_error(
+        "TypeError: '>' not supported between instances of "
+        "'bytearray' and other type"
+    );
+}
+
+bool ByteArrayValue::greaterOrEqual(const Value& other) const {
+
+    if (other.isByteArray()) {
+
+        return data >= other.asByteArray("bytearray")->bytes();
+    }
+
+    if (other.isBytes()) {
+
+        return data >= other.asBytes("bytes")->bytes();
+    }
+
+    throw std::runtime_error(
+        "TypeError: '>=' not supported between instances of "
+        "'bytearray' and other type"
+    );
+}
+
+Value ByteArrayValue::find(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QByteArray needle;
+
+    if (sub.isByteArray()) {
+
+        needle = sub.asByteArray("find")->bytes();
+
+    } else if (sub.isBytes()) {
+
+        needle = sub.asBytes("find")->bytes();
+
+    } else if (sub.isBigInt()) {
+
+        auto v = sub.toBigInt();
+
+        if (v < 0 || v > 255) {
+
+            throw std::runtime_error(
+                "byte must be in range(0, 256)"
+            );
+        }
+
+        needle.append(
+            static_cast<char>(
+                v.convert_to<int>()
+            )
+        );
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: expected bytes-like object"
+        );
+    }
+
+    long long begin = 0;
+    long long finish = data.size();
+
+    if (start.has_value()) {
+        begin = start->toBigInt().convert_to<long long>();
+    }
+
+    if (end.has_value()) {
+        finish = end->toBigInt().convert_to<long long>();
+    }
+
+    if (begin < 0) {
+        begin += data.size();
+    }
+
+    if (finish < 0) {
+        finish += data.size();
+    }
+
+    begin = std::clamp(begin, 0LL, data.size());
+    finish = std::clamp(finish, 0LL, data.size());
+
+    const QByteArray slice =
+        data.mid(
+            static_cast<int>(begin),
+            static_cast<int>(finish - begin)
+        );
+
+    const int pos = slice.indexOf(needle);
+
+    if (pos == -1) {
+        return Value(Value::BigInt(-1));
+    }
+
+    return Value(
+        Value::BigInt(begin + pos)
+    );
+}
+
+Value ByteArrayValue::rfind(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QByteArray needle;
+
+    if (sub.isByteArray()) {
+
+        needle = sub.asByteArray("rfind")->bytes();
+
+    } else if (sub.isBytes()) {
+
+        needle = sub.asBytes("rfind")->bytes();
+
+    } else if (sub.isBigInt()) {
+
+        auto v = sub.toBigInt();
+
+        if (v < 0 || v > 255) {
+
+            throw std::runtime_error(
+                "byte must be in range(0, 256)"
+            );
+        }
+
+        needle.append(
+            static_cast<char>(
+                v.convert_to<int>()
+            )
+        );
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: expected bytes-like object"
+        );
+    }
+
+    long long begin = 0;
+    long long finish = data.size();
+
+    if (start.has_value()) {
+        begin = start->toBigInt().convert_to<long long>();
+    }
+
+    if (end.has_value()) {
+        finish = end->toBigInt().convert_to<long long>();
+    }
+
+    if (begin < 0) {
+        begin += data.size();
+    }
+
+    if (finish < 0) {
+        finish += data.size();
+    }
+
+    begin = std::clamp(
+        begin,
+        0LL,
+        static_cast<long long>(data.size())
+    );
+
+    finish = std::clamp(
+        finish,
+        0LL,
+        static_cast<long long>(data.size())
+    );
+
+    QByteArray slice =
+        data.mid(
+            static_cast<int>(begin),
+            static_cast<int>(finish - begin)
+        );
+
+    const int pos = slice.lastIndexOf(needle);
+
+    if (pos == -1) {
+        return Value(Value::BigInt(-1));
+    }
+
+    return Value(
+        Value::BigInt(begin + pos)
+    );
+}
+
+Value ByteArrayValue::index(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    Value result = find(sub, start, end);
+
+    if (result.toBigInt() == -1) {
+
+        throw std::runtime_error(
+            "ValueError: subsection not found"
+        );
+    }
+
+    return result;
+}
+
+Value ByteArrayValue::rindex(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    Value result = rfind(sub, start, end);
+
+    if (result.toBigInt() == -1) {
+
+        throw std::runtime_error(
+            "ValueError: subsection not found"
+        );
+    }
+
+    return result;
+}
+
+Value ByteArrayValue::count(
+    const Value& sub,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QByteArray needle;
+
+    if (sub.isByteArray()) {
+
+        needle = sub.asByteArray("count")->bytes();
+
+    } else if (sub.isBytes()) {
+
+        needle = sub.asBytes("count")->bytes();
+
+    } else if (sub.isBigInt()) {
+
+        auto v = sub.toBigInt();
+
+        if (v < 0 || v > 255) {
+            throw std::runtime_error(
+                "byte must be in range(0, 256)"
+            );
+        }
+
+        needle.append(
+            static_cast<char>(
+                v.convert_to<int>()
+            )
+        );
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: expected bytes-like object"
+        );
+    }
+
+    long long begin = 0;
+    long long finish = data.size();
+
+    if (start.has_value()) {
+        begin = start->toBigInt().convert_to<long long>();
+    }
+
+    if (end.has_value()) {
+        finish = end->toBigInt().convert_to<long long>();
+    }
+
+    if (begin < 0) {
+        begin += data.size();
+    }
+
+    if (finish < 0) {
+        finish += data.size();
+    }
+
+    begin = std::clamp(
+        begin,
+        0LL,
+        data.size()
+    );
+
+    finish = std::clamp(
+        finish,
+        0LL,
+        data.size()
+    );
+
+    QByteArray haystack =
+        data.mid(
+            static_cast<int>(begin),
+            static_cast<int>(finish - begin)
+        );
+
+    if (needle.isEmpty()) {
+        return Value(
+            Value::BigInt(
+                haystack.size() + 1
+            )
+        );
+    }
+
+    int occurrences = 0;
+    int pos = 0;
+
+    while (true) {
+
+        pos = haystack.indexOf(needle, pos);
+
+        if (pos == -1) {
+            break;
+        }
+
+        ++occurrences;
+
+        pos += needle.size();
+    }
+
+    return Value(
+        Value::BigInt(occurrences)
+    );
+}
+
+Value ByteArrayValue::startsWith(
+    const Value& prefix,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QByteArray needle;
+
+    if (prefix.isByteArray()) {
+
+        needle = prefix.asByteArray("startswith")->bytes();
+
+    } else if (prefix.isBytes()) {
+
+        needle = prefix.asBytes("startswith")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: startswith first arg must be bytes-like object"
+        );
+    }
+
+    long long begin = 0;
+    long long finish = data.size();
+
+    if (start.has_value()) {
+        begin = start->toBigInt().convert_to<long long>();
+    }
+
+    if (end.has_value()) {
+        finish = end->toBigInt().convert_to<long long>();
+    }
+
+    if (begin < 0) {
+        begin += data.size();
+    }
+
+    if (finish < 0) {
+        finish += data.size();
+    }
+
+    begin = std::clamp(
+        begin,
+        0LL,
+        data.size()
+    );
+
+    finish = std::clamp(
+        finish,
+        0LL,
+        data.size()
+    );
+
+    const QByteArray slice =
+        data.mid(
+            static_cast<int>(begin),
+            static_cast<int>(finish - begin)
+        );
+
+    return Value(
+        slice.startsWith(needle)
+    );
+}
+
+Value ByteArrayValue::endsWith(
+    const Value& suffix,
+    const std::optional<Value>& start,
+    const std::optional<Value>& end) const {
+
+    QByteArray needle;
+
+    if (suffix.isByteArray()) {
+
+        needle = suffix.asByteArray("endswith")->bytes();
+
+    } else if (suffix.isBytes()) {
+
+        needle = suffix.asBytes("endswith")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: endswith first arg must be bytes-like object"
+        );
+    }
+
+    long long begin = 0;
+    long long finish = data.size();
+
+    if (start.has_value()) {
+        begin = start->toBigInt().convert_to<long long>();
+    }
+
+    if (end.has_value()) {
+        finish = end->toBigInt().convert_to<long long>();
+    }
+
+    if (begin < 0) {
+        begin += data.size();
+    }
+
+    if (finish < 0) {
+        finish += data.size();
+    }
+
+    begin = std::clamp(
+        begin,
+        0LL,
+        static_cast<long long>(data.size())
+    );
+
+    finish = std::clamp(
+        finish,
+        0LL,
+        static_cast<long long>(data.size())
+    );
+
+    QByteArray slice =
+        data.mid(
+            static_cast<int>(begin),
+            static_cast<int>(finish - begin)
+        );
+
+    return Value(
+        slice.endsWith(needle)
+    );
+}
+
+Value ByteArrayValue::lstrip(
+const std::optional<Value>& chars) const {
+
+    QByteArray stripChars;
+
+    if (chars.has_value()) {
+
+        const Value& value = *chars;
+
+        if (value.isBytes()) {
+
+            stripChars =
+                value.asBytes("lstrip")->bytes();
+
+        } else if (value.isByteArray()) {
+
+            stripChars =
+                value.asByteArray("lstrip")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: lstrip arg must be bytes or bytearray"
+            );
+        }
+
+    } else {
+
+        stripChars = QByteArray(" \t\n\r\v\f");
+    }
+
+    int pos = 0;
+
+    while (
+        pos < data.size()
+        && stripChars.contains(data[pos])
+    ) {
+        ++pos;
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            data.mid(pos)
+        )
+    );
+}
+
+Value ByteArrayValue::rstrip(
+const std::optional<Value>& chars) const {
+
+    QByteArray stripChars;
+
+    if (chars.has_value()) {
+
+        const Value& value = *chars;
+
+        if (value.isBytes()) {
+
+            stripChars =
+                value.asBytes("rstrip")->bytes();
+
+        } else if (value.isByteArray()) {
+
+            stripChars =
+                value.asByteArray("rstrip")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: rstrip arg must be bytes or bytearray"
+            );
+        }
+
+    } else {
+
+        stripChars = QByteArray(" \t\n\r\v\f");
+    }
+
+    int pos = data.size();
+
+    while (
+        pos > 0
+        && stripChars.contains(data[pos - 1])
+    ) {
+        --pos;
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            data.left(pos)
+        )
+    );
+}
+
+Value ByteArrayValue::strip(
+const std::optional<Value>& chars) const {
+
+    const auto leftStripped = chars.has_value()
+        ? lstrip(*chars)
+        : lstrip();
+
+    const auto result =
+        leftStripped.asByteArray("strip");
+
+    return chars.has_value()
+        ? result->rstrip(*chars)
+        : result->rstrip();
+}
+
+Value ByteArrayValue::removeprefix(const Value& prefix) const {
+
+    QByteArray prefixBytes;
+
+    if (prefix.isBytes()) {
+
+        prefixBytes = prefix.asBytes("removeprefix")->bytes();
+
+    } else if (prefix.isByteArray()) {
+
+        prefixBytes = prefix.asByteArray("removeprefix")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: removeprefix() argument must be bytes-like"
+        );
+    }
+
+    if (data.startsWith(prefixBytes)) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data.mid(prefixBytes.size())
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(data)
+    );
+}
+
+Value ByteArrayValue::removesuffix(const Value& suffix) const {
+
+    QByteArray suffixBytes;
+
+    if (suffix.isBytes()) {
+
+        suffixBytes = suffix.asBytes("removesuffix")->bytes();
+
+    } else if (suffix.isByteArray()) {
+
+        suffixBytes = suffix.asByteArray("removesuffix")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: removesuffix() argument must be bytes-like"
+        );
+    }
+
+    if (
+        !suffixBytes.isEmpty()
+        && data.endsWith(suffixBytes)
+    ) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data.first(
+                    data.size() - suffixBytes.size()
+                )
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(data)
+    );
+}
+
+Value ByteArrayValue::replace(
+    const Value& oldValue,
+    const Value& newValue,
+    const Value::BigInt& count) const {
+
+    QByteArray oldBytes;
+    QByteArray newBytes;
+
+    if (oldValue.isBytes()) {
+
+        oldBytes = oldValue.asBytes("replace")->bytes();
+
+    } else if (oldValue.isByteArray()) {
+
+        oldBytes = oldValue.asByteArray("replace")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: replace() argument 1 must be bytes-like"
+        );
+    }
+
+    if (newValue.isBytes()) {
+
+        newBytes = newValue.asBytes("replace")->bytes();
+
+    } else if (newValue.isByteArray()) {
+
+        newBytes = newValue.asByteArray("replace")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: replace() argument 2 must be bytes-like"
+        );
+    }
+
+    const long long maxCount = count.convert_to<long long>();
+
+    // special case: old == b""
+    if (oldBytes.isEmpty()) {
+
+        QByteArray result;
+
+        long long inserted = 0;
+
+        auto canInsert =
+            [&]() -> bool {
+
+                return  maxCount < 0 || inserted < maxCount;
+            };
+
+        if (canInsert()) {
+
+            result.append(newBytes);
+            ++inserted;
+        }
+
+        for (const char ch : data) {
+
+            result.append(ch);
+
+            if (canInsert()) {
+
+                result.append(newBytes);
+                ++inserted;
+            }
+        }
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                result
+            )
+        );
+    }
+
+    QByteArray result = data;
+
+    if (maxCount == 0) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                result
+            )
+        );
+    }
+
+    int pos = 0;
+    long long replaced = 0;
+
+    while ((pos = result.indexOf(oldBytes, pos)) != -1) {
+
+        if (
+            maxCount >= 0
+            && replaced >= maxCount
+        ) {
+            break;
+        }
+
+        result.replace(
+            pos,
+            oldBytes.size(),
+            newBytes
+        );
+
+        pos += newBytes.size();
+
+        ++replaced;
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::split(
+    const Value& sep,
+    const Value::BigInt& maxsplit) const {
+
+    QByteArray separator;
+
+    if (sep.isBytes()) {
+
+        separator = sep.asBytes("split")->bytes();
+
+    } else if (sep.isByteArray()) {
+
+        separator = sep.asByteArray("split")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: split() separator must be bytes-like"
+        );
+    }
+
+    if (separator.isEmpty()) {
+
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    std::vector<Value> result;
+
+    const long long limit = maxsplit.convert_to<long long>();
+
+    int start = 0;
+
+    long long splits = 0;
+
+    while (true) {
+
+        if (
+            limit >= 0
+            && splits >= limit
+        ) {
+            break;
+        }
+
+        const int pos = data.indexOf(separator, start);
+
+        if (pos < 0) {
+            break;
+        }
+
+        result.emplace_back(
+            std::make_shared<ByteArrayValue>(
+                data.mid(start, pos - start)
+            )
+        );
+
+        start = pos + separator.size();
+
+        ++splits;
+    }
+
+    result.emplace_back(
+        std::make_shared<ByteArrayValue>(
+            data.mid(start)
+        )
+    );
+
+    return Value(
+        std::make_shared<ListValue>(result)
+    );
+}
+
+Value ByteArrayValue::rsplit(
+    const Value& sep,
+    const Value::BigInt& maxsplit) const {
+
+    QByteArray separator;
+
+    if (sep.isBytes()) {
+
+        separator = sep.asBytes("rsplit")->bytes();
+
+    } else if (sep.isByteArray()) {
+
+        separator = sep.asByteArray("rsplit")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: rsplit() separator must be bytes-like"
+        );
+    }
+
+    if (separator.isEmpty()) {
+
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const long long limit =
+        maxsplit.convert_to<long long>();
+
+    std::vector<Value> parts;
+
+    QByteArray remaining = data;
+
+    long long splits = 0;
+
+    while (true) {
+
+        if (
+            limit >= 0 &&
+            splits >= limit
+        ) {
+            break;
+        }
+
+        const int pos =
+            remaining.lastIndexOf(separator);
+
+        if (pos < 0) {
+            break;
+        }
+
+        parts.emplace_back(
+            std::make_shared<ByteArrayValue>(
+                remaining.mid(
+                    pos + separator.size()
+                )
+            )
+        );
+
+        remaining =
+            remaining.left(pos);
+
+        ++splits;
+    }
+
+    parts.emplace_back(
+        std::make_shared<ByteArrayValue>(
+            remaining
+        )
+    );
+
+    std::reverse(
+        parts.begin(),
+        parts.end()
+    );
+
+    return Value(
+        std::make_shared<ListValue>(
+            parts
+        )
+    );
+}
+
+Value ByteArrayValue::partition(
+    const Value& sep) const {
+
+    QByteArray separator;
+
+    if (sep.isBytes()) {
+
+        separator = sep.asBytes("partition")->bytes();
+
+    } else if (sep.isByteArray()) {
+
+        separator = sep.asByteArray("partition")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: partition() separator must be bytes-like"
+        );
+    }
+
+    if (separator.isEmpty()) {
+
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const int pos = data.indexOf(separator);
+
+    if (pos < 0) {
+
+        return Value(
+            std::make_shared<TupleValue>(
+                std::vector{
+                    Value(
+                        std::make_shared<ByteArrayValue>(data)
+                    ),
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            QByteArray()
+                        )
+                    ),
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            QByteArray()
+                        )
+                    )
+                }
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::vector{
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        data.left(pos)
+                    )
+                ),
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        separator
+                    )
+                ),
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        data.mid(
+                            pos + separator.size()
+                        )
+                    )
+                )
+            }
+        )
+    );
+}
+
+Value ByteArrayValue::rpartition(
+    const Value& sep) const {
+
+    QByteArray separator;
+
+    if (sep.isBytes()) {
+
+        separator =
+            sep.asBytes("rpartition")->bytes();
+
+    } else if (sep.isByteArray()) {
+
+        separator =
+            sep.asByteArray("rpartition")->bytes();
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: rpartition() separator must be bytes-like"
+        );
+    }
+
+    if (separator.isEmpty()) {
+
+        throw std::runtime_error(
+            "ValueError: empty separator"
+        );
+    }
+
+    const int pos =
+        data.lastIndexOf(separator);
+
+    if (pos < 0) {
+
+        return Value(
+            std::make_shared<TupleValue>(
+                std::vector<Value>{
+
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            QByteArray()
+                        )
+                    ),
+
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            QByteArray()
+                        )
+                    ),
+
+                    Value(
+                        std::make_shared<ByteArrayValue>(
+                            data
+                        )
+                    )
+                }
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<TupleValue>(
+            std::vector<Value>{
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        data.left(pos)
+                    )
+                ),
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        separator
+                    )
+                ),
+
+                Value(
+                    std::make_shared<ByteArrayValue>(
+                        data.mid(
+                            pos + separator.size()
+                        )
+                    )
+                )
+            }
+        )
+    );
+}
+
+Value ByteArrayValue::center(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillByte) const {
+
+    const auto targetWidth = width.convert_to<long long>();
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    char fill = ' ';
+
+    if (fillByte.has_value()) {
+
+        QByteArray fillData;
+
+        if (fillByte->isBytes()) {
+
+            fillData = fillByte->asBytes("center")->bytes();
+
+        } else if (fillByte->isByteArray()) {
+
+            fillData = fillByte->asByteArray("center")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: center() fill byte must be bytes-like"
+            );
+        }
+
+        if (fillData.size() != 1) {
+
+            throw std::runtime_error(
+                "TypeError: center() fill byte must be length 1"
+            );
+        }
+
+        fill = fillData[0];
+    }
+
+    const auto totalPadding = targetWidth - data.size();
+
+    const auto leftPadding = totalPadding / 2;
+
+    const auto rightPadding = totalPadding - leftPadding;
+
+    QByteArray result;
+
+    result.append(
+        QByteArray(leftPadding, fill)
+    );
+
+    result.append(data);
+
+    result.append(
+        QByteArray(rightPadding, fill)
+    );
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::ljust(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillByte) const {
+
+    const auto targetWidth = width.convert_to<long long>();
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    char fill = ' ';
+
+    if (fillByte.has_value()) {
+
+        QByteArray fillData;
+
+        if (fillByte->isBytes()) {
+
+            fillData = fillByte->asBytes("ljust")->bytes();
+
+        } else if (fillByte->isByteArray()) {
+
+            fillData = fillByte->asByteArray("ljust")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: ljust() fill byte must be bytes-like"
+            );
+        }
+
+        if (fillData.size() != 1) {
+
+            throw std::runtime_error(
+                "TypeError: ljust() fill byte must be length 1"
+            );
+        }
+
+        fill = fillData[0];
+    }
+
+    QByteArray result = data;
+
+    result.append(
+        QByteArray(
+            targetWidth - data.size(),
+            fill
+        )
+    );
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::rjust(
+    const Value::BigInt& width,
+    const std::optional<Value>& fillByte) const {
+
+    const auto targetWidth = width.convert_to<long long>();
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    char fill = ' ';
+
+    if (fillByte.has_value()) {
+
+        QByteArray fillData;
+
+        if (fillByte->isBytes()) {
+
+            fillData = fillByte->asBytes("rjust")->bytes();
+
+        } else if (fillByte->isByteArray()) {
+
+            fillData =
+                fillByte->asByteArray("rjust")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: rjust() fill byte must be bytes-like"
+            );
+        }
+
+        if (fillData.size() != 1) {
+
+            throw std::runtime_error(
+                "TypeError: rjust() fill byte must be length 1"
+            );
+        }
+
+        fill = fillData[0];
+    }
+
+    QByteArray result;
+
+    result.append(
+        QByteArray(
+            targetWidth - data.size(),
+            fill
+        )
+    );
+
+    result.append(data);
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::zfill(
+    const Value::BigInt& width) const {
+
+    const auto targetWidth = width.convert_to<long long>();
+
+    if (targetWidth <= data.size()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    const auto padding = targetWidth - data.size();
+
+    QByteArray result;
+
+    if (
+        !data.isEmpty()
+        &&
+        (
+            data[0] == '+'
+            ||
+            data[0] == '-'
+        )
+    ) {
+
+        result.append(data[0]);
+
+        result.append(
+            QByteArray(
+                padding,
+                '0'
+            )
+        );
+
+        result.append(data.mid(1));
+
+    } else {
+
+        result.append(
+            QByteArray(
+                padding,
+                '0'
+            )
+        );
+
+        result.append(data);
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::lower() const {
+
+    QByteArray result = data;
+
+    for (char& c : result) {
+
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(result)
+    );
+}
+
+Value ByteArrayValue::upper() const {
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            data.toUpper()
+        )
+    );
+}
+
+Value ByteArrayValue::swapcase() const {
+
+    QByteArray result = data;
+
+    for (char& c : result) {
+
+        if (c >= 'a' && c <= 'z') {
+
+            c = static_cast<char>(
+                c - 'a' + 'A'
+            );
+
+        } else if (c >= 'A' && c <= 'Z') {
+
+            c = static_cast<char>(
+                c - 'A' + 'a'
+            );
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::capitalize() const {
+
+    if (data.isEmpty()) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                data
+            )
+        );
+    }
+
+    QByteArray result = data;
+
+    if (
+        result[0] >= 'a' &&
+        result[0] <= 'z'
+    ) {
+
+        result[0] = static_cast<char>(
+            result[0] - 'a' + 'A'
+        );
+    }
+
+    for (int i = 1; i < result.size(); ++i) {
+
+        if (
+            result[i] >= 'A' &&
+            result[i] <= 'Z'
+        ) {
+
+            result[i] = static_cast<char>(
+                result[i] - 'A' + 'a'
+            );
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::title() const {
+
+    QByteArray result = data;
+
+    bool newWord = true;
+
+    for (char& c : result) {
+
+        const bool isAlpha =
+            (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z');
+
+        if (isAlpha) {
+
+            if (newWord) {
+
+                if (c >= 'a' && c <= 'z') {
+
+                    c = static_cast<char>(
+                        c - 'a' + 'A'
+                    );
+                }
+
+                newWord = false;
+
+            } else {
+
+                if (c >= 'A' && c <= 'Z') {
+
+                    c = static_cast<char>(
+                        c - 'A' + 'a'
+                    );
+                }
+            }
+
+        } else {
+
+            newWord = true;
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::isLower() const {
+
+    bool hasLower = false;
+
+    for (const unsigned char c : data) {
+
+        if (c >= 'a' && c <= 'z') {
+            hasLower = true;
+        }
+
+        if (c >= 'A' && c <= 'Z') {
+            return Value(false);
+        }
+    }
+
+    return Value(hasLower);
+}
+
+Value ByteArrayValue::isUpper() const {
+
+    bool hasUpper = false;
+
+    for (const unsigned char c : data) {
+
+        if (c >= 'A' && c <= 'Z') {
+            hasUpper = true;
+        }
+
+        if (c >= 'a' && c <= 'z') {
+            return Value(false);
+        }
+    }
+
+    return Value(hasUpper);
+}
+
+Value ByteArrayValue::isTitle() const {
+
+    bool hasCasedChar = false;
+    bool newWord = true;
+
+    for (const unsigned char c : data) {
+
+        const bool isUpper = c >= 'A' && c <= 'Z';
+
+        const bool isLower = c >= 'a' && c <= 'z';
+
+        const bool isAlpha = isUpper || isLower;
+
+        if (!isAlpha) {
+
+            newWord = true;
+            continue;
+        }
+
+        hasCasedChar = true;
+
+        if (newWord) {
+
+            if (!isUpper) {
+                return Value(false);
+            }
+
+            newWord = false;
+
+        } else {
+
+            if (!isLower) {
+                return Value(false);
+            }
+        }
+    }
+
+    return Value(hasCasedChar);
+}
+
+Value ByteArrayValue::isAscii() const {
+
+    for (const unsigned char c : data) {
+
+        if (c > 127) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
+Value ByteArrayValue::isAlpha() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char c : data) {
+
+        const bool isAlpha =
+            (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z');
+
+        if (!isAlpha) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
+Value ByteArrayValue::isDigit() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char c : data) {
+
+        if (!(c >= '0' && c <= '9')) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
+Value ByteArrayValue::isAlnum() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char c : data) {
+
+        const bool isAlpha =
+            (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z');
+
+        const bool isDigit =
+            (c >= '0' && c <= '9');
+
+        if (!(isAlpha || isDigit)) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
+Value ByteArrayValue::isSpace() const {
+
+    if (data.isEmpty()) {
+        return Value(false);
+    }
+
+    for (const unsigned char c : data) {
+
+        const bool isSpace =
+            c == ' '  ||
+            c == '\t' ||
+            c == '\n' ||
+            c == '\r' ||
+            c == '\v' ||
+            c == '\f';
+
+        if (!isSpace) {
+            return Value(false);
+        }
+    }
+
+    return Value(true);
+}
+
+Value ByteArrayValue::expandTabs(
+    const Value::BigInt& tabsize) const {
+
+    const long long tabSize =
+        tabsize.convert_to<long long>();
+
+    if (tabSize < 0) {
+
+        throw std::runtime_error(
+            "ValueError: tabsize must be >= 0"
+        );
+    }
+
+    QByteArray result;
+
+    long long column = 0;
+
+    for (const unsigned char c : data) {
+
+        if (c == '\t') {
+
+            const long long spaces =
+                tabSize == 0
+                ? 0
+                : tabSize - (column % tabSize);
+
+            result.append(
+                static_cast<int>(spaces),
+                ' '
+            );
+
+            column += spaces;
+
+            continue;
+        }
+
+        result.append(static_cast<char>(c));
+
+        if (c == '\n' || c == '\r') {
+
+            column = 0;
+
+        } else {
+
+            ++column;
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            std::move(result)
+        )
+    );
+}
+
+Value ByteArrayValue::splitLines(
+    bool keepEnds) const {
+
+    std::vector<Value> result;
+
+    int start = 0;
+    int i = 0;
+
+    while (i < data.size()) {
+
+        int lineBreakLen = 0;
+
+        if (data[i] == '\n' ||
+            data[i] == '\r') {
+
+            lineBreakLen = 1;
+
+            if (data[i] == '\r' &&
+                i + 1 < data.size() &&
+                data[i + 1] == '\n') {
+
+                lineBreakLen = 2;
+            }
+        }
+
+        if (lineBreakLen > 0) {
+
+            const int end =
+                keepEnds
+                ? i + lineBreakLen
+                : i;
+
+            result.emplace_back(
+                std::make_shared<ByteArrayValue>(
+                    data.mid(start, end - start)
+                )
+            );
+
+            i += lineBreakLen;
+            start = i;
+
+            continue;
+        }
+
+        ++i;
+    }
+
+    if (start < data.size()) {
+
+        result.emplace_back(
+            std::make_shared<ByteArrayValue>(
+                data.mid(start)
+            )
+        );
+    }
+
+    return Value(
+        std::make_shared<ListValue>(
+            result
+        )
+    );
+}
+
+Value ByteArrayValue::join(
+    const Value& iterable) const {
+
+    std::vector<QByteArray> chunks;
+
+    auto appendChunk =
+        [&chunks](const Value& value) {
+
+            if (value.isByteArray()) {
+
+                chunks.push_back(
+                    value.asByteArray("join")->bytes()
+                );
+
+                return;
+            }
+
+            if (value.isBytes()) {
+
+                chunks.push_back(
+                    value.asBytes("join")->bytes()
+                );
+
+                return;
+            }
+
+            throw std::runtime_error(
+                "TypeError: sequence item "
+                "must be bytes-like"
+            );
+    };
+
+    if (iterable.isIterable() || supportsIter(iterable)) {
+
+        Value iterMethod = getAttrValue(iterable, "__iter__");
+
+        Value iterObj = call(iterMethod, {}, {}, nullptr);
+
+        if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
+            throw std::runtime_error(
+                "__iter__ returned non-iterator"
+            );
+        }
+
+        auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
+
+        while (iterator->hasNext()) {
+            appendChunk(iterator->next());
+        }
+
+    } else {
+
+        throw std::runtime_error(
+            "TypeError: object is not iterable"
+        );
+    }
+
+    QByteArray result;
+
+    for (size_t i = 0; i < chunks.size(); ++i) {
+
+        if (i > 0) {
+            result += data;
+        }
+
+        result += chunks[i];
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            std::move(result)
+        )
+    );
+}
+
+Value ByteArrayValue::append(const Value& value) {
+
+    const auto byte = value.toBigInt();
+
+    if (byte < 0 || byte > 255) {
+
+        throw std::runtime_error(
+            "ValueError: byte must be in range(0, 256)"
+        );
+    }
+
+    data.append(
+        static_cast<char>(
+            byte.convert_to<int>()
+        )
+    );
+
+    return {};
+}
+
+Value ByteArrayValue::extend(const Value& iterable) {
+
+    if (!iterable.isIterable() && !supportsIter(iterable)) {
+
+        throw std::runtime_error(
+            "TypeError: object is not iterable"
+        );
+    }
+
+    Value iterMethod = getAttrValue(iterable, "__iter__");
+
+    Value iterObj = call(iterMethod, {}, {}, nullptr);
+
+    if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
+
+        throw std::runtime_error(
+            "__iter__ returned non-iterator"
+        );
+    }
+
+    auto iterator =std::get<Value::IteratorPtr>(iterObj.data);
+
+    while (iterator->hasNext()) {
+
+        Value item = iterator->next();
+
+        auto byte = item.toBigInt();
+
+        if (byte < 0 || byte > 255) {
+
+            throw std::runtime_error(
+                "ValueError: byte must be in range(0, 256)"
+            );
+        }
+
+        data.append(
+            static_cast<char>(
+                byte.convert_to<int>()
+            )
+        );
+    }
+
+    return {};
+}
+
+Value ByteArrayValue::insert(const Value::BigInt& indexValue, const Value& value) {
+
+    const auto byte = value.toBigInt();
+
+    if (byte < 0 || byte > 255) {
+
+        throw std::runtime_error(
+            "ValueError: byte must be in range(0, 256)"
+        );
+    }
+
+    long long index = indexValue.convert_to<long long>();
+
+    const long long size = data.size();
+
+    if (index < 0) {
+        index += size;
+    }
+
+    if (index < 0) {
+        index = 0;
+    }
+
+    if (index > size) {
+        index = size;
+    }
+
+    data.insert(
+        index,
+        static_cast<char>(
+            byte.convert_to<int>()
+        )
+    );
+
+    return {};
+}
+
+Value ByteArrayValue::pop(const std::optional<Value::BigInt>& indexValue) {
+
+    if (data.isEmpty()) {
+
+        throw std::runtime_error(
+            "IndexError: pop from empty bytearray"
+        );
+    }
+
+    long long index;
+
+    if (indexValue.has_value()) {
+
+        index = indexValue->convert_to<long long>();
+
+    } else {
+
+        index = data.size() - 1;
+    }
+
+    const long long size = data.size();
+
+    if (index < 0) {
+        index += size;
+    }
+
+    if (index < 0 || index >= size) {
+
+        throw std::runtime_error(
+            "IndexError: pop index out of range"
+        );
+    }
+
+    const unsigned char result =
+        static_cast<unsigned char>(
+            data[index]
+        );
+
+    data.remove(index, 1);
+
+    return Value(Value::BigInt(result));
+}
+
+Value ByteArrayValue::remove(const Value& value) {
+
+    auto byte = value.toBigInt();
+
+    if (byte < 0 || byte > 255) {
+
+        throw std::runtime_error(
+            "ValueError: byte must be in range(0, 256)"
+        );
+    }
+
+    const char target =
+        static_cast<char>(
+            byte.convert_to<int>()
+        );
+
+    const int index = data.indexOf(target);
+
+    if (index < 0) {
+
+        throw std::runtime_error(
+            "ValueError: value not found in bytearray"
+        );
+    }
+
+    data.remove(index, 1);
+
+    return {};
+}
+
+Value ByteArrayValue::clear() {
+
+    data.clear();
+
+    return {};
+}
+
+Value ByteArrayValue::copy() const {
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            data
+        )
+    );
+}
+
+Value ByteArrayValue::reverse() {
+
+    std::reverse(data.begin(), data.end());
+
+    return {};
+}
+
+Value ByteArrayValue::hex(
+    const std::optional<QString>& sep,
+    const std::optional<Value::BigInt>& bytesPerSep) const {
+
+    if (!sep.has_value()) {
+
+        QString result;
+
+        result.reserve(
+            data.size() * 2
+        );
+
+        for (unsigned char byte : data) {
+
+            result += QString("%1")
+                .arg(
+                    static_cast<int>(byte),
+                    2,
+                    16,
+                    QLatin1Char('0')
+                );
+        }
+
+        return Value(result);
+    }
+
+    const QString separator = *sep;
+
+    const long long groupSize =
+        bytesPerSep.has_value()
+        ? bytesPerSep->convert_to<long long>()
+        : 1;
+
+    if (groupSize == 0) {
+
+        throw std::runtime_error(
+            "ValueError: bytes_per_sep must not be zero"
+        );
+    }
+
+    QString result;
+
+    const bool fromRight =
+        groupSize > 0;
+
+    const long long absGroup =
+        std::llabs(groupSize);
+
+    for (int i = 0; i < data.size(); ++i) {
+
+        if (i > 0) {
+
+            bool insertSep = false;
+
+            if (fromRight) {
+
+                const int remaining = data.size() - i;
+
+                insertSep = remaining % absGroup == 0;
+
+            } else {
+
+                insertSep = i % absGroup == 0;
+            }
+
+            if (insertSep) {
+                result += separator;
+            }
+        }
+
+        result += QString("%1")
+            .arg(
+                static_cast<unsigned char>(data[i]),
+                2,
+                16,
+                QLatin1Char('0')
+            );
+    }
+
+    return Value(result);
+}
+
+Value ByteArrayValue::fromHex(const std::vector<Value> &args) {
+
+    QString text = args[0]
+                .asString("fromhex")
+                ->toString();
+
+    QByteArray cleaned;
+
+    for (QChar ch : text) {
+
+        if (!ch.isSpace()) {
+            cleaned.append(
+                ch.toLatin1()
+            );
+        }
+    }
+
+    if (cleaned.size() % 2 != 0) {
+
+        throw std::runtime_error(
+            "ValueError: non-hexadecimal "
+            "number found in fromhex() arg"
+        );
+    }
+
+    QByteArray result;
+
+    for (int i = 0; i < cleaned.size(); i += 2) {
+
+        bool ok = false;
+
+        const QByteArray pair = cleaned.mid(i, 2);
+
+        const int value = pair.toInt(&ok, 16);
+
+        if (!ok) {
+
+            throw std::runtime_error(
+                "ValueError: non-hexadecimal "
+                "number found in fromhex() arg"
+            );
+        }
+
+        result.append(
+            static_cast<char>(value)
+        );
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            std::move(result)
+        )
+    );
+}
+
+Value ByteArrayValue::decode(
+    const QString& encoding,
+    const QString& errors) const {
+
+    const QString normalized = encoding.toLower();
+
+    if (normalized != "utf8" && normalized != "utf-8") {
+
+        throw std::runtime_error(
+            QString(
+                "LookupError: unknown encoding: %1"
+            ).arg(encoding).toStdString()
+        );
+    }
+
+    if (errors != "strict") {
+
+        throw std::runtime_error(
+            QString(
+                "LookupError: unknown error handler name '%1'"
+            ).arg(errors).toStdString()
+        );
+    }
+
+    const QString decoded = QString::fromUtf8(data);
+
+    if (decoded.toUtf8() != data) {
+
+        throw std::runtime_error(
+            "UnicodeDecodeError"
+        );
+    }
+
+    return Value(decoded);
+}
+
+Value ByteArrayValue::makeTrans(const std::vector<Value> &args) {
+
+    QByteArray from;
+    QByteArray to;
+
+    if (args[0].isBytes()) {
+        from = args[0]
+                .asBytes("maketrans")
+                ->bytes();
+
+    } else if (args[0].isByteArray()) {
+        from = args[0]
+                .asByteArray("maketrans")
+                ->bytes();
+
+    } else {
+        throw std::runtime_error(
+            "TypeError: first argument "
+            "must be bytes-like"
+        );
+    }
+
+    if (args[1].isBytes()) {
+        to = args[1]
+                .asBytes("maketrans")
+                ->bytes();
+
+    } else if (
+        args[1].isByteArray()) {
+        to = args[1]
+                .asByteArray("maketrans")
+                ->bytes();
+
+    } else {
+        throw std::runtime_error(
+            "TypeError: second argument "
+            "must be bytes-like"
+        );
+    }
+
+    if (from.size() != to.size()) {
+        throw std::runtime_error(
+            "ValueError: arguments "
+            "must have same length"
+        );
+    }
+
+    QByteArray table(256, '\0');
+
+    for (int i = 0; i < 256; ++i) {
+        table[i] = static_cast<char>(i);
+    }
+
+    for (int i = 0; i < from.size(); ++i) {
+        table[
+            static_cast<
+                unsigned char>(from[i])
+        ] = to[i];
+    }
+
+    return Value(
+        std::make_shared<BytesValue>(table)
+    );
+}
+
+Value ByteArrayValue::translate(
+    const std::optional<Value>& table,
+    const std::optional<Value>& deleteBytes) const {
+
+    QByteArray deletionSet;
+
+    if (deleteBytes.has_value()) {
+
+        if (const Value& del = *deleteBytes;
+            del.isBytes()) {
+
+            deletionSet = del.asBytes("translate")->bytes();
+
+        } else if (del.isByteArray()) {
+
+            deletionSet = del.asByteArray("translate")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: delete argument "
+                "must be bytes-like"
+            );
+        }
+    }
+
+    QByteArray translationTable;
+
+    bool useTranslation = table.has_value();
+
+    if (useTranslation) {
+
+        if (const Value& tbl = *table;
+            tbl.isNone()) {
+
+            useTranslation = false;
+
+        } else if (tbl.isBytes()) {
+
+            translationTable = tbl.asBytes("translate")->bytes();
+
+        } else if (tbl.isByteArray()) {
+
+            translationTable = tbl.asByteArray("translate")->bytes();
+
+        } else {
+
+            throw std::runtime_error(
+                "TypeError: translation table "
+                "must be bytes-like"
+            );
+        }
+
+        if (useTranslation && translationTable.size() != 256) {
+
+            throw std::runtime_error(
+                "ValueError: translation table "
+                "must be 256 bytes long"
+            );
+        }
+    }
+
+    QByteArray result;
+
+    for (const unsigned char byte : data) {
+
+        if (
+            deletionSet.contains(
+                static_cast<char>(byte)
+            )
+        ) {
+            continue;
+        }
+
+        if (useTranslation) {
+
+            result.append(translationTable[byte]);
+
+        } else {
+
+            result.append(
+                static_cast<char>(byte)
+            );
+        }
+    }
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            std::move(result)
+        )
+    );
+}
+
+Value ByteArrayValue::resize(const Value& newSizeValue) {
+
+    if (!newSizeValue.isBigInt()) {
+        throw std::runtime_error(
+            "TypeError: new size must be an integer"
+        );
+    }
+
+    const auto newSize = newSizeValue.toBigInt();
+
+    if (newSize < 0) {
+        throw std::runtime_error(
+            "ValueError: negative resize value"
+        );
+    }
+
+    const qsizetype oldSize = data.size();
+    const qsizetype size = static_cast<qsizetype>(newSize);
+
+    data.resize(size);
+
+    if (size > oldSize) {
+        std::fill(
+            data.begin() + oldSize,
+            data.end(),
+            '\0'
+        );
+    }
+
+    return {};
+}
+
+Value ByteArrayValue::rmul(const Value& other) const {
+    return multiply(other);
+}
+
+Value ByteArrayValue::mod(const Value& other) const {
+
+    const auto bytesObj = std::make_shared<BytesValue>(data);
+
+    const Value result = bytesObj->mod(other);
+
+    auto formatted = result.asBytes()->bytes();
+
+    return Value(
+        std::make_shared<ByteArrayValue>(
+            formatted
+        )
+    );
+}
+
+Value ByteArrayValue::rmod(const Value& other) const {
+
+    return other % Value(
+        std::const_pointer_cast<ByteArrayValue>(
+            shared_from_this()
+        )
+    );
+}

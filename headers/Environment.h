@@ -1,8 +1,8 @@
 #ifndef ENVIRONMENT_H
 #define ENVIRONMENT_H
 #include "Value.h"
-#include <unordered_map>
-#include <unordered_set>
+#include <QSet>
+#include <QHash>
 #include <utility>
 
 /**
@@ -15,9 +15,9 @@
  */
 class Environment : public std::enable_shared_from_this<Environment> {
 public:
-    std::unordered_set<QString> globalVars;
-    std::unordered_set<QString> nonlocalVars;
-    std::unordered_map<QString, Value> variables;
+    QSet<QString> globalVars;
+    QSet<QString> nonlocalVars;
+    QHash<QString, Value> variables;
     std::shared_ptr<Environment> parent;
 
     void set(const QString& name, const Value& value);

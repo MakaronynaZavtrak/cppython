@@ -9,18 +9,31 @@
 #include "Environment.h"
 #include "Value.h"
 
+using Kwargs = std::vector<std::pair<QString, Value>>;
+
 Value call(const Value&,
            const std::vector<Value>&,
+           const Kwargs&,
            const std::shared_ptr<Environment>&);
 
 Value callFunction(const Value::FunctionPtr&,
                    const std::vector<Value>&,
+                   const Kwargs&,
                    const std::shared_ptr<Environment>&);
 
 Value constructClass(const Value::ClassPtr&,
                      const std::vector<Value>&,
+                     const Kwargs&,
                      const std::shared_ptr<Environment>&);
 
-Value callBoundMethod(const Value::BoundMethodPtr &,
-                      const std::vector<Value> &);
+Value callBoundMethod(const Value::BoundMethodPtr&,
+                      const std::vector<Value>&,
+                      const Kwargs&);
+
+QByteArray constructBytesData(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs);
+
+bool supportsIter(const Value& obj);
+
 #endif //CPPYTHON_CALLRUNTIME_H

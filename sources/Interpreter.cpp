@@ -7,6 +7,9 @@
 #include <sstream>
 
 #include "Runtime.h"
+#include "../runtime/builtins/bytearray/ByteArrayMethods.h"
+#include "../runtime/builtins/bytes/BytesMethods.h"
+#include "../runtime/builtins/str/StrMethods.h"
 
 
 /**
@@ -39,6 +42,19 @@ std::string Interpreter::assembleCode(const std::vector<std::string>& lines) {
     return oss.str();
 }
 
+Value Interpreter::executeNode(
+    const std::shared_ptr<ASTNode>& node,
+    const std::shared_ptr<Environment>& env) {
+
+    const Value result = node->eval(env);
+
+    if (node->shouldPrint() && !result.isNone()) {
+        std::cout << result.display().toStdString() << "\n";
+    }
+
+    return result;
+}
+
 /**
  * Выполняет интерпретацию кода, переданного в виде строки. Разбивает код на токены
  * с помощью лексера, создает абстрактное синтаксическое дерево (AST) с помощью парсера
@@ -50,15 +66,18 @@ std::string Interpreter::assembleCode(const std::vector<std::string>& lines) {
  * @param lexer Лексер, используемый для токенизации переданного кода.
  * @param env Среда, содержащая переменные и их значения, используемые во время интерпретации.
  */
-void Interpreter::executeCode(const std::string& code, Lexer& lexer, const std::shared_ptr<Environment> &env) {
+void Interpreter::executeCode(
+    const std::string& code, Lexer& lexer,
+    const std::shared_ptr<Environment> &env) {
+
     try {
+
         const QVector<Token> tokens = lexer.tokenize(QString::fromStdString(code));
         Parser parser(tokens);
         const std::shared_ptr<ASTNode> ast = parser.parse();
 
-        if (const auto result = ast->eval(env); ast->shouldPrint() && !result.isNone()) {
-            std::cout << result.toString().toStdString() << "\n";
-        }
+        executeNode(ast, env);
+
     } catch (const std::runtime_error& e) {
         std::cout << e.what() << "\n";
     }
@@ -81,7 +100,7 @@ void Interpreter::run(int argc, char* argv[]) {
     const auto globalEnv = std::make_shared<Environment>();
     BuiltinFunction::registerBuiltins(globalEnv);
 
-    Runtime::objectClass = std::make_shared<ClassValue>(* new ClassValue("object"));
+    Runtime::objectClass = std::make_shared<ClassValue>("object");
 
     Runtime::objectClass->name = "object";
 
@@ -92,6 +111,48 @@ void Interpreter::run(int argc, char* argv[]) {
 
     Runtime::objectClass->attributes["__setattr__"] =
     globalEnv->get("__object_setattr__");
+
+
+
+    Runtime::strClass = std::make_shared<ClassValue>("str");
+    Runtime::strClass->name = "str";
+    Runtime::strClass->bases.push_back(Runtime::objectClass);
+
+    auto builtin = std::get<Value::BuiltinFunctionPtr>(makeMakeTransStrClassBuiltin().data);
+
+    Runtime::strClass->attributes["maketrans"] = makeMakeTransStrClassBuiltin();
+
+    globalEnv->set("str", Value(Runtime::strClass));
+
+    Runtime::strClass->attributes["__call__"] = globalEnv->get("__str_call__");
+
+    globalEnv->set("__str_type__", Value(Runtime::strClass));
+
+
+
+    Runtime::bytesClass = std::make_shared<ClassValue>("bytes");
+    Runtime::bytesClass->name = "bytes";
+    Runtime::bytesClass->bases.push_back(Runtime::objectClass);
+
+    Runtime::bytesClass->attributes["fromhex"] = makeFromHexClassBuiltin();
+    Runtime::bytesClass->attributes["maketrans"] = makeMakeTransBytesClassBuiltin();
+    Runtime::bytesClass->attributes["__bytes__"] = make__bytes__ClassBuiltin();
+
+    globalEnv->set("bytes", Value(Runtime::bytesClass));
+    Runtime::bytesClass->attributes["__call__"] = globalEnv->get("__bytes_call__");
+    globalEnv->set("__bytes_type__", Value(Runtime::bytesClass));
+
+
+    Runtime::bytearrayClass = std::make_shared<ClassValue>("bytearray");
+    Runtime::bytearrayClass->name = "bytearray";
+    Runtime::bytearrayClass->bases.push_back(Runtime::objectClass);
+
+    globalEnv->set("bytearray", Value(Runtime::bytearrayClass));
+    Runtime::bytearrayClass->attributes["__call__"] = globalEnv->get("__bytearray_call__");
+    globalEnv->set("__bytearray_type__", Value(Runtime::bytearrayClass));
+    Runtime::bytearrayClass->attributes["__bytes__"] = make_byteArray_ClassBuiltin();
+    Runtime::bytearrayClass->attributes["fromhex"] = makeByteArrayFromHexBuiltin();
+    Runtime::bytearrayClass->attributes["maketrans"] = makeByteArrayMakeTransBuiltin();
 
     Lexer lexer;
     std::vector<std::string> buffer;

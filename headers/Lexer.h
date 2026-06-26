@@ -46,7 +46,9 @@ enum TokenType {
     TOKEN_ID,
     TOKEN_NUMBER,
     TOKEN_STRING,
+    TOKEN_BYTES,
     TOKEN_BOOL,
+    TOKEN_NONE,
     TOKEN_KEYWORD,
     TOKEN_OP,
     TOKEN_AT,
@@ -68,7 +70,15 @@ enum class Keyword {
     PASS,
     GLOBAL,
     NONLOCAL,
-    CLASS
+    CLASS,
+    LAMBDA,
+    FOR,
+    IN,
+    NOT,
+    AND,
+    OR,
+    DEL,
+    IS
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -83,7 +93,15 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"pass", Keyword::PASS},
     {"global", Keyword::GLOBAL},
     {"nonlocal", Keyword::NONLOCAL},
-    {"class", Keyword::CLASS}
+    {"class", Keyword::CLASS},
+    {"lambda", Keyword::LAMBDA},
+    {"for", Keyword::FOR},
+    {"in", Keyword::IN},
+    {"not", Keyword::NOT},
+    {"and", Keyword::AND},
+    {"or", Keyword::OR},
+    {"del", Keyword::DEL},
+    {"is", Keyword::IS}
 };
 
 /**
@@ -98,6 +116,7 @@ struct Token {
     QString value;
     int line; //Строка, где начинается токен
     // int column; //Столбец, где начинается токен
+
     Token(const TokenType type,
         QString value,
         const int line,
@@ -146,6 +165,8 @@ private:
      * @return Token Токен, содержащий строковое значение
      */
     Token readString(const QString &code);
+
+    Token readBytes(const QString& code);
 
     /**
      * @brief Читает идентификатор, ключевое слово или булево значение

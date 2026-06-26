@@ -4,6 +4,7 @@
 #include "Environment.h"
 #include "Lexer.h"
 
+class ASTNode;
 /**
  * @class Interpreter
  * @brief Минимальный интерпретатор Python, предоставляющий REPL для выполнения Python-подобного кода.
@@ -16,6 +17,11 @@
 class Interpreter {
     public:
         static void run(int argc, char *argv[]);
+
+        static Value executeNode(
+            const std::shared_ptr<ASTNode>& node,
+            const std::shared_ptr<Environment>& env);
+
     private:
         static constexpr const char* MAIN_PROMPT = ">>> ";
         static constexpr const char* CONTINUATION_PROMPT = "... ";

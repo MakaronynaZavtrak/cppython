@@ -1,43 +1,49 @@
 #include "CallRuntime.h"
 
 #include "BoundMethod.h"
+#include "ByteArrayValue.h"
+#include "BytesValue.h"
 #include "ClassMethodValue.h"
 #include "Environment.h"
 #include "FunctionValue.h"
 #include "Parser.h"
 #include "StaticMethodValue.h"
+#include "StrValue.h"
 #include "Value.h"
+
+#include <unordered_set>
+
 //
 // Created by semyo on 03.05.2026.
 //
 Value call(const Value& callee,
            const std::vector<Value>& args,
-           const std::shared_ptr<Environment>& env)
-{
+           const Kwargs& kwargs,
+           const std::shared_ptr<Environment>& env) {
 
     if (std::holds_alternative<Value::BuiltinFunctionPtr>(callee.data)) {
         const auto fn = std::get<Value::BuiltinFunctionPtr>(callee.data);
-        return fn->func(args, env);
+        return fn->func(args, kwargs, env);
     }
 
     if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data)) {
-        return callFunction(*f, args, env);
+        return callFunction(*f, args, kwargs, env);
     }
 
     if (const auto c = std::get_if<Value::ClassPtr>(&callee.data)) {
-        return constructClass(*c, args, env);
+        return constructClass(*c, args, kwargs, env);
     }
 
     if (const auto b = std::get_if<Value::BoundMethodPtr>(&callee.data)) {
-        return callBoundMethod(*b, args);
+        return callBoundMethod(*b, args, kwargs);
     }
 
     if (const auto sm = std::get_if<Value::StaticMethodPtr>(&callee.data)) {
-        return call(Value((*sm)->func), args, env);
+        return call(Value((*sm)->func), args, kwargs, env);
     }
 
     if (const auto cm = std::get_if<Value::ClassMethodPtr>(&callee.data)) {
-        return call(Value((*cm)->func), args, env);
+        return call(Value((*cm)->func), args, kwargs, env);
     }
 
     throw std::runtime_error("Object is not callable");
@@ -45,24 +51,69 @@ Value call(const Value& callee,
 
 Value callFunction(const Value::FunctionPtr& func,
                    const std::vector<Value>& args,
-                   const std::shared_ptr<Environment>& envOverride = nullptr)
-{
-    if (args.size() != func->params.size()) {
-        throw std::runtime_error("Argument count mismatch");
-    }
+                   const Kwargs& kwargs,
+                   const std::shared_ptr<Environment>& envOverride = nullptr) {
 
     const auto local = std::make_shared<Environment>(func->closure);
 
-    // копируем override-переменные
     if (envOverride) {
-        for (const auto& [k, v] : envOverride->variables) {
-            local->set(k, v);
+        for (auto it = envOverride->variables.cbegin();
+            it != envOverride->variables.cend(); ++it) {
+
+            local->set(it.key(), it.value());
         }
     }
 
+    std::unordered_set<QString> assigned;
 
+    // позиционные аргументы
     for (size_t i = 0; i < args.size(); ++i) {
-        local->set(func->params[i].name, args[i]);
+
+        if (i >= func->params.size()) {
+            throw std::runtime_error("Too many positional arguments");
+        }
+
+        const QString& paramName = func->params[i].name;
+
+        local->set(paramName, args[i]);
+        assigned.insert(paramName);
+    }
+
+    // именованные аргументы
+    for (const auto& [name, value] : kwargs) {
+
+        bool found = false;
+
+        for (const auto& param : func->params) {
+
+            if (param.name == name) {
+
+                if (assigned.count(name)) {
+                    throw std::runtime_error(
+                    "Multiple values for argument: "+ name.toStdString()
+                    );
+                }
+
+                local->set(name, value);
+
+                assigned.insert(name);
+
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            throw std::runtime_error("Unknown keyword argument: " + name.toStdString());
+        }
+    }
+
+    // отсутствие аргументов
+    for (const auto& param : func->params) {
+
+        if (!assigned.count(param.name)) {
+            throw std::runtime_error("Missing argument: " + param.name.toStdString());
+        }
     }
 
     try {
@@ -79,14 +130,64 @@ Value callFunction(const Value::FunctionPtr& func,
     }
 }
 
+bool supportsIter(const Value& obj) {
+
+    try {
+
+        getAttrValue(obj, "__iter__");
+
+        return true;
+
+    } catch (...) {
+
+        return false;
+    }
+}
+
 Value constructClass(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
+                     const Kwargs& kwargs,
                      const std::shared_ptr<Environment>& env) {
+
+    if (cls == Runtime::strClass) {
+
+        if (args.empty()) {
+            return Value("");
+        }
+
+        if (args.size() > 1) {
+            throw std::runtime_error(
+                "str() takes at most 1 argument"
+            );
+        }
+
+        return Value(args[0].toString());
+    }
+
+    if (cls == Runtime::bytesClass) {
+
+        return Value(
+            std::make_shared<BytesValue>(
+                constructBytesData(args, kwargs)
+            )
+        );
+
+    }
+
+    if (cls == Runtime::bytearrayClass) {
+
+        return Value(
+            std::make_shared<ByteArrayValue>(
+                constructBytesData(args, kwargs)
+            )
+        );
+    }
+
     const auto instance = std::make_shared<InstanceValue>(cls);
 
     try {
         const Value init = getAttrValue(Value(instance), "__init__");
-        call(init, args, env);
+        call(init, args, kwargs, env);
     } catch (...) {
         if (!args.empty()) {
             throw std::runtime_error("Class takes no arguments");
@@ -96,7 +197,9 @@ Value constructClass(const Value::ClassPtr& cls,
     return Value(instance);
 }
 
-Value callBoundMethod(const Value::BoundMethodPtr &bm, const std::vector<Value> &args) {
+Value callBoundMethod(const Value::BoundMethodPtr &bm,
+                      const std::vector<Value> &args,
+                      const Kwargs& kwargs) {
     std::vector<Value> newArgs;
 
     // self
@@ -111,14 +214,190 @@ Value callBoundMethod(const Value::BoundMethodPtr &bm, const std::vector<Value> 
 
         local->set("__class__", Value(bm->ownerClass));
 
-        return callFunction(*f, newArgs, local);
+        return callFunction(*f, newArgs, kwargs, local);
     }
 
 
     if (const auto b =
        std::get_if<Value::BuiltinFunctionPtr>(&bm->callable.data)) {
-        return (*b)->func(newArgs, nullptr);
+        return (*b)->func(newArgs, kwargs, nullptr);
     }
 
     throw std::runtime_error("Invalid bound method callable");
+}
+
+QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwargs) {
+
+    std::optional<QString> encoding;
+
+        //TODO: пока не поддерживается
+        std::optional<QString> errors;
+
+        for (const auto& [name, value] : kwargs) {
+
+            if (name == "encoding") {
+
+                encoding = value.asString("bytes")->toString();
+
+            } else if (name == "errors") {
+
+                //TODO: пока не поддерживается
+                errors = value.asString("bytes")->toString();
+
+            } else {
+
+                throw std::runtime_error(
+                    "Unknown keyword argument: "
+                    + name.toStdString()
+                );
+            }
+        }
+
+        if (args.empty()) {
+            return QByteArray();
+        }
+
+        if (args.size() > 2) {
+
+            throw std::runtime_error(
+                "bytes() takes at most 2 arguments"
+            );
+        }
+
+        const Value& obj = args[0];
+
+        if (obj.isBytes()) {
+
+            if (encoding.has_value()) {
+
+                throw std::runtime_error(
+                    "TypeError: encoding without a string argument"
+                );
+            }
+
+            return obj.asBytes("bytes")->bytes();
+        }
+
+        if (obj.isByteArray()) {
+
+            if (encoding.has_value()) {
+                throw std::runtime_error(
+                    "TypeError: encoding without a string argument"
+                );
+            }
+
+            return obj.asByteArray("bytes")->bytes();
+        }
+
+        try {
+
+            Value bytesMethod = getAttrValue(obj, "__bytes__");
+
+            Value result = call(bytesMethod, {}, {}, nullptr);
+
+            if (!result.isBytes()) {
+
+                throw std::runtime_error(
+                    "TypeError: __bytes__ returned non-bytes"
+                );
+            }
+
+            return result.asBytes()->bytes();
+
+        }
+        catch (const std::runtime_error& e) {
+
+            const std::string msg = e.what();
+
+            if (msg.find("AttributeError") == std::string::npos) {
+                throw;
+            }
+        }
+
+        if (obj.isString()) {
+
+            QString actualEncoding;
+
+            if (args.size() >= 2) {
+
+                actualEncoding = args[1].asString("bytes")->toString();
+
+            } else if (encoding.has_value()) {
+
+                actualEncoding = *encoding;
+                //TODO: if (errors.has_value()) {}
+            } else {
+
+                throw std::runtime_error(
+                    "TypeError: string argument without an encoding"
+                );
+            }
+
+            // TODO: пока поддерживается только utf-8
+            if (
+                actualEncoding != "utf-8" &&
+                actualEncoding != "utf8") {
+
+                throw std::runtime_error(
+                    "LookupError: unknown encoding"
+                );
+            }
+
+            return  obj.toString().toUtf8();
+        }
+
+        if (obj.isBigInt() || obj.isBool()) {
+
+            auto count = obj.toBigInt();
+
+            if (count < 0) {
+                throw;
+            }
+
+            return QByteArray(count.convert_to<long long>(), '\0');
+        }
+
+        if (obj.isIterable() || supportsIter(obj)) {
+
+            QByteArray result;
+
+            Value iterMethod = getAttrValue(obj, "__iter__");
+
+            Value iterObj = call(iterMethod, {}, {}, nullptr);
+
+            if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
+                throw std::runtime_error(
+                    "__iter__ returned non-iterator"
+                );
+            }
+
+            auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
+
+            while (iterator->hasNext()) {
+
+                Value item = iterator->next();
+
+                auto value = item.toBigInt();
+
+                if (value < 0 || value > 255) {
+                    throw std::runtime_error(
+                        "bytes must be in range(0, 256)"
+                    );
+                }
+
+                result.append(
+                    static_cast<char>(
+                        value.convert_to<int>()
+                    )
+                );
+            }
+
+            return result;
+        }
+
+        throw std::runtime_error(
+            "TypeError: cannot convert object to bytes"
+        );
+
+
 }

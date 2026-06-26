@@ -1,0 +1,1495 @@
+//
+// Created by semyo on 24.05.2026.
+//
+
+#include "StrValue.h"
+#include "../BuiltinAttrLookup.h"
+#include "../BuiltinMethodRegistry.h"
+#include "../../ProtocolHelpers.h"
+#include <QDebug>
+
+namespace {
+
+    Value make_getitem_Method(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__getitem__",
+
+            [str](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__getitem__");
+
+                return str->getItem(args[0]);
+            }
+        );
+    }
+
+    Value makeContainsMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__contains__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__contains__");
+
+                return Value(
+                    str->contains(args[0])
+                );
+            }
+        );
+    }
+
+    Value makeAddMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__add__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__add__");
+
+                return str->add(args[0]);
+            }
+        );
+    }
+
+    Value makeMultiplyMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__mul__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__mul__");
+
+                return str->multiply(args[0]);
+            }
+        );
+    }
+
+    Value makeRmulMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__rmul__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__rmul__");
+
+                return str->rmul(args[0]);
+            }
+        );
+    }
+
+    Value makeModMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__mod__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__mod__");
+
+                return str->mod(args[0]);
+            }
+        );
+    }
+
+    Value makeEqualMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__eq__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__eq__");
+
+                return Value(
+                    str->equal(args[0])
+                );
+            }
+        );
+    }
+
+    Value makeNotEqualMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__ne__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__ne__");
+
+                return Value(str->notEqual(args[0]));
+            }
+        );
+    }
+
+    Value makeLtMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__lt__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__lt__");
+
+                return Value(str->less(args[0]));
+            }
+        );
+    }
+
+    Value makeLeMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__le__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__le__");
+
+                return Value(str->lessOrEqual(args[0]));
+            }
+        );
+    }
+
+    Value makeGtMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__gt__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__gt__");
+
+                return Value(str->greater(args[0]));
+            }
+        );
+    }
+
+    Value makeGeMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__ge__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 1, "__ge__");
+
+                return Value(str->greaterOrEqual(args[0]));
+            }
+        );
+    }
+
+    Value makeHashMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__hash__",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 0, "__hash__");
+
+                return Value(
+                    Value::BigInt(
+                        static_cast<long long>(
+                            str->hash()
+                        )
+                    )
+                );
+            }
+        );
+    }
+
+    Value makeReprMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__repr__",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "__repr__");
+
+                return Value(str->repr());
+            }
+        );
+    }
+
+    Value makeStrMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__str__",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "__str__");
+
+                return Value(str->toString());
+            }
+        );
+    }
+
+    Value makeDunderFormatMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "__format__",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(
+                    args,
+                    1,
+                    "__format__"
+                );
+
+                return str->formatSelf(
+                    args[0].toString()
+                );
+            }
+        );
+    }
+
+    Value makeUpperMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "upper",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "upper");
+
+                return str->upper();
+            }
+        );
+    }
+
+    Value makeLowerMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "lower",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "lower");
+
+                return str->lower();
+            }
+        );
+    }
+
+    Value makeStripMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "strip",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "strip");
+
+                if (args.empty()) {
+                    return str->strip();
+                }
+
+                return str->strip(args[0].asString("strip")->toString());
+            }
+        );
+    }
+
+    Value makeSplitMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "split",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 2, "split");
+
+                std::optional<QString> sep;
+                std::optional<qsizetype> maxsplit;
+
+                if (!args.empty()) {
+
+                    if (!args[0].isNone()) {
+                        sep = args[0].asString("split")->toString();
+                    }
+                }
+
+                if (args.size() == 2) {
+                    maxsplit = static_cast<qsizetype>(args[1].asBigInt("split"));
+                }
+
+                return str->split(sep, maxsplit);
+            }
+        );
+    }
+
+    Value makeJoinMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "join",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "join");
+
+                return str->join(args[0]);
+            }
+        );
+    }
+
+    Value makeReplaceMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "replace",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 2, 3, "replace");
+
+                if (args.size() == 2) {
+                    return str->replace(args[0], args[1]);
+                }
+
+                return str->replace(args[0], args[1], args[2]);
+            }
+        );
+    }
+
+    Value makeStartswithMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "startswith",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "startswith");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() == 3) {
+                    end = args[2];
+                }
+
+                return str->startswith(args[0], start, end);
+            }
+        );
+    }
+
+    Value makeEndswithMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "endswith",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "endswith");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() == 3) {
+                    end = args[2];
+                }
+
+                return str->endswith(args[0], start, end);
+            }
+        );
+    }
+
+    Value makeFindMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "find",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "find");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() == 3) {
+                    end = args[2];
+                }
+
+                return str->find(args[0], start, end);
+            }
+        );
+    }
+
+    Value makeCountMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "count",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "count");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() == 3) {
+                    end = args[2];
+                }
+
+                return str->count(args[0], start, end);
+            }
+        );
+    }
+
+    Value makeIndexMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "index",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "index");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() == 3) {
+                    end = args[2];
+                }
+
+                return str->index(args[0], start, end);
+            }
+        );
+    }
+
+    Value makeRfindMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "rfind",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "rfind");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() == 3) {
+                    end = args[2];
+                }
+
+                return str->rfind(args[0], start, end);
+            }
+        );
+    }
+
+    Value makeRindexMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "rindex",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 3, "rindex");
+
+                std::optional<Value> start;
+                std::optional<Value> end;
+
+                if (args.size() >= 2) {
+                    start = args[1];
+                }
+
+                if (args.size() == 3) {
+                    end = args[2];
+                }
+
+                return str->rindex(args[0], start, end);
+            }
+        );
+    }
+
+    Value makeCapitalizeMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "capitalize",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "capitalize");
+
+                return str->capitalize();
+            }
+        );
+    }
+
+    Value makeTitleMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "title",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "title");
+
+                return str->title();
+            }
+        );
+    }
+
+    Value makeSwapcaseMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "swapcase",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "swapcase");
+
+                return str->swapcase();
+            }
+        );
+    }
+
+    Value makeIsAlphaMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isalpha",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isalpha");
+
+                return str->isalpha();
+            }
+        );
+    }
+
+    Value makeIsDigitMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isdigit",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isdigit");
+
+                return str->isdigit();
+            }
+        );
+    }
+
+    Value makeIsAlnumMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isalnum",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isalnum");
+
+                return str->isalnum();
+            }
+        );
+    }
+
+    Value makeIsSpaceMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isspace",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isspace");
+
+                return str->isspace();
+            }
+        );
+    }
+
+    Value makeCenterMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "center",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "center");
+
+                if (args.size() == 1) {
+                    return str->center(args[0]);
+                }
+
+                return str->center(args[0], args[1]);
+            }
+        );
+    }
+
+    Value makeLjustMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "ljust",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "ljust");
+
+                if (args.size() == 1) {
+                    return str->ljust(args[0]);
+                }
+
+                return str->ljust(args[0], args[1]);
+            }
+        );
+    }
+
+    Value makeRjustMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "rjust",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 1, 2, "rjust");
+
+                if (args.size() == 1) {
+                    return str->rjust(args[0]);
+                }
+
+                return str->rjust(args[0], args[1]);
+            }
+        );
+    }
+
+    Value makeLstripMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "lstrip",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "lstrip");
+
+                if (args.empty()) {
+                    return str->lstrip();
+                }
+
+                return str->lstrip(
+                    args[0]
+                        .asString("lstrip")
+                        ->toString()
+                );
+            }
+        );
+    }
+
+    Value makeRstripMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "rstrip",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "rstrip");
+
+                if (args.empty()) {
+                    return str->rstrip();
+                }
+
+                return str->rstrip(
+                    args[0]
+                        .asString("rstrip")
+                        ->toString()
+                );
+            }
+        );
+    }
+
+    Value makeIsLowerMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "islower",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "islower");
+
+                return str->islower();
+            }
+        );
+    }
+
+    Value makeIsUpperMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isupper",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isupper");
+
+                return str->isupper();
+            }
+        );
+    }
+
+    Value makeIsDecimalMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isdecimal",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isdecimal");
+
+                return str->isdecimal();
+            }
+        );
+    }
+
+    Value makeIsNumericMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isnumeric",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isnumeric");
+
+                return str->isnumeric();
+            }
+        );
+    }
+
+    Value makeIsTitleMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "istitle",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "istitle");
+
+                return str->istitle();
+            }
+        );
+    }
+
+    Value makeIsAsciiMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isascii",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isascii");
+
+                return str->isASCII();
+            }
+        );
+    }
+
+    Value makeIsIdentifierMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isidentifier",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isidentifier");
+
+                return str->isidentifier();
+            }
+        );
+    }
+
+    Value makeIsPrintableMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "isprintable",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "isprintable");
+
+                return str->isprintable();
+            }
+        );
+    }
+
+    Value makePartitionMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "partition",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "partition");
+
+                return str->partition(args[0]);
+            }
+        );
+    }
+
+    Value makeRPartitionMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "rpartition",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "rpartition");
+
+                return str->rpartition(args[0]);
+            }
+        );
+    }
+
+    Value makeSplitLinesMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "splitlines",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "splitlines");
+
+                if (args.empty()) {
+                    return str->splitlines();
+                }
+
+                return str->splitlines(args[0]);
+            }
+        );
+    }
+
+    Value makeZfillMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "zfill",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "zfill");
+
+                return str->zfill(args[0]);
+            }
+        );
+    }
+
+    Value makeExpandTabsMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "expandtabs",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 1, "expandtabs");
+
+                if (args.empty()) {
+                    return str->expandtabs();
+                }
+
+                return str->expandtabs(args[0]);
+            }
+        );
+    }
+
+    Value makeRSplitMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "rsplit",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgsRange(args, 0, 2, "rsplit");
+
+                std::optional<QString> sep;
+                std::optional<qsizetype> maxsplit;
+
+                if (!args.empty()) {
+
+                    if (!args[0].isNone()) {
+                        sep =
+                            args[0]
+                                .asString("rsplit")
+                                ->toString();
+                    }
+                }
+
+                if (args.size() == 2) {
+                    maxsplit =
+                        static_cast<qsizetype>(
+                            args[1].asBigInt("rsplit")
+                        );
+                }
+
+                return str->rsplit(sep, maxsplit);
+            }
+        );
+    }
+
+    Value makeCasefoldMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "casefold",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "casefold");
+
+                return str->casefold();
+            }
+        );
+    }
+
+    extern Value makeMaketransMethod(const Value&) {
+        return makeBuiltin(
+            "maketrans",
+
+            [](const std::vector<Value>& args,
+               const Kwargs&,
+               const std::shared_ptr<Environment>&)
+            -> Value {
+
+                return StrValue::maketrans(args);
+            }
+        );
+    }
+
+    Value makeTranslateMethod(const Value& obj) {
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "translate",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "translate");
+
+                return str->translate(args[0]);
+            }
+        );
+    }
+
+    Value makeFormatMapMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "format_map",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "format_map");
+
+                return str->formatMap(args[0]);
+            }
+        );
+    }
+
+    Value makeFormatMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "format",
+
+            [str](const std::vector<Value>& args,
+                  const Kwargs& kwargs,
+                  const std::shared_ptr<Environment>&)
+            -> Value {
+
+                return str->format(args, kwargs);
+            }
+        );
+    }
+
+    Value makeEncodeMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "encode",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                if (args.size() > 2) {
+
+                    throw std::runtime_error(
+                        "TypeError: encode expected at most 2 arguments"
+                    );
+                }
+
+                std::optional<QString> encoding;
+                std::optional<QString> errors;
+
+                if (!args.empty()) {
+                    encoding = args[0].toString();
+                }
+
+                if (args.size() >= 2) {
+                    errors = args[1].toString();
+                }
+
+                return str->encode(encoding, errors);
+            }
+        );
+    }
+
+    Value makeRemovePrefixMethod(const Value& obj) {
+
+        auto str = extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "removeprefix",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "removeprefix");
+
+                return str->removePrefix(args[0]);
+            }
+        );
+    }
+
+    Value makeRemoveSuffixMethod(const Value& obj) {
+
+        auto str =
+            extract<Value::StrPtr>(obj);
+
+        return makeBuiltin(
+            "removesuffix",
+
+            [str](
+                const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "removesuffix");
+
+                return str->removeSuffix(args[0]);
+            }
+        );
+    }
+
+    const MethodMap STR_METHODS = {
+        REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
+        REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::StrPtr>),
+        REGISTER_METHOD("__getitem__", make_getitem_Method),
+        REGISTER_METHOD("__contains__", makeContainsMethod),
+        REGISTER_METHOD("__add__", makeAddMethod),
+        REGISTER_METHOD("__mul__", makeMultiplyMethod),
+        REGISTER_METHOD("__rmul__", makeRmulMethod),
+        REGISTER_METHOD("__mod__", makeModMethod),
+        REGISTER_METHOD("__eq__", makeEqualMethod),
+        REGISTER_METHOD("__ne__", makeNotEqualMethod),
+        REGISTER_METHOD("__lt__", makeLtMethod),
+        REGISTER_METHOD("__le__", makeLeMethod),
+        REGISTER_METHOD("__gt__", makeGtMethod),
+        REGISTER_METHOD("__ge__", makeGeMethod),
+        REGISTER_METHOD("__hash__", makeHashMethod),
+        REGISTER_METHOD("__repr__", makeReprMethod),
+        REGISTER_METHOD("__str__", makeStrMethod),
+        REGISTER_METHOD("__format__", makeDunderFormatMethod),
+        REGISTER_METHOD("upper", makeUpperMethod),
+        REGISTER_METHOD("lower", makeLowerMethod),
+        REGISTER_METHOD("strip", makeStripMethod),
+        REGISTER_METHOD("split", makeSplitMethod),
+        REGISTER_METHOD("join", makeJoinMethod),
+        REGISTER_METHOD("replace", makeReplaceMethod),
+        REGISTER_METHOD("startswith", makeStartswithMethod),
+        REGISTER_METHOD("endswith", makeEndswithMethod),
+        REGISTER_METHOD("find", makeFindMethod),
+        REGISTER_METHOD("count", makeCountMethod),
+        REGISTER_METHOD("index", makeIndexMethod),
+        REGISTER_METHOD("rfind", makeRfindMethod),
+        REGISTER_METHOD("rindex", makeRindexMethod),
+        REGISTER_METHOD("capitalize", makeCapitalizeMethod),
+        REGISTER_METHOD("title", makeTitleMethod),
+        REGISTER_METHOD("swapcase", makeSwapcaseMethod),
+        REGISTER_METHOD("isalpha", makeIsAlphaMethod),
+        REGISTER_METHOD("isdigit", makeIsDigitMethod),
+        REGISTER_METHOD("isalnum", makeIsAlnumMethod),
+        REGISTER_METHOD("isspace", makeIsSpaceMethod),
+        REGISTER_METHOD("center", makeCenterMethod),
+        REGISTER_METHOD("ljust", makeLjustMethod),
+        REGISTER_METHOD("rjust", makeRjustMethod),
+        REGISTER_METHOD("lstrip", makeLstripMethod),
+        REGISTER_METHOD("rstrip", makeRstripMethod),
+        REGISTER_METHOD("islower", makeIsLowerMethod),
+        REGISTER_METHOD("isupper", makeIsUpperMethod),
+        REGISTER_METHOD("isdecimal", makeIsDecimalMethod),
+        REGISTER_METHOD("isnumeric", makeIsNumericMethod),
+        REGISTER_METHOD("istitle", makeIsTitleMethod),
+        REGISTER_METHOD("isascii", makeIsAsciiMethod),
+        REGISTER_METHOD("isidentifier", makeIsIdentifierMethod),
+        REGISTER_METHOD("isprintable", makeIsPrintableMethod),
+        REGISTER_METHOD("partition", makePartitionMethod),
+        REGISTER_METHOD("rpartition", makeRPartitionMethod),
+        REGISTER_METHOD("splitlines", makeSplitLinesMethod),
+        REGISTER_METHOD("zfill", makeZfillMethod),
+        REGISTER_METHOD("expandtabs", makeExpandTabsMethod),
+        REGISTER_METHOD("rsplit", makeRSplitMethod),
+        REGISTER_METHOD("casefold", makeCasefoldMethod),
+        REGISTER_METHOD("maketrans", makeMaketransMethod),
+        REGISTER_METHOD("translate", makeTranslateMethod),
+        REGISTER_METHOD("format_map", makeFormatMapMethod),
+        REGISTER_METHOD("format", makeFormatMethod),
+        REGISTER_METHOD("encode", makeEncodeMethod),
+        REGISTER_METHOD("removeprefix", makeRemovePrefixMethod),
+        REGISTER_METHOD("removesuffix", makeRemoveSuffixMethod)
+    };
+}
+
+Value getStrAttr(const Value& obj, const QString& attr) {
+
+    return getBuiltinAttr(obj, attr, STR_METHODS, "str");
+}
+
+Value makeMakeTransStrClassBuiltin() {
+    return makeBuiltin(
+        "maketrans",
+
+        [](const std::vector<Value>& args,
+           const Kwargs&,
+           const std::shared_ptr<Environment>&)
+        -> Value {
+
+            return StrValue::maketrans(args);
+        }
+    );
+}

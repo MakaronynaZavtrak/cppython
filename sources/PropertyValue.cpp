@@ -15,5 +15,9 @@ Value PropertyValue::get(const Value& instance,
 
     // вызываем fget как bound method
     const auto bound = std::make_shared<BoundMethod>(Value(fget), instance, owner);
-    return callBoundMethod(bound, {});
+    return callBoundMethod(bound, {}, {});
+}
+
+QString PropertyValue::toString() const {
+    return "<property object>";
 }
