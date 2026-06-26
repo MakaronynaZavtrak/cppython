@@ -6116,6 +6116,25 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("repr(frozenset({'a'})) == frozenset({'a'}).__repr__()", "True"),
     ("repr(frozenset({(1, 2)})) == frozenset({(1, 2)}).__repr__()", "True"),
 
+    # is
+    ("None is None", "True"),
+    ("None is not None", "False"),
+
+    ("True is True", "True"),
+    ("False is False", "True"),
+    ("True is False", "False"),
+    ("True is not False", "True"),
+
+    ("1 is 1", "True"),
+    ("1 is 2", "False"),
+    ("-5 is -5", "True"),
+    ("100000 is 100000", "True"),
+
+    ("1.5 is 1.5", "True"),
+    ("1.5 is 2.5", "False"),
+
+    ("[] is []", "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -10683,6 +10702,82 @@ if _result is not None:
     (["a = [None]",
       "a *= 2",
       "a"], "[None, None]"),
+
+    # is
+    (["a = 'abc'",
+      "b = a",
+      "a is b"], "True"),
+
+    (["a = 'abc'",
+      "b = 'abd'",
+      "a is b"], "False"),
+
+    (["a = b'abc'",
+      "b = a",
+      "a is b"], "True"),
+
+
+    (["a = [1]",
+      "b = a",
+      "a is b"], "True"),
+
+    (["a = [1]",
+      "b = [1]",
+      "a is b"], "False"),
+
+    (["a = (1,2)",
+      "b = a",
+      "a is b"], "True"),
+
+    (["a = {1:2}",
+      "b = a",
+      "a is b"], "True"),
+
+    (["a = {1:2}",
+      "b = {1:2}",
+      "a is b"], "False"),
+
+    (["a = {1}",
+      "b = a",
+      "a is b"], "True"),
+
+    (["a = {1}",
+      "b = {1}",
+      "a is b"], "False"),
+
+    (["a = frozenset({1})",
+      "b = a",
+      "a is b"], "True"),
+
+    (["a = frozenset({1})",
+      "b = frozenset({1})",
+      "a is b"], "False"),
+
+    (["def f():",
+      "    pass",
+      "",
+      "g = f",
+      "f is g"], "True"),
+
+    (["class A:",
+      "    pass",
+      "",
+      "B = A",
+      "A is B"], "True"),
+
+    (["class A:",
+      "    pass",
+      "",
+      "A() is A()"], "False"),
+
+    (["a = [1]",
+      "b = a",
+      "a is not b"], "False"),
+
+    (["a=[1]",
+      "b=[1]",
+      "a is not b"], "True"),
+
 
 ])
 

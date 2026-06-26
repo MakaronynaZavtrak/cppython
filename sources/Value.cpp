@@ -826,7 +826,7 @@ bool Value::is(const Value& other) const {
     }
 
     if (isBytes())
-        return asBytes().get() == other.asBytes().get();
+        return asBytes() == other.asBytes();
 
     if (isList())
         return asList().get() == other.asList().get();
@@ -836,6 +836,10 @@ bool Value::is(const Value& other) const {
 
     if (isTuple()) {
         return asTuple().get() == other.asTuple().get();
+    }
+
+    if (isFrozenSet()) {
+        return asFrozenSet().get() == other.asFrozenSet().get();
     }
 
     if (isFunction()) {

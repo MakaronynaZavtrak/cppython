@@ -182,7 +182,6 @@ public:
             case Operation::Divide:         return l / r;
             case Operation::Modulo:         return l % r;
             case Operation::IntDivide:      return l.intDivide(r);
-            case Operation::Is:             return Value(l.is(r));
             case Operation::BitOr:          return l | r;
             case Operation::BitAnd:         return l & r;
             case Operation::BitXor:         return l ^ r;
@@ -217,7 +216,6 @@ public:
         IntDivide,
         And,
         Or,
-        Is,
         BitOr,
         BitAnd,
         BitXor
@@ -245,7 +243,6 @@ public:
             {"//", Operation::IntDivide},
             {"and", Operation::And},
             {"or", Operation::Or},
-            {"is", Operation::Is},
             {"|", Operation::BitOr},
             {"&", Operation::BitAnd},
             {"^", Operation::BitXor}
@@ -668,7 +665,9 @@ class CompareNode final : public ASTNode {
         Greater,
         GreaterOrEqual,
         In,
-        NotIn
+        NotIn,
+        Is,
+        IsNot,
     };
 
     static Operation parseOperation(const QString &op) {
@@ -680,7 +679,9 @@ class CompareNode final : public ASTNode {
             {">", Operation::Greater},
             {">=", Operation::GreaterOrEqual},
             {"in", Operation::In},
-            {"not in", Operation::NotIn}
+            {"not in", Operation::NotIn},
+            {"is", Operation::Is},
+            {"is not", Operation::IsNot},
         };
 
         const auto it = opMap.find(op);
@@ -703,6 +704,8 @@ class CompareNode final : public ASTNode {
             case Operation::GreaterOrEqual: return a >= b;
             case Operation::In:             return b.contains(a);
             case Operation::NotIn:          return !b.contains(a);
+            case Operation::Is:             return a.is(b);
+            case Operation::IsNot:          return !a.is(b);
 
             default: throw std::runtime_error("Invalid comparison operation");
         }

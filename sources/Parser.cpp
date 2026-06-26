@@ -1027,10 +1027,34 @@ bool Parser::isComparisonOperator() const {
         tokens[current + 1].keyword == Keyword::IN)
         return true;
 
+    if (peek().type == TOKEN_KEYWORD &&
+        peek().keyword == Keyword::IS)
+        return true;
+
+    if (peek().type == TOKEN_KEYWORD &&
+    peek().keyword == Keyword::IS &&
+    current + 1 < tokens.size() &&
+    tokens[current + 1].type == TOKEN_KEYWORD &&
+    tokens[current + 1].keyword == Keyword::NOT)
+        return true;
+
     return false;
 }
 
 QString Parser::parseComparisonOperator() {
+
+    if (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::IS) {
+
+        advance();
+
+        if (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::NOT) {
+            advance();
+            return "is not";
+        }
+
+        return "is";
+    }
+
     if (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::NOT) {
 
         advance();
@@ -1102,8 +1126,8 @@ std::shared_ptr<ASTNode> Parser::parseAnd() {
     return left;
 }
 
-std::shared_ptr<ASTNode> Parser::parseOr()
-{
+std::shared_ptr<ASTNode> Parser::parseOr() {
+
     auto left = parseAnd();
 
     while (peek().type == TOKEN_KEYWORD &&

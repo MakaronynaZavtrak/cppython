@@ -77,7 +77,8 @@ enum class Keyword {
     NOT,
     AND,
     OR,
-    DEL
+    DEL,
+    IS
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -99,7 +100,8 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"not", Keyword::NOT},
     {"and", Keyword::AND},
     {"or", Keyword::OR},
-    {"del", Keyword::DEL}
+    {"del", Keyword::DEL},
+    {"is", Keyword::IS}
 };
 
 /**
