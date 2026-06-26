@@ -217,6 +217,25 @@ namespace {
         );
     }
 
+    Value makeIAddMethod(const Value& obj) {
+
+        auto list = extract<Value::ListPtr>(obj);
+
+        return makeBuiltin(
+            "__iadd__",
+
+            [list](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__iadd__");
+
+                return list->iadd(args[0]);
+            }
+        );
+    }
+
     Value makeAppendMethod(const Value& obj) {
 
         auto list = extract<Value::ListPtr>(obj);
@@ -490,6 +509,7 @@ namespace {
         REGISTER_METHOD("__ge__", makeGreaterOrEqualMethod),
         REGISTER_METHOD("__gt__", makeGreaterMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
+        REGISTER_METHOD("__iadd__", makeIAddMethod),
         REGISTER_METHOD("append", makeAppendMethod),
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("extend", makeExtendMethod),

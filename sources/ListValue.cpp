@@ -479,6 +479,17 @@ bool ListValue::contains(const Value &value) const {
 
 }
 
+Value ListValue::iadd(const Value& other) {
+
+    extend(other);
+
+    return Value(
+        std::const_pointer_cast<ListValue>(
+            shared_from_this()
+        )
+    );
+}
+
 bool ListValue::greaterOrEqual(const Value& other) const {
     return !less(other);
 }

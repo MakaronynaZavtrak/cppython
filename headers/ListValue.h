@@ -9,7 +9,7 @@
 #include "ObjectValue.h"
 #include "Value.h"
 
-class ListValue : public ObjectValue {
+class ListValue : public ObjectValue, public std::enable_shared_from_this<ListValue> {
 public:
     std::vector<Value> elements;
 
@@ -69,5 +69,7 @@ public:
     [[nodiscard]] Value add(const Value& other) const override;
 
     [[nodiscard]] bool contains(const Value& value) const override;
+
+    [[nodiscard]] Value iadd(const Value& other) override;
 };
 #endif //CPPYTHON_LISTVALUE_H
