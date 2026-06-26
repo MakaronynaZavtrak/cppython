@@ -10,6 +10,9 @@
 #include "StaticMethodValue.h"
 #include "StrValue.h"
 #include "Value.h"
+
+#include <unordered_set>
+
 //
 // Created by semyo on 03.05.2026.
 //
