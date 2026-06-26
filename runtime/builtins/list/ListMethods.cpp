@@ -293,6 +293,25 @@ namespace {
         );
     }
 
+    Value makeReprMethod(const Value& obj) {
+
+        auto list = extract<Value::ListPtr>(obj);
+
+        return makeBuiltin(
+            "__repr__",
+
+            [list](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 0, "__repr__");
+
+                return Value(list->repr());
+            }
+        );
+    }
+
     Value makeAppendMethod(const Value& obj) {
 
         auto list = extract<Value::ListPtr>(obj);
@@ -570,6 +589,7 @@ namespace {
         REGISTER_METHOD("__mul__", makeMulMethod),
         REGISTER_METHOD("__rmul__", makeRMulMethod),
         REGISTER_METHOD("__reversed__", makeReversedMethod),
+        REGISTER_METHOD("__repr__", makeReprMethod),
         REGISTER_METHOD("append", makeAppendMethod),
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("extend", makeExtendMethod),
