@@ -492,7 +492,7 @@ Value ListValue::iadd(const Value& other) {
 
 Value ListValue::multiply(const Value& other) const {
 
-    if (!other.isBigInt()) {
+    if (!other.isNumeric() || other.isBigFloat()) {
         throw std::runtime_error(
             "TypeError: can't multiply list by non-int"
         );
@@ -526,6 +526,11 @@ Value ListValue::multiply(const Value& other) const {
             std::move(result)
         )
     );
+}
+
+Value ListValue::rmul(const Value& other) const {
+
+    return multiply(other);
 }
 
 bool ListValue::greaterOrEqual(const Value& other) const {
