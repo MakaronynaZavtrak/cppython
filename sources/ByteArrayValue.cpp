@@ -2633,8 +2633,7 @@ Value ByteArrayValue::decode(
 
     const QString normalized = encoding.toLower();
 
-    if (normalized != "utf8" &&
-        normalized != "utf-8") {
+    if (normalized != "utf8" && normalized != "utf-8") {
 
         throw std::runtime_error(
             QString(

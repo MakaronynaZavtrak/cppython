@@ -3,12 +3,14 @@
 //
 #include "ReversedSequenceIterator.h"
 
+#include <utility>
+
 #include "CallRuntime.h"
 #include "ClassUtils.h"
 #include "StopIterationException.h"
 
-ReversedSequenceIterator::ReversedSequenceIterator(const Value& object, const std::ptrdiff_t length)
-    : object(object), index(length - 1) {}
+ReversedSequenceIterator::ReversedSequenceIterator(Value object, const qsizetype length)
+    : object(std::move(object)), index(length - 1) {}
 
 Value ReversedSequenceIterator::next() {
 

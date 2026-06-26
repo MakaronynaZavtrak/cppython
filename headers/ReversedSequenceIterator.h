@@ -14,15 +14,12 @@ class ReversedSequenceIterator : public IteratorValue {
 
 public:
 
-    ReversedSequenceIterator(
-        const Value& object,
-        qsizetype length
-    );
+    ReversedSequenceIterator(Value object, qsizetype length);
 
     Value next() override;
 
-    bool hasNext() const override;
+    [[nodiscard]] bool hasNext() const override;
 
-    QString getTypeName() const override;
+    [[nodiscard]] QString getTypeName() const override;
 };
 #endif //CPPYTHON_REVERSEDSEQUENCEITERATOR_H
