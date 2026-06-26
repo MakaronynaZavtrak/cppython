@@ -491,6 +491,27 @@ Value ListValue::iadd(const Value& other) {
     );
 }
 
+std::vector<Value> ListValue::buildRepeated(const long long times) const {
+
+    if (times <= 0)
+        return {};
+
+    std::vector<Value> result;
+
+    result.reserve(
+        elements.size() * static_cast<size_t>(times));
+
+    for (long long i = 0; i < times; ++i) {
+
+        result.insert(
+            result.end(),
+            elements.begin(),
+            elements.end());
+    }
+
+    return result;
+}
+
 Value ListValue::multiply(const Value& other) const {
 
     if (!other.isNumeric() || other.isBigFloat()) {
@@ -501,37 +522,37 @@ Value ListValue::multiply(const Value& other) const {
 
     const auto times = other.toBigInt().convert_to<long long>();
 
-    if (times <= 0) {
-        return Value(
-            std::make_shared<ListValue>()
-        );
-    }
-
-    std::vector<Value> result;
-
-    result.reserve(
-        elements.size() * static_cast<std::size_t>(times)
-    );
-
-    for (long long i = 0; i < times; ++i) {
-
-        result.insert(
-            result.end(),
-            elements.begin(),
-            elements.end()
-        );
-    }
-
     return Value(
         std::make_shared<ListValue>(
-            std::move(result)
+            buildRepeated(times)
         )
     );
+
 }
 
 Value ListValue::rmul(const Value& other) const {
 
     return multiply(other);
+}
+
+Value ListValue::imul(const Value& other) {
+
+    if (!other.isNumeric() || other.isBigFloat()) {
+
+        throw std::runtime_error(
+            "TypeError: can't multiply list by non-int"
+        );
+    }
+
+    const auto times = other.toBigInt().convert_to<long long>();
+
+    elements = buildRepeated(times);
+
+    return Value(
+        std::const_pointer_cast<ListValue>(
+            shared_from_this()
+        )
+    );
 }
 
 Value ListValue::reversed() const {

@@ -76,6 +76,12 @@ public:
 
     [[nodiscard]] Value rmul(const Value& other) const override;
 
+    [[nodiscard]] Value imul(const Value& other) override;
+
     [[nodiscard]] Value reversed() const override;
+
+private:
+    std::vector<Value> buildRepeated(long long times) const;
+
 };
 #endif //CPPYTHON_LISTVALUE_H

@@ -274,6 +274,25 @@ namespace {
         );
     }
 
+    Value makeIMulMethod(const Value& obj) {
+
+        auto list = extract<Value::ListPtr>(obj);
+
+        return makeBuiltin(
+            "__imul__",
+
+            [list](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__imul__");
+
+                return list->imul(args[0]);
+            }
+        );
+    }
+
     Value makeReversedMethod(const Value& obj) {
 
         auto list = extract<Value::ListPtr>(obj);
@@ -587,6 +606,7 @@ namespace {
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__iadd__", makeIAddMethod),
         REGISTER_METHOD("__mul__", makeMulMethod),
+        REGISTER_METHOD("__imul__", makeIMulMethod),
         REGISTER_METHOD("__rmul__", makeRMulMethod),
         REGISTER_METHOD("__reversed__", makeReversedMethod),
         REGISTER_METHOD("__repr__", makeReprMethod),
