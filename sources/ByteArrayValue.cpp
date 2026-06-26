@@ -2633,7 +2633,8 @@ Value ByteArrayValue::decode(
 
     const QString normalized = encoding.toLower();
 
-    if (normalized != "utf8" && normalized != "utf-8") {
+    if (normalized != "utf8" &&
+        normalized != "utf-8") {
 
         throw std::runtime_error(
             QString(
@@ -2651,11 +2652,9 @@ Value ByteArrayValue::decode(
         );
     }
 
-    QStringDecoder decoder(QStringDecoder::Utf8);
+    const QString decoded = QString::fromUtf8(data);
 
-    const QString decoded = decoder.decode(data);
-
-    if (decoder.hasError()) {
+    if (decoded.toUtf8() != data) {
 
         throw std::runtime_error(
             "UnicodeDecodeError"
