@@ -1861,22 +1861,13 @@ Value BytesValue::decode(
 
     if (encoding == "utf-8" || encoding == "utf8") {
 
-        QStringDecoder decoder(QStringDecoder::Utf8);
+        result = QString::fromUtf8(data);
 
-        result = decoder.decode(data);
+        if (errors == "strict") {
 
-        if (decoder.hasError()) {
+            const QByteArray encoded = result.toUtf8();
 
-            if (errors == "ignore") {
-
-                QStringDecoder ignoreDecoder(
-                    QStringDecoder::Utf8,
-                    QStringConverter::Flag::ConvertInvalidToNull
-                );
-
-                result = ignoreDecoder.decode(data);
-
-            } else {
+            if (encoded != data) {
 
                 throw std::runtime_error(
                     "UnicodeDecodeError: invalid utf-8 sequence"
