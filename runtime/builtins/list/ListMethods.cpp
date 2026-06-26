@@ -236,6 +236,25 @@ namespace {
         );
     }
 
+    Value makeMulMethod(const Value& obj) {
+
+        auto list = extract<Value::ListPtr>(obj);
+
+        return makeBuiltin(
+            "__mul__",
+
+            [list](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__mul__");
+
+                return list->multiply(args[0]);
+            }
+        );
+    }
+
     Value makeAppendMethod(const Value& obj) {
 
         auto list = extract<Value::ListPtr>(obj);
@@ -510,6 +529,7 @@ namespace {
         REGISTER_METHOD("__gt__", makeGreaterMethod),
         REGISTER_METHOD("__add__", makeAddMethod),
         REGISTER_METHOD("__iadd__", makeIAddMethod),
+        REGISTER_METHOD("__mul__", makeMulMethod),
         REGISTER_METHOD("append", makeAppendMethod),
         REGISTER_METHOD("pop", makePopMethod),
         REGISTER_METHOD("extend", makeExtendMethod),

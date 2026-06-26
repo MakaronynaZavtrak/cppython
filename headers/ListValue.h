@@ -71,5 +71,7 @@ public:
     [[nodiscard]] bool contains(const Value& value) const override;
 
     [[nodiscard]] Value iadd(const Value& other) override;
+
+    [[nodiscard]] Value multiply(const Value& other) const override;
 };
 #endif //CPPYTHON_LISTVALUE_H
