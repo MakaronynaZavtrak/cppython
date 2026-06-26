@@ -65,5 +65,7 @@ public:
     [[nodiscard]] bool greater(const Value &other) const override;
 
     [[nodiscard]] Value add(const Value& other) const override;
+
+    [[nodiscard]] bool contains(const Value& value) const override;
 };
 #endif //CPPYTHON_LISTVALUE_H

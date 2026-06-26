@@ -445,6 +445,15 @@ Value ListValue::add(const Value& other) const {
     return Value(result);
 }
 
+bool ListValue::contains(const Value &value) const {
+
+    return std::any_of(
+        elements.begin(),
+        elements.end(),
+        [&](const auto& e) { return e == value;});
+
+}
+
 bool ListValue::greaterOrEqual(const Value& other) const {
     return !less(other);
 }

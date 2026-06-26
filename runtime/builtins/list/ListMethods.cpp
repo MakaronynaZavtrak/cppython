@@ -50,6 +50,25 @@ namespace {
         );
     }
 
+    Value makeContainsMethod(const Value& obj) {
+
+        auto list = extract<Value::ListPtr>(obj);
+
+        return makeBuiltin(
+            "__contains__",
+
+            [list](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__contains__");
+
+                return Value(list->contains(args[0]));
+            }
+        );
+    }
+
     Value makeEqualMethod(const Value& obj) {
 
         auto list = extract<Value::ListPtr>(obj);
@@ -440,6 +459,7 @@ namespace {
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("__setitem__", make_setitem_Method),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
+        REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ListPtr>),
         REGISTER_METHOD("__eq__", makeEqualMethod),
         REGISTER_METHOD("__ne__", makeNotEqualMethod),

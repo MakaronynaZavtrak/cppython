@@ -487,6 +487,65 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("([(1,)]) + ([(2,)])", "[(1,), (2,)]"),
     ("([{'a': 1}]) + ([{'b': 2}])", "[{'a': 1}, {'b': 2}]"),
 
+    # list.__contains__
+    ("[].__contains__(1)", "False"),
+
+    ("[1].__contains__(1)", "True"),
+    ("[1].__contains__(2)", "False"),
+
+    ("[1, 2, 3].__contains__(1)", "True"),
+    ("[1, 2, 3].__contains__(2)", "True"),
+    ("[1, 2, 3].__contains__(3)", "True"),
+    ("[1, 2, 3].__contains__(4)", "False"),
+
+    ("['a', 'b', 'c'].__contains__('a')", "True"),
+    ("['a', 'b', 'c'].__contains__('c')", "True"),
+    ("['a', 'b', 'c'].__contains__('d')", "False"),
+
+    ("[True, False].__contains__(True)", "True"),
+    ("[True, False].__contains__(False)", "True"),
+
+    ("[None].__contains__(None)", "True"),
+    ("[None].__contains__(1)", "False"),
+
+    ("[[1], [2]].__contains__([1])", "True"),
+    ("[[1], [2]].__contains__([2])", "True"),
+    ("[[1], [2]].__contains__([3])", "False"),
+
+    ("[(1,), (2,)].__contains__((1,))", "True"),
+    ("[(1,), (2,)].__contains__((3,))", "False"),
+
+    ("[{'a': 1}].__contains__({'a': 1})", "True"),
+    ("[{'a': 1}].__contains__({'a': 2})", "False"),
+
+    ("[frozenset({1})].__contains__(frozenset({1}))", "True"),
+    ("[frozenset({1})].__contains__(frozenset({2}))", "False"),
+
+    ("1 in []", "False"),
+
+    ("1 in [1]", "True"),
+    ("2 in [1]", "False"),
+
+    ("1 in [1, 2, 3]", "True"),
+    ("2 in [1, 2, 3]", "True"),
+    ("3 in [1, 2, 3]", "True"),
+    ("4 in [1, 2, 3]", "False"),
+
+    ("'a' in ['a', 'b', 'c']", "True"),
+    ("'d' in ['a', 'b', 'c']", "False"),
+
+    ("None in [None]", "True"),
+    ("True in [True, False]", "True"),
+
+    ("[1] in [[1], [2]]", "True"),
+    ("[3] in [[1], [2]]", "False"),
+
+    ("(1,) in [(1,), (2,)]", "True"),
+    ("(3,) in [(1,), (2,)]", "False"),
+
+    ("frozenset({1}) in [frozenset({1})]", "True"),
+    ("frozenset({2}) in [frozenset({1})]", "False"),
+
     # dict len
     ("len({})", "0"),
     ("len({'a': 1})", "1"),
