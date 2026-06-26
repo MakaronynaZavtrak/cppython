@@ -11,7 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
 
       - name: Install build tools
         run: |
@@ -20,30 +25,24 @@ jobs:
 
       - name: Install Qt
         run: |
-          sudo apt-get update
-          sudo apt-get install -y qt6-base-dev libqt6core6 qt6-tools-dev qt6-l10n-tools
+          sudo apt-get install -y qt6-base-dev qt6-tools-dev libqt6core6 qt6-l10n-tools
 
+      - name: Install Boost
+        run: |
+          sudo apt-get install -y libboost-all-dev
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
-
-      - name: Install Boost
-        run: sudo apt-get install -y libboost-all-dev
+          python -m pip install pytest
 
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config Release
-
-      - name: Check build artifacts
-        run: |
-          ls -la ${{github.workspace}}/build/
+        run: cmake --build build
 
       - name: Run tests
         run: |
-          cd ${{github.workspace}}
           sed -i 's|os.path.join(ROOT, "cmake-build-debug", "cppython.exe")|os.path.join(ROOT, "build", "cppython")|g' tests/test_integration.py
           python -m pytest tests/test_integration.py -v
