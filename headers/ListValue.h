@@ -75,5 +75,7 @@ public:
     [[nodiscard]] Value multiply(const Value& other) const override;
 
     [[nodiscard]] Value rmul(const Value& other) const override;
+
+    [[nodiscard]] Value reversed() const override;
 };
 #endif //CPPYTHON_LISTVALUE_H

@@ -5,6 +5,7 @@
 
 #include "CallRuntime.h"
 #include "IteratorValue.h"
+#include "ReversedSequenceIterator.h"
 #include "Value.h"
 #include "../runtime/ProtocolHelpers.h"
 //
@@ -531,6 +532,20 @@ Value ListValue::multiply(const Value& other) const {
 Value ListValue::rmul(const Value& other) const {
 
     return multiply(other);
+}
+
+Value ListValue::reversed() const {
+
+    return Value(
+        std::make_shared<ReversedSequenceIterator>(
+            Value(
+                std::const_pointer_cast<ListValue>(
+                    shared_from_this()
+                )
+            ),
+            static_cast<std::ptrdiff_t>(elements.size())
+        )
+    );
 }
 
 bool ListValue::greaterOrEqual(const Value& other) const {

@@ -605,6 +605,19 @@ def run_cppython(cmds: str | list[str]) -> str:
     ("True * [1,2]", "[1, 2]"),
     ("False * [1,2]", "[]"),
 
+    # list.__reversed__
+    ("list(reversed([1,2,3]))", "[3, 2, 1]"),
+    ("list([1,2,3].__reversed__())", "[3, 2, 1]"),
+    ("list([1].__reversed__())", "[1]"),
+    ("list([].__reversed__())", "[]"),
+    ("list([[1],[2],[3]].__reversed__())", "[[3], [2], [1]]"),
+    ("list(['a','b','c'].__reversed__())", "['c', 'b', 'a']"),
+    ("list([(1,2),(3,4)].__reversed__())", "[(3, 4), (1, 2)]"),
+    ("list([True, False].__reversed__())", "[False, True]"),
+    ("list(reversed([1,2,3])) == list([1,2,3].__reversed__())", "True"),
+    ("list(reversed([])) == list([].__reversed__())", "True"),
+    ("list(reversed(['x','y'])) == list(['x','y'].__reversed__())", "True"),
+
     # dict len
     ("len({})", "0"),
     ("len({'a': 1})", "1"),
@@ -10558,6 +10571,18 @@ if _result is not None:
     (["x = ['a']",
       "x += ['b']",
       "x"], "['a', 'b']"),
+
+    # list.__reversed__
+    (["x = [1,2,3]",
+      "y = list(x.__reversed__())",
+      "x.append(4)",
+      "y"], "[3, 2, 1]"),
+
+    (["x = []",
+      "for i in [1,2,3].__reversed__():",
+      "    x.append(i)",
+      "",
+      "x"], "[3, 2, 1]"),
 
 ])
 
