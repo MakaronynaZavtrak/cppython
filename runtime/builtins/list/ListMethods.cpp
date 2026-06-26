@@ -50,6 +50,27 @@ namespace {
         );
     }
 
+    Value makeDelItemMethod(const Value& obj) {
+
+        auto list = extract<Value::ListPtr>(obj);
+
+        return makeBuiltin(
+            "__delitem__",
+
+            [list](const std::vector<Value>& args,
+                   const Kwargs&,
+                   const std::shared_ptr<Environment>&)
+            -> Value {
+
+                expectArgs(args, 1, "__delitem__");
+
+                list->delItem(args[0]);
+
+                return {};
+            }
+        );
+    }
+
     Value makeContainsMethod(const Value& obj) {
 
         auto list = extract<Value::ListPtr>(obj);
@@ -458,6 +479,7 @@ namespace {
     const MethodMap LIST_METHODS = {
         REGISTER_METHOD("__getitem__", make_getitem_Method),
         REGISTER_METHOD("__setitem__", make_setitem_Method),
+        REGISTER_METHOD("__delitem__", makeDelItemMethod),
         REGISTER_METHOD("__iter__", makeIterMethodBuiltin),
         REGISTER_METHOD("__contains__", makeContainsMethod),
         REGISTER_METHOD("__len__", makeLenMethodBuiltin<Value::ListPtr>),

@@ -22,9 +22,11 @@ public:
 
     [[nodiscard]] QString repr() const override;
 
-    Value getItem(const Value& index);
+    [[nodiscard]] Value getItem(const Value& index) const override;
 
-    void setItem(const Value& index, const Value& value);
+    void setItem(const Value& index, const Value& value) override;
+
+    void delItem(const Value& index) override;
 
     void append(const Value& value);
 

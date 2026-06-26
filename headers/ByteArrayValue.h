@@ -27,9 +27,9 @@ public:
 
     [[nodiscard]] QString repr() const override;
 
-    [[nodiscard]] Value getItem(const Value& indexValue) const;
+    [[nodiscard]] Value getItem(const Value& indexValue) const override;
 
-    Value setItem(const Value& indexValue, const Value& value);
+    void setItem(const Value& indexValue, const Value& value) override;
 
     void delItem(const Value& indexValue) override;
 

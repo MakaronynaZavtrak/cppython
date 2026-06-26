@@ -24,9 +24,9 @@ public:
 
     [[nodiscard]] QString repr() const override;
 
-    [[nodiscard]] Value getItem(const Value& key) const;
+    [[nodiscard]] Value getItem(const Value& key) const override;
 
-    void setItem(const Value& key, const Value& value);
+    void setItem(const Value& key, const Value& value) override;
 
     [[nodiscard]] bool hasKey(const Value& key) const;
 

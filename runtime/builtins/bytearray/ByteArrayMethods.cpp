@@ -43,7 +43,9 @@ namespace {
 
                 expectArgs(args, 2, "__setitem__");
 
-                return byteArray->setItem(args[0], args[1]);
+                byteArray->setItem(args[0], args[1]);
+
+                return {};
             }
         );
     }

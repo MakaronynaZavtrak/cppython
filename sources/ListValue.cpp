@@ -25,7 +25,7 @@ QString ListValue::repr() const {
     return toString();
 }
 
-Value ListValue::getItem(const Value& index) {
+Value ListValue::getItem(const Value& index) const {
 
     if (index.isSlice()) {
 
@@ -87,6 +87,31 @@ void ListValue::setItem(const Value &index, const Value &value) {
     }
 
     elements[i.convert_to<size_t>()] = value;
+}
+
+void ListValue::delItem(const Value& index) {
+
+    if (!index.isBigInt()) {
+
+        throw std::runtime_error(
+            "TypeError: list indices must be integers"
+        );
+    }
+
+    auto idx = static_cast<qsizetype>(index.toBigInt());
+
+    if (idx < 0) {
+        idx += elements.size();
+    }
+
+    if (idx < 0 || idx >= elements.size()) {
+
+        throw std::runtime_error(
+            "IndexError: list index out of range"
+        );
+    }
+
+    elements.erase(elements.begin() + idx);
 }
 
 void ListValue::append(const Value &value) {

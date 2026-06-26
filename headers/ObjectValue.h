@@ -10,6 +10,14 @@
 class ObjectValue : public ReprMixin {
 public:
 
+    [[nodiscard]] virtual Value getItem(const Value& index) const {
+        throw std::runtime_error("Not supported operation for this type");
+    }
+
+    virtual void setItem(const Value& index, const Value& value) {
+        throw std::runtime_error("Not supported operation for this type");
+    }
+
     virtual void delItem(const Value& indexValue) {
         throw std::runtime_error("Not supported operation for this type");
     }

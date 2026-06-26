@@ -24,7 +24,7 @@ public:
 
     [[nodiscard]] QString repr() const override;
 
-    [[nodiscard]] Value getItem(const Value& indexValue) const;
+    [[nodiscard]] Value getItem(const Value& indexValue) const override;
 
     [[nodiscard]] std::size_t len() const;
 

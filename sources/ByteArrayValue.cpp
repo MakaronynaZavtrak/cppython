@@ -57,7 +57,7 @@ Value ByteArrayValue::getItem(const Value& indexValue) const {
     );
 }
 
-Value ByteArrayValue::setItem(
+void ByteArrayValue::setItem(
     const Value& indexValue,
     const Value& value) {
 
@@ -95,8 +95,6 @@ Value ByteArrayValue::setItem(
     }
 
     data[index] = static_cast<char>(byte.convert_to<int>());
-
-    return {};
 }
 
 void ByteArrayValue::delItem(const Value& indexValue) {

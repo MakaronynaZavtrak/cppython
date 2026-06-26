@@ -25,7 +25,7 @@ public:
 
     [[nodiscard]] std::size_t len() const;
 
-    [[nodiscard]] Value getItem(const Value&) const;
+    [[nodiscard]] Value getItem(const Value&) const override;
 
     [[nodiscard]] Value upper() const;
 

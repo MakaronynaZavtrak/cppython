@@ -21,7 +21,7 @@ public:
 
     [[nodiscard]] QString repr() const override;
 
-    [[nodiscard]] Value getItem(const Value& index) const;
+    [[nodiscard]] Value getItem(const Value& index) const override;
 
     [[nodiscard]] Value count(const Value& value) const;
 
