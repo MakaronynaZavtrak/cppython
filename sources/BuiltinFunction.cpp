@@ -17,6 +17,8 @@
 #include "SuperValue.h"
 #include "TupleValue.h"
 #include "Value.h"
+#include "../exception/AttributeErrorException.h"
+#include "../exception/TypeErrorException.h"
 #include "../runtime/ArgValidation.h"
 #include "../runtime/RuntimeUtils.h"
 //
@@ -57,7 +59,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                      }
 
                      auto clsVal = local_env->get("__class__");
-                     auto origin = std::get<Value::ClassPtr>(clsVal.data);
+                     auto origin = clsVal.asClass();
 
                      return Value(std::make_shared<SuperValue>(
                          origin, // currentClass
@@ -142,7 +144,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                     const std::shared_ptr<Environment> &) -> Value {
 
                      if (args.empty())
-                         throw std::runtime_error("property needs at least fget");
+                         throw TypeErrorException("property needs at least fget");
 
                      auto fget = std::get<Value::FunctionPtr>(args[0].data);
 
@@ -199,8 +201,8 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      expectArgs(args, 1, "staticmethod");
 
-                     if (!std::holds_alternative<Value::FunctionPtr>(args[0].data)) {
-                         throw std::runtime_error("staticmethod expects function");
+                     if (!args[0].isFunction()) {
+                         throw TypeErrorException("staticmethod expects function");
                      }
 
                      return Value(
@@ -223,16 +225,14 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      expectArgs(args, 1, "classmethod");
 
-                     if (!std::holds_alternative<Value::FunctionPtr>(args[0].data)) {
-                         throw std::runtime_error("classmethod expects function");
+                     if (!args[0].isFunction()) {
+                         throw TypeErrorException("classmethod expects function");
                      }
 
                      return Value(
                          std::make_shared<ClassMethodValue>(
-                             std::get<Value::FunctionPtr>(
-                                 args[0].data
-                             )
-                         )
+                             args[0].asFunction()
+                        )
                      );
                  }
              ));
@@ -267,7 +267,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      } catch (...) {}
 
-                     throw std::runtime_error("Object has no len()");
+                     throw AttributeErrorException("Object has no len()");
                  }
              ));
 
@@ -434,7 +434,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                          const auto tup = item.asTuple("dict()");
 
                          if (tup->items.size() != 2) {
-                             throw std::runtime_error("dict() expects (key, value) pairs");
+                             throw TypeErrorException("dict() expects (key, value) pairs");
                          }
 
                          dict->setItem(tup->items[0], tup->items[1]);
@@ -463,8 +463,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                     );
                 }
 
-                const auto iterator =
-                        args[0].getIterator();
+                const auto iterator = args[0].getIterator();
 
                 QSet<Value> elements;
 
@@ -511,10 +510,9 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             bool flush = false;
 
             // sep
-            if (const auto sepArg = findKwarg(kwargs, "sep"))
-            {
+            if (const auto sepArg = findKwarg(kwargs, "sep")) {
                 if (!sepArg->isString()) {
-                    throw std::runtime_error("TypeError: sep must be str");
+                    throw TypeErrorException("sep must be str");
                 }
 
                 sep = sepArg->toString();
@@ -524,7 +522,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             if (const auto endArg = findKwarg(kwargs, "end"))
             {
                 if (!endArg->isString()) {
-                    throw std::runtime_error("TypeError: end must be str");
+                    throw TypeErrorException("end must be str");
                 }
 
                 end = endArg->toString();
@@ -596,20 +594,12 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                 Value result = call(method, {}, {}, nullptr);
 
                 if (!result.isBytes()) {
-                    throw std::runtime_error(
-                        "TypeError: __bytes__ returned non-bytes"
-                    );
+                    throw TypeErrorException("__bytes__ returned non-bytes");
                 }
 
                 return result;
 
-            } catch (const std::runtime_error &e) {
-
-                if (const std::string msg = e.what();
-                    msg.find("AttributeError") == std::string::npos) {
-                    throw;
-                }
-            }
+            } catch ([[maybe_unused]] AttributeErrorException &e) {}
 
             if (obj.isBytes()) {
                 return obj;
@@ -624,9 +614,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                 );
             }
 
-            throw std::runtime_error(
-                "TypeError: cannot convert object to bytes"
-            );
+            throw TypeErrorException("cannot convert object to bytes");
         }
     ));
 
@@ -657,20 +645,12 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                 Value result = call(method, {}, {}, nullptr);
 
                 if (!result.isBytes()) {
-                    throw std::runtime_error(
-                        "TypeError: __bytes__ returned non-bytes"
-                    );
+                    throw TypeErrorException("__bytes__ returned non-bytes");
                 }
 
                 return result;
 
-            } catch (const std::runtime_error &e) {
-
-                if (const std::string msg = e.what();
-                    msg.find("AttributeError") == std::string::npos) {
-                    throw;
-                }
-            }
+            } catch ([[maybe_unused]] const AttributeErrorException& e) {}
 
              if (obj.isByteArray()) {
                  return Value(
@@ -696,9 +676,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  );
              }
 
-             throw std::runtime_error(
-                 "TypeError: cannot convert object to bytearray"
-             );
+             throw TypeErrorException("cannot convert object to bytearray");
          }
     ));
 
@@ -743,10 +721,8 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
             } catch (...) {}
 
-            throw std::runtime_error(
-                "TypeError: '"
-                + obj.toString().toStdString()
-                + "' object is not reversible"
+            throw TypeErrorException(
+                obj.toString() + "' object is not reversible"
             );
         }
     )
@@ -762,18 +738,10 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
            const Kwargs&,
            const std::shared_ptr<Environment>& env) -> Value {
 
-            if (args.empty() || args.size() > 2) {
+            expectArgsRange(args, 1, 2, "format");
 
-                throw std::runtime_error(
-                    "TypeError: format() takes at most 2 arguments"
-                );
-            }
-
-            if (args.size() == 2 && !args[1].isString()) {
-
-                throw std::runtime_error(
-                    "TypeError: format() argument 2 must be str"
-                );
+            if (!args[1].isString()) {
+                throw TypeErrorException("format() argument 2 must be str");
             }
 
             const Value& obj = args[0];

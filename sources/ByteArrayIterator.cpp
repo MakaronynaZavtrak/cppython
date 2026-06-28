@@ -3,7 +3,7 @@
 //
 #include "ByteArrayIterator.h"
 
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 #include "Value.h"
 
 Value ByteArrayIterator::next() {
@@ -12,7 +12,7 @@ Value ByteArrayIterator::next() {
         throw StopIterationException();
     }
 
-    const unsigned char value =
+    const auto value =
         static_cast<unsigned char>(
             snapshot[index++]
         );

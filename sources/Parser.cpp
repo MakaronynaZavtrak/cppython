@@ -1,6 +1,8 @@
 #include "Parser.h"
 
 #include "BytesValue.h"
+#include "../exception/SyntaxErrorException.h"
+#include "../exception/ValueErrorException.h"
 
 /**
  * @brief Конструирует объект Parser с заданным вектором токенов.
@@ -96,9 +98,7 @@ std::shared_ptr<ASTNode> Parser::parseExpression() {
             return std::make_shared<AugAssignNode>(var->name, op, right);
         }
 
-        throw std::runtime_error(
-            "Invalid augmented assignment target"
-        );
+        throw SyntaxErrorException("Invalid augmented assignment target");
     }
 
     if (matchAndAdvance(TOKEN_OP, "=")) {
@@ -131,7 +131,7 @@ std::shared_ptr<ASTNode> Parser::parseExpression() {
             );
         }
 
-        throw std::runtime_error("Invalid assignment target");
+        throw SyntaxErrorException("Invalid assignment target");
     }
 
     return left;
@@ -366,8 +366,7 @@ std::shared_ptr<ASTNode> Parser::parseNumberToken() {
             );
         }
     } catch (const std::exception&) {
-        throw std::runtime_error(
-            "Invalid number format: " + token.value.toStdString());
+        throw ValueErrorException("Invalid number format: " + token.value);
     }
 }
 
@@ -521,7 +520,7 @@ std::shared_ptr<ASTNode> Parser::parseParenthesizedExpression() {
  * @param token Токен, который оказался неожиданным в текущем контексте.
  */
 void Parser::throwUnexpectedTokenError(const Token &token) {
-    throw std::runtime_error("Unexpected token: \"" + token.value.toStdString() + "\"");
+    throw SyntaxErrorException("Unexpected token: \"" + token.value + "\"");
 }
 
 /**
@@ -593,12 +592,12 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement() {
 std::vector<std::shared_ptr<ASTNode>> Parser::parseBlock() {
 
     if (peek().type != TOKEN_NEWLINE)
-        throw std::runtime_error("Expected newline after statement");
+        throw SyntaxErrorException("Expected newline after statement");
 
     advance();
 
     if (peek().type != TOKEN_INDENT)
-        throw std::runtime_error("Expected indent after statement");
+        throw SyntaxErrorException("Expected indent after statement");
 
     advance();
 
@@ -616,7 +615,7 @@ std::vector<std::shared_ptr<ASTNode>> Parser::parseBlock() {
         advance();
     }
     else {
-        throw std::runtime_error("Expected dedent after block");
+        throw SyntaxErrorException("Expected dedent after block");
     }
 
     return statements;
@@ -689,7 +688,7 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
     advance();
 
     if (peek().type != TOKEN_ID) {
-        throw std::runtime_error("Expected function name");
+        throw SyntaxErrorException("Expected function name");
     }
 
     QString name = advance().value;
@@ -703,14 +702,14 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
         while (true) {
 
             if (peek().type != TOKEN_ID)
-                throw std::runtime_error("Expected parameter name");
+                throw SyntaxErrorException("Expected parameter name");
 
             Param param {advance().value, ""};
 
             if (matchAndAdvance(TOKEN_OP, ":")) {
 
                 if (peek().type != TOKEN_ID)
-                    throw std::runtime_error("Expected type after ':'");
+                    throw SyntaxErrorException("Expected type after ':'");
 
                 param.type = advance().value;
             }
@@ -730,7 +729,7 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
     if (matchAndAdvance(TOKEN_OP, "->")) {
 
         if (peek().type != TOKEN_ID)
-            throw std::runtime_error("Expected return type after '->'");
+            throw SyntaxErrorException("Expected return type after '->'");
 
         advance();
     }
@@ -766,7 +765,7 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(const std::vector<std::shared_ptr
     advance(); // class
 
     if (peek().type != TOKEN_ID) {
-        throw std::runtime_error("Expected class name");
+        throw SyntaxErrorException("Expected class name");
     }
 
     QString name = advance().value;
@@ -815,7 +814,7 @@ std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
         if (matchAndAdvance(TOKEN_OP, ".")) {
 
             if (peek().type != TOKEN_ID)
-                throw std::runtime_error("Expected attribute name after '.'");
+                throw SyntaxErrorException("Expected attribute name after '.'");
 
             QString attr = advance().value;
             node = std::make_shared<AttributeAccessNode>(node, attr);
@@ -881,7 +880,7 @@ std::shared_ptr<ASTNode> Parser::parseDecorated() {
     }
 
     if (peek().type != TOKEN_KEYWORD) {
-        throw std::runtime_error("Expected def or class after decorator");
+        throw SyntaxErrorException("Expected def or class after decorator");
     }
 
     const auto kw = peek().keyword.value();
@@ -894,7 +893,7 @@ std::shared_ptr<ASTNode> Parser::parseDecorated() {
         return parseClassDef(decorators);
     }
 
-    throw std::runtime_error("Decorator can only be applied to def/class");
+    throw SyntaxErrorException("Decorator can only be applied to def/class");
 }
 
 std::shared_ptr<ASTNode> Parser::parseList() {
@@ -938,7 +937,7 @@ std::shared_ptr<ASTNode> Parser::parseLambda() {
         while (true) {
 
             if (peek().type != TOKEN_ID) {
-                throw std::runtime_error("Expected parameter name in lambda");
+                throw SyntaxErrorException("Expected parameter name in lambda");
             }
 
             params.push_back(Param{advance().value, ""});
@@ -961,9 +960,7 @@ std::shared_ptr<ASTNode> Parser::parseLambda() {
 QString Parser::consume(const TokenType type, const QString& value) {
 
     if (peek().type != type || peek().value != value) {
-        throw std::runtime_error(
-            "Expected token: " + value.toStdString()
-        );
+        throw SyntaxErrorException("Expected token: " + value);
     }
 
     return advance().value;
@@ -1061,7 +1058,7 @@ QString Parser::parseComparisonOperator() {
 
         if (peek().type != TOKEN_KEYWORD ||
             peek().keyword != Keyword::IN) {
-            throw std::runtime_error("Expected 'in' after 'not'");
+            throw SyntaxErrorException("Expected 'in' after 'not'");
         }
 
         advance();
@@ -1213,9 +1210,7 @@ std::shared_ptr<ASTNode>Parser::parseDelStatement() {
     !std::dynamic_pointer_cast<IndexNode>(target) &&
     !std::dynamic_pointer_cast<AttributeAccessNode>(target)) {
 
-        throw std::runtime_error(
-        "SyntaxError: cannot delete expression"
-        );
+        throw SyntaxErrorException("cannot delete expression");
     }
 
     return std::make_shared<DeleteNode>(target);
@@ -1368,7 +1363,7 @@ std::shared_ptr<ASTNode> Parser::parseForStatement() {
     advance(); // for
 
     if (peek().type != TOKEN_ID) {
-        throw std::runtime_error("Expected variable name after 'for'");
+        throw SyntaxErrorException("Expected variable name after 'for'");
     }
 
     QString varName = advance().value;
@@ -1376,7 +1371,7 @@ std::shared_ptr<ASTNode> Parser::parseForStatement() {
     if (peek().type != TOKEN_KEYWORD ||
         peek().keyword.value() != Keyword::IN) {
 
-        throw std::runtime_error("Expected 'in' after for variable");
+        throw SyntaxErrorException("Expected 'in' after for variable");
     }
 
     advance(); // in

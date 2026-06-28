@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Value.h"
+#include "../exception/TypeErrorException.h"
 
 inline void expectArgs(
     const std::vector<Value>& args,
@@ -17,8 +18,9 @@ inline void expectArgs(
 
         const QString argGrammar = expected == 1 ? "arg" : "args";
 
-        throw std::runtime_error((name + " expects " +
-            QString::number(expected) + " " + argGrammar).toStdString()
+        throw TypeErrorException(
+            name + " expects " +
+            QString::number(expected) + " " + argGrammar
         );
     }
 }
@@ -31,8 +33,8 @@ inline void expectArgsRange(
 
     if (args.size() < min || args.size() > max) {
 
-        throw std::runtime_error((name + " expects between " + QString::number(min) +
-             " and " + QString::number(max) + " args").toStdString());
+        throw TypeErrorException((name + " expects between " + QString::number(min) +
+             " and " + QString::number(max) + " args"));
         }
 }
 #endif //CPPYTHON_ARGVALIDATION_H

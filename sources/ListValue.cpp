@@ -7,6 +7,9 @@
 #include "IteratorValue.h"
 #include "ReversedSequenceIterator.h"
 #include "Value.h"
+#include "../exception/IndexErrorException.h"
+#include "../exception/TypeErrorException.h"
+#include "../exception/ValueErrorException.h"
 #include "../runtime/ProtocolHelpers.h"
 //
 // Created by semyo on 12.05.2026.
@@ -55,9 +58,7 @@ Value ListValue::getItem(const Value& index) const {
     }
 
     if (!index.isBigInt() && !index.isBool()) {
-        throw std::runtime_error(
-            "TypeError: list indices must be integers or slices"
-        );
+        throw TypeErrorException("list indices must be integers or slices");
     }
 
     auto i = index.toBigInt();
@@ -67,7 +68,7 @@ Value ListValue::getItem(const Value& index) const {
     }
 
     if (i < 0 || i >= elements.size()) {
-        throw std::runtime_error("IndexError: list index out of range");
+        throw IndexErrorException("list index out of range");
     }
 
     const auto idx = i.convert_to<size_t>();
@@ -82,9 +83,7 @@ void ListValue::setItem(const Value &index, const Value &value) {
     }
 
     if (i < 0 || i >= elements.size()) {
-        throw std::runtime_error(
-            "IndexError: list assignment index out of range"
-        );
+        throw IndexErrorException("list assignment index out of range");
     }
 
     elements[i.convert_to<size_t>()] = value;
@@ -94,9 +93,7 @@ void ListValue::delItem(const Value& index) {
 
     if (!index.isBigInt()) {
 
-        throw std::runtime_error(
-            "TypeError: list indices must be integers"
-        );
+        throw TypeErrorException("list indices must be integers");
     }
 
     auto idx = static_cast<qsizetype>(index.toBigInt());
@@ -107,9 +104,7 @@ void ListValue::delItem(const Value& index) {
 
     if (idx < 0 || idx >= elements.size()) {
 
-        throw std::runtime_error(
-            "IndexError: list index out of range"
-        );
+        throw IndexErrorException("list index out of range");
     }
 
     elements.erase(elements.begin() + idx);
@@ -122,7 +117,7 @@ void ListValue::append(const Value &value) {
 Value ListValue::pop(const std::optional<Value>& index) {
 
     if (elements.empty()) {
-        throw std::runtime_error("IndexError: pop from empty list");
+        throw IndexErrorException("pop from empty list");
     }
 
     std::ptrdiff_t i;
@@ -149,9 +144,8 @@ Value ListValue::pop(const std::optional<Value>& index) {
     if (i < 0 ||
         i >= static_cast<std::ptrdiff_t>(elements.size())) {
 
-        throw std::runtime_error(
-            "IndexError: pop index out of range");
-        }
+        throw IndexErrorException("pop index out of range");
+    }
 
     Value result = elements[i];
 
@@ -167,7 +161,7 @@ std::size_t ListValue::len() const {
 void ListValue::extend(const Value& other) {
 
     if (!other.isIterable()) {
-        throw std::runtime_error("extend expects iterable");
+        throw TypeErrorException("extend expects iterable");
     }
 
     const auto iter = other.getIterator();
@@ -211,7 +205,7 @@ void ListValue::remove(const Value& value) {
     );
 
     if (it == elements.end()) {
-        throw std::runtime_error("ValueError: list.remove(x): x not in list");
+        throw ValueErrorException("list.remove(x): x not in list");
     }
 
     elements.erase(it);
@@ -296,7 +290,7 @@ Value ListValue::index(
         }
     }
 
-    throw std::runtime_error("ValueError: value is not in list");
+    throw ValueErrorException("value is not in list");
 }
 
 void ListValue::reverse() {
@@ -388,15 +382,12 @@ bool ListValue::notEqual(const Value& other) const {
 bool ListValue::less(const Value& other) const {
 
     if (!other.isList()) {
-        throw std::runtime_error(
-            "TypeError: '<' not supported between instances of 'list' and other type"
-        );
+        throw TypeErrorException("'<' not supported between instances of 'list' and other type");
     }
 
     const auto& rhs = other.asList()->elements;
 
-    const size_t minSize =
-        std::min(elements.size(), rhs.size());
+    const size_t minSize = std::min(elements.size(), rhs.size());
 
     for (size_t i = 0; i < minSize; ++i) {
 
@@ -417,9 +408,7 @@ bool ListValue::lessOrEqual(const Value& other) const {
 bool ListValue::greater(const Value& other) const {
 
     if (!other.isList()) {
-        throw std::runtime_error(
-            "TypeError: '>' not supported between instances of 'list' and other type"
-        );
+        throw TypeErrorException("'>' not supported between instances of 'list' and other type");
     }
 
     const auto& rhs = other.asList()->elements;
@@ -443,13 +432,10 @@ Value ListValue::add(const Value& other) const {
 
     if (!other.isList()) {
 
-        throw std::runtime_error(
-            "TypeError: can only concatenate list to list"
-        );
+        throw TypeErrorException("can only concatenate list to list");
     }
 
-    auto result =
-        std::make_shared<ListValue>();
+    const auto result = std::make_shared<ListValue>();
 
     result->elements.reserve(
         elements.size() +
@@ -515,9 +501,7 @@ std::vector<Value> ListValue::buildRepeated(const long long times) const {
 Value ListValue::multiply(const Value& other) const {
 
     if (!other.isNumeric() || other.isBigFloat()) {
-        throw std::runtime_error(
-            "TypeError: can't multiply list by non-int"
-        );
+        throw TypeErrorException("can't multiply list by non-int");
     }
 
     const auto times = other.toBigInt().convert_to<long long>();
@@ -539,9 +523,7 @@ Value ListValue::imul(const Value& other) {
 
     if (!other.isNumeric() || other.isBigFloat()) {
 
-        throw std::runtime_error(
-            "TypeError: can't multiply list by non-int"
-        );
+        throw TypeErrorException("can't multiply list by non-int");
     }
 
     const auto times = other.toBigInt().convert_to<long long>();

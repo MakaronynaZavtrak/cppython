@@ -5,6 +5,7 @@
 #ifndef CPPYTHON_BUILTINATTRLOOKUP_H
 #define CPPYTHON_BUILTINATTRLOOKUP_H
 #include "BuiltinMethodRegistry.h"
+#include "../../exception/AttributeErrorException.h"
 
 inline Value getBuiltinAttr(
     const Value& obj,
@@ -18,8 +19,8 @@ inline Value getBuiltinAttr(
         return it.value()(obj);
     }
 
-    throw std::runtime_error("AttributeError: " + typeName.toStdString() +
-        " has no attribute '" + attr.toStdString() + "'"
+    throw AttributeErrorException(
+        typeName + " has no attribute '" + attr + "'"
     );
 }
 #endif //CPPYTHON_BUILTINATTRLOOKUP_H

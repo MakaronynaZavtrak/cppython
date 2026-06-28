@@ -61,7 +61,7 @@ add_executable(cppython main.cpp
         headers/TupleValue.h
         headers/ListIterator.h
         headers/TupleIterator.h
-        headers/StopIterationException.h
+        exception/StopIterationException.h
         headers/DictKeysView.h
         sources/DictKeysView.cpp
         headers/DictValuesView.h
@@ -126,7 +126,24 @@ add_executable(cppython main.cpp
         headers/ReversedDictIterator.h
         sources/ReversedDictIterator.cpp
         headers/ReversedSequenceIterator.h
-        sources/ReversedSequenceIterator.cpp)
+        sources/ReversedSequenceIterator.cpp
+        exception/PythonException.h
+        exception/TypeErrorException.h
+        exception/RuntimeErrorException.h
+        exception/ValueErrorException.h
+        exception/AttributeErrorException.h
+        exception/KeyErrorException.h
+        exception/IndexErrorException.h
+        exception/ReturnException.h
+        exception/BreakException.h
+        exception/ContinueException.h
+        exception/ArithmeticErrorException.h
+        sources/PythonException.cpp
+        exception/UnicodeDecodeErrorException.h
+        exception/LookupErorException.h
+        exception/NameErrorException.h
+        exception/SyntaxErrorException.h
+        exception/OverflowErrorException.h)
 
 target_include_directories(cppython PRIVATE headers)
 

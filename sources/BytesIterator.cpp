@@ -4,7 +4,7 @@
 #include "BytesIterator.h"
 
 #include "BytesValue.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 #include "Value.h"
 
 Value BytesIterator::next() {
@@ -13,7 +13,7 @@ Value BytesIterator::next() {
         throw StopIterationException();
     }
 
-    const unsigned char value =
+    const auto value =
         static_cast<unsigned char>(
             bytes->bytes()[index++]
         );

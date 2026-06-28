@@ -4,7 +4,7 @@
 
 #include "DictItemsIterator.h"
 #include "DictValue.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 
 Value DictItemsIterator::next() {
 

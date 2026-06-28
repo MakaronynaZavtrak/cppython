@@ -13,6 +13,13 @@
 #include "ListValue.h"
 #include "TupleValue.h"
 #include "Value.h"
+#include "../exception/IndexErrorException.h"
+#include "../exception/KeyErrorException.h"
+#include "../exception/LookupErorException.h"
+#include "../exception/OverflowErrorException.h"
+#include "../exception/TypeErrorException.h"
+#include "../exception/UnicodeDecodeErrorException.h"
+#include "../exception/ValueErrorException.h"
 #include "../runtime/ProtocolHelpers.h"
 
 namespace {
@@ -115,7 +122,7 @@ Value StrValue::getItem(const Value& index) const {
 
 
     if (!index.isBigInt()) {
-        throw std::runtime_error("TypeError: string indices must be integers");
+        throw TypeErrorException("string indices must be integers");
     }
 
     auto i = static_cast<long long>(index.toBigInt());
@@ -125,7 +132,7 @@ Value StrValue::getItem(const Value& index) const {
     }
 
     if (i < 0 || i >= value.size()) {
-        throw std::runtime_error("IndexError: string index out of range");
+        throw IndexErrorException("string index out of range");
     }
 
     return Value(
@@ -186,7 +193,7 @@ Value StrValue::split(const std::optional<QString>& sep,
     } else {
 
         if (sep->isEmpty()) {
-            throw std::runtime_error("empty separator");
+            throw ValueErrorException("empty separator");
         }
 
         if (maxSplit.has_value()) {
@@ -286,8 +293,7 @@ Value StrValue::startswith(
     const std::optional<Value>& start,
     const std::optional<Value>& end) const {
 
-    QString prefixStr =
-        prefix.asString("startwith")->toString();
+    const QString prefixStr = prefix.asString("startwith")->toString();
 
     qsizetype begin = 0;
     qsizetype finish = value.size();
@@ -448,7 +454,7 @@ Value StrValue::index(
     Value result = find(sub, start, end);
 
     if (result.toBigInt() == -1) {
-        throw std::runtime_error("ValueError: substring not found");
+        throw ValueErrorException("substring not found");
     }
 
     return result;
@@ -499,7 +505,7 @@ Value StrValue::rindex(
     Value result = rfind(sub, start, end);
 
     if (result.toBigInt() == -1) {
-        throw std::runtime_error("ValueError: substring not found");
+        throw ValueErrorException("substring not found");
     }
 
     return result;
@@ -635,9 +641,7 @@ Value StrValue::isspace() const {
 Value StrValue::add(const Value& other) const {
 
     if (!other.isString()) {
-        throw std::runtime_error(
-            "TypeError: can only concatenate str to str"
-        );
+        throw TypeErrorException("can only concatenate str to str");
     }
 
     QString result = value;
@@ -653,9 +657,7 @@ Value StrValue::add(const Value& other) const {
 Value StrValue::multiply(const Value& other) const {
 
     if (!other.isNumeric() || other.isBigFloat()) {
-        throw std::runtime_error(
-            "TypeError: can't multiply sequence by non-int"
-        );
+        throw TypeErrorException("can't multiply sequence by non-int");
     }
 
     const Value::BigInt numVal = other.toBigInt();
@@ -664,7 +666,7 @@ Value StrValue::multiply(const Value& other) const {
         return Value("");
 
     if (numVal > std::numeric_limits<qsizetype>::max()) {
-        throw std::runtime_error("String repetition too large");
+        throw OverflowErrorException("String repetition too large");
     }
 
     return Value(value.repeated(static_cast<qsizetype>(numVal)));
@@ -690,8 +692,8 @@ bool StrValue::notEqual(const Value &other) const {
 bool StrValue::lessOrEqual(const Value &other) const {
 
     if (!other.isString()) {
-        throw std::runtime_error(
-            "TypeError: '<=' not supported between instances of 'str' and other type"
+        throw TypeErrorException(
+            "'<=' not supported between instances of 'str' and other type"
         );
     }
 
@@ -701,8 +703,8 @@ bool StrValue::lessOrEqual(const Value &other) const {
 bool StrValue::less(const Value &other) const {
 
     if (!other.isString()) {
-        throw std::runtime_error(
-            "TypeError: '<' not supported between instances of 'str' and other type"
+        throw TypeErrorException(
+            "'<' not supported between instances of 'str' and other type"
         );
     }
 
@@ -712,8 +714,8 @@ bool StrValue::less(const Value &other) const {
 bool StrValue::greaterOrEqual(const Value &other) const {
 
     if (!other.isString()) {
-        throw std::runtime_error(
-            "TypeError: '>=' not supported between instances of 'str' and other type"
+        throw TypeErrorException(
+            "'>=' not supported between instances of 'str' and other type"
         );
     }
 
@@ -723,8 +725,8 @@ bool StrValue::greaterOrEqual(const Value &other) const {
 bool StrValue::greater(const Value &other) const {
 
     if (!other.isString()) {
-        throw std::runtime_error(
-            "TypeError: '>' not supported between instances of 'str' and other type"
+        throw TypeErrorException(
+            "'>' not supported between instances of 'str' and other type"
         );
     }
 
@@ -785,8 +787,8 @@ Value StrValue::center(
         fillChar = fillCharValue->asString("fillchar")->toString();
 
         if (fillChar.size() != 1) {
-            throw std::runtime_error(
-                "TypeError: The fill character must be exactly one character long");
+            throw TypeErrorException(
+                "The fill character must be exactly one character long");
         }
     }
 
@@ -820,8 +822,8 @@ Value StrValue::ljust(
         fillChar = fillCharValue->asString("fillchar")->toString();
 
         if (fillChar.size() != 1) {
-            throw std::runtime_error(
-                "TypeError: The fill character must be exactly one character long"
+            throw TypeErrorException(
+                "The fill character must be exactly one character long"
             );
         }
     }
@@ -848,8 +850,8 @@ Value StrValue::rjust(
         fillChar = fillCharValue->asString("fillchar")->toString();
 
         if (fillChar.size() != 1) {
-            throw std::runtime_error(
-                "TypeError: The fill character must be exactly one character long"
+            throw TypeErrorException(
+                "The fill character must be exactly one character long"
             );
         }
     }
@@ -1093,9 +1095,7 @@ Value StrValue::partition(const Value& sepValue) const {
             ->toString();
 
     if (sep.isEmpty()) {
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     const qsizetype pos = value.indexOf(sep);
@@ -1132,9 +1132,7 @@ Value StrValue::rpartition(const Value& sepValue) const {
             ->toString();
 
     if (sep.isEmpty()) {
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     const qsizetype pos = value.lastIndexOf(sep);
@@ -1356,9 +1354,7 @@ Value StrValue::rsplit(
     const QString& separator = *sep;
 
     if (separator.isEmpty()) {
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     const qsizetype limit =
@@ -1439,8 +1435,8 @@ Value StrValue::maketrans(const std::vector<Value>& args) {
                 const QString str = key.asString("maketrans")->toString();
 
                 if (str.size() != 1) {
-                    throw std::runtime_error(
-                        "ValueError: string keys in translate table must be length 1"
+                    throw ValueErrorException(
+                        "string keys in translate table must be length 1"
                     );
                 }
 
@@ -1452,8 +1448,8 @@ Value StrValue::maketrans(const std::vector<Value>& args) {
             }
             else {
 
-                throw std::runtime_error(
-                    "TypeError: keys in translate table must be integers or single-character strings"
+                throw TypeErrorException(
+                "keys in translate table must be integers or single-character strings"
                 );
             }
 
@@ -1470,8 +1466,8 @@ Value StrValue::maketrans(const std::vector<Value>& args) {
         const QString to = args[1].asString("maketrans")->toString();
 
         if (from.size() != to.size()) {
-            throw std::runtime_error(
-                "ValueError: the first two maketrans arguments must have equal length"
+            throw ValueErrorException(
+                "the first two maketrans arguments must have equal length"
             );
         }
 
@@ -1501,9 +1497,7 @@ Value StrValue::maketrans(const std::vector<Value>& args) {
         return Value(result);
     }
 
-    throw std::runtime_error(
-        "maketrans expected 1, 2 or 3 arguments"
-    );
+    throw TypeErrorException("maketrans expected 1, 2 or 3 arguments");
 }
 
 Value StrValue::translate(const Value& table) const {
@@ -1551,8 +1545,8 @@ Value StrValue::translate(const Value& table) const {
             continue;
         }
 
-        throw std::runtime_error(
-            "TypeError: character mapping must return integer, None or str"
+        throw TypeErrorException(
+            "character mapping must return integer, None or str"
         );
     }
 
@@ -1596,7 +1590,7 @@ Value StrValue::formatMap(const Value& mapping) const {
 
         if (end == -1) {
 
-            throw std::runtime_error("ValueError: unmatched '{'");
+            throw ValueErrorException("unmatched '{'");
         }
 
         QString field = value.mid(pos + 1, end - pos - 1);
@@ -1624,7 +1618,7 @@ Value StrValue::formatMap(const Value& mapping) const {
 
             if (bang + 1 >= field.size()) {
 
-                throw std::runtime_error("ValueError: expected conversion");
+                throw ValueErrorException("expected conversion");
             }
 
             conversion = field[bang + 1];
@@ -1640,10 +1634,7 @@ Value StrValue::formatMap(const Value& mapping) const {
             }
         }
         catch (...) {
-
-            throw std::runtime_error(
-                "KeyError: '" + key.toStdString() + "'"
-            );
+            throw KeyErrorException(key);
         }
 
         if (conversion == 'r') {
@@ -1656,9 +1647,7 @@ Value StrValue::formatMap(const Value& mapping) const {
         }
         else if (!conversion.isNull()) {
 
-            throw std::runtime_error(
-                "ValueError: unknown conversion"
-            );
+            throw ValueErrorException("unknown conversion");
         }
         else {
 
@@ -1723,7 +1712,7 @@ Value StrValue::resolveFormatField(
             }
 
             if (pos >= field.size()) {
-                throw std::runtime_error(
+                throw ValueErrorException(
                     "ValueError: unmatched '[' in format field"
                 );
             }
@@ -1776,14 +1765,10 @@ Value StrValue::resolveFormatField(
                 continue;
             }
 
-            throw std::runtime_error(
-                "ValueError: invalid index in format field"
-            );
+            throw ValueErrorException("invalid index in format field");
         }
 
-        throw std::runtime_error(
-            "ValueError: invalid format field"
-        );
+        throw ValueErrorException("invalid format field");
     }
 
     return current;
@@ -1807,9 +1792,7 @@ Value StrValue::getItemValue(const Value& obj, const Value& key) {
         return obj.asDict("getitem")->getItem(key);
     }
 
-    throw std::runtime_error(
-        "TypeError: object is not subscriptable"
-    );
+    throw TypeErrorException("object is not subscriptable");
 }
 
 Value StrValue::format(
@@ -1853,7 +1836,7 @@ Value StrValue::resolveEmptyFormatField(const std::shared_ptr<DictValue>& dict) 
         if (idx > 100) break;
     }
 
-    throw std::runtime_error("KeyError: ''");
+    throw KeyErrorException("");
 }
 
 QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
@@ -1909,9 +1892,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == "%") {
 
         if (!value.isBigFloat() && !value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: percent format requires number"
-            );
+            throw ValueErrorException("unsupported format character '%'");
         }
 
         double d;
@@ -1928,9 +1909,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == ",") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: comma format requires integer"
-            );
+            throw ValueErrorException("unsupported format character ','");
         }
 
         QString txt = value.toString();
@@ -1950,14 +1929,11 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == "+d") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: +d format requires integer"
-            );
+            throw ValueErrorException("unsupported format character '+'");
         }
 
-        const auto n = value.toBigInt();
-
-        if (n >= 0) {
+        if (const auto n = value.toBigInt();
+            n >= 0) {
             return "+" + value.toString();
         }
 
@@ -1967,14 +1943,11 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == " d") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: space-sign format requires integer"
-            );
+            throw ValueErrorException("unsupported format character ' '");
         }
 
-        auto n = value.toBigInt();
-
-        if (n >= 0) {
+        if (const auto n = value.toBigInt();
+            n >= 0) {
             return " " + value.toString();
         }
 
@@ -1984,9 +1957,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == "d") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: d format requires integer"
-            );
+            throw ValueErrorException("unsupported format character 'd'");
         }
 
         return value.toString();
@@ -1995,9 +1966,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == "x") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: x format requires integer"
-            );
+            throw ValueErrorException("unsupported format character 'x'");
         }
 
         const auto num = value.toBigInt().convert_to<long long>();
@@ -2008,9 +1977,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == "X") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: X format requires integer"
-            );
+            throw ValueErrorException("X format requires integer");
         }
 
         const auto num = value.toBigInt().convert_to<long long>();
@@ -2021,9 +1988,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == "o") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: o format requires integer"
-            );
+            throw ValueErrorException("unsupported format character 'o'");
         }
 
         const auto n = value.toBigInt().convert_to<long long>();
@@ -2034,13 +1999,10 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
     if (spec == "b") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: b format requires integer"
-            );
+            throw ValueErrorException("unsupported format character 'b'");
         }
 
-        long long n =
-            value.toBigInt().convert_to<long long>();
+        long long n = value.toBigInt().convert_to<long long>();
 
         if (n == 0) {
             return "0";
@@ -2060,12 +2022,10 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
         return result;
     }
 
-    if (spec.startsWith("+.") && spec.endsWith('f'))
-    {
+    if (spec.startsWith("+.") && spec.endsWith('f')) {
+
         if (!value.isBigFloat() && !value.isBigInt()) {
-            throw std::runtime_error(
-                "ValueError: float format requires number"
-            );
+            throw ValueErrorException("unsupported format character '+'");
         }
 
         const int precision = spec.mid(2, spec.size() - 3).toInt();
@@ -2092,7 +2052,7 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
 
         if (!value.isBigFloat() && !value.isBigInt()) {
 
-            throw std::runtime_error("ValueError: float format requires number");
+            throw ValueErrorException("ValueError: float format requires number");
         }
 
         const int precision = spec.mid(1, spec.size() - 2).toInt();
@@ -2108,9 +2068,8 @@ QString StrValue::applyFormatSpec(const Value& value, const QString& spec) {
         return QString::number(d, 'f', precision);
     }
 
-    throw std::runtime_error(
-        "Unsupported format specifier: "
-        + spec.toStdString()
+    throw ValueErrorException(
+        "Unsupported format specifier: " + spec
     );
 }
 
@@ -2164,9 +2123,7 @@ QString StrValue::applyPercentSpec(
     spec == "u") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "%d requires integer"
-            );
+            throw TypeErrorException("%d requires integer");
         }
 
         return value.toString();
@@ -2175,9 +2132,7 @@ QString StrValue::applyPercentSpec(
     if (spec == "x") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "%x requires integer"
-            );
+            throw TypeErrorException("%x requires integer");
         }
 
         return QString::number(
@@ -2189,9 +2144,7 @@ QString StrValue::applyPercentSpec(
     if (spec == "X") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "%X requires integer"
-            );
+            throw TypeErrorException("%X requires integer");
         }
 
         return QString::number(
@@ -2203,9 +2156,7 @@ QString StrValue::applyPercentSpec(
     if (spec == "o") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "%o requires integer"
-            );
+            throw TypeErrorException("%o requires integer");
         }
 
         return QString::number(
@@ -2217,9 +2168,7 @@ QString StrValue::applyPercentSpec(
     if (spec == "b") {
 
         if (!value.isBigInt()) {
-            throw std::runtime_error(
-                "%b requires integer"
-            );
+            throw TypeErrorException("%b requires integer");
         }
 
         auto n = value.toBigInt().convert_to<long long>();
@@ -2250,9 +2199,7 @@ QString StrValue::applyPercentSpec(
 
             if (code < 0 || code > 0x10FFFF) {
 
-                throw std::runtime_error(
-                    "%c arg not in range(0x110000)"
-                );
+                throw ValueErrorException("%c arg not in range(0x110000)");
             }
 
             const auto cp = static_cast<char32_t>(code);
@@ -2267,17 +2214,13 @@ QString StrValue::applyPercentSpec(
 
             if (s.size() != 1) {
 
-                throw std::runtime_error(
-                    "%c requires a character"
-                );
+                throw TypeErrorException("%c requires a character");
             }
 
             return s;
         }
 
-        throw std::runtime_error(
-            "%c requires int or char"
-        );
+        throw TypeErrorException("%c requires int or char");
     }
 
     if (spec == "f") {
@@ -2291,9 +2234,7 @@ QString StrValue::applyPercentSpec(
             d = value.toBigFloat().convert_to<double>();
         }
         else {
-            throw std::runtime_error(
-                "%f requires number"
-            );
+            throw TypeErrorException("%f requires number");
         }
 
         const int digits = precision >= 0
@@ -2321,9 +2262,7 @@ QString StrValue::applyPercentSpec(
 
         } else {
 
-            throw std::runtime_error(
-                "%e requires number"
-            );
+            throw TypeErrorException("%e requires number");
         }
 
         const int digits = precision >= 0 ? precision : 6;
@@ -2349,9 +2288,7 @@ QString StrValue::applyPercentSpec(
 
         } else {
 
-            throw std::runtime_error(
-                "%E requires number"
-            );
+            throw TypeErrorException("%E requires number");
         }
 
         const int digits = precision >= 0 ? precision : 6;
@@ -2377,9 +2314,7 @@ QString StrValue::applyPercentSpec(
 
         } else {
 
-            throw std::runtime_error(
-                "%g requires number"
-            );
+            throw TypeErrorException("%g requires number");
         }
 
         const int digits = precision >= 0 ? precision : 6;
@@ -2401,9 +2336,7 @@ QString StrValue::applyPercentSpec(
 
         } else {
 
-            throw std::runtime_error(
-                "%G requires number"
-            );
+            throw TypeErrorException("%G requires number");
         }
 
         const int digits = precision >= 0 ? precision : 6;
@@ -2411,7 +2344,7 @@ QString StrValue::applyPercentSpec(
         return QString::number(d, 'g', digits).toUpper();
     }
 
-    throw std::runtime_error("unsupported format");
+    throw ValueErrorException("unsupported format");
 }
 
 QString StrValue::formatPercentValue(
@@ -2592,9 +2525,7 @@ Value StrValue::modTuple(const std::shared_ptr<TupleValue>& tuple) const {
         if (i < value.size() && value[i] == '*') {
             if (tupleIndex >= tuple->len()) {
 
-                throw std::runtime_error(
-                    "not enough arguments for format string"
-                );
+                throw ValueErrorException("not enough arguments for format string");
             }
 
             Value widthValue =
@@ -2606,9 +2537,7 @@ Value StrValue::modTuple(const std::shared_ptr<TupleValue>& tuple) const {
 
             if (!widthValue.isBigInt()) {
 
-                throw std::runtime_error(
-                    "* wants int"
-                );
+                throw TypeErrorException("* wants int");
             }
 
             width =
@@ -2643,9 +2572,7 @@ Value StrValue::modTuple(const std::shared_ptr<TupleValue>& tuple) const {
 
                 if (tupleIndex >= tuple->len()) {
 
-                    throw std::runtime_error(
-                        "not enough arguments for format string"
-                    );
+                    throw ValueErrorException("not enough arguments for format string");
                 }
 
                 Value precisionValue =
@@ -2657,9 +2584,7 @@ Value StrValue::modTuple(const std::shared_ptr<TupleValue>& tuple) const {
 
                 if (!precisionValue.isBigInt()) {
 
-                    throw std::runtime_error(
-                        "* wants int"
-                    );
+                    throw TypeErrorException("* wants int");
                 }
 
                 precision =
@@ -2685,18 +2610,14 @@ Value StrValue::modTuple(const std::shared_ptr<TupleValue>& tuple) const {
 
         if (i >= value.size()) {
 
-            throw std::runtime_error(
-                "incomplete format"
-            );
+            throw TypeErrorException("not enough arguments for format string");
         }
 
         QString spec(value[i]);
 
         if (tupleIndex >= tuple->len()) {
 
-            throw std::runtime_error(
-                "TypeError: not enough arguments for format string"
-            );
+            throw TypeErrorException("not enough arguments for format string");
         }
 
         Value current = tuple->getItem(
@@ -2724,9 +2645,7 @@ Value StrValue::modTuple(const std::shared_ptr<TupleValue>& tuple) const {
 
     if (tupleIndex != tuple->len()) {
 
-        throw std::runtime_error(
-            "TypeError: not all arguments converted during string formatting"
-        );
+        throw TypeErrorException("not all arguments converted during string formatting");
     }
 
     return Value(result);
@@ -2764,9 +2683,7 @@ Value StrValue::mod(const Value& rhs) const {
 
     if (!rhs.isTuple()) {
 
-        throw std::runtime_error(
-            "TypeError: not enough arguments for format string"
-        );
+        throw TypeErrorException("not enough arguments for format string");
     }
 
     return modTuple(rhs.asTuple());
@@ -2846,9 +2763,7 @@ QString StrValue::applyStringFormatSpec(
                + QString(rightPadding, ' ');
     }
 
-    throw std::runtime_error(
-        "Unknown format code for str"
-    );
+    throw ValueErrorException("Unknown format code for str");
 
 
 }
@@ -2889,9 +2804,7 @@ Value StrValue::encode(
 
                 if (ch.unicode() > 255) {
 
-                    throw std::runtime_error(
-                        "UnicodeEncodeError: latin-1 codec can't encode character"
-                    );
+                    throw UnicodeDecodeErrorException("latin-1 codec can't encode character");
                 }
             }
 
@@ -2930,9 +2843,7 @@ Value StrValue::encode(
 
         else {
 
-            throw std::runtime_error(
-                "LookupError: unknown error handler"
-            );
+            throw LookupErrorException("unknown error handler");
         }
     }
 
@@ -2944,9 +2855,7 @@ Value StrValue::encode(
 
                 if (ch.unicode() > 127) {
 
-                    throw std::runtime_error(
-                        "UnicodeEncodeError: ascii codec can't encode character"
-                    );
+                    throw UnicodeDecodeErrorException("ascii codec can't encode character");
                 }
             }
 
@@ -2985,17 +2894,13 @@ Value StrValue::encode(
 
         else {
 
-            throw std::runtime_error(
-                "LookupError: unknown error handler"
-            );
+            throw LookupErrorException("unknown error handler");
         }
     }
 
     else {
 
-        throw std::runtime_error(
-            "LookupError: unknown encoding"
-        );
+        throw LookupErrorException("unknown encoding");
     }
 
     const auto bytes = std::make_shared<BytesValue>(std::move(result));
@@ -3017,9 +2922,8 @@ Value StrValue::removePrefix(const Value& prefix) const {
 
 Value StrValue::removeSuffix(const Value& suffix) const {
 
-    const QString suff = suffix.toString();
-
-    if (!suff.isEmpty() && value.endsWith(suff)) {
+    if (const QString suff = suffix.toString();
+        !suff.isEmpty() && value.endsWith(suff)) {
 
         return Value(
             value.left(
@@ -3038,9 +2942,7 @@ Value StrValue::modSingle(const Value& rhs) const {
     const qsizetype pos = text.indexOf('%');
 
     if (pos == -1) {
-        throw std::runtime_error(
-            "no format specifier"
-        );
+        throw ValueErrorException("no format specifier");
     }
 
     bool leftAlign = false;
@@ -3098,9 +3000,7 @@ Value StrValue::modSingle(const Value& rhs) const {
     }
 
     if (i >= text.size()) {
-        throw std::runtime_error(
-            "incomplete format"
-        );
+        throw ValueErrorException("incomplete format");
     }
 
     const QString spec(text[i]);
@@ -3149,12 +3049,8 @@ Value StrValue::modMapping(const Value::DictPtr &dict) const {
             continue;
         }
 
-        if (pos + 1 >= value.size() ||
-            value[pos + 1] != '(')
-        {
-            throw std::runtime_error(
-                "invalid mapping format"
-            );
+        if (pos + 1 >= value.size() || value[pos + 1] != '(') {
+            throw ValueErrorException("invalid mapping format");
         }
 
         const qsizetype keyStart = pos + 2;
@@ -3163,9 +3059,7 @@ Value StrValue::modMapping(const Value::DictPtr &dict) const {
 
         if (keyEnd == -1) {
 
-            throw std::runtime_error(
-                "incomplete mapping key"
-            );
+            throw ValueErrorException("incomplete mapping key");
         }
 
         QString key = value.mid(keyStart, keyEnd - keyStart);
@@ -3213,19 +3107,14 @@ Value StrValue::modMapping(const Value::DictPtr &dict) const {
             ++i;
         }
 
-        if (i < value.size() &&
-            value[i] == '.')
-        {
+        if (i < value.size() && value[i] == '.') {
             ++i;
 
             precision = 0;
 
-            while (i < value.size() &&
-                   value[i].isDigit())
-            {
-                precision =
-                    precision * 10 +
-                    value[i].digitValue();
+            while (i < value.size() && value[i].isDigit()) {
+
+                precision = precision * 10 + value[i].digitValue();
 
                 ++i;
             }
@@ -3233,9 +3122,7 @@ Value StrValue::modMapping(const Value::DictPtr &dict) const {
 
         if (i >= value.size()) {
 
-            throw std::runtime_error(
-                "missing format specifier"
-            );
+            throw ValueErrorException("incomplete format");
         }
 
         QString spec(value[i]);
@@ -3267,9 +3154,7 @@ Value StrValue::modMapping(const Value::DictPtr &dict) const {
 bool StrValue::contains(const Value& val) const {
 
     if (!val.isString()) {
-        throw std::runtime_error(
-            "TypeError: 'in <string>' requires string as left operand"
-        );
+        throw TypeErrorException("'in <string>' requires string as left operand");
     }
 
     return value.contains(

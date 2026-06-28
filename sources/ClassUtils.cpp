@@ -14,12 +14,15 @@
 #include "../runtime/builtins/set/SetMethods.h"
 #include "../runtime/builtins/str/StrMethods.h"
 #include "SuperValue.h"
+#include "../exception/AttributeErrorException.h"
+#include "../exception/TypeErrorException.h"
 #include "../runtime/builtins/bytearray/ByteArrayMethods.h"
 #include "../runtime/builtins/bytes/BytesMethods.h"
 #include "../runtime/builtins/frozenset/FrozenSetMethods.h"
 #include "../runtime/builtins/tuple/TupleMethods.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
+
     try {
         findAttrInHierarchy(cls, attr);
         return true;
@@ -31,28 +34,20 @@ bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
 Value genericGetAttr(const Value& obj, const QString& attr) {
 
     // instance
-    if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
+    if (obj.isInstance()) {
 
-        auto instance = std::get<Value::InstancePtr>(obj.data);
+        auto instance = obj.asInstance();
         auto cls = instance->klass;
 
         //  1. data descriptor (hasSet)
         try {
+            if (Value val = findAttrInHierarchy(cls, attr);
+                DescriptorUtils::hasGet(val) && DescriptorUtils::hasSet(val)) {
 
-            Value val = findAttrInHierarchy(cls, attr);
-
-            if (DescriptorUtils::hasGet(val) && DescriptorUtils::hasSet(val)) {
                 return DescriptorUtils::callGet(val, Value(instance), cls);
             }
 
-        } catch (const std::runtime_error& e) {
-
-            const std::string msg = e.what();
-
-            if (msg.find("Attribute not found") == std::string::npos) {
-                throw;
-            }
-        }
+        } catch (const AttributeErrorException& e) {}
 
         // 2. instance fields
         if (instance->fields.contains(attr)) {
@@ -70,25 +65,18 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
             return val;
 
-        } catch (const std::runtime_error& e) {
-
-            const std::string msg = e.what();
-
-            if (msg.find("Attribute not found") == std::string::npos) {
-                throw;
-            }
-        }
+        } catch (const AttributeErrorException& e) {}
     }
 
     // super
-    if (std::holds_alternative<Value::SuperPtr>(obj.data)) {
-        auto super = std::get<Value::SuperPtr>(obj.data);
-        return getAttrFromSuper(super, attr);
+    if (obj.isSuper()) {
+        return getAttrFromSuper(obj.asSuper(), attr);
     }
 
     // class
-    if (std::holds_alternative<Value::ClassPtr>(obj.data)) {
-        auto cls = std::get<Value::ClassPtr>(obj.data);
+    if (obj.isClass()) {
+
+        auto cls = obj.asClass();
 
         Value val = findAttrInHierarchy(cls, attr);
 
@@ -159,8 +147,9 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         return getFrozenSetAttr(obj, attr);
     }
 
-    throw std::runtime_error("AttributeError: object has no attribute '" +
-                            attr.toStdString() + "'");
+    throw AttributeErrorException(
+        "object has no attribute '" + attr + "'"
+    );
 }
 
 Value makeIterMethod(const Value& obj) {
@@ -175,7 +164,10 @@ Value makeIterMethod(const Value& obj) {
                   -> Value {
 
                 if (!args.empty()) {
-                    throw std::runtime_error("__iter__ expects 0 args");
+                    throw TypeErrorException(
+    "__iter__() takes 0 positional arguments but "
+    + QString::number(args.size()) + " were given"
+);
                 }
 
                 return Value(obj.getIterator());
@@ -212,28 +204,13 @@ Value getAttrValue(const Value& obj, const QString& attr) {
             return call(getattribute, { Value(attr) }, {}, nullptr);
         }
 
-    } catch (const std::runtime_error& e) {
-
-        const std::string msg = e.what();
-
-        if (msg.find("AttributeError") == std::string::npos) {
-            throw;
-        }
-    }
+    } catch (const AttributeErrorException& e) {}
 
     // default lookup
     try {
         return genericGetAttr(obj, attr);
     }
-    catch (const std::runtime_error& e) {
-
-        const std::string msg = e.what();
-
-        // только если attr реально не найден
-        if (msg.find("AttributeError") == std::string::npos) {
-            throw;
-        }
-    }
+    catch (const AttributeErrorException& e) {}
 
     // __getattr__
     try {
@@ -242,19 +219,9 @@ Value getAttrValue(const Value& obj, const QString& attr) {
 
         return call(getattr, { Value(attr) }, {}, nullptr);
 
-    } catch (const std::runtime_error& e) {
+    } catch (const AttributeErrorException& e) {}
 
-        const std::string msg = e.what();
-
-        if (msg.find("AttributeError") == std::string::npos) {
-            throw;
-        }
-    }
-
-    throw std::runtime_error(
-        "AttributeError: object has no attribute '" +
-        attr.toStdString() + "'"
-    );
+    throw AttributeErrorException("object has no attribute '" + attr + "'");
 }
 
 Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
@@ -285,8 +252,7 @@ Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
         }
     }
 
-    throw std::runtime_error("AttributeError: object has no attribute '" +
-                            attr.toStdString() + "'");
+    throw AttributeErrorException("object has no attribute '" + attr + "'");
 }
 
 void buildMRO(const Value::ClassPtr& cls, std::vector<Value::ClassPtr>& out) {
@@ -297,65 +263,54 @@ void buildMRO(const Value::ClassPtr& cls, std::vector<Value::ClassPtr>& out) {
     }
 }
 
-Value::ClassPtr getObjectClass(const Value& obj)
-{
-    if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
-        return std::get<Value::InstancePtr>(obj.data)->klass;
+Value::ClassPtr getObjectClass(const Value& obj) {
+
+    if (obj.isInstance()) {
+        return obj.asInstance()->klass;
     }
 
     if (std::holds_alternative<Value::ClassPtr>(obj.data)) {
         return std::get<Value::ClassPtr>(obj.data);
     }
 
-    throw std::runtime_error("super(): invalid receiver");
+    throw TypeErrorException("super(): invalid receiver");
 }
 
 Value findAttrInHierarchy(const Value::ClassPtr& cls, const QString& attr) {
+
     if (cls->attributes.contains(attr)) {
         return cls->attributes[attr];
     }
 
     for (const auto& base : cls->bases) {
+
         try {
+
             return findAttrInHierarchy(base, attr);
 
-        } catch (const std::runtime_error& e) {
-
-            const std::string msg = e.what();
-
-            if (msg.find("Attribute not found") == std::string::npos) {
-                throw;
-            }
-        }
+        } catch (const AttributeErrorException& e) {}
     }
 
-    throw std::runtime_error("Attribute not found: " + attr.toStdString());
+    throw AttributeErrorException("Attribute not found: " + attr);
 }
 
 void genericSetAttr(const Value& obj, const QString& attr, const Value& value) {
     // instance
-    if (std::holds_alternative<Value::InstancePtr>(obj.data)) {
-        const auto instance = std::get<Value::InstancePtr>(obj.data);
+    if (obj.isInstance()) {
+
+        const auto instance = obj.asInstance();
         const auto cls = instance->klass;
 
         // 1. проверяем descriptor в классе
         try {
+            if (const Value descr = findAttrInHierarchy(cls, attr);
+                DescriptorUtils::hasSet(descr)) {
 
-            const Value descr = findAttrInHierarchy(cls, attr);
-
-            if (DescriptorUtils::hasSet(descr)) {
                 DescriptorUtils::callSet(descr, Value(instance), cls, value);
                 return;
             }
 
-        } catch (const std::runtime_error& e) {
-
-            const std::string msg = e.what();
-
-            if (msg.find("Attribute not found") == std::string::npos) {
-                throw;
-            }
-        }
+        } catch (const AttributeErrorException& e) {}
 
         // 2. обычная запись в поля
         instance->fields[attr] = value;
@@ -363,39 +318,35 @@ void genericSetAttr(const Value& obj, const QString& attr, const Value& value) {
     }
 
     // class
-    if (std::holds_alternative<Value::ClassPtr>(obj.data)) {
-        const auto cls = std::get<Value::ClassPtr>(obj.data);
+    if (obj.isClass()) {
+        const auto cls = obj.asClass();
         cls->attributes[attr] = value;
         return;
     }
 
-    throw std::runtime_error("setattr: object has no attributes");
+    throw AttributeErrorException("object has no attributes");
 }
 
 void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
 
     // super bypass
-    if (std::holds_alternative<Value::SuperPtr>(obj.data)) {
+    if (obj.isSuper()) {
         genericSetAttr(obj, attr, value);
         return;
     }
 
     try {
 
-        Value setattr =
-            genericGetAttr(obj, "__setattr__");
+        const Value setattr = genericGetAttr(obj, "__setattr__");
 
         bool isDefault = false;
 
-        if (std::holds_alternative<Value::BuiltinFunctionPtr>(
-                setattr.data)) {
+        if (setattr.isBuiltinFunction()) {
 
-            const auto builtin =
-                std::get<Value::BuiltinFunctionPtr>(
-                    setattr.data);
+            const auto builtin = setattr.asBuiltinFunction();
 
             isDefault = builtin->name == "__object_setattr__";
-                }
+        }
 
         if (!isDefault) {
 
@@ -404,14 +355,7 @@ void setAttrValue(const Value& obj, const QString& attr, const Value& value) {
             return;
         }
 
-    } catch (const std::runtime_error& e) {
-
-        const std::string msg = e.what();
-
-        if (msg.find("AttributeError") == std::string::npos) {
-            throw;
-        }
-    }
+    } catch (const AttributeErrorException& e) {}
 
     genericSetAttr(obj, attr, value);
 }

@@ -21,8 +21,15 @@
 #include "SetValue.h"
 #include "SliceValue.h"
 #include "StaticMethodValue.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 #include "TupleValue.h"
+#include "../exception/AttributeErrorException.h"
+#include "../exception/BreakException.h"
+#include "../exception/ContinueException.h"
+#include "../exception/ReturnException.h"
+#include "../exception/RuntimeErrorException.h"
+#include "../exception/SyntaxErrorException.h"
+#include "../exception/TypeErrorException.h"
 
 /**
  * @class ASTNode
@@ -94,7 +101,7 @@ class UnaryOpNode final : public ASTNode {
 
         const auto it = opMap.find(op);
         if (it == opMap.end()) {
-            throw std::runtime_error("Unsupported operation: " + op.toStdString());
+            throw SyntaxErrorException("Unsupported operation: " + op);
         }
         return it->second;
     }
@@ -113,7 +120,7 @@ public:
             case Operation::UnaryPlus:  return +val;
             case Operation::UnaryMinus: return -val;
 
-            default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
+            default: throw SyntaxErrorException("Unsupported operation: " + op);
         }
 
 
@@ -186,7 +193,7 @@ public:
             case Operation::BitAnd:         return l & r;
             case Operation::BitXor:         return l ^ r;
 
-            default: throw std::runtime_error("Unsupported operation: " + op.toStdString());
+            default: throw SyntaxErrorException("Unsupported operation: " + op);
         }
     }
 
@@ -251,7 +258,7 @@ public:
         const auto it = opMap.find(op);
 
         if (it == opMap.end()) {
-            throw std::runtime_error("Unsupported operation: " + op.toStdString());
+            throw SyntaxErrorException("Unsupported operation: " + op);
         }
 
         return it->second;
@@ -288,7 +295,7 @@ public:
             return right->eval(env);
         }
 
-        throw std::runtime_error("Unknown logical operator");
+        throw SyntaxErrorException("Unknown logical operator");
     }
 
     [[nodiscard]] QString toString() const override {
@@ -457,58 +464,6 @@ private:
     std::vector<std::shared_ptr<ASTNode>> body;
     std::vector<std::pair<std::shared_ptr<ASTNode>, std::vector<std::shared_ptr<ASTNode>>>> elifs;
     std::vector<std::shared_ptr<ASTNode>> elseBody;
-};
-
-/**
- * @class BreakException
- * @brief Исключение, генерируемое для выхода из выполнения цикла.
- *
- * BreakException используется для имитации выполнения конструкции `break`
- * внутри циклов. Это исключение может содержать сообщение для дополнительных
- * описаний возникшей ситуации.
- *
- * @details
- * Данный класс является производным от `std::exception` и предлагает
- * возможность передачи текстового сообщения, доступного через метод `what`.
- * Это сообщение помогает идентифицировать причину прерывания выполнения.
- *
- * @note
- * Исключение `BreakException` обычно обрабатывается специально в интерпретаторе
- * или компиляторе для управления потоком выполнения.
- */
-class BreakException final : public std::exception {
-public:
-    explicit BreakException(std::string  message = "") : message(std::move(message)) {}
-
-    [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
-
-private:
-    std::string message;
-};
-
-/**
- * @class ContinueException
- * @brief Исключение, используемое для реализации оператора continue.
- *
- * Эта структура исключения предназначена для управления потоком выполнения в циклических конструкциях,
- * таких как `while` или `for`. Она позволяет пропускать оставшуюся часть текущей итерации и переходить
- * к следующей итерации цикла.
- *
- * @details
- * Классу передается сообщение, описывающее причину возникновения исключения. Это сообщение
- * может быть получено с помощью метода `what`, что делает удобной диагностику и отладку
- * кода при возникновении подобных исключительных ситуаций.
- *
- * Этот класс является финальным и не может быть унаследован.
- */
-class ContinueException final : public std::exception {
-public:
-    explicit ContinueException(std::string message = "") : message(std::move(message)) {}
-
-    [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
-
-private:
-    std::string message;
 };
 
 /**
@@ -686,7 +641,7 @@ class CompareNode final : public ASTNode {
 
         const auto it = opMap.find(op);
         if (it == opMap.end()) {
-            throw std::runtime_error("Unsupported operation: " + op.toStdString());
+            throw SyntaxErrorException("Unsupported operation: " + op);
         }
         return it->second;
     }
@@ -707,7 +662,9 @@ class CompareNode final : public ASTNode {
             case Operation::Is:             return a.is(b);
             case Operation::IsNot:          return !a.is(b);
 
-            default: throw std::runtime_error("Invalid comparison operation");
+            default: throw SyntaxErrorException(
+                "Invalid comparison operation"
+            );
         }
     }
 
@@ -743,18 +700,6 @@ public:
         }
         return out;
     }
-};
-
-class ReturnException final : public std::exception {
-public:
-    explicit ReturnException(Value val) : value(std::move(val)) {}
-
-    [[nodiscard]] const char* what() const noexcept override { return "ReturnException"; }
-
-    [[nodiscard]] Value getValue() const { return value; }
-
-private:
-    Value value;
 };
 
 class FunctionDefNode final : public ASTNode {
@@ -947,7 +892,7 @@ public:
             Value baseVal = baseExpr->eval(env);
 
             if (!std::holds_alternative<Value::ClassPtr>(baseVal.data)) {
-                throw std::runtime_error("Base must be a class");
+                throw TypeErrorException("Base must be a class");
             }
 
             bases.push_back(std::get<Value::ClassPtr>(baseVal.data));
@@ -1247,7 +1192,7 @@ public:
     }
 
     [[nodiscard]] Value eval(EnvPtr) const override {
-        throw std::runtime_error("DictKeyValueNode cannot be evaluated directly");
+        throw RuntimeErrorException("DictKeyValueNode cannot be evaluated directly");
     }
 
     [[nodiscard]] QString toString() const override {
@@ -1273,7 +1218,7 @@ public:
     }
 
     [[nodiscard]] Value eval(EnvPtr env) const override {
-        throw std::runtime_error("DictUnpackNode cannot be evaluated directly");
+        throw RuntimeErrorException("DictUnpackNode cannot be evaluated directly");
     }
 
     [[nodiscard]] QString toString() const override {
@@ -1576,9 +1521,7 @@ public:
 
         if (!indexNode) {
 
-            throw std::runtime_error(
-                "SyntaxError: invalid del target"
-            );
+            throw SyntaxErrorException("invalid del target");
         }
 
         Value obj = indexNode->object->eval(env);
@@ -1636,9 +1579,8 @@ class AugAssignNode : public ASTNode {
         const auto it = opMap.find(op);
 
         if (it == opMap.end()) {
-            throw std::runtime_error(
-                "Unsupported augmented assignment: "
-                + op.toStdString()
+            throw SyntaxErrorException(
+                "Unsupported augmented assignment: " + op
             );
         }
 
@@ -1658,13 +1600,7 @@ class AugAssignNode : public ASTNode {
 
             return call(method, { right }, {}, env);
 
-        } catch (const std::runtime_error& e) {
-
-            if (const std::string msg = e.what();
-                msg.find("AttributeError") == std::string::npos) {
-                throw;
-            }
-        }
+        } catch (const AttributeErrorException& e) {}
 
         return fallback();
     }
@@ -1782,9 +1718,7 @@ public:
                 break;
 
             default:
-                throw std::runtime_error(
-                    "Unsupported augmented assignment"
-                );
+                throw SyntaxErrorException("Unsupported augmented assignment");
         }
 
         env->set(name, result);

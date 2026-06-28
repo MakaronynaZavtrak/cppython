@@ -13,6 +13,12 @@
 
 #include "ByteArrayValue.h"
 #include "DictValue.h"
+#include "../exception/IndexErrorException.h"
+#include "../exception/KeyErrorException.h"
+#include "../exception/LookupErorException.h"
+#include "../exception/TypeErrorException.h"
+#include "../exception/UnicodeDecodeErrorException.h"
+#include "../exception/ValueErrorException.h"
 #include "../runtime/ProtocolHelpers.h"
 
 QString BytesValue::repr() const {
@@ -175,9 +181,7 @@ Value BytesValue::getItem(const Value& indexValue) const {
     int index = indexValue.asBigInt("__getitem__").convert_to<int>();
 
     if (data.isEmpty()) {
-        throw std::runtime_error(
-            "IndexError: index out of range"
-        );
+        throw IndexErrorException("index out of range");
     }
 
     if (index < 0) {
@@ -185,9 +189,7 @@ Value BytesValue::getItem(const Value& indexValue) const {
     }
 
     if (index < 0 || index >= data.size()) {
-        throw std::runtime_error(
-            "IndexError: index out of range"
-        );
+        throw IndexErrorException("index out of range");
     }
 
     return Value(
@@ -204,9 +206,7 @@ std::size_t BytesValue::len() const {
 Value BytesValue::add(const Value& other) const {
 
     if (!other.isBytes()) {
-        throw std::runtime_error(
-            "TypeError: can't concat bytes to non-bytes"
-        );
+        throw TypeErrorException("can't concat bytes to non-bytes");
     }
 
     QByteArray result = data;
@@ -222,9 +222,7 @@ Value BytesValue::add(const Value& other) const {
 Value BytesValue::multiply(const Value &other) const {
 
     if (!other.isNumeric() || other.isBigFloat()) {
-        throw std::runtime_error(
-            "TypeError: can't multiply sequence by non-int"
-        );
+        throw TypeErrorException("can't multiply sequence by non-int");
     }
 
     const Value::BigInt count = other.toBigInt();
@@ -234,7 +232,7 @@ Value BytesValue::multiply(const Value &other) const {
     }
 
     if (count > std::numeric_limits<qsizetype>::max()) {
-        throw std::runtime_error("String repetition too large");
+        throw ValueErrorException("String repetition too large");
     }
 
     QByteArray result;
@@ -267,9 +265,8 @@ bool BytesValue::notEqual(const Value& other) const {
 bool BytesValue::less(const Value& other) const {
 
     if (!other.isBytes()) {
-        throw std::runtime_error(
-            "TypeError: '<' not supported between instances of 'bytes' and '" +
-            other.toString().toStdString() + "'"
+        throw TypeErrorException(
+            "'<' not supported between instances of 'bytes' and '" + other.toString() + "'"
         );
     }
 
@@ -279,9 +276,7 @@ bool BytesValue::less(const Value& other) const {
 bool BytesValue::lessOrEqual(const Value& other) const {
 
     if (!other.isBytes()) {
-        throw std::runtime_error(
-            "TypeError: bytes can only be compared with bytes"
-        );
+        throw TypeErrorException("bytes can only be compared with bytes");
     }
 
     return data <= other.asBytes("__le__")->bytes();
@@ -290,9 +285,7 @@ bool BytesValue::lessOrEqual(const Value& other) const {
 bool BytesValue::greater(const Value& other) const {
 
     if (!other.isBytes()) {
-        throw std::runtime_error(
-            "TypeError: bytes can only be compared with bytes"
-        );
+        throw TypeErrorException("bytes can only be compared with bytes");
     }
 
     return data > other.asBytes("__gt__")->bytes();
@@ -301,39 +294,34 @@ bool BytesValue::greater(const Value& other) const {
 bool BytesValue::greaterOrEqual(const Value& other) const {
 
     if (!other.isBytes()) {
-        throw std::runtime_error(
-            "TypeError: bytes can only be compared with bytes"
-        );
+        throw TypeErrorException("bytes can only be compared with bytes");
     }
 
     return data >= other.asBytes("__ge__")->bytes();
 }
 
-bool BytesValue::contains(const Value& other) const {
+bool BytesValue::contains(const Value& value) const {
 
-    if (other.isNumeric()) {
+    if (value.isNumeric()) {
 
-        const auto byte = other.toBigInt();
+        const auto byte = value.toBigInt();
 
         if (byte < 0 || byte > 255) {
-            throw std::runtime_error(
-                "ValueError: byte must be in range(0, 256)"
+            throw ValueErrorException("byte must be in range(0, 256)"
             );
         }
 
         return data.contains(static_cast<unsigned char>(byte));
     }
 
-    if (other.isBytes()) {
+    if (value.isBytes()) {
 
         return data.contains(
-            other.asBytes()->bytes()
+            value.asBytes()->bytes()
         );
     }
 
-    throw std::runtime_error(
-        "TypeError: a bytes-like object is required"
-    );
+    throw TypeErrorException("a bytes-like object is required");
 }
 
 Value BytesValue::find(
@@ -342,7 +330,7 @@ Value BytesValue::find(
     const std::optional<Value>& end) const {
 
     if (!sub.isBytes()) {
-        throw std::runtime_error("find() argument must be bytes");
+        throw TypeErrorException("find() argument must be bytes");
     }
 
     auto [startIdx, endIdx] = getSliceBounds(data, start, end);
@@ -366,9 +354,7 @@ Value BytesValue::rfind(
     const std::optional<Value>& end) const {
 
     if (!sub.isBytes()) {
-        throw std::runtime_error(
-            "rfind() argument must be bytes"
-        );
+        throw TypeErrorException("rfind() argument must be bytes");
     }
 
     int startIdx = 0;
@@ -422,7 +408,7 @@ Value BytesValue::index(
     Value result = find(sub, start, end);
 
     if (result.toBigInt() == Value::BigInt(-1)) {
-        throw std::runtime_error("ValueError: subsection not found");
+        throw ValueErrorException("subsection not found");
     }
 
     return result;
@@ -437,9 +423,7 @@ Value BytesValue::rindex(
 
     if (result.toBigInt() == Value::BigInt(-1)) {
 
-        throw std::runtime_error(
-            "ValueError: subsection not found"
-        );
+        throw ValueErrorException("subsection not found");
     }
 
     return result;
@@ -451,7 +435,7 @@ Value BytesValue::count(
     const std::optional<Value>& end) const {
 
     if (!sub.isBytes()) {
-        throw std::runtime_error("count() argument must be bytes");
+        throw TypeErrorException("count() argument must be bytes");
     }
 
     auto [startIdx, endIdx] = getSliceBounds(data, start, end);
@@ -493,9 +477,7 @@ Value BytesValue::startsWith(
     const std::optional<Value>& end) const {
 
     if (!prefix.isBytes()) {
-        throw std::runtime_error(
-            "startswith first arg must be bytes"
-        );
+        throw TypeErrorException("startswith first arg must be bytes");
     }
 
     auto [startIdx, endIdx] = getSliceBounds(data, start, end);
@@ -578,15 +560,13 @@ Value BytesValue::split(
     }
 
     if (!sep->isBytes()) {
-        throw std::runtime_error(
-            "split() separator must be bytes"
-        );
+        throw TypeErrorException("split() separator must be bytes");
     }
 
     const QByteArray delimiter = sep->asBytes()->bytes();
 
     if (delimiter.isEmpty()) {
-        throw std::runtime_error("ValueError: empty separator");
+        throw ValueErrorException("empty separator");
     }
 
     qsizetype start = 0;
@@ -719,9 +699,7 @@ Value BytesValue::rsplit(const std::optional<Value> &sep, const Value::BigInt &m
     const QByteArray delimiter = sep->asBytes("rsplit")->bytes();
 
     if (delimiter.isEmpty()) {
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     std::vector<QByteArray> parts;
@@ -729,10 +707,7 @@ Value BytesValue::rsplit(const std::optional<Value> &sep, const Value::BigInt &m
     qsizetype end = data.size();
     Value::BigInt splits = 0;
 
-    while (
-        maxsplit < 0 ||
-        splits < maxsplit
-    ) {
+    while (maxsplit < 0 || splits < maxsplit) {
 
         const qsizetype searchFrom = end - delimiter.size();
 
@@ -787,9 +762,7 @@ Value BytesValue::rsplit(const std::optional<Value> &sep, const Value::BigInt &m
 Value BytesValue::join(const Value& iterable) const {
 
     if (!iterable.isIterable()) {
-        throw std::runtime_error(
-            "TypeError: can only join an iterable"
-        );
+        throw TypeErrorException("can only join an iterable");
     }
 
     QByteArray result;
@@ -803,9 +776,7 @@ Value BytesValue::join(const Value& iterable) const {
         const Value item = iter->next();
 
         if (!item.isBytes()) {
-            throw std::runtime_error(
-                "TypeError: sequence item is not bytes"
-            );
+            throw TypeErrorException("sequence item is not bytes");
         }
 
         if (!first) {
@@ -830,15 +801,11 @@ Value BytesValue::replace(
     const Value::BigInt& count) const {
 
     if (!oldValue.isBytes()) {
-        throw std::runtime_error(
-            "replace() argument 1 must be bytes"
-        );
+        throw TypeErrorException("replace() argument 1 must be bytes");
     }
 
     if (!newValue.isBytes()) {
-        throw std::runtime_error(
-            "replace() argument 2 must be bytes"
-        );
+        throw TypeErrorException("replace() argument 2 must be bytes");
     }
 
     const QByteArray oldBytes = oldValue.asBytes()->bytes();
@@ -1230,18 +1197,12 @@ Value BytesValue::lstrip(const std::optional<Value>& chars) const {
     else {
 
         if (!chars->isBytes()) {
-            throw std::runtime_error(
-                "lstrip arg must be bytes"
-            );
+            throw TypeErrorException("lstrip arg must be bytes");
         }
 
-        const QByteArray stripChars =
-            chars->asBytes()->bytes();
+        const QByteArray stripChars = chars->asBytes()->bytes();
 
-        while (
-            pos < data.size() &&
-            stripChars.contains(data[pos])
-        ) {
+        while (pos < data.size() && stripChars.contains(data[pos])) {
             ++pos;
         }
     }
@@ -1272,18 +1233,12 @@ Value BytesValue::rstrip(const std::optional<Value>& chars) const {
     else {
 
         if (!chars->isBytes()) {
-            throw std::runtime_error(
-                "rstrip arg must be bytes"
-            );
+            throw TypeErrorException("rstrip arg must be bytes");
         }
 
-        const QByteArray stripChars =
-            chars->asBytes()->bytes();
+        const QByteArray stripChars = chars->asBytes()->bytes();
 
-        while (
-            end > 0 &&
-            stripChars.contains(data[end - 1])
-        ) {
+        while (end > 0 && stripChars.contains(data[end - 1])) {
             --end;
         }
     }
@@ -1313,22 +1268,17 @@ Value BytesValue::center(
     if (fillchar.has_value()) {
 
         if (!fillchar->isBytes()) {
-            throw std::runtime_error(
-                "center() argument 2 must be bytes"
-            );
+            throw TypeErrorException("center() argument 2 must be bytes");
         }
 
         fill = fillchar->asBytes()->bytes();
 
         if (fill.size() != 1) {
-            throw std::runtime_error(
-                "TypeError: center() argument 2 must be a byte string of length 1"
-            );
+            throw TypeErrorException("center() argument 2 must be a byte string of length 1");
         }
     }
 
-    const qsizetype targetWidth =
-        static_cast<qsizetype>(width);
+    const qsizetype targetWidth = static_cast<qsizetype>(width);
 
     if (targetWidth <= data.size()) {
 
@@ -1337,14 +1287,11 @@ Value BytesValue::center(
         );
     }
 
-    const qsizetype padding =
-        targetWidth - data.size();
+    const qsizetype padding = targetWidth - data.size();
 
-    const qsizetype left =
-        padding / 2;
+    const qsizetype left = padding / 2;
 
-    const qsizetype right =
-        padding - left;
+    const qsizetype right = padding - left;
 
     QByteArray result;
 
@@ -1370,22 +1317,19 @@ Value BytesValue::ljust(
     if (fillchar.has_value()) {
 
         if (!fillchar->isBytes()) {
-            throw std::runtime_error(
-                "ljust() argument 2 must be bytes"
-            );
+            throw TypeErrorException("ljust() argument 2 must be bytes");
         }
 
         fill = fillchar->asBytes()->bytes();
 
         if (fill.size() != 1) {
-            throw std::runtime_error(
-                "TypeError: ljust() argument 2 must be a byte string of length 1"
+            throw TypeErrorException(
+                "ljust() argument 2 must be a byte string of length 1"
             );
         }
     }
 
-    const qsizetype targetWidth =
-        static_cast<qsizetype>(width);
+    const qsizetype targetWidth = static_cast<qsizetype>(width);
 
     if (targetWidth <= data.size()) {
 
@@ -1396,10 +1340,7 @@ Value BytesValue::ljust(
 
     QByteArray result = data;
 
-    result.append(
-        targetWidth - data.size(),
-        fill[0]
-    );
+    result.append(targetWidth - data.size(), fill[0]);
 
     return Value(
         std::make_shared<BytesValue>(
@@ -1417,15 +1358,13 @@ Value BytesValue::rjust(
     if (fillchar.has_value()) {
 
         if (!fillchar->isBytes()) {
-            throw std::runtime_error(
-                "rjust() argument 2 must be bytes"
-            );
+            throw TypeErrorException("rjust() argument 2 must be bytes");
         }
 
         fill = fillchar->asBytes()->bytes();
 
         if (fill.size() != 1) {
-            throw std::runtime_error(
+            throw TypeErrorException(
                 "TypeError: rjust() argument 2 must be a byte string of length 1"
             );
         }
@@ -1497,9 +1436,7 @@ Value BytesValue::zfill(const Value::BigInt& width) const {
 Value BytesValue::removeprefix(const Value& prefix) const {
 
     if (!prefix.isBytes()) {
-        throw std::runtime_error(
-            "removeprefix() argument must be bytes"
-        );
+        throw TypeErrorException("removeprefix() argument must be bytes");
     }
 
     const QByteArray& needle = prefix.asBytes()->bytes();
@@ -1528,14 +1465,11 @@ Value BytesValue::removeprefix(const Value& prefix) const {
 Value BytesValue::removeSuffix(const Value& suffix) const {
 
     if (!suffix.isBytes()) {
-        throw std::runtime_error(
-            "removesuffix() argument must be bytes"
-        );
+        throw TypeErrorException("removesuffix() argument must be bytes");
     }
 
-    const QByteArray& suffixBytes = suffix.asBytes()->bytes();
-
-    if (!suffixBytes.isEmpty() && data.endsWith(suffixBytes)) {
+    if (const QByteArray& suffixBytes = suffix.asBytes()->bytes();
+        !suffixBytes.isEmpty() && data.endsWith(suffixBytes)) {
 
         return Value(
             std::make_shared<BytesValue>(
@@ -1553,18 +1487,13 @@ Value BytesValue::removeSuffix(const Value& suffix) const {
 Value BytesValue::partition(const Value& sep) const {
 
     if (!sep.isBytes()) {
-        throw std::runtime_error(
-            "partition() argument must be bytes"
-        );
+        throw TypeErrorException("partition() argument must be bytes");
     }
 
-    const QByteArray& separator =
-        sep.asBytes()->bytes();
+    const QByteArray& separator = sep.asBytes()->bytes();
 
     if (separator.isEmpty()) {
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     const int pos = data.indexOf(separator);
@@ -1616,17 +1545,13 @@ Value BytesValue::partition(const Value& sep) const {
 Value BytesValue::rpartition(const Value& sep) const {
 
     if (!sep.isBytes()) {
-        throw std::runtime_error(
-            "rpartition() argument must be bytes"
-        );
+        throw TypeErrorException("rpartition() argument must be bytes");
     }
 
     const QByteArray& separator = sep.asBytes()->bytes();
 
     if (separator.isEmpty()) {
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     const int pos = data.lastIndexOf(separator);
@@ -1818,9 +1743,7 @@ Value BytesValue::fromHex(const QString& text) {
 
     if (cleaned.size() % 2 != 0) {
 
-        throw std::runtime_error(
-            "ValueError: non-hexadecimal number found in fromhex() arg"
-        );
+        throw ValueErrorException("non-hexadecimal number found in fromhex() arg");
     }
 
     QByteArray result;
@@ -1837,9 +1760,7 @@ Value BytesValue::fromHex(const QString& text) {
 
         if (!ok) {
 
-            throw std::runtime_error(
-                "ValueError: non-hexadecimal number found in fromhex() arg"
-            );
+            throw ValueErrorException("non-hexadecimal number found in fromhex() arg");
         }
 
         result.append(static_cast<char>(value));
@@ -1865,13 +1786,10 @@ Value BytesValue::decode(
 
         if (errors == "strict") {
 
-            const QByteArray encoded = result.toUtf8();
+            if (const QByteArray encoded = result.toUtf8();
+                encoded != data) {
 
-            if (encoded != data) {
-
-                throw std::runtime_error(
-                    "UnicodeDecodeError: invalid utf-8 sequence"
-                );
+                throw UnicodeDecodeErrorException("invalid utf-8 sequence");
             }
         }
 
@@ -1885,9 +1803,7 @@ Value BytesValue::decode(
                     continue;
                 }
 
-                throw std::runtime_error(
-                    "UnicodeDecodeError: ordinal not in range(128)"
-                );
+                throw UnicodeDecodeErrorException("ordinal not in range(128)");
             }
 
             result += QChar(ch);
@@ -1896,16 +1812,14 @@ Value BytesValue::decode(
     } else if (encoding == "latin-1" ||
                encoding == "latin1") {
 
-        for (unsigned char ch : data) {
+        for (const unsigned char ch : data) {
             result += QChar(ch);
         }
 
     } else {
 
-        throw std::runtime_error(
-            QString(
-                "LookupError: unknown encoding '%1'"
-            ).arg(encoding).toStdString()
+        throw LookupErrorException(
+            QString("unknown encoding '%1'").arg(encoding)
         );
     }
 
@@ -1916,19 +1830,11 @@ Value BytesValue::decode(
 
 Value BytesValue::maketrans(const std::vector<Value>& args) {
 
-    if (args.size() != 2) {
-        throw std::runtime_error(
-            "maketrans expected 2 arguments"
-        );
-    }
+    expectArgs(args, 2, "maketrans");
 
-    if (
-        !args[0].isBytes() ||
-        !args[1].isBytes()
-    ) {
-        throw std::runtime_error(
-            "maketrans arguments must be bytes"
-        );
+    if (!args[0].isBytes() || !args[1].isBytes()) {
+
+        throw TypeErrorException("maketrans arguments must be bytes");
     }
 
     const QByteArray from = args[0].asBytes()->bytes();
@@ -1936,9 +1842,8 @@ Value BytesValue::maketrans(const std::vector<Value>& args) {
     const QByteArray to = args[1].asBytes()->bytes();
 
     if (from.size() != to.size()) {
-        throw std::runtime_error(
-            "ValueError: maketrans arguments must have equal length"
-        );
+
+        throw ValueErrorException("maketrans arguments must have equal length");
     }
 
     QByteArray table(256, '\0');
@@ -1965,17 +1870,13 @@ Value BytesValue::translate(
     const std::optional<Value>& deleteBytes) const {
 
     if (!table.isBytes()) {
-        throw std::runtime_error(
-            "translate table must be bytes"
-        );
+        throw TypeErrorException("translate table must be bytes");
     }
 
     const QByteArray mapping = table.asBytes()->bytes();
 
     if (mapping.size() != 256) {
-        throw std::runtime_error(
-            "translation table must be 256 characters long"
-        );
+        throw ValueErrorException("translation table must be 256 characters long");
     }
 
     QByteArray deleteSet;
@@ -1983,9 +1884,7 @@ Value BytesValue::translate(
     if (deleteBytes.has_value()) {
 
         if (!deleteBytes->isBytes()) {
-            throw std::runtime_error(
-                "delete argument must be bytes"
-            );
+            throw TypeErrorException("delete argument must be bytes");
         }
 
         deleteSet = deleteBytes->asBytes()->bytes();
@@ -1996,11 +1895,9 @@ Value BytesValue::translate(
 
     for (const unsigned char byte : data) {
 
-        if (deleteSet.contains(
-                static_cast<char>(byte)
-            )) {
+        if (deleteSet.contains(static_cast<char>(byte))) {
             continue;
-            }
+        }
 
         result.append(mapping[byte]);
     }
@@ -2131,9 +2028,7 @@ static BytesFormatSpec parseBytesFormat(
 
     if (pos >= format.size()) {
 
-        throw std::runtime_error(
-            "incomplete format"
-        );
+        throw ValueErrorException("incomplete format");
     }
 
     spec.type = format[pos];
@@ -2326,9 +2221,9 @@ static QByteArray bigIntToBase(
     if (number == 0)
         return "0";
 
-    const char* digitsLower = "0123456789abcdef";
+    const auto digitsLower = "0123456789abcdef";
 
-    const char* digitsUpper = "0123456789ABCDEF";
+    const auto digitsUpper = "0123456789ABCDEF";
 
     const char* digits = upper
         ? digitsUpper
@@ -2377,9 +2272,7 @@ static QByteArray formatBytesArgument(
 
             } else {
 
-                throw std::runtime_error(
-                    "%s/%b requires bytes-like object"
-                );
+                throw TypeErrorException("%s/%b requires bytes-like object");
             }
             break;
 
@@ -2446,9 +2339,7 @@ static QByteArray formatBytesArgument(
 
             if (code < 0 || code > 255) {
 
-                throw std::runtime_error(
-                    "%c arg not in range(256)"
-                );
+                throw ValueErrorException("byte must be in range(0, 256)");
             }
 
             result = QByteArray(
@@ -2677,13 +2568,11 @@ static QByteArray formatBytesArgument(
 
             oss << number;
 
-            result =
-                QByteArray::fromStdString(
-                    oss.str()
-                );
+            result = QByteArray::fromStdString(
+                oss.str()
+            );
 
-            result =
-                stripTrailingZeros(result);
+            result = stripTrailingZeros(result);
 
             if (specifier.type == 'G') {
                 result.replace('e', 'E');
@@ -2700,10 +2589,9 @@ static QByteArray formatBytesArgument(
             break;
         }
 
-        default: throw std::runtime_error(
+        default: throw ValueErrorException(
         QString("unsupported format character '%1'")
-            .arg(specifier.type)
-            .toStdString());
+            .arg(specifier.type));
     }
 
     result = applyPrecision(result, specifier);
@@ -2744,7 +2632,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
         if (i + 1 >= data.size()) {
 
-            throw std::runtime_error("incomplete format");
+            throw ValueErrorException("incomplete format");
         }
 
         ++i;
@@ -2766,7 +2654,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
             if (i >= data.size() || data[i] != ')') {
 
-                throw std::runtime_error("incomplete format key");
+                throw ValueErrorException("incomplete format key");
             }
 
             ++i;
@@ -2789,9 +2677,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
             if (argIndex >= arguments.size()) {
 
-                throw std::runtime_error(
-                    "not enough arguments for format string"
-                );
+                throw TypeErrorException("not enough arguments for format string");
             }
 
             effectiveSpec.width =
@@ -2810,9 +2696,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
             if (argIndex >= arguments.size()) {
 
-                throw std::runtime_error(
-                    "not enough arguments for format string"
-                );
+                throw TypeErrorException("not enough arguments for format string");
             }
 
             effectiveSpec.precision =
@@ -2833,9 +2717,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
             if (!rhs.isDict()) {
 
-                throw std::runtime_error(
-                    "format requires a mapping"
-                );
+                throw TypeErrorException("format requires a mapping");
             }
 
             auto dict = rhs.asDict();
@@ -2852,9 +2734,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
             if (it == elements.end()) {
 
-                throw std::runtime_error(
-                    "missing key in mapping"
-                );
+                throw KeyErrorException("missing key in mapping");
             }
 
             currentArg = it.value();
@@ -2863,9 +2743,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
             if (argIndex >= arguments.size()) {
 
-                throw std::runtime_error(
-                    "not enough arguments for format string"
-                );
+                throw TypeErrorException("not enough arguments for format string");
             }
 
             currentArg = arguments[argIndex++];
@@ -2879,9 +2757,7 @@ Value BytesValue::mod(const Value& rhs) const {
 
     if (argIndex != arguments.size()) {
 
-        throw std::runtime_error(
-            "not all arguments converted during bytes formatting"
-        );
+        throw TypeErrorException("not all arguments converted during bytes formatting");
     }
 
     return Value(

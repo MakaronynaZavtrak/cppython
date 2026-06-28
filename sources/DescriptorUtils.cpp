@@ -12,6 +12,7 @@
 #include "FunctionValue.h"
 #include "PropertyValue.h"
 #include "StaticMethodValue.h"
+#include "../exception/AttributeErrorException.h"
 
 bool DescriptorUtils::hasGet(const Value& descriptor) {
 
@@ -113,9 +114,7 @@ void DescriptorUtils::callSet(const Value& descriptor,
             std::get<Value::PropertyPtr>(descriptor.data);
 
         if (!prop->fset) {
-            throw std::runtime_error(
-                "AttributeError: can't set attribute"
-            );
+            throw AttributeErrorException("can't set attribute");
         }
 
         const auto bound =

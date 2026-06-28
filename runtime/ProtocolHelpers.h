@@ -9,6 +9,7 @@
 #include "RuntimeUtils.h"
 #include "ArgValidation.h"
 #include "SliceValue.h"
+#include "../exception/ValueErrorException.h"
 
 inline Value makeIterMethodBuiltin(const Value& obj) {
     return makeIterMethod(obj);
@@ -52,9 +53,7 @@ inline NormalizedSlice normalizeSlice(
         step = slice.step->toBigInt().convert_to<long long>();
 
         if (step == 0) {
-            throw std::runtime_error(
-                "ValueError: slice step cannot be zero"
-            );
+            throw ValueErrorException("slice step cannot be zero");
         }
     }
 

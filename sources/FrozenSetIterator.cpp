@@ -4,7 +4,7 @@
 #include "FrozenSetIterator.h"
 
 #include "FrozenSetValue.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 
 Value FrozenSetIterator::next() {
 

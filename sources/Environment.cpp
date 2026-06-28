@@ -1,5 +1,8 @@
 #include "Environment.h"
 
+#include "../exception/NameErrorException.h"
+#include "../exception/SyntaxErrorException.h"
+
 /**
  * Устанавливает переменную в окружении с указанным именем и значением.
  * Если переменная уже существует, её значение будет обновлено.
@@ -26,7 +29,7 @@ void Environment::set(const QString& name, const Value& value) {
             }
             env = env->parent;
         }
-        throw std::runtime_error("No binding for nonlocal " + name.toStdString());
+        throw SyntaxErrorException("No binding for nonlocal " + name);
     }
 
     variables[name] = value;
@@ -48,5 +51,5 @@ Value& Environment::get(const QString& name) {
     if (parent)
         return parent->get(name);
 
-    throw std::runtime_error("Undefined variable: " + name.toStdString());
+    throw NameErrorException("Undefined variable: " + name);
 }

@@ -13,6 +13,12 @@
 
 #include <unordered_set>
 
+#include "../exception/AttributeErrorException.h"
+#include "../exception/LookupErorException.h"
+#include "../exception/TypeErrorException.h"
+#include "../exception/ValueErrorException.h"
+#include "../runtime/ArgValidation.h"
+
 //
 // Created by semyo on 03.05.2026.
 //
@@ -21,9 +27,9 @@ Value call(const Value& callee,
            const Kwargs& kwargs,
            const std::shared_ptr<Environment>& env) {
 
-    if (std::holds_alternative<Value::BuiltinFunctionPtr>(callee.data)) {
-        const auto fn = std::get<Value::BuiltinFunctionPtr>(callee.data);
-        return fn->func(args, kwargs, env);
+    if (callee.isBuiltinFunction()) {
+
+        return callee.asBuiltinFunction()->func(args, kwargs, env);
     }
 
     if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data)) {
@@ -46,7 +52,7 @@ Value call(const Value& callee,
         return call(Value((*cm)->func), args, kwargs, env);
     }
 
-    throw std::runtime_error("Object is not callable");
+    throw TypeErrorException("Object is not callable");
 }
 
 Value callFunction(const Value::FunctionPtr& func,
@@ -70,7 +76,7 @@ Value callFunction(const Value::FunctionPtr& func,
     for (size_t i = 0; i < args.size(); ++i) {
 
         if (i >= func->params.size()) {
-            throw std::runtime_error("Too many positional arguments");
+            throw ValueErrorException("Too many positional arguments");
         }
 
         const QString& paramName = func->params[i].name;
@@ -89,9 +95,7 @@ Value callFunction(const Value::FunctionPtr& func,
             if (param.name == name) {
 
                 if (assigned.count(name)) {
-                    throw std::runtime_error(
-                    "Multiple values for argument: "+ name.toStdString()
-                    );
+                    throw ValueErrorException("multiple values for argument " + name);
                 }
 
                 local->set(name, value);
@@ -104,7 +108,7 @@ Value callFunction(const Value::FunctionPtr& func,
         }
 
         if (!found) {
-            throw std::runtime_error("Unknown keyword argument: " + name.toStdString());
+            throw ValueErrorException("Unknown keyword argument: " + name);
         }
     }
 
@@ -112,7 +116,7 @@ Value callFunction(const Value::FunctionPtr& func,
     for (const auto& param : func->params) {
 
         if (!assigned.count(param.name)) {
-            throw std::runtime_error("Missing argument: " + param.name.toStdString());
+            throw TypeErrorException("Missing argument: " + param.name);
         }
     }
 
@@ -151,14 +155,10 @@ Value constructClass(const Value::ClassPtr& cls,
 
     if (cls == Runtime::strClass) {
 
+        expectArgsRange(args, 0, 1, "str");
+
         if (args.empty()) {
             return Value("");
-        }
-
-        if (args.size() > 1) {
-            throw std::runtime_error(
-                "str() takes at most 1 argument"
-            );
         }
 
         return Value(args[0].toString());
@@ -190,7 +190,7 @@ Value constructClass(const Value::ClassPtr& cls,
         call(init, args, kwargs, env);
     } catch (...) {
         if (!args.empty()) {
-            throw std::runtime_error("Class takes no arguments");
+            throw TypeErrorException("Class takes no arguments");
         }
     }
 
@@ -223,7 +223,7 @@ Value callBoundMethod(const Value::BoundMethodPtr &bm,
         return (*b)->func(newArgs, kwargs, nullptr);
     }
 
-    throw std::runtime_error("Invalid bound method callable");
+    throw TypeErrorException("object is not callable");
 }
 
 QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwargs) {
@@ -246,22 +246,16 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
 
             } else {
 
-                throw std::runtime_error(
-                    "Unknown keyword argument: "
-                    + name.toStdString()
+                throw ValueErrorException(
+                "Unknown keyword argument: " + name
                 );
             }
         }
 
+        expectArgsRange(args, 0, 2, "bytes");
+
         if (args.empty()) {
             return QByteArray();
-        }
-
-        if (args.size() > 2) {
-
-            throw std::runtime_error(
-                "bytes() takes at most 2 arguments"
-            );
         }
 
         const Value& obj = args[0];
@@ -270,9 +264,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
 
             if (encoding.has_value()) {
 
-                throw std::runtime_error(
-                    "TypeError: encoding without a string argument"
-                );
+                throw TypeErrorException("encoding without a string argument");
             }
 
             return obj.asBytes("bytes")->bytes();
@@ -281,9 +273,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
         if (obj.isByteArray()) {
 
             if (encoding.has_value()) {
-                throw std::runtime_error(
-                    "TypeError: encoding without a string argument"
-                );
+                throw TypeErrorException("encoding without a string argument");
             }
 
             return obj.asByteArray("bytes")->bytes();
@@ -297,22 +287,13 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
 
             if (!result.isBytes()) {
 
-                throw std::runtime_error(
-                    "TypeError: __bytes__ returned non-bytes"
-                );
+                throw TypeErrorException("__bytes__ returned non-bytes");
             }
 
             return result.asBytes()->bytes();
 
         }
-        catch (const std::runtime_error& e) {
-
-            const std::string msg = e.what();
-
-            if (msg.find("AttributeError") == std::string::npos) {
-                throw;
-            }
-        }
+        catch (const AttributeErrorException& e) {}
 
         if (obj.isString()) {
 
@@ -328,19 +309,13 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
                 //TODO: if (errors.has_value()) {}
             } else {
 
-                throw std::runtime_error(
-                    "TypeError: string argument without an encoding"
-                );
+                throw TypeErrorException("string argument without an encoding");
             }
 
             // TODO: пока поддерживается только utf-8
-            if (
-                actualEncoding != "utf-8" &&
-                actualEncoding != "utf8") {
+            if (actualEncoding != "utf-8" && actualEncoding != "utf8") {
 
-                throw std::runtime_error(
-                    "LookupError: unknown encoding"
-                );
+                throw LookupErrorException("unknown encoding");
             }
 
             return  obj.toString().toUtf8();
@@ -366,9 +341,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
             Value iterObj = call(iterMethod, {}, {}, nullptr);
 
             if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
-                throw std::runtime_error(
-                    "__iter__ returned non-iterator"
-                );
+                throw TypeErrorException("__iter__ returned non-iterator");
             }
 
             auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
@@ -380,9 +353,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
                 auto value = item.toBigInt();
 
                 if (value < 0 || value > 255) {
-                    throw std::runtime_error(
-                        "bytes must be in range(0, 256)"
-                    );
+                    throw ValueErrorException("bytes must be in range(0, 256)");
                 }
 
                 result.append(
@@ -395,9 +366,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
             return result;
         }
 
-        throw std::runtime_error(
-            "TypeError: cannot convert object to bytes"
-        );
+        throw TypeErrorException("cannot convert object to bytes");
 
 
 }

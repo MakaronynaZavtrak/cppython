@@ -2,7 +2,7 @@
 // Created by semyo on 23.05.2026.
 //
 #include "SetIterator.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 #include "Value.h"
 
 Value SetIterator::next() {

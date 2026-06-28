@@ -7,7 +7,7 @@
 
 #include "CallRuntime.h"
 #include "ClassUtils.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 
 ReversedSequenceIterator::ReversedSequenceIterator(Value object, const qsizetype length)
     : object(std::move(object)), index(length - 1) {}

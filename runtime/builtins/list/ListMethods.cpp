@@ -371,7 +371,7 @@ namespace {
                     return list->pop(args[0]);
                 }
 
-                throw std::runtime_error("pop expects at most 1 arg");
+                throw TypeErrorException("pop expects at most 1 arg");
             }
         );
     }
@@ -560,7 +560,9 @@ namespace {
                     } else if (name == "reverse") {
                         reverse = value.toBool();
                     } else {
-                        throw std::runtime_error("Unknown keyword argument: " + name.toStdString());
+                        throw ValueErrorException(
+                            "Unknown keyword argument: " + name
+                        );
                     }
                 }
 

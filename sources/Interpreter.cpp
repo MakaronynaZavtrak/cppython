@@ -78,7 +78,7 @@ void Interpreter::executeCode(
 
         executeNode(ast, env);
 
-    } catch (const std::runtime_error& e) {
+    } catch (const PythonException& e) {
         std::cout << e.what() << "\n";
     }
 }

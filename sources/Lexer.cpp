@@ -1,5 +1,8 @@
 #include "Lexer.h"
 
+#include "../exception/SyntaxErrorException.h"
+#include "../exception/ValueErrorException.h"
+
 /**
  * Разбивает заданный исходный код на QVector токенов. Этот метод
  * обрабатывает входной код и создаёт коллекцию токенов,
@@ -168,7 +171,7 @@ Token Lexer::readNumber(const QString& code)
     QString num = code.mid(start, pos - start);
 
     if (num.endsWith('e') || num.endsWith('E')) {
-        throw std::runtime_error("Invalid number format");
+        throw SyntaxErrorException("Invalid number format");
     }
 
     return {TOKEN_NUMBER, num, line};
@@ -201,7 +204,7 @@ Token Lexer::readString(const QString& code) {
         if (ch == '\\') {
 
             if (pos >= code.length()) {
-                throw std::runtime_error("Invalid escape sequence");
+                throw SyntaxErrorException("Invalid escape sequence");
             }
 
             QChar next = code[pos++];
@@ -242,7 +245,7 @@ Token Lexer::readString(const QString& code) {
                 case 'x': {
 
                     if (pos + 1 >= code.length()) {
-                        throw std::runtime_error("Invalid hex escape");
+                        throw SyntaxErrorException("Invalid hex escape");
                     }
 
                     QString hex;
@@ -255,7 +258,7 @@ Token Lexer::readString(const QString& code) {
                     const int value = hex.toInt(&ok, 16);
 
                     if (!ok) {
-                        throw std::runtime_error("Invalid hex escape");
+                        throw SyntaxErrorException("Invalid hex escape");
                     }
 
                     result += QChar(value);
@@ -274,7 +277,7 @@ Token Lexer::readString(const QString& code) {
         result += ch;
     }
 
-    throw std::runtime_error("Unterminated string literal");
+    throw SyntaxErrorException("Unterminated string literal");
 }
 
 Token Lexer::readBytes(const QString& code) {

@@ -31,6 +31,8 @@
 
 #include "FrozenSetIterator.h"
 #include "FrozenSetValue.h"
+#include "../exception/ArithmeticErrorException.h"
+#include "../exception/TypeErrorException.h"
 
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
 
@@ -303,7 +305,7 @@ bool Value::toBool() const {
         return std::get<ClassMethodPtr>(data) != nullptr;
     }
 
-    throw std::runtime_error("Unsupported type");
+    throw TypeErrorException("Unsupported type");
 }
 
 /**
@@ -332,7 +334,7 @@ Value::BigFloat Value::toBigFloat() const {
         return std::get<bool>(data) ? BigFloat(1.0) : BigFloat(0.0);
     }
 
-    throw std::runtime_error("Cannot convert to double");
+    throw TypeErrorException("Cannot convert to double");
 }
 
 Value::BigInt Value::toBigInt() const {
@@ -411,7 +413,9 @@ bool Value::operator<(const Value& other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported comparison: " + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported comparison: " +
+        toString() + " " + other.toString());
 }
 
 bool Value::operator!=(const Value &other) const {
@@ -430,8 +434,8 @@ bool Value::operator!=(const Value &other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for !=: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException("unsupported operand type(s) for !=: "
+        + toString() + " " + other.toString());
 }
 
 bool Value::operator<=(const Value &other) const {
@@ -450,8 +454,9 @@ bool Value::operator<=(const Value &other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for <=: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for <=: " + toString() + " " + other.toString()
+    );
 }
 
 bool Value::operator>(const Value &other) const {
@@ -470,8 +475,9 @@ bool Value::operator>(const Value &other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for >: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for >: " + toString() + " " + other.toString()
+    );
 }
 
 bool Value::operator>=(const Value &other) const {
@@ -488,8 +494,9 @@ bool Value::operator>=(const Value &other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for >=: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for >=: " + toString() + " " + other.toString()
+    );
 }
 
 Value Value::operator+(const Value& other) const {
@@ -516,8 +523,9 @@ Value Value::operator+(const Value& other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for +: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for +: " + toString() + " " + other.toString()
+    );
 
 }
 
@@ -545,8 +553,9 @@ Value Value::operator-(const Value &other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for -: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for -: " + toString() + " " + other.toString()
+    );
 }
 
 bool Value::isObject() const {
@@ -595,9 +604,7 @@ Value::ObjectPtr Value::asObject() const {
         return std::static_pointer_cast<ObjectValue>(asFrozenSet());
     }
 
-    throw std::runtime_error(
-        "Value is not an object"
-    );
+    throw TypeErrorException("Value is not an object");
 }
 
 bool Value::isFrozenSet() const {
@@ -607,7 +614,7 @@ bool Value::isFrozenSet() const {
 Value::FrozenSetPtr Value::asFrozenSet(const QString &) const {
 
     if (!isFrozenSet()) {
-        throw std::runtime_error("Value is not a bytes");
+        throw TypeErrorException("Value is not a bytes");
     }
 
     return std::get<FrozenSetPtr>(data);
@@ -639,8 +646,8 @@ Value Value::operator*(const Value &other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for *: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException("unsupported operand type(s) for *: "
+        + toString() + " " + other.toString());
 }
 
 Value Value::operator/(const Value &other) const {
@@ -650,14 +657,15 @@ Value Value::operator/(const Value &other) const {
         const BigFloat r = other.toBigFloat();
 
         if (r == 0) {
-            throw std::runtime_error("ArithmeticError: Division by zero");
+            throw ArithmeticErrorException("Division by zero");
         }
 
         return Value(toBigFloat() / r);
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for /: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for /: " + toString() + " " + other.toString()
+    );
 }
 
 Value Value::operator%(const Value &other) const {
@@ -667,7 +675,7 @@ Value Value::operator%(const Value &other) const {
         const auto rf = other.toBigFloat();
 
         if (rf == 0) {
-            throw std::runtime_error("ArithmeticError: Division by zero");
+            throw ArithmeticErrorException("Division by zero");
         }
 
         if (!isBigFloat() && !other.isBigFloat()) {
@@ -697,8 +705,9 @@ Value Value::operator%(const Value &other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for %: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for %: " + toString() + " " + other.toString()
+    );
 }
 
 Value Value::power(const Value& other) const {
@@ -724,8 +733,9 @@ Value Value::power(const Value& other) const {
         return Value(result);
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for **: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for **: " + toString() + " " + " " + other.toString()
+    );
 }
 
 Value Value::intDivide(const Value& other) const {
@@ -736,7 +746,7 @@ Value Value::intDivide(const Value& other) const {
         const BigFloat rf = other.toBigFloat();
 
         if (rf == 0) {
-            throw std::runtime_error("ArithmeticError: Division by zero");
+            throw ArithmeticErrorException("Division by zero");
         }
 
         const BigFloat result = floor(lf / rf);
@@ -747,8 +757,9 @@ Value Value::intDivide(const Value& other) const {
 
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for //: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for //: " + toString() + " " + other.toString()
+    );
 }
 
 Value& Value::operator+=(const Value &other) {
@@ -901,8 +912,9 @@ bool Value::is(const Value& other) const {
     if (isNone())
         return true;
 
-    throw std::runtime_error("TypeError: is not supported between instances of '"
-        + toString().toStdString() + "' and '" + other.toString().toStdString() + "'");
+    throw TypeErrorException(
+        "is not supported between instances of '" + toString() + "' and '" + other.toString() + "'"
+    );
 }
 
 Value Value::operator+() const {
@@ -915,9 +927,7 @@ Value Value::operator+() const {
         return *this;
     }
 
-    throw std::runtime_error(
-        "TypeError: bad operand type for unary +"
-    );
+    throw TypeErrorException("bad operand type for unary +");
 }
 
 Value Value::operator-() const {
@@ -934,9 +944,7 @@ Value Value::operator-() const {
         return Value(-toBigInt());
     }
 
-    throw std::runtime_error(
-        "TypeError: bad operand type for unary -"
-    );
+    throw TypeErrorException("bad operand type for unary -");
 }
 
 bool Value::contains(const Value &value) const {
@@ -948,8 +956,8 @@ bool Value::contains(const Value &value) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: argument of type '" +
-       toString().toStdString() + "' is not iterable"
+    throw TypeErrorException(
+        "argument of type '" + toString() + "' is not iterable"
     );
 }
 
@@ -970,8 +978,9 @@ Value Value::operator|(const Value& other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for |: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for |: " + toString() + " " + other.toString()
+    );
 }
 
 Value Value::operator&(const Value& other) const {
@@ -991,8 +1000,9 @@ Value Value::operator&(const Value& other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for &: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for &: "
+        + toString() + " " + other.toString());
 }
 
 Value Value::operator^(const Value& other) const {
@@ -1012,8 +1022,9 @@ Value Value::operator^(const Value& other) const {
         catch (...) {}
     }
 
-    throw std::runtime_error("TypeError: unsupported operand type(s) for &: "
-        + toString().toStdString() + " " + " " + other.toString().toStdString());
+    throw TypeErrorException(
+        "unsupported operand type(s) for &: " + toString() + " " + other.toString()
+    );
 }
 
 Value& Value::operator|=(const Value& other) {
@@ -1123,10 +1134,7 @@ bool Value::isBigInt() const {
 Value::BigInt Value::asBigInt(const QString& where) const {
 
     if (!isBigInt()) {
-        throw std::runtime_error(
-        (where + " argument must be int")
-           .toStdString()
-       );
+        throw TypeErrorException(where + " argument must be int");
     }
 
     return std::get<BigInt>(data);
@@ -1139,7 +1147,7 @@ bool Value::isBigFloat() const {
 Value::BigFloat Value::asBigFloat(const QString &) const {
 
     if (!isBigFloat()) {
-        throw std::runtime_error("Value is not a float");
+        throw TypeErrorException("Value is not a float");
     }
 
     return std::get<BigFloat>(data);
@@ -1151,10 +1159,9 @@ bool Value::isList() const {
 
 Value::ListPtr Value::asList(const QString& where) const {
     if (!isList()) {
-        throw std::runtime_error(
-        (where + " argument must be list")
-           .toStdString()
-       );
+        throw TypeErrorException(
+            where + " argument must be list"
+        );
     }
 
     return std::get<ListPtr>(data);
@@ -1167,10 +1174,9 @@ bool Value::isDict() const {
 Value::DictPtr Value::asDict(const QString& where) const {
 
     if (!isDict()) {
-        throw std::runtime_error(
-        (where + " argument must be dict")
-           .toStdString()
-       );
+        throw TypeErrorException(
+            where + " argument must be dict"
+        );
     }
 
     return std::get<DictPtr>(data);
@@ -1183,10 +1189,9 @@ bool Value::isTuple() const {
 Value::TuplePtr Value::asTuple(const QString& where) const {
 
     if (!isTuple()) {
-        throw std::runtime_error(
-        (where + " argument must be tuple")
-           .toStdString()
-       );
+        throw TypeErrorException(
+            where + " argument must be tuple"
+        );
     }
 
     return std::get<TuplePtr>(data);
@@ -1199,10 +1204,8 @@ bool Value::isString() const {
 Value::StrPtr Value::asString(const QString& where) const {
 
     if (!isString()) {
-        throw std::runtime_error(
-        (where + " argument must be str")
-           .toStdString()
-       );
+        throw TypeErrorException(
+            where + " argument must be str");
     }
 
     return std::get<StrPtr>(data);
@@ -1222,7 +1225,7 @@ bool Value::isDictKeysView() const {
 
 Value::DictKeysViewPtr Value::asDictKeysView() const {
     if (!isDictKeysView()) {
-        throw std::runtime_error("Value is not a dict keys view");
+        throw TypeErrorException("Value is not a dict keys view");
     }
 
     return std::get<DictKeysViewPtr>(data);
@@ -1233,8 +1236,9 @@ bool Value::isDictValuesView() const {
 }
 
 Value::DictValuesViewPtr Value::asDictValuesView() const {
+
     if (!isDictValuesView()) {
-        throw std::runtime_error("Value is not a dict values view");
+        throw TypeErrorException("Value is not a dict values view");
     }
 
     return std::get<DictValuesViewPtr>(data);
@@ -1245,8 +1249,9 @@ bool Value::isDictItemsView() const {
 }
 
 Value::DictItemsViewPtr Value::asDictItemsView() const {
+
     if (!isDictItemsView()) {
-        throw std::runtime_error("Value is not a dict items view");
+        throw TypeErrorException("Value is not a dict items view");
     }
 
     return std::get<DictItemsViewPtr>(data);
@@ -1259,7 +1264,7 @@ bool Value::isFunction() const {
 Value::FunctionPtr Value::asFunction() const {
 
     if (!isFunction()) {
-        throw std::runtime_error("Value is not a function");
+        throw TypeErrorException("Value is not a function");
     }
 
     return std::get<FunctionPtr>(data);
@@ -1273,7 +1278,7 @@ bool Value::isClass() const {
 Value::ClassPtr Value::asClass() const {
 
     if (!isClass()) {
-        throw std::runtime_error("Value is not a class");
+        throw TypeErrorException("Value is not a class");
     }
 
     return std::get<ClassPtr>(data);
@@ -1286,7 +1291,7 @@ bool Value::isInstance() const {
 Value::InstancePtr Value::asInstance() const {
 
     if (!isInstance()) {
-        throw std::runtime_error("Value is not an instance");
+        throw TypeErrorException("Value is not an instance");
     }
 
     return std::get<InstancePtr>(data);
@@ -1299,7 +1304,7 @@ bool Value::isBoundMethod() const {
 Value::BoundMethodPtr Value::asBoundMethod() const {
 
     if (!isBoundMethod()) {
-        throw std::runtime_error("Value is not a bound method");
+        throw TypeErrorException("Value is not a bound method");
     }
 
     return std::get<BoundMethodPtr>(data);
@@ -1312,7 +1317,7 @@ bool Value::isSuper() const {
 Value::SuperPtr Value::asSuper() const {
 
     if (!isSuper()) {
-        throw std::runtime_error("Value is not a super");
+        throw TypeErrorException("Value is not a super");
     }
 
     return std::get<SuperPtr>(data);
@@ -1325,7 +1330,7 @@ bool Value::isBuiltinFunction() const {
 Value::BuiltinFunctionPtr Value::asBuiltinFunction() const {
 
     if (!isBuiltinFunction()) {
-        throw std::runtime_error("Value is not a builtin function");
+        throw TypeErrorException("Value is not a builtin function");
     }
 
     return std::get<BuiltinFunctionPtr>(data);
@@ -1338,7 +1343,7 @@ bool Value::isProperty() const {
 Value::PropertyPtr Value::asProperty() const {
 
     if (!isProperty()) {
-        throw std::runtime_error("Value is not a property");
+        throw TypeErrorException("Value is not a property");
     }
 
     return std::get<PropertyPtr>(data);
@@ -1351,7 +1356,7 @@ bool Value::isStaticMethod() const {
 Value::StaticMethodPtr Value::asStaticMethod() const {
 
     if (!isStaticMethod()) {
-        throw std::runtime_error("Value is not a static method");
+        throw TypeErrorException("Value is not a static method");
     }
 
     return std::get<StaticMethodPtr>(data);
@@ -1364,7 +1369,7 @@ bool Value::isClassMethod() const {
 Value::ClassMethodPtr Value::asClassMethod() const {
 
     if (!isClassMethod()) {
-        throw std::runtime_error("Value is not a class method");
+        throw TypeErrorException("Value is not a class method");
     }
 
     return std::get<ClassMethodPtr>(data);
@@ -1377,10 +1382,7 @@ bool Value::isSet() const {
 Value::SetPtr Value::asSet(const QString& where) const {
 
     if (!isSet()) {
-        throw std::runtime_error(
-        (where + " argument must be set")
-           .toStdString()
-       );
+        throw TypeErrorException(where + " argument must be set");
     }
 
     return std::get<SetPtr>(data);
@@ -1425,7 +1427,7 @@ bool Value::isHashable() const {
 std::size_t Value::hash() const {
 
     if (!isHashable()) {
-        throw std::runtime_error("TypeError: unhashable type");
+        throw TypeErrorException("unhashable type");
     }
 
     // numeric
@@ -1467,7 +1469,7 @@ std::size_t Value::hash() const {
         return asFrozenSet()->hash();
     }
 
-    throw std::runtime_error("TypeError: unhashable type");
+    throw TypeErrorException("unhashable type");
 }
 
 bool Value::isIterable() const {
@@ -1567,7 +1569,7 @@ Value::IteratorPtr Value::getIterator() const {
         return std::get<IteratorPtr>(data);
     }
 
-    throw std::runtime_error("Object is not iterable");
+    throw TypeErrorException("Object is not iterable");
 }
 
 bool Value::isBytes() const {
@@ -1577,7 +1579,7 @@ bool Value::isBytes() const {
 Value::BytesPtr Value::asBytes(const QString &) const {
 
     if (!isBytes()) {
-        throw std::runtime_error("Value is not a bytes");
+        throw TypeErrorException("Value is not a bytes");
     }
 
     return std::get<BytesPtr>(data);
@@ -1590,7 +1592,7 @@ bool Value::isSlice() const {
 Value::SlicePtr Value::asSlice() const {
 
     if (!isSlice()) {
-        throw std::runtime_error("Value is not a slice");
+        throw TypeErrorException("Value is not a slice");
     }
 
     return std::get<SlicePtr>(data);
@@ -1603,7 +1605,7 @@ bool Value::isByteArray() const {
 Value::ByteArrayPtr Value::asByteArray(const QString &where) const {
 
     if (!isByteArray()) {
-        throw std::runtime_error(where.toStdString() + "value is not a bytearray");
+        throw TypeErrorException(where + "value is not a bytearray");
     }
 
     return std::get<ByteArrayPtr>(data);
