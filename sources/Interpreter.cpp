@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "Runtime.h"
+#include "../runtime/Runtime.h"
 #include "../runtime/builtins/bytearray/ByteArrayMethods.h"
 #include "../runtime/builtins/bytes/BytesMethods.h"
 #include "../runtime/builtins/str/StrMethods.h"

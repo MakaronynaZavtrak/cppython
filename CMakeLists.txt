@@ -45,8 +45,8 @@ add_executable(cppython main.cpp
         headers/ReprMixin.h
         headers/PropertyValue.h
         sources/PropertyValue.cpp
-        headers/Runtime.h
-        sources/Runtime.cpp
+        runtime/Runtime.h
+        runtime/Runtime.cpp
         headers/StaticMethodValue.h
         headers/ClassMethodValue.h
         sources/StaticMethodValue.cpp
@@ -143,7 +143,9 @@ add_executable(cppython main.cpp
         exception/LookupErorException.h
         exception/NameErrorException.h
         exception/SyntaxErrorException.h
-        exception/OverflowErrorException.h)
+        exception/OverflowErrorException.h
+        runtime/exceptions/ExceptionClasses.h
+        runtime/exceptions/ExceptionClasses.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

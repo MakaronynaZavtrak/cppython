@@ -1,0 +1,8 @@
+//
+// Created by semyo on 28.06.2026.
+//
+
+#ifndef CPPYTHON_EXCEPTIONCLASSES_H
+#define CPPYTHON_EXCEPTIONCLASSES_H
+
+#endif //CPPYTHON_EXCEPTIONCLASSES_H
