@@ -5,10 +5,11 @@
 #ifndef CPPYTHON_KEYERROREXCEPTION_H
 #define CPPYTHON_KEYERROREXCEPTION_H
 #include "PythonException.h"
+#include "../runtime/Runtime.h"
 
 class KeyErrorException : public PythonException {
 public:
     explicit KeyErrorException(const QString& msg)
-        : PythonException("KeyError", msg) {}
+        : PythonException(Runtime::indexErrorClass, msg) {}
 };
 #endif //CPPYTHON_KEYERROREXCEPTION_H

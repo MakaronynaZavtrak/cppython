@@ -144,8 +144,10 @@ add_executable(cppython main.cpp
         exception/NameErrorException.h
         exception/SyntaxErrorException.h
         exception/OverflowErrorException.h
-        runtime/exceptions/ExceptionClasses.h
-        runtime/exceptions/ExceptionClasses.cpp)
+        runtime/classes/RegisterClasses.h
+        runtime/classes/RegisterClasses.cpp
+        runtime/exceptions/RegisterExceptionClasses.h
+        runtime/exceptions/RegisterExceptionClasses.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

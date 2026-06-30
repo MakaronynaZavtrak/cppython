@@ -24,6 +24,6 @@
  */
 class BreakException final : public PythonException {
 public:
-    explicit BreakException() : PythonException("", "") {}
+    explicit BreakException() : PythonException(Runtime::baseExceptionClass, "") {}
 };
 #endif //CPPYTHON_BREAKEXCEPTION_H

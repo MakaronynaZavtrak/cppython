@@ -5,10 +5,11 @@
 #ifndef CPPYTHON_SYNTAXERROREXCEPTION_H
 #define CPPYTHON_SYNTAXERROREXCEPTION_H
 #include "PythonException.h"
+#include "../runtime/Runtime.h"
 
 class SyntaxErrorException : public PythonException {
 public:
     explicit SyntaxErrorException(const QString& msg)
-        : PythonException("SyntaxError", msg) {}
+        : PythonException(Runtime::syntaxErrorClass, msg) {}
 };
 #endif //CPPYTHON_SYNTAXERROREXCEPTION_H

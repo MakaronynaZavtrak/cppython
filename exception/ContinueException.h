@@ -22,6 +22,6 @@
  */
 class ContinueException final : public PythonException {
 public:
-    explicit ContinueException() : PythonException("", "") {}
+    explicit ContinueException() : PythonException(Runtime::baseExceptionClass, "") {}
 };
 #endif //CPPYTHON_CONTINUEEXCEPTION_H

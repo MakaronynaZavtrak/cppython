@@ -5,10 +5,11 @@
 #ifndef CPPYTHON_VALUEERROREXCEPTION_H
 #define CPPYTHON_VALUEERROREXCEPTION_H
 #include "PythonException.h"
+#include "../runtime/Runtime.h"
 
 class ValueErrorException : public PythonException {
 public:
     explicit ValueErrorException(const QString& msg)
-        : PythonException("ValueError", msg) {}
+        : PythonException(Runtime::valueErrorClass, msg) {}
 };
 #endif //CPPYTHON_VALUEERROREXCEPTION_H

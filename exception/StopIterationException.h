@@ -5,10 +5,11 @@
 #ifndef CPPYTHON_STOPITERATIONEXCEPTION_H
 #define CPPYTHON_STOPITERATIONEXCEPTION_H
 #include "PythonException.h"
+#include "../runtime/Runtime.h"
 
 class StopIterationException final : public PythonException {
 public:
     explicit StopIterationException()
-        : PythonException("StopIteration", "") {}
+        : PythonException(Runtime::stopIterationClass, "") {}
 };
 #endif //CPPYTHON_STOPITERATIONEXCEPTION_H

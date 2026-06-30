@@ -5,10 +5,11 @@
 #ifndef CPPYTHON_INDEXERROREXCEPTION_H
 #define CPPYTHON_INDEXERROREXCEPTION_H
 #include "PythonException.h"
+#include "../runtime/Runtime.h"
 
 class IndexErrorException : public PythonException {
 public:
     explicit IndexErrorException(const QString& msg)
-        : PythonException("IndexError", msg) {}
+        : PythonException(Runtime::indexErrorClass, msg) {}
 };
 #endif //CPPYTHON_INDEXERROREXCEPTION_H

@@ -5,25 +5,28 @@
 #ifndef CPPYTHON_PYTHONEXCEPTION_H
 #define CPPYTHON_PYTHONEXCEPTION_H
 #include <exception>
-#include <QString>
+
+#include "Value.h"
 
 class PythonException : public std::exception {
 
 protected:
-    QString typeName;
+    Value::ClassPtr klass;
     QString message;
     std::string cachedWhat;
 
 public:
 
-    explicit PythonException(QString typeName, QString message);
+    PythonException(const Value::ClassPtr& klass, QString message);
 
     [[nodiscard]] const char* what() const noexcept override;
+
+    [[nodiscard]] const Value::ClassPtr& getClass() const;
 
     [[nodiscard]] const QString& getTypeName() const;
 
     [[nodiscard]] const QString& getMessage() const;
 
-    virtual bool isCatchable() const { return true; }
+    [[nodiscard]] virtual bool isCatchable() const { return true; }
 };
 #endif //CPPYTHON_PYTHONEXCEPTION_H

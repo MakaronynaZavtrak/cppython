@@ -10,7 +10,7 @@
 class ReturnException final : public PythonException {
 public:
     explicit ReturnException(Value val)
-    : PythonException("", ""),
+    : PythonException(Runtime::baseExceptionClass, ""),
     value(std::move(val)) {}
 
     [[nodiscard]] Value getValue() const { return value; }

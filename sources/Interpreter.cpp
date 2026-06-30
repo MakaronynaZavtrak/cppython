@@ -10,6 +10,7 @@
 #include "../runtime/builtins/bytearray/ByteArrayMethods.h"
 #include "../runtime/builtins/bytes/BytesMethods.h"
 #include "../runtime/builtins/str/StrMethods.h"
+#include "../runtime/exceptions/RegisterExceptionClasses.h"
 
 
 /**
@@ -100,59 +101,9 @@ void Interpreter::run(int argc, char* argv[]) {
     const auto globalEnv = std::make_shared<Environment>();
     BuiltinFunction::registerBuiltins(globalEnv);
 
-    Runtime::objectClass = std::make_shared<ClassValue>("object");
+    Runtime::initialize(globalEnv);
 
-    Runtime::objectClass->name = "object";
-
-    globalEnv->set("object", Value(Runtime::objectClass));
-
-    Runtime::objectClass->attributes["__getattribute__"] =
-    globalEnv->get("__object_getattribute__");
-
-    Runtime::objectClass->attributes["__setattr__"] =
-    globalEnv->get("__object_setattr__");
-
-
-
-    Runtime::strClass = std::make_shared<ClassValue>("str");
-    Runtime::strClass->name = "str";
-    Runtime::strClass->bases.push_back(Runtime::objectClass);
-
-    auto builtin = std::get<Value::BuiltinFunctionPtr>(makeMakeTransStrClassBuiltin().data);
-
-    Runtime::strClass->attributes["maketrans"] = makeMakeTransStrClassBuiltin();
-
-    globalEnv->set("str", Value(Runtime::strClass));
-
-    Runtime::strClass->attributes["__call__"] = globalEnv->get("__str_call__");
-
-    globalEnv->set("__str_type__", Value(Runtime::strClass));
-
-
-
-    Runtime::bytesClass = std::make_shared<ClassValue>("bytes");
-    Runtime::bytesClass->name = "bytes";
-    Runtime::bytesClass->bases.push_back(Runtime::objectClass);
-
-    Runtime::bytesClass->attributes["fromhex"] = makeFromHexClassBuiltin();
-    Runtime::bytesClass->attributes["maketrans"] = makeMakeTransBytesClassBuiltin();
-    Runtime::bytesClass->attributes["__bytes__"] = make__bytes__ClassBuiltin();
-
-    globalEnv->set("bytes", Value(Runtime::bytesClass));
-    Runtime::bytesClass->attributes["__call__"] = globalEnv->get("__bytes_call__");
-    globalEnv->set("__bytes_type__", Value(Runtime::bytesClass));
-
-
-    Runtime::bytearrayClass = std::make_shared<ClassValue>("bytearray");
-    Runtime::bytearrayClass->name = "bytearray";
-    Runtime::bytearrayClass->bases.push_back(Runtime::objectClass);
-
-    globalEnv->set("bytearray", Value(Runtime::bytearrayClass));
-    Runtime::bytearrayClass->attributes["__call__"] = globalEnv->get("__bytearray_call__");
-    globalEnv->set("__bytearray_type__", Value(Runtime::bytearrayClass));
-    Runtime::bytearrayClass->attributes["__bytes__"] = make_byteArray_ClassBuiltin();
-    Runtime::bytearrayClass->attributes["fromhex"] = makeByteArrayFromHexBuiltin();
-    Runtime::bytearrayClass->attributes["maketrans"] = makeByteArrayMakeTransBuiltin();
+    registerExceptionClasses(globalEnv);
 
     Lexer lexer;
     std::vector<std::string> buffer;
