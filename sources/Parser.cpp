@@ -41,6 +41,8 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::LAMBDA:   return parseLambda();
             case Keyword::FOR:      return parseForStatement();
             case Keyword::DEL:      return parseDelStatement();
+            case Keyword::TRY:      return parseTryStatement();
+            case Keyword::RAISE:    return parseRaiseStatement();
             default:                break;
         }
     }
@@ -1214,6 +1216,96 @@ std::shared_ptr<ASTNode>Parser::parseDelStatement() {
     }
 
     return std::make_shared<DeleteNode>(target);
+}
+
+std::shared_ptr<ASTNode> Parser::parseTryStatement() {
+
+    advance(); // try
+
+    consume(TOKEN_OP, ":");
+
+    auto tryBody = parseBlock();
+
+    std::vector<TryNode::ExceptClause> excepts;
+
+    while (matchAndAdvance(TOKEN_KEYWORD, "except")) {
+
+        QString exceptionName;
+        QString variableName;
+
+        if (!match(TOKEN_OP, ":")) {
+
+            if (peek().type != TOKEN_ID)
+                throw SyntaxErrorException("Expected exception type");
+
+            exceptionName = advance().value;
+
+            if (matchAndAdvance(TOKEN_KEYWORD, "as")) {
+
+                if (peek().type != TOKEN_ID)
+                    throw SyntaxErrorException("Expected identifier after as");
+
+                variableName = advance().value;
+            }
+        }
+
+        consume(TOKEN_OP, ":");
+
+        auto body = parseBlock();
+
+        excepts.push_back({
+            exceptionName,
+            variableName,
+            body
+        });
+    }
+
+    std::vector<std::shared_ptr<ASTNode>> elseBody;
+
+    if (matchAndAdvance(TOKEN_KEYWORD, "else")) {
+
+        consume(TOKEN_OP, ":");
+
+        elseBody = parseBlock();
+    }
+
+    std::vector<std::shared_ptr<ASTNode>> finallyBody;
+
+    if (matchAndAdvance(TOKEN_KEYWORD, "finally")) {
+
+        consume(TOKEN_OP, ":");
+
+        finallyBody = parseBlock();
+    }
+
+    if (excepts.empty() && finallyBody.empty()) {
+        throw SyntaxErrorException(
+            "expected except or finally"
+        );
+    }
+
+    return std::make_shared<TryNode>(
+        tryBody,
+        excepts,
+        elseBody,
+        finallyBody
+    );
+}
+
+std::shared_ptr<ASTNode> Parser::parseRaiseStatement() {
+
+    advance(); // raise
+
+    if (peek().type == TOKEN_NEWLINE ||
+        peek().type == TOKEN_DEDENT ||
+        peek().type == TOKEN_EOF) {
+
+        return std::make_shared<RaiseNode>(nullptr);
+        }
+
+    return std::make_shared<RaiseNode>(
+        parseExpression()
+    );
 }
 
 ParsedCallArgs Parser::parseCallArguments() {

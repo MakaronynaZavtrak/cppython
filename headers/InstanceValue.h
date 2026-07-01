@@ -11,6 +11,9 @@ public:
     std::shared_ptr<ClassValue> klass;
     QMap<QString, Value> fields;
 
+    // Только для объектов исключений.
+    QString exceptionMessage;
+
     explicit InstanceValue(std::shared_ptr<ClassValue> cls)
     : klass(std::move(cls)) {}
 

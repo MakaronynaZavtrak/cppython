@@ -21,6 +21,7 @@
 #include "SetValue.h"
 #include "SliceValue.h"
 #include "StaticMethodValue.h"
+#include "StrValue.h"
 #include "../exception/StopIterationException.h"
 #include "TupleValue.h"
 #include "../exception/AttributeErrorException.h"
@@ -1600,7 +1601,7 @@ class AugAssignNode : public ASTNode {
 
             return call(method, { right }, {}, env);
 
-        } catch (const AttributeErrorException& e) {}
+        } catch ([[maybe_unused]] const AttributeErrorException& e) {}
 
         return fallback();
     }
@@ -1731,6 +1732,237 @@ public:
     }
 
     [[nodiscard]] bool shouldPrint() const override { return false; }
+};
+
+class TryNode : public ASTNode {
+
+public:
+
+    struct ExceptClause {
+        std::shared_ptr<ASTNode> exceptionExpr;
+        QString variableName;    // "" если без as
+        std::vector<std::shared_ptr<ASTNode>> body;
+    };
+
+private:
+
+    std::vector<std::shared_ptr<ASTNode>> tryBody;
+
+    std::vector<ExceptClause> excepts;
+
+    std::vector<std::shared_ptr<ASTNode>> elseBody;
+
+    std::vector<std::shared_ptr<ASTNode>> finallyBody;
+
+public:
+
+    TryNode(
+    std::vector<std::shared_ptr<ASTNode>> tryBody,
+    std::vector<ExceptClause> excepts,
+    std::vector<std::shared_ptr<ASTNode>> elseBody,
+    std::vector<std::shared_ptr<ASTNode>> finallyBody)
+    : tryBody(std::move(tryBody)),
+      excepts(std::move(excepts)),
+      elseBody(std::move(elseBody)),
+      finallyBody(std::move(finallyBody)) {}
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+
+        try {
+
+            bool completedWithoutException = false;
+
+            try {
+
+            for (const auto& stmt : tryBody) {
+                [[maybe_unused]] auto _ = stmt->eval(env);
+            }
+
+            completedWithoutException = true;
+        }
+
+        catch (const PythonException& e) {
+
+            bool handled = false;
+
+            for (const auto& clause : excepts) {
+
+                // except:
+                if (!clause.exceptionExpr) {
+
+                    handled = true;
+
+                } else {
+
+                    Value value = clause.exceptionExpr->eval(env);
+
+                    if (!std::holds_alternative<Value::ClassPtr>(value.data)) {
+                        throw TypeErrorException(
+                            "catching classes that do not inherit from BaseException is not allowed"
+                        );
+                    }
+
+                    if (auto handlerClass = std::get<Value::ClassPtr>(value.data);
+
+                        !PythonException::isSubclass(e.getClass(), handlerClass)) {
+                        continue;
+                    }
+
+                    handled = true;
+                }
+
+                // except ... as var
+                if (!clause.variableName.isEmpty()) {
+
+                    env->set(clause.variableName, Value(e.getInstance()));
+                }
+
+                for (const auto& stmt : clause.body) {
+                    [[maybe_unused]] auto _ = stmt->eval(env);
+                }
+
+                break;
+            }
+
+            if (!handled) {
+                throw;
+            }
+        }
+
+        // else
+        if (completedWithoutException) {
+
+            for (const auto& stmt : elseBody) {
+                [[maybe_unused]] auto _ = stmt->eval(env);
+            }
+        }
+    }
+
+    catch (...) {
+
+        // finally выполняется даже если исключение пробрасывается дальше
+        for (const auto& stmt : finallyBody) {
+            [[maybe_unused]] auto _ = stmt->eval(env);
+        }
+
+        throw;
+    }
+
+    // finally выполняется и при отсутствии исключений
+    for (const auto& stmt : finallyBody) {
+        [[maybe_unused]] auto _ = stmt->eval(env);
+    }
+
+    return Value();
+}
+
+    [[nodiscard]] QString toString() const override {
+
+        QString result = "TryNode(\n";
+
+        result += "try:\n";
+
+        for (const auto& stmt : tryBody)
+            result += "    " + stmt->toString() + "\n";
+
+        for (const auto& clause : excepts) {
+
+            result += "except";
+
+            if (clause.exceptionExpr) {
+                result += " ";
+                result += clause.exceptionExpr->toString();
+            }
+
+            if (!clause.variableName.isEmpty()) {
+                result += " as ";
+                result += clause.variableName;
+            }
+
+            result += ":\n";
+
+            for (const auto& stmt : clause.body)
+                result += "    " + stmt->toString() + "\n";
+        }
+
+        if (!elseBody.empty()) {
+
+            result += "else:\n";
+
+            for (const auto& stmt : elseBody)
+                result += "    " + stmt->toString() + "\n";
+        }
+
+        if (!finallyBody.empty()) {
+
+            result += "finally:\n";
+
+            for (const auto& stmt : finallyBody)
+                result += "    " + stmt->toString() + "\n";
+        }
+
+        result += ")";
+
+        return result;
+    }
+};
+
+class RaiseNode : public ASTNode {
+
+    std::shared_ptr<ASTNode> exceptionExpr;
+
+public:
+
+    explicit RaiseNode(std::shared_ptr<ASTNode> exceptionExpr);
+
+    static void throwExceptionObject(const Value& value) {
+
+        if (!value.isInstance())
+            throw TypeErrorException(
+                "exceptions must derive from BaseException"
+            );
+
+        auto instance = value.asInstance();
+
+        if (!PythonException::isSubclass(instance->klass, Runtime::baseExceptionClass)) {
+            throw TypeErrorException(
+                "exceptions must derive from BaseException"
+            );
+        }
+
+        QString message;
+
+        if (instance->fields.contains("message"))
+            message = instance->fields["message"].asString()->getValue();
+
+        throw PythonException(instance->klass, message);
+    }
+
+    [[nodiscard]] Value eval(const EnvPtr env) const override {
+
+        if (!exceptionExpr) {
+
+            throw RuntimeErrorException(
+                "re-raise is not implemented yet"
+            );
+        }
+
+        const Value value = exceptionExpr->eval(env);
+
+        throwExceptionObject(value);
+
+        return {};
+    }
+
+    [[nodiscard]] QString toString() const override {
+
+        if (!exceptionExpr) {
+            return "RaiseNode()";
+        }
+
+        return QString("RaiseNode(%1)")
+            .arg(exceptionExpr->toString());
+    }
 };
 
 /**
@@ -1943,6 +2175,10 @@ private:
     std::shared_ptr<ASTNode> parseShift();
 
     std::shared_ptr<ASTNode> parseDelStatement();
+
+    std::shared_ptr<ASTNode> parseTryStatement();
+
+    std::shared_ptr<ASTNode> parseRaiseStatement();
 
     QVector<Token> tokens;
     int current = 0;

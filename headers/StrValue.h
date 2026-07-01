@@ -11,6 +11,7 @@
 class Value;
 
 class StrValue : public ObjectValue, public std::enable_shared_from_this<StrValue> {
+
     QString value;
 
 public:
@@ -18,6 +19,8 @@ public:
     explicit StrValue(QString value) : value(std::move(value)) {}
 
     explicit StrValue(const char* value) : value(value) {}
+
+    [[nodiscard]] QString getValue() const { return value; }
 
     [[nodiscard]] QString toString() const override;
 
