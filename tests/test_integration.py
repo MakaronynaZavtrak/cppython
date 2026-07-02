@@ -10765,6 +10765,8 @@ def run_cpython(cmds: str | list[str]) -> str:
       "b=[1]",
       "a is not b"], "True"),
 
+    # try/except/finally
+
     (["try:",
       "    raise ValueError(\"boom\")",
       "except ValueError:",
@@ -10790,6 +10792,63 @@ def run_cpython(cmds: str | list[str]) -> str:
       "except ValueError:",
       "    'ok'",
       "",], "'ok'"),
+
+    # except (A, B)
+    (["try:",
+      "    raise ValueError(\"boom\")",
+      "except (TypeError, ValueError):",
+      "    42",
+      ""], "42"),
+
+    (["try:",
+      "    raise TypeError(\"boom\")",
+      "except (TypeError, ValueError):",
+      "    42",
+      ""], "42"),
+
+    (["try:",
+      "    raise KeyError(\"x\")",
+      "except (TypeError, ValueError):",
+      "    'wrong'",
+      "except KeyError:",
+      "    'right'",
+      ""], "'right'"),
+
+    (["try:",
+      "    raise IndexError(\"x\")",
+      "except (LookupError,):",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    raise IndexError(\"x\")",
+      "except (TypeError, LookupError):",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    raise KeyError(\"x\")",
+      "except (TypeError, ValueError):",
+      "    'first'",
+      "except (LookupError, RuntimeError):",
+      "    'second'",
+      ""], "'second'"),
+
+    (["x = 0",
+      "try:",
+      "    raise ValueError(\"x\")",
+      "except (TypeError, ValueError):",
+      "    x = 1",
+      "finally:",
+      "    x = 2",
+      "",
+      "x"], "2"),
+
+    (["try:",
+      "    raise ArithmeticError(\"x\")",
+      "except (OverflowError, ArithmeticError):",
+      "    'ok'",
+      ""], "'ok'"),
 
 ])
 

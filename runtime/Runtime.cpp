@@ -24,6 +24,7 @@ std::shared_ptr<ClassValue> Runtime::objectClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::strClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::bytesClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::bytearrayClass = nullptr;
+std::vector<Value::InstancePtr> Runtime::exceptionStack;
 std::shared_ptr<ClassValue> Runtime::baseExceptionClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::exceptionClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::arithmeticErrorClass = nullptr;

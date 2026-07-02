@@ -1734,6 +1734,20 @@ public:
     [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
+class ExceptionScopeGuard {
+public:
+    explicit ExceptionScopeGuard(const Value::InstancePtr& instance) {
+        Runtime::exceptionStack.push_back(instance);
+    }
+
+    ~ExceptionScopeGuard() {
+        Runtime::exceptionStack.pop_back();
+    }
+
+    ExceptionScopeGuard(const ExceptionScopeGuard&) = delete;
+    ExceptionScopeGuard& operator=(const ExceptionScopeGuard&) = delete;
+};
+
 class TryNode : public ASTNode {
 
 public:
@@ -1766,7 +1780,45 @@ public:
       elseBody(std::move(elseBody)),
       finallyBody(std::move(finallyBody)) {}
 
+    static bool matchesExceptionHandler(const Value& handlerValue, const Value::ClassPtr& excClass) {
+
+        // except (A, B, C):
+        if (handlerValue.isTuple()) {
+
+            const auto tuple = handlerValue.asTuple();
+
+            for (const auto& item : tuple->items) {
+
+                if (!std::holds_alternative<Value::ClassPtr>(item.data)) {
+                    throw TypeErrorException(
+                        "catching classes that do not inherit from BaseException is not allowed"
+                    );
+                }
+
+                const auto handlerClass = item.asClass();
+
+                if (PythonException::isSubclass(excClass, handlerClass)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // except A:
+        if (!std::holds_alternative<Value::ClassPtr>(handlerValue.data)) {
+            throw TypeErrorException(
+                "catching classes that do not inherit from BaseException is not allowed"
+            );
+        }
+
+        const auto handlerClass = handlerValue.asClass();
+
+        return PythonException::isSubclass(excClass, handlerClass);
+    }
+
     [[nodiscard]] Value eval(const EnvPtr env) const override {
+
         Value result;
 
         try {
@@ -1790,30 +1842,37 @@ public:
                     body]: excepts) {
 
                     if (!exceptionExpr) {
+
                         handled = true;
+
                     } else {
-                        Value value = exceptionExpr->eval(env);
 
-                        if (!std::holds_alternative<Value::ClassPtr>(value.data)) {
-                            throw TypeErrorException(
-                                "catching classes that do not inherit from BaseException is not allowed"
-                            );
-                        }
+                        if (Value value = exceptionExpr->eval(env);
+                            !matchesExceptionHandler(value, e.getClass())) {
 
-                        if (auto handlerClass = value.asClass();
-                            !PythonException::isSubclass(e.getClass(), handlerClass)) {
                             continue;
                         }
 
                         handled = true;
+
+                        // if (auto handlerClass = value.asClass();
+                        //     !PythonException::isSubclass(e.getClass(), handlerClass)) {
+                        //     continue;
+                        // }
+
+                        // handled = true;
                     }
 
                     if (!variableName.isEmpty()) {
                         env->set(variableName, Value(e.getInstance()));
                     }
 
-                    for (const auto &stmt: body) {
-                        result = stmt->eval(env);
+                    {
+                        ExceptionScopeGuard guard(e.getInstance());
+
+                        for (const auto& stmt : body) {
+                            result = stmt->eval(env);
+                        }
                     }
 
                     break;
@@ -1930,9 +1989,15 @@ public:
 
         if (!exceptionExpr) {
 
-            throw RuntimeErrorException(
-                "re-raise is not implemented yet"
-            );
+            if (Runtime::exceptionStack.empty()) {
+                throw RuntimeErrorException(
+                    "No active exception to re-raise"
+                );
+            }
+
+            const auto instance = Runtime::exceptionStack.back();
+
+            throw PythonException(instance);
         }
 
         const Value value = exceptionExpr->eval(env);

@@ -6,6 +6,8 @@
 #define CPPYTHON_RUNTIME_H
 #include <memory>
 
+#include "Value.h"
+
 class Environment;
 class ClassValue;
 
@@ -22,6 +24,8 @@ public:
     static std::shared_ptr<ClassValue> bytesClass;
 
     static std::shared_ptr<ClassValue> bytearrayClass;
+
+    static std::vector<Value::InstancePtr> exceptionStack;
 
     static std::shared_ptr<ClassValue> baseExceptionClass;
 
