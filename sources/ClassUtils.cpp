@@ -179,7 +179,7 @@ Value makeIterMethod(const Value& obj) {
 Value getAttrValue(const Value& obj, const QString& attr) {
 
     // super bypasses __getattribute__
-    if (std::holds_alternative<Value::SuperPtr>(obj.data)) {
+    if (obj.isSuper()) {
         return genericGetAttr(obj, attr);
     }
 
@@ -192,12 +192,11 @@ Value getAttrValue(const Value& obj, const QString& attr) {
 
         bool isDefault = false;
 
-        if (std::holds_alternative<Value::BuiltinFunctionPtr>(getattribute.data)) {
+        if (getattribute.isBuiltinFunction()) {
 
-            const auto builtin =
-                std::get<Value::BuiltinFunctionPtr>(getattribute.data);
+            const auto builtin = getattribute.asBuiltinFunction();
 
-            isDefault = (builtin->name == "__object_getattribute__");
+            isDefault = builtin->name == "__object_getattribute__";
         }
 
         if (!isDefault) {

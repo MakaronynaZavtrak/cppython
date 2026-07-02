@@ -11,29 +11,37 @@
 class PythonException : public std::exception {
 
 protected:
-    Value::ClassPtr klass;
     std::shared_ptr<InstanceValue> instance;
-    QString message;
     std::string cachedWhat;
 
 public:
 
-    PythonException(const Value::ClassPtr& klass, QString message);
+    explicit PythonException(Value::InstancePtr  instance);
+
+    explicit PythonException(
+    const Value::ClassPtr& klass,
+    const QString& message)
+    : PythonException(
+        makeInstance(klass, message)) {}
 
     [[nodiscard]] const char* what() const noexcept override;
 
     [[nodiscard]] const Value::ClassPtr& getClass() const;
 
-    [[nodiscard]] const std::shared_ptr<InstanceValue>& getInstance() const;
+    [[nodiscard]] const Value::InstancePtr& getInstance() const;
 
-    [[nodiscard]] const QString& getTypeName() const;
+    [[nodiscard]] QString getTypeName() const;
 
-    [[nodiscard]] const QString& getMessage() const;
+    [[nodiscard]] QString getMessage() const;
 
     [[nodiscard]] virtual bool isCatchable() const { return true; }
 
     [[nodiscard]] static bool isSubclass(
         const Value::ClassPtr& child,
         const Value::ClassPtr& parent);
+
+    static std::shared_ptr<InstanceValue> makeInstance(
+    const Value::ClassPtr& klass,
+    const QString& message);
 };
 #endif //CPPYTHON_PYTHONEXCEPTION_H

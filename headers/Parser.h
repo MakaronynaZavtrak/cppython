@@ -1767,6 +1767,7 @@ public:
       finallyBody(std::move(finallyBody)) {}
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
+        Value result;
 
         try {
 
@@ -1774,87 +1775,75 @@ public:
 
             try {
 
-            for (const auto& stmt : tryBody) {
+                for (const auto &stmt: tryBody) {
+                    result = stmt->eval(env);
+                }
+
+                completedWithoutException = true;
+
+            } catch (const PythonException &e) {
+
+                bool handled = false;
+
+                for (const auto &[exceptionExpr,
+                    variableName,
+                    body]: excepts) {
+
+                    if (!exceptionExpr) {
+                        handled = true;
+                    } else {
+                        Value value = exceptionExpr->eval(env);
+
+                        if (!std::holds_alternative<Value::ClassPtr>(value.data)) {
+                            throw TypeErrorException(
+                                "catching classes that do not inherit from BaseException is not allowed"
+                            );
+                        }
+
+                        if (auto handlerClass = value.asClass();
+                            !PythonException::isSubclass(e.getClass(), handlerClass)) {
+                            continue;
+                        }
+
+                        handled = true;
+                    }
+
+                    if (!variableName.isEmpty()) {
+                        env->set(variableName, Value(e.getInstance()));
+                    }
+
+                    for (const auto &stmt: body) {
+                        result = stmt->eval(env);
+                    }
+
+                    break;
+                }
+
+                if (!handled) {
+                    throw;
+                }
+            }
+
+            if (completedWithoutException) {
+                for (const auto &stmt: elseBody) {
+                    result = stmt->eval(env);
+                }
+            }
+        } catch (...) {
+
+            for (const auto &stmt: finallyBody) {
                 [[maybe_unused]] auto _ = stmt->eval(env);
             }
 
-            completedWithoutException = true;
+            throw;
         }
 
-        catch (const PythonException& e) {
-
-            bool handled = false;
-
-            for (const auto& clause : excepts) {
-
-                // except:
-                if (!clause.exceptionExpr) {
-
-                    handled = true;
-
-                } else {
-
-                    Value value = clause.exceptionExpr->eval(env);
-
-                    if (!std::holds_alternative<Value::ClassPtr>(value.data)) {
-                        throw TypeErrorException(
-                            "catching classes that do not inherit from BaseException is not allowed"
-                        );
-                    }
-
-                    if (auto handlerClass = std::get<Value::ClassPtr>(value.data);
-
-                        !PythonException::isSubclass(e.getClass(), handlerClass)) {
-                        continue;
-                    }
-
-                    handled = true;
-                }
-
-                // except ... as var
-                if (!clause.variableName.isEmpty()) {
-
-                    env->set(clause.variableName, Value(e.getInstance()));
-                }
-
-                for (const auto& stmt : clause.body) {
-                    [[maybe_unused]] auto _ = stmt->eval(env);
-                }
-
-                break;
-            }
-
-            if (!handled) {
-                throw;
-            }
-        }
-
-        // else
-        if (completedWithoutException) {
-
-            for (const auto& stmt : elseBody) {
-                [[maybe_unused]] auto _ = stmt->eval(env);
-            }
-        }
-    }
-
-    catch (...) {
-
-        // finally выполняется даже если исключение пробрасывается дальше
-        for (const auto& stmt : finallyBody) {
+        for (const auto &stmt: finallyBody) {
             [[maybe_unused]] auto _ = stmt->eval(env);
         }
 
-        throw;
+        return result;
     }
-
-    // finally выполняется и при отсутствии исключений
-    for (const auto& stmt : finallyBody) {
-        [[maybe_unused]] auto _ = stmt->eval(env);
-    }
-
-    return Value();
-}
 
     [[nodiscard]] QString toString() const override {
 
@@ -1865,23 +1854,23 @@ public:
         for (const auto& stmt : tryBody)
             result += "    " + stmt->toString() + "\n";
 
-        for (const auto& clause : excepts) {
+        for (const auto&[exceptionExpr, variableName, body] : excepts) {
 
             result += "except";
 
-            if (clause.exceptionExpr) {
+            if (exceptionExpr) {
                 result += " ";
-                result += clause.exceptionExpr->toString();
+                result += exceptionExpr->toString();
             }
 
-            if (!clause.variableName.isEmpty()) {
+            if (!variableName.isEmpty()) {
                 result += " as ";
-                result += clause.variableName;
+                result += variableName;
             }
 
             result += ":\n";
 
-            for (const auto& stmt : clause.body)
+            for (const auto& stmt : body)
                 result += "    " + stmt->toString() + "\n";
         }
 
@@ -1913,29 +1902,28 @@ class RaiseNode : public ASTNode {
 
 public:
 
-    explicit RaiseNode(std::shared_ptr<ASTNode> exceptionExpr);
+    explicit RaiseNode(std::shared_ptr<ASTNode> exceptionExpr)
+    : exceptionExpr(std::move(exceptionExpr)) {}
 
-    static void throwExceptionObject(const Value& value) {
+    [[noreturn]] static void raiseException(const Value& value) {
 
-        if (!value.isInstance())
-            throw TypeErrorException(
-                "exceptions must derive from BaseException"
-            );
-
-        auto instance = value.asInstance();
-
-        if (!PythonException::isSubclass(instance->klass, Runtime::baseExceptionClass)) {
+        if (!value.isInstance()) {
             throw TypeErrorException(
                 "exceptions must derive from BaseException"
             );
         }
 
-        QString message;
+        const auto instance = value.asInstance();
 
-        if (instance->fields.contains("message"))
-            message = instance->fields["message"].asString()->getValue();
+        if (!PythonException::isSubclass(
+                instance->klass,
+                Runtime::baseExceptionClass)) {
+            throw TypeErrorException(
+                "exceptions must derive from BaseException"
+            );
+        }
 
-        throw PythonException(instance->klass, message);
+        throw PythonException(instance);
     }
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
@@ -1949,9 +1937,38 @@ public:
 
         const Value value = exceptionExpr->eval(env);
 
-        throwExceptionObject(value);
+        // raise Exception(...)
+        if (value.isInstance()) {
 
-        return {};
+            raiseException(value);
+        }
+
+        // raise Exception
+        if (value.isClass()) {
+
+            const auto klass = value.asClass();
+
+            if (!PythonException::isSubclass(
+                    klass,
+                    Runtime::baseExceptionClass)) {
+                throw TypeErrorException(
+                    "exceptions must derive from BaseException"
+                );
+            }
+
+            const auto instance =
+                    PythonException::makeInstance(
+                        klass,
+                        ""
+                    );
+
+            throw PythonException(instance);
+        }
+
+        // raise 123
+        throw TypeErrorException(
+            "exceptions must derive from BaseException"
+        );
     }
 
     [[nodiscard]] QString toString() const override {

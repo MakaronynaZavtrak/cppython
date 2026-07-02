@@ -6156,68 +6156,55 @@ def test_single_line_expressions(expr, expected):
     assert py == expected, f"CPython: {expr!r} -> {py!r}, expected: {expected!r}"
     assert my == py,     f"Mismatch: cppython={my!r} vs CPython={py!r}"
 
-def run_cpython(cmds: str | list[str]) -> str:
-    """
-    Выполняет код или выражение Python, вычисляет конечное выражение и захватывает его вывод. Метод
-    динамически создает скрипт Python на основе предоставленных входных данных для оценки одиночного
-    выражения или выполнения блока кода с последующей оценкой конечного выражения. Возвращает
-    строковое представление результата вычисления.
+import subprocess
+import textwrap
 
-    :param cmds: Строка, содержащая код Python или выражение, либо список строк, где каждая строка
-        представляет строку кода Python или выражение.
-    :return: Строковое представление вычисленного результата из предоставленного выражения или кода.
-    :rtype: str
-    """
+def run_cpython(cmds: str | list[str]) -> str:
     if isinstance(cmds, str):
         lines = cmds.splitlines()
     else:
         lines = list(cmds)
 
-    if len(lines) == 1:
-        expr = lines[0]
+    code = textwrap.dedent(f"""
+        import sys
+        import code
 
-        code = f"""
-import sys
+        sys.stdout.reconfigure(encoding="utf-8")
 
-sys.stdout.reconfigure(encoding="utf-8")
+        _captured = []
 
-_result = eval({expr!r})
+        def _displayhook(value):
+            if value is not None:
+                _captured.append(repr(value))
 
-if _result is not None:
-    sys.stdout.write(repr(_result))
-"""
-    else:
-        code_to_exec = "\n".join(lines[:-1])
-        last_expr = lines[-1].strip()
+        sys.displayhook = _displayhook
 
-        code = f"""
-import sys
+        console = code.InteractiveConsole()
 
-sys.stdout.reconfigure(encoding="utf-8")
+        lines = {lines!r}
 
-_ns = {{"__builtins__": __builtins__}}
+        buffer = []
 
-exec({code_to_exec!r}, _ns)
+        for line in lines:
+            more = console.push(line)
 
-_result = eval({last_expr!r}, _ns)
+        if _captured:
+            print(_captured[-1], end="")
+    """)
 
-if _result is not None:
-    sys.stdout.write(repr(_result))
-"""
-
-    p = subprocess.run([PYTHON, "-c", code],
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       timeout=5)
+    p = subprocess.run(
+        [PYTHON, "-c", code],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=5
+    )
 
     err = p.stderr.decode("utf-8", "ignore")
-
     if err:
         print("STDERR:")
         print(err)
 
     out = p.stdout.decode("utf-8", "ignore").splitlines()
-
     return out[0].strip() if out else ""
 
 @pytest.mark.parametrize("commands,expected", [
@@ -10778,6 +10765,31 @@ if _result is not None:
       "b=[1]",
       "a is not b"], "True"),
 
+    (["try:",
+      "    raise ValueError(\"boom\")",
+      "except ValueError:",
+      "    42",
+      ""], "42"),
+
+    (["try:",
+      "    raise RuntimeError(\"x\")",
+      "except:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["x = 0",
+      "try:",
+      "    x = 1",
+      "finally:",
+      "    x = 2",
+      "",
+      "x"], "2"),
+
+    (["try:",
+      "    raise ValueError",
+      "except ValueError:",
+      "    'ok'",
+      "",], "'ok'"),
 
 ])
 

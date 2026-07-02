@@ -7,6 +7,10 @@
 
 #include "ClassValue.h"
 #include "Environment.h"
+#include "InstanceValue.h"
+#include "TupleValue.h"
+#include "../ArgValidation.h"
+#include "../../exception/TypeErrorException.h"
 
 static std::shared_ptr<ClassValue> createExceptionClass(
     const QString& name,
@@ -33,6 +37,14 @@ void registerExceptionClasses(const std::shared_ptr<Environment>& env) {
             Runtime::objectClass,
             env
         );
+
+    Runtime::baseExceptionClass->attributes["__init__"] =
+            Value(
+                std::make_shared<BuiltinFunction>(
+                    "__init__",
+                    baseExceptionInit
+                )
+            );
 
     Runtime::exceptionClass =
         createExceptionClass(
@@ -131,4 +143,38 @@ void registerExceptionClasses(const std::shared_ptr<Environment>& env) {
             Runtime::exceptionClass,
             env
         );
+}
+
+Value baseExceptionInit(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs,
+    const std::shared_ptr<Environment>&) {
+
+    expectNoKwargs(kwargs, "BaseException.__init__");
+
+    if (args.empty())
+        throw TypeErrorException("__init__ missing self");
+
+    const auto self = args[0].asInstance("BaseException.__init__");
+
+    std::vector<Value> tupleValues;
+
+    for (size_t i = 1; i < args.size(); ++i)
+        tupleValues.push_back(args[i]);
+
+    self->fields["args"] = Value(
+        std::make_shared<TupleValue>(tupleValues)
+    );
+
+    if (tupleValues.empty()) {
+
+        self->fields["message"] = Value("");
+
+    } else {
+
+        self->fields["message"] =
+            Value(tupleValues[0].toString());
+    }
+
+    return Value();
 }

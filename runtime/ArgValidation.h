@@ -37,4 +37,23 @@ inline void expectArgsRange(
              " and " + QString::number(max) + " args"));
         }
 }
+
+inline void expectNoKwargs(const Kwargs& kwargs, const QString& funcName) {
+
+    if (kwargs.empty()) {
+        return;
+    }
+
+    if (funcName.isEmpty()) {
+
+        throw TypeErrorException(
+            "keyword arguments are not supported"
+        );
+    }
+
+    throw TypeErrorException(
+        QString("%1() takes no keyword arguments")
+            .arg(funcName)
+    );
+}
 #endif //CPPYTHON_ARGVALIDATION_H

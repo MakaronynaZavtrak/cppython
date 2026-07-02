@@ -1218,9 +1218,9 @@ std::shared_ptr<ASTNode>Parser::parseDelStatement() {
     return std::make_shared<DeleteNode>(target);
 }
 
-std::shared_ptr<ASTNode> Parser::parseTryStatement() {
-
-    advance(); // try
+std::shared_ptr<ASTNode> Parser::parseTryStatement()
+{
+    consume(TOKEN_KEYWORD, "try");
 
     consume(TOKEN_OP, ":");
 
@@ -1230,20 +1230,20 @@ std::shared_ptr<ASTNode> Parser::parseTryStatement() {
 
     while (matchAndAdvance(TOKEN_KEYWORD, "except")) {
 
-        QString exceptionName;
+        std::shared_ptr<ASTNode> exceptionExpr = nullptr;
         QString variableName;
 
+        // except:
         if (!match(TOKEN_OP, ":")) {
 
-            if (peek().type != TOKEN_ID)
-                throw SyntaxErrorException("Expected exception type");
-
-            exceptionName = advance().value;
+            exceptionExpr = parseExpression();
 
             if (matchAndAdvance(TOKEN_KEYWORD, "as")) {
 
                 if (peek().type != TOKEN_ID)
-                    throw SyntaxErrorException("Expected identifier after as");
+                    throw SyntaxErrorException(
+                        "Expected identifier after 'as'"
+                    );
 
                 variableName = advance().value;
             }
@@ -1251,13 +1251,15 @@ std::shared_ptr<ASTNode> Parser::parseTryStatement() {
 
         consume(TOKEN_OP, ":");
 
-        auto body = parseBlock();
+        const auto body = parseBlock();
 
-        excepts.push_back({
-            exceptionName,
-            variableName,
-            body
-        });
+        excepts.push_back(
+            TryNode::ExceptClause{
+                exceptionExpr,
+                variableName,
+                body
+            }
+        );
     }
 
     std::vector<std::shared_ptr<ASTNode>> elseBody;

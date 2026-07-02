@@ -1288,10 +1288,10 @@ bool Value::isInstance() const {
     return std::holds_alternative<InstancePtr>(data);
 }
 
-Value::InstancePtr Value::asInstance() const {
+Value::InstancePtr Value::asInstance(const QString& where) const {
 
     if (!isInstance()) {
-        throw TypeErrorException("Value is not an instance");
+        throw TypeErrorException(where + " is not an instance");
     }
 
     return std::get<InstancePtr>(data);

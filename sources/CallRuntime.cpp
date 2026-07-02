@@ -188,7 +188,8 @@ Value constructClass(const Value::ClassPtr& cls,
     try {
         const Value init = getAttrValue(Value(instance), "__init__");
         call(init, args, kwargs, env);
-    } catch (...) {
+    } catch (const AttributeErrorException&) {
+
         if (!args.empty()) {
             throw TypeErrorException("Class takes no arguments");
         }

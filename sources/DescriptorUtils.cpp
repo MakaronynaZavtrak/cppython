@@ -16,16 +16,19 @@
 
 bool DescriptorUtils::hasGet(const Value& descriptor) {
 
-    if (std::holds_alternative<Value::FunctionPtr>(descriptor.data))
+    if (descriptor.isFunction())
         return true;
 
-    if (std::holds_alternative<Value::PropertyPtr>(descriptor.data))
+    if (descriptor.isBuiltinFunction())
         return true;
 
-    if (std::holds_alternative<Value::StaticMethodPtr>(descriptor.data))
+    if (descriptor.isProperty())
         return true;
 
-    if (std::holds_alternative<Value::ClassMethodPtr>(descriptor.data))
+    if (descriptor.isStaticMethod())
+        return true;
+
+    if (descriptor.isClassMethod())
         return true;
 
     // user-defined descriptor
@@ -40,12 +43,28 @@ bool DescriptorUtils::hasGet(const Value& descriptor) {
 
 Value DescriptorUtils::callGet(const Value& descriptor,
               const Value& instance,
-              const std::shared_ptr<ClassValue>& owner) {
+              const Value::ClassPtr& owner) {
 
     if (const auto f =
     std::get_if<Value::FunctionPtr>(&descriptor.data)) {
 
         return (*f)->get(instance, owner);
+    }
+
+    if (const auto bf =
+        std::get_if<Value::BuiltinFunctionPtr>(&descriptor.data)) {
+
+        if (instance.isNone()) {
+            return descriptor;
+        }
+
+        return Value(
+            std::make_shared<BoundMethod>(
+                Value(*bf),
+                instance,
+                owner
+            )
+        );
         }
 
     if (const auto p =
@@ -85,11 +104,9 @@ Value DescriptorUtils::callGet(const Value& descriptor,
 
 bool DescriptorUtils::hasSet(const Value& descriptor) {
 
-    if (std::holds_alternative<Value::PropertyPtr>(descriptor.data)) {
+    if (descriptor.isProperty()) {
 
-        const auto& prop =
-            std::get<Value::PropertyPtr>(descriptor.data);
-
+        const auto& prop = descriptor.asProperty();
         return prop->fset != nullptr;
     }
 
@@ -107,11 +124,9 @@ void DescriptorUtils::callSet(const Value& descriptor,
              const std::shared_ptr<ClassValue>& owner,
              const Value& value) {
 
-    if (std::holds_alternative<Value::PropertyPtr>(
-            descriptor.data)) {
+    if (descriptor.isProperty()) {
 
-        const auto& prop =
-            std::get<Value::PropertyPtr>(descriptor.data);
+        const auto& prop = descriptor.asProperty();
 
         if (!prop->fset) {
             throw AttributeErrorException("can't set attribute");
@@ -127,10 +142,9 @@ void DescriptorUtils::callSet(const Value& descriptor,
         call(Value(bound), { value }, {}, nullptr);
 
         return;
-            }
+    }
 
-    const Value setter =
-        getAttrValue(descriptor, "__set__");
+    const Value setter = getAttrValue(descriptor, "__set__");
 
     call(setter, { instance, value }, {}, nullptr);
 }

@@ -213,7 +213,7 @@ public:
     [[nodiscard]] ClassPtr asClass() const;
 
     [[nodiscard]] bool isInstance() const;
-    [[nodiscard]] InstancePtr asInstance() const;
+    [[nodiscard]] InstancePtr asInstance(const QString& = "") const;
 
     [[nodiscard]] bool isBoundMethod() const;
     [[nodiscard]] BoundMethodPtr asBoundMethod() const;

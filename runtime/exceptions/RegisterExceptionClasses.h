@@ -6,7 +6,15 @@
 #define CPPYTHON_EXCEPTIONCLASSES_H
 #include <memory>
 
+#include "CallRuntime.h"
+#include "Value.h"
+
 class Environment;
 
 void registerExceptionClasses(const std::shared_ptr<Environment>& env);
+
+Value baseExceptionInit(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs,
+    const std::shared_ptr<Environment>&);
 #endif //CPPYTHON_EXCEPTIONCLASSES_H
