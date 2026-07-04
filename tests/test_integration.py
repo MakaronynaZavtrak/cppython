@@ -10766,7 +10766,6 @@ def run_cpython(cmds: str | list[str]) -> str:
       "a is not b"], "True"),
 
     # try/except/finally
-
     (["try:",
       "    raise ValueError(\"boom\")",
       "except ValueError:",
@@ -10899,6 +10898,164 @@ def run_cpython(cmds: str | list[str]) -> str:
       "except KeyError as e:",
       "    str(e)",
       ""], "\"'missing'\""),
+
+    # edge cases try/except/else/finally
+
+    # else — выполняется только при отсутствии исключения
+    (["x = 0",
+      "try:",
+      "    x = 1",
+      "except ValueError:",
+      "    x = 2",
+      "else:",
+      "    x = 3",
+      "",
+      "x"], "3"),
+
+    # else — НЕ выполняется, если было исключение (даже пойманное)
+    (["x = 0",
+      "try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError:",
+      "    x = 1",
+      "else:",
+      "    x = 3",
+      "",
+      "x"], "1"),
+
+    # else + finally вместе
+    (["x = 0",
+      "try:",
+      "    x = 1",
+      "except ValueError:",
+      "    x = 2",
+      "else:",
+      "    x = 3",
+      "finally:",
+      "    x = x + 10",
+      "",
+      "x"], "13"),
+
+    # else возвращает значение как последнее выражение
+    (["try:",
+      "    'no error'",
+      "except ValueError:",
+      "    'caught'",
+      "else:",
+      "    'else branch'",
+      ""], "'else branch'"),
+
+    # вложенный try внутри except
+    (["try:",
+      "    raise ValueError(\"outer\")",
+      "except ValueError as e:",
+      "    try:",
+      "        raise TypeError(\"inner\")",
+      "    except TypeError as e2:",
+      "        str(e2)",
+      ""], "'inner'"),
+
+    # вложенный try внутри except — внешний except не должен видеть внутреннее исключение
+    (["try:",
+      "    raise ValueError(\"outer\")",
+      "except ValueError as e:",
+      "    try:",
+      "        raise TypeError(\"inner\")",
+      "    except TypeError:",
+      "        'inner caught'",
+      ""], "'inner caught'"),
+
+    # вложенный try внутри try (без except снаружи, обычная вложенность)
+    (["try:",
+      "    try:",
+      "        raise KeyError(\"deep\")",
+      "    except ValueError:",
+      "        'wrong handler'",
+      "except KeyError as e:",
+      "    str(e)",
+      ""], "\"'deep'\""),
+
+    # re-raise внутри вложенного try корректно всплывает во внешний except
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"x\")",
+      "    except ValueError:",
+      "        raise",
+      "except ValueError as e:",
+      "    'caught outer'",
+      ""], "'caught outer'"),
+
+    # порядок matching — первый except шире, но не подходит, должен дойти до второго
+    (["try:",
+      "    raise TypeError(\"x\")",
+      "except ValueError:",
+      "    'wrong'",
+      "except Exception:",
+      "    'right'",
+      ""], "'right'"),
+
+    # порядок matching — более узкий класс стоит первым и должен перехватить раньше широкого
+    (["try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError:",
+      "    'narrow'",
+      "except Exception:",
+      "    'wide'",
+      ""], "'narrow'"),
+
+    # finally выполняется даже когда exception пробрасывается наружу необработанным, но try/except тут ловит его снаружи
+    (["x = 0",
+      "try:",
+      "    try:",
+      "        raise RuntimeError(\"boom\")",
+      "    finally:",
+      "        x = 99",
+      "except RuntimeError:",
+      "    pass",
+      "",
+      "x"], "99"),
+
+    (["x = 0",
+      "try:",
+      "    try:",
+      "        raise ValueError(\"x\")",
+      "    except ValueError:",
+      "        raise TypeError(\"from except\")",
+      "    finally:",
+      "        x = 99",
+      "except TypeError:",
+      "    pass",
+      "",
+      "x"], "99"),
+
+    (["x = 0",
+      "try:",
+      "    try:",
+      "        raise ValueError(\"x\")",
+      "    except ValueError:",
+      "        raise",
+      "    finally:",
+      "        x = 1",
+      "except ValueError:",
+      "    pass",
+      "",
+      "x"], "1"),
+
+    (["x = 0",
+      "try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError:",
+      "    x = x + 1",
+      "finally:",
+      "    x = x + 1",
+      "",
+      "x"], "2"),
+
+    (["try:",
+      "    42",
+      "finally:",
+      "    'ignored value'",
+      ""], "42"),
 
 ])
 
