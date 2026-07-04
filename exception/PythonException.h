@@ -11,7 +11,7 @@
 class PythonException : public std::exception {
 
 protected:
-    std::shared_ptr<InstanceValue> instance;
+    Value::InstancePtr instance;
     std::string cachedWhat;
 
 public:
@@ -40,7 +40,7 @@ public:
         const Value::ClassPtr& child,
         const Value::ClassPtr& parent);
 
-    static std::shared_ptr<InstanceValue> makeInstance(
+    static Value::InstancePtr makeInstance(
     const Value::ClassPtr& klass,
     const QString& message);
 };

@@ -1789,7 +1789,7 @@ public:
 
             for (const auto& item : tuple->items) {
 
-                if (!std::holds_alternative<Value::ClassPtr>(item.data)) {
+                    if (!item.isClass()) {
                     throw TypeErrorException(
                         "catching classes that do not inherit from BaseException is not allowed"
                     );
@@ -1854,13 +1854,6 @@ public:
                         }
 
                         handled = true;
-
-                        // if (auto handlerClass = value.asClass();
-                        //     !PythonException::isSubclass(e.getClass(), handlerClass)) {
-                        //     continue;
-                        // }
-
-                        // handled = true;
                     }
 
                     if (!variableName.isEmpty()) {
@@ -1995,7 +1988,7 @@ public:
                 );
             }
 
-            const auto instance = Runtime::exceptionStack.back();
+            const auto& instance = Runtime::exceptionStack.back();
 
             throw PythonException(instance);
         }

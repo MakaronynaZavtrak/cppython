@@ -10850,6 +10850,56 @@ def run_cpython(cmds: str | list[str]) -> str:
       "    'ok'",
       ""], "'ok'"),
 
+    # exception.__str__
+    (["try:",
+      "    raise ValueError(\"boom\")",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "'boom'"),
+
+    (["try:",
+      "    raise ValueError(\"a\", \"b\")",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "\"('a', 'b')\""),
+
+    (["try:",
+      "    raise ValueError()",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "''"),
+
+    (["try:",
+      "    raise RuntimeError(\"oops\")",
+      "except RuntimeError as e:",
+      "    str(e)",
+      ""], "'oops'"),
+
+    (["class MyError(Exception):",
+      "    pass",
+      "",
+      "try:",
+      "    raise MyError(\"custom\")",
+      "except MyError as e:",
+      "    str(e)",
+      ""], "'custom'"),
+
+    (["class MyError(Exception):",
+      "    def __init__(self, code):",
+      "        self.code = code",
+      "",
+      "try:",
+      "    raise MyError(42)",
+      "except MyError as e:",
+      "    str(e)",
+      ""], "'42'"),
+
+    (["try:",
+      "    raise KeyError(\"missing\")",
+      "except KeyError as e:",
+      "    str(e)",
+      ""], "\"'missing'\""),
+
 ])
 
 def test_multiline_expressions(commands, expected):

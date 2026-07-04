@@ -11,7 +11,7 @@
 #include "TupleValue.h"
 
 PythonException::PythonException(
-    Value::InstancePtr  instance)
+    Value::InstancePtr instance)
     : instance(std::move(instance)) {
 
     QString message = getMessage();

@@ -560,12 +560,26 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  [](const std::vector<Value> &args,
                     const Kwargs &,
                     const std::shared_ptr<Environment> &) -> Value {
+                     expectArgsRange(args, 0, 1, "str");
 
                      if (args.empty()) {
                          return Value("");
                      }
 
-                     return Value(args[0].toString());
+                     try {
+
+                         Value strMethod = getAttrValue(args[0], "__str__");
+                         Value result = call(strMethod, {}, {}, nullptr);
+
+                         if (!result.isString()) {
+                             throw TypeErrorException("__str__ returned non-string");
+                         }
+
+                         return result;
+
+                     } catch (const AttributeErrorException &) {
+                         return Value(args[0].toString());
+                     }
                  }
              ));
 

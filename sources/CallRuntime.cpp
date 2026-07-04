@@ -161,7 +161,22 @@ Value constructClass(const Value::ClassPtr& cls,
             return Value("");
         }
 
-        return Value(args[0].toString());
+        const Value& obj = args[0];
+
+        try {
+
+            Value strMethod = getAttrValue(obj, "__str__");
+            Value result = call(strMethod, {}, {}, nullptr);
+
+            if (!result.isString()) {
+                throw TypeErrorException("__str__ returned non-string");
+            }
+
+            return result;
+
+        } catch (const AttributeErrorException&) {
+            return Value(obj.toString());
+        }
     }
 
     if (cls == Runtime::bytesClass) {
@@ -184,6 +199,12 @@ Value constructClass(const Value::ClassPtr& cls,
     }
 
     const auto instance = std::make_shared<InstanceValue>(cls);
+
+    if (PythonException::isSubclass(cls, Runtime::baseExceptionClass)) {
+        instance->fields["args"] = Value(
+            std::make_shared<TupleValue>(args)
+        );
+    }
 
     try {
         const Value init = getAttrValue(Value(instance), "__init__");

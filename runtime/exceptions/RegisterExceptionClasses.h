@@ -17,4 +17,15 @@ Value baseExceptionInit(
     const std::vector<Value>& args,
     const Kwargs& kwargs,
     const std::shared_ptr<Environment>&);
+
+Value baseExceptionStr(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs,
+    const std::shared_ptr<Environment>&);
+
+Value keyErrorStr(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs,
+    const std::shared_ptr<Environment>&);
+
 #endif //CPPYTHON_EXCEPTIONCLASSES_H

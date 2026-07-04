@@ -46,6 +46,14 @@ void registerExceptionClasses(const std::shared_ptr<Environment>& env) {
                 )
             );
 
+    Runtime::baseExceptionClass->attributes["__str__"] =
+            Value(
+                std::make_shared<BuiltinFunction>(
+                    "__str__",
+                    baseExceptionStr
+                )
+            );
+
     Runtime::exceptionClass =
         createExceptionClass(
             "Exception",
@@ -87,6 +95,14 @@ void registerExceptionClasses(const std::shared_ptr<Environment>& env) {
             Runtime::lookupErrorClass,
             env
         );
+
+    Runtime::keyErrorClass->attributes["__str__"] =
+    Value(
+        std::make_shared<BuiltinFunction>(
+            "__str__",
+            keyErrorStr
+        )
+    );
 
     Runtime::runtimeErrorClass =
         createExceptionClass(
@@ -176,5 +192,69 @@ Value baseExceptionInit(
             Value(tupleValues[0].toString());
     }
 
-    return Value();
+    return {};
+}
+
+Value baseExceptionStr(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs,
+    const std::shared_ptr<Environment>&) {
+
+    expectNoKwargs(kwargs, "BaseException.__str__");
+
+    if (args.empty())
+        throw TypeErrorException("__str__ missing self");
+
+    const auto self = args[0].asInstance("BaseException.__str__");
+
+    const auto it = self->fields.find("args");
+
+    if (it == self->fields.end()) {
+        return Value("");
+    }
+
+    const auto tuple = it.value().asTuple();
+
+    if (tuple->items.empty()) {
+        return Value("");
+    }
+
+    if (tuple->items.size() == 1) {
+        return Value(tuple->items[0].toString());
+    }
+
+    // несколько аргументов — repr всего кортежа
+    return Value(it.value().toString());
+}
+
+Value keyErrorStr(
+    const std::vector<Value>& args,
+    const Kwargs& kwargs,
+    const std::shared_ptr<Environment>&) {
+
+    expectNoKwargs(kwargs, "KeyError.__str__");
+
+    if (args.empty())
+        throw TypeErrorException("__str__ missing self");
+
+    const auto self = args[0].asInstance("KeyError.__str__");
+
+    const auto it = self->fields.find("args");
+
+    if (it == self->fields.end()) {
+        return Value("");
+    }
+
+    const auto tuple = it.value().asTuple();
+
+    if (tuple->items.empty()) {
+        return Value("");
+    }
+
+    if (tuple->items.size() == 1) {
+        // KeyError.__str__ всегда repr, не str
+        return Value(tuple->items[0].repr());
+    }
+
+    return Value(it.value().toString());
 }
