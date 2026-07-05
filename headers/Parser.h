@@ -52,6 +52,12 @@ public:
     [[nodiscard]] virtual Value eval(EnvPtr env) const = 0;
     [[nodiscard]] virtual QString toString() const = 0;
     [[nodiscard]] virtual bool shouldPrint() const { return true; }
+
+    static void printIfNeeded(const std::shared_ptr<ASTNode>& stmt, const Value& value) {
+        if (stmt->shouldPrint() && !value.isNone()) {
+            std::cout << value.display().toStdString() << "\n";
+        }
+    }
 };
 
 
@@ -1829,6 +1835,7 @@ public:
 
                 for (const auto &stmt: tryBody) {
                     result = stmt->eval(env);
+                    printIfNeeded(stmt, result);
                 }
 
                 completedWithoutException = true;
@@ -1865,6 +1872,7 @@ public:
 
                         for (const auto& stmt : body) {
                             result = stmt->eval(env);
+                            printIfNeeded(stmt, result);
                         }
                     }
 
@@ -1879,19 +1887,22 @@ public:
             if (completedWithoutException) {
                 for (const auto &stmt: elseBody) {
                     result = stmt->eval(env);
+                    printIfNeeded(stmt, result);
                 }
             }
         } catch (...) {
 
             for (const auto &stmt: finallyBody) {
-                [[maybe_unused]] auto _ = stmt->eval(env);
+                const Value finallyResult = stmt->eval(env);
+                printIfNeeded(stmt, finallyResult);
             }
 
             throw;
         }
 
         for (const auto &stmt: finallyBody) {
-            [[maybe_unused]] auto _ = stmt->eval(env);
+            const Value finallyResult = stmt->eval(env);
+            printIfNeeded(stmt, finallyResult);
         }
 
         return result;
@@ -1946,6 +1957,8 @@ public:
 
         return result;
     }
+
+    [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
 class RaiseNode : public ASTNode {

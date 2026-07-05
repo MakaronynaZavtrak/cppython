@@ -16,7 +16,7 @@ if not os.path.isfile(MYPYTHON):
 
 PYTHON = sys.executable
 
-def run_cppython(cmds: str | list[str]) -> str:
+def run_cppython(cmds: str | list[str]) -> list[str]:
     """
     Выполняет команды Python с использованием подпроцесса, запускающего интерпретатор Python, и 
     возвращает окончательный обработанный вывод, полученный из подпроцесса.
@@ -41,17 +41,22 @@ def run_cppython(cmds: str | list[str]) -> str:
         timeout=5,
     )
 
-    payloads = []
-    for raw in p.stdout.decode("utf-8", "ignore").splitlines():
-        s = raw.lstrip()
-        if s.startswith(">>> ") or s.startswith("... "):
-            parts = s.replace(">>> ", "###").replace("... ", "###").split("###")
-            val = parts[-1].strip() if parts else ""
-            if not val:
-                continue
-            payloads.append(val)
+    raw = p.stdout.decode("utf-8", "ignore")
 
-    return payloads[-1] if payloads else ""
+    cleaned = raw.replace(">>> ", "\n").replace("... ", "\n")
+
+    banner_prefixes = ("Hello and welcome", "Made by Semenov Oleg")
+
+    payloads = []
+    for line in cleaned.split("\n"):
+        val = line.strip()
+        if not val:
+            continue
+        if val.startswith(banner_prefixes):
+            continue
+        payloads.append(val)
+
+    return payloads
 
 @pytest.mark.parametrize("expr,expected", [
     # Два целых числа
@@ -6150,53 +6155,64 @@ def test_single_line_expressions(expr, expected):
     :param expected: Строка, представляющая ожидаемый результат вычисления выражения.
     :return: None
     """
-    my = run_cppython(expr)
-    py = run_cpython(expr)
-    assert my == expected, f"cppython: {expr!r} -> {my!r}, expected: {expected!r}"
-    assert py == expected, f"CPython: {expr!r} -> {py!r}, expected: {expected!r}"
-    assert my == py,     f"Mismatch: cppython={my!r} vs CPython={py!r}"
+    my_all = run_cppython(expr)
+    py_all = run_cpython(expr)
+    if isinstance(expected, str):
+        my = my_all[-1] if my_all else ""
+        py = py_all[-1] if py_all else ""
+
+        assert my == expected, f"cppython: {expr!r} -> {my!r}, expected: {expected!r}"
+        assert py == expected, f"CPython: {expr!r} -> {py!r}, expected: {expected!r}"
+        assert my == py, f"Mismatch: cppython={my!r} vs CPython={py!r}"
+
+    else:
+        assert my_all == expected, f"cppython: {expr!r} -> {my_all!r}, expected: {expected!r}"
+        assert py_all == expected, f"CPython: {expr!r} -> {py_all!r}, expected: {expected!r}"
+        assert my_all == py_all, f"Mismatch: cppython={my_all!r} vs CPython={py_all!r}"
 
 import subprocess
 import textwrap
 
-def run_cpython(cmds: str | list[str]) -> str:
+def run_cpython(cmds: str | list[str]) -> list[str]:
     if isinstance(cmds, str):
         lines = cmds.splitlines()
     else:
         lines = list(cmds)
 
-    code = textwrap.dedent(f"""
+    code_str = textwrap.dedent(f"""
         import sys
         import code
+        import io
 
         sys.stdout.reconfigure(encoding="utf-8")
 
-        _captured = []
+        buf = io.StringIO()
 
         def _displayhook(value):
             if value is not None:
-                _captured.append(repr(value))
+                buf.write(repr(value) + "\\n")
 
         sys.displayhook = _displayhook
+
+        sys.stdout = buf
 
         console = code.InteractiveConsole()
 
         lines = {lines!r}
 
-        buffer = []
-
         for line in lines:
-            more = console.push(line)
+            console.push(line)
 
-        if _captured:
-            print(_captured[-1], end="")
+        sys.stdout = sys.__stdout__
+        sys.stdout.write(buf.getvalue())
     """)
 
     p = subprocess.run(
-        [PYTHON, "-c", code],
+        [PYTHON, "-c", code_str],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        timeout=5
+        timeout=5,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
     )
 
     err = p.stderr.decode("utf-8", "ignore")
@@ -6204,8 +6220,8 @@ def run_cpython(cmds: str | list[str]) -> str:
         print("STDERR:")
         print(err)
 
-    out = p.stdout.decode("utf-8", "ignore").splitlines()
-    return out[0].strip() if out else ""
+    out = p.stdout.decode("utf-8", "ignore")
+    return [line for line in out.splitlines() if line]
 
 @pytest.mark.parametrize("commands,expected", [
     # if-elif-else
@@ -10943,7 +10959,7 @@ def run_cpython(cmds: str | list[str]) -> str:
       "    'caught'",
       "else:",
       "    'else branch'",
-      ""], "'else branch'"),
+      ""], ["'no error'", "'else branch'"]),
 
     # вложенный try внутри except
     (["try:",
@@ -11055,7 +11071,57 @@ def run_cpython(cmds: str | list[str]) -> str:
       "    42",
       "finally:",
       "    'ignored value'",
-      ""], "42"),
+      ""], ["42", "'ignored value'"]),
+
+    # базовый implicit chaining
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"first\")",
+      "    except ValueError:",
+      "        raise TypeError(\"second\")",
+      "except TypeError as e:",
+      "    e.__context__.args",
+      ""], "('first',)"),
+
+    # доступ к message/str предыдущего исключения через __context__
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"first\")",
+      "    except ValueError:",
+      "        raise TypeError(\"second\")",
+      "except TypeError as e:",
+      "    str(e.__context__)",
+      ""], "'first'"),
+
+    # без цепочки — __context__ должен быть None
+    (["try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError as e:",
+      "    e.__context__",
+      ""], ""),
+
+    # re-raise не создаёт самоссылку — __context__ остаётся None
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"x\")",
+      "    except ValueError:",
+      "        raise",
+      "except ValueError as e:",
+      "    e.__context__",
+      ""], ""),
+
+    # цепочка из трёх уровней — __context__ у второго указывает на первое
+    (["try:",
+      "    try:",
+      "        try:",
+      "            raise ValueError(\"a\")",
+      "        except ValueError:",
+      "            raise TypeError(\"b\")",
+      "    except TypeError:",
+      "        raise KeyError(\"c\")",
+      "except KeyError as e:",
+      "    e.__context__.args",
+      ""], "('b',)"),
 
 ])
 
@@ -11063,24 +11129,27 @@ def test_multiline_expressions(commands, expected):
     """
     Тестирует вычисление многострочных выражений кода,
     интерпретируемых интерпретаторами cppython и CPython.
-    Тесты проверяют корректность присваивания переменных,
-    конструкций управления потоком, таких как if-elif-else, циклы,
-    и других выражений. Для каждого предоставленного входного случая
-    гарантируется, что cppython и CPython производят одинаковые
-    результаты, соответствующие ожидаемому выводу.
-
-    :param commands: Список строк, представляющих строки многострочного
-        кода Python. Эти команды выполняются последовательно.
-    :type commands: List[str]
-    :param expected: Ожидаемый вывод, полученный в результате выполнения кода,
-        представленного в `commands`.
-    :type expected: str
+    ...
+    :param expected: Ожидаемый вывод. Строка — сравнивается только последнее
+        напечатанное значение (обратная совместимость). Список строк —
+        сравнивается вся последовательность напечатанных значений.
+    :type expected: str | list[str]
     :return: None
     :raises AssertionError: Если выводы cppython или CPython
         не соответствуют ожидаемому результату `expected` или не соответствуют друг другу.
     """
-    my = run_cppython(commands)
-    py = run_cpython(commands)
-    assert my == expected, f"cppython: {commands!r} -> {my!r}, expected: {expected!r}"
-    assert py == expected, f"CPython: {commands!r} -> {py!r}, expected: {expected!r}"
-    assert my == py,     f"Mismatch: cppython={my!r} vs CPython={py!r}"
+    my_all = run_cppython(commands)
+    py_all = run_cpython(commands)
+
+    if isinstance(expected, str):
+        my = my_all[-1] if my_all else ""
+        py = py_all[-1] if py_all else ""
+
+        assert my == expected, f"cppython: {commands!r} -> {my!r}, expected: {expected!r}"
+        assert py == expected, f"CPython: {commands!r} -> {py!r}, expected: {expected!r}"
+        assert my == py,     f"Mismatch: cppython={my!r} vs CPython={py!r}"
+
+    else:
+        assert my_all == expected, f"cppython: {commands!r} -> {my_all!r}, expected: {expected!r}"
+        assert py_all == expected, f"CPython: {commands!r} -> {py_all!r}, expected: {expected!r}"
+        assert my_all == py_all,   f"Mismatch: cppython={my_all!r} vs CPython={py_all!r}"

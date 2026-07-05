@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "..//exception/PythonException.h"
+#include "../runtime/Runtime.h"
 
 #include "ClassValue.h"
 #include "InstanceValue.h"
@@ -13,6 +14,18 @@
 PythonException::PythonException(
     Value::InstancePtr instance)
     : instance(std::move(instance)) {
+
+    if (!Runtime::exceptionStack.empty() &&
+        Runtime::exceptionStack.back() != this->instance &&
+        !this->instance->fields.contains("__context__")) {
+
+        this->instance->fields["__context__"] =
+            Value(Runtime::exceptionStack.back());
+
+        } else if (!this->instance->fields.contains("__context__")) {
+
+            this->instance->fields["__context__"] = Value(); // None
+        }
 
     QString message = getMessage();
 
