@@ -1218,8 +1218,7 @@ std::shared_ptr<ASTNode>Parser::parseDelStatement() {
     return std::make_shared<DeleteNode>(target);
 }
 
-std::shared_ptr<ASTNode> Parser::parseTryStatement()
-{
+std::shared_ptr<ASTNode> Parser::parseTryStatement() {
     consume(TOKEN_KEYWORD, "try");
 
     consume(TOKEN_OP, ":");
@@ -1302,12 +1301,18 @@ std::shared_ptr<ASTNode> Parser::parseRaiseStatement() {
         peek().type == TOKEN_DEDENT ||
         peek().type == TOKEN_EOF) {
 
-        return std::make_shared<RaiseNode>(nullptr);
+        return std::make_shared<RaiseNode>(nullptr, nullptr);
         }
 
-    return std::make_shared<RaiseNode>(
-        parseExpression()
-    );
+    std::shared_ptr<ASTNode> exceptionExpr = parseExpression();
+
+    std::shared_ptr<ASTNode> causeExpr = nullptr;
+
+    if (matchAndAdvance(TOKEN_KEYWORD, "from")) {
+        causeExpr = parseExpression();
+    }
+
+    return std::make_shared<RaiseNode>(exceptionExpr, causeExpr);
 }
 
 ParsedCallArgs Parser::parseCallArguments() {

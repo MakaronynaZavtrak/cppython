@@ -27,6 +27,14 @@ PythonException::PythonException(
             this->instance->fields["__context__"] = Value(); // None
         }
 
+    if (!this->instance->fields.contains("__cause__")) {
+        this->instance->fields["__cause__"] = Value(); // None
+    }
+
+    if (!this->instance->fields.contains("__suppress_context__")) {
+        this->instance->fields["__suppress_context__"] = Value(false);
+    }
+
     QString message = getMessage();
 
     cachedWhat =

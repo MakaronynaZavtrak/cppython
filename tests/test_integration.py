@@ -11123,6 +11123,34 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    e.__context__.args",
       ""], "('b',)"),
 
+    # __cause__, raise from
+    (["try:",
+      "    raise TypeError(\"boom\") from ValueError(\"cause\")",
+      "except TypeError as e:",
+      "    str(e.__cause__)",
+      ""], "'cause'"),
+
+    (["try:",
+      "    raise TypeError(\"boom\") from ValueError(\"cause\")",
+      "except TypeError as e:",
+      "    e.__suppress_context__",
+      ""], "True"),
+
+    (["try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError as e:",
+      "    e.__cause__",
+      ""], ""),
+
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"orig\")",
+      "    except ValueError as inner:",
+      "        raise TypeError(\"wrapped\") from inner",
+      "except TypeError as e:",
+      "    str(e.__cause__)",
+      ""], "'orig'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

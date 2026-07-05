@@ -83,7 +83,8 @@ enum class Keyword {
     EXCEPT,
     FINALLY,
     AS,
-    RAISE
+    RAISE,
+    FROM
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -111,7 +112,8 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"except", Keyword::EXCEPT},
     {"finally", Keyword::FINALLY},
     {"as", Keyword::AS},
-    {"raise", Keyword::RAISE}
+    {"raise", Keyword::RAISE},
+    {"from", Keyword::FROM}
 };
 
 /**

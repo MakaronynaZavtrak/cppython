@@ -21,7 +21,6 @@
 #include "SetValue.h"
 #include "SliceValue.h"
 #include "StaticMethodValue.h"
-#include "StrValue.h"
 #include "../exception/StopIterationException.h"
 #include "TupleValue.h"
 #include "../exception/AttributeErrorException.h"
@@ -1964,13 +1963,17 @@ public:
 class RaiseNode : public ASTNode {
 
     std::shared_ptr<ASTNode> exceptionExpr;
+    std::shared_ptr<ASTNode> causeExpr;
 
 public:
 
-    explicit RaiseNode(std::shared_ptr<ASTNode> exceptionExpr)
-    : exceptionExpr(std::move(exceptionExpr)) {}
+    explicit RaiseNode(
+        std::shared_ptr<ASTNode> exceptionExpr,
+        std::shared_ptr<ASTNode> causeExpr = nullptr)
+    : exceptionExpr(std::move(exceptionExpr)),
+      causeExpr(std::move(causeExpr)) {}
 
-    [[noreturn]] static void raiseException(const Value& value) {
+    [[noreturn]] static void raiseException(const Value& value, const Value& cause, bool hasCause) {
 
         if (!value.isInstance()) {
             throw TypeErrorException(
@@ -1986,6 +1989,11 @@ public:
             throw TypeErrorException(
                 "exceptions must derive from BaseException"
             );
+        }
+
+        if (hasCause) {
+            instance->fields["__cause__"] = cause;
+            instance->fields["__suppress_context__"] = Value(true);
         }
 
         throw PythonException(instance);
@@ -2008,10 +2016,34 @@ public:
 
         const Value value = exceptionExpr->eval(env);
 
+        Value cause;
+        bool hasCause = false;
+
+        if (causeExpr) {
+
+            hasCause = true;
+            cause = causeExpr->eval(env);
+
+            // raise X from None — явное подавление chaining
+            if (!cause.isNone() && !cause.isInstance()) {
+                throw TypeErrorException(
+                    "exception causes must derive from BaseException"
+                );
+            }
+
+            if (cause.isInstance() &&
+                !PythonException::isSubclass(
+                    cause.asInstance()->klass,
+                    Runtime::baseExceptionClass)) {
+                throw TypeErrorException(
+                    "exception causes must derive from BaseException"
+                );
+            }
+        }
+
         // raise Exception(...)
         if (value.isInstance()) {
-
-            raiseException(value);
+            raiseException(value, cause, hasCause);
         }
 
         // raise Exception
@@ -2033,6 +2065,11 @@ public:
                         ""
                     );
 
+            if (hasCause) {
+                instance->fields["__cause__"] = cause;
+                instance->fields["__suppress_context__"] = Value(true);
+            }
+
             throw PythonException(instance);
         }
 
@@ -2046,6 +2083,11 @@ public:
 
         if (!exceptionExpr) {
             return "RaiseNode()";
+        }
+
+        if (causeExpr) {
+            return QString("RaiseNode(%1 from %2)")
+                .arg(exceptionExpr->toString(), causeExpr->toString());
         }
 
         return QString("RaiseNode(%1)")
