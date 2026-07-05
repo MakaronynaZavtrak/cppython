@@ -33,7 +33,7 @@ Value call(const Value& callee,
     }
 
     if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data)) {
-        return callFunction(*f, args, kwargs, env);
+        return callFunction(*f, args, kwargs, nullptr);
     }
 
     if (const auto c = std::get_if<Value::ClassPtr>(&callee.data)) {
@@ -121,13 +121,11 @@ Value callFunction(const Value::FunctionPtr& func,
     }
 
     try {
-        Value result;
-
         for (const auto& stmt : func->body) {
-            result = stmt->eval(local);
+            [[maybe_unused]] auto _ = stmt->eval(local);
         }
 
-        return result;
+        return {};
     }
     catch (ReturnException& e) {
         return e.getValue();
@@ -277,7 +275,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
         expectArgsRange(args, 0, 2, "bytes");
 
         if (args.empty()) {
-            return QByteArray();
+            return {};
         }
 
         const Value& obj = args[0];
@@ -351,7 +349,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
                 throw;
             }
 
-            return QByteArray(count.convert_to<long long>(), '\0');
+            return {count.convert_to<long long>(), '\0'};
         }
 
         if (obj.isIterable() || supportsIter(obj)) {

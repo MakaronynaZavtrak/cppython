@@ -43,6 +43,8 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::DEL:      return parseDelStatement();
             case Keyword::TRY:      return parseTryStatement();
             case Keyword::RAISE:    return parseRaiseStatement();
+            case Keyword::GLOBAL:   return parseGlobalStatement();
+            case Keyword::NONLOCAL: return parseNonlocalStatement();
             default:                break;
         }
     }
@@ -760,6 +762,60 @@ std::shared_ptr<ASTNode> Parser::parsePass() {
 
     advance();
     return std::make_shared<PassNode>();
+}
+
+std::shared_ptr<ASTNode> Parser::parseGlobalStatement() {
+
+    advance(); // global
+
+    QVector<QString> names;
+
+    if (peek().type != TOKEN_ID) {
+        throw SyntaxErrorException("Expected identifier after 'global'");
+    }
+
+    names.push_back(advance().value);
+
+    while (matchAndAdvance(TOKEN_OP, ",")) {
+
+        if (peek().type != TOKEN_ID) {
+            throw SyntaxErrorException("Expected identifier after ','");
+        }
+
+        names.push_back(advance().value);
+    }
+
+    auto node = std::make_shared<GlobalNode>();
+    node->names = names;
+
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::parseNonlocalStatement() {
+
+    advance(); // nonlocal
+
+    QVector<QString> names;
+
+    if (peek().type != TOKEN_ID) {
+        throw SyntaxErrorException("Expected identifier after 'nonlocal'");
+    }
+
+    names.push_back(advance().value);
+
+    while (matchAndAdvance(TOKEN_OP, ",")) {
+
+        if (peek().type != TOKEN_ID) {
+            throw SyntaxErrorException("Expected identifier after ','");
+        }
+
+        names.push_back(advance().value);
+    }
+
+    auto node = std::make_shared<NonlocalNode>();
+    node->names = names;
+
+    return node;
 }
 
 std::shared_ptr<ASTNode> Parser::parseClassDef(const std::vector<std::shared_ptr<ASTNode>>& decorators) {

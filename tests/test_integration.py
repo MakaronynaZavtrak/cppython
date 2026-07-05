@@ -11151,6 +11151,143 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    str(e.__cause__)",
       ""], "'orig'"),
 
+    # области видимости local, global, nonlocal
+    # базовый global — модификация уже существующей переменной
+    (["x = 1",
+      "def bump():",
+      "    global x",
+      "    x = x + 1",
+      "",
+      "bump()",
+      "x"], "2"),
+
+    # global — создание НОВОЙ переменной прямо из функции
+    (["def create():",
+      "    global y",
+      "    y = 42",
+      "",
+      "create()",
+      "y"], "42"),
+
+    # несколько имён в одном global
+    (["a = 1",
+      "b = 2",
+      "def bump_both():",
+      "    global a, b",
+      "    a = a + 10",
+      "    b = b + 20",
+      "",
+      "bump_both()",
+      "a",
+      "b"], ["11", "22"]),
+
+    # nonlocal — модификация переменной из ближайшего объемлющего scope
+    (["def outer():",
+      "    x = 'outer'",
+      "    def inner():",
+      "        nonlocal x",
+      "        x = 'changed'",
+      "    inner()",
+      "    return x",
+      "",
+      "outer()"], "'changed'"),
+
+    # global должен видеть модульный x, игнорируя промежуточный outer scope
+    (["x = 'module'",
+      "def outer():",
+      "    x = 'outer'",
+      "    def inner():",
+      "        global x",
+      "        return x",
+      "    return inner()",
+      "",
+      "outer()"], "'module'"),
+
+    # без global/nonlocal — присваивание создаёт ЛОКАЛЬНУЮ переменную, не трогая внешнюю
+    (["x = 'module'",
+      "def outer():",
+      "    x = 'local'",
+      "    return x",
+      "",
+      "outer()",
+      "x"], ["'local'", "'module'"]),
+
+    # nonlocal через ДВА уровня вложенности функций
+    (["def level1():",
+      "    x = 'level1'",
+      "    def level2():",
+      "        def level3():",
+      "            nonlocal x",
+      "            x = 'level3'",
+      "        level3()",
+      "    level2()",
+      "    return x",
+      "",
+      "level1()"], "'level3'"),
+
+    # nonlocal ищет ближайший scope, где переменная реально объявлена (пропускает level2, где x нет)
+    (["def level1():",
+      "    x = 'level1'",
+      "    def level2():",
+      "        y = 'level2 only'",
+      "        def level3():",
+      "            nonlocal x",
+      "            x = x + '-modified'",
+      "        level3()",
+      "        return y",
+      "    result = level2()",
+      "    return (x, result)",
+      "",
+      "level1()"], "('level1-modified', 'level2 only')"),
+
+    # global внутри цикла — накопление в модульной переменной
+    (["counter = 0",
+      "def increment():",
+      "    global counter",
+      "    counter = counter + 1",
+      "",
+      "increment()",
+      "increment()",
+      "increment()",
+      "increment()",
+      "increment()",
+      "counter"], "5"),
+
+    # два независимых вызова функции с global — состояние сохраняется между вызовами
+    (["total = 0",
+      "def add(n):",
+      "    global total",
+      "    total = total + n",
+      "",
+      "add(3)",
+      "add(4)",
+      "total"], "7"),
+
+    # nonlocal и global в разных функциях одновременно, не мешают друг другу
+    (["g = 'global val'",
+      "def outer():",
+      "    n = 'outer val'",
+      "    def inner():",
+      "        global g",
+      "        nonlocal n",
+      "        g = 'global changed'",
+      "        n = 'outer changed'",
+      "    inner()",
+      "    return n",
+      "",
+      "result = outer()",
+      "result",
+      "g"], ["'outer changed'", "'global changed'"]),
+
+    # closure БЕЗ nonlocal может ЧИТАТЬ внешнюю переменную свободно
+    (["def outer():",
+      "    x = 'captured'",
+      "    def inner():",
+      "        return x",
+      "    return inner()",
+      "",
+      "outer()"], "'captured'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

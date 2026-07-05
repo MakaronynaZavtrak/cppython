@@ -44,6 +44,35 @@ void Environment::set(const QString& name, const Value& value) {
  * @throws std::runtime_error Если переменная с указанным именем не найдена.
  */
 Value& Environment::get(const QString& name) {
+
+    if (globalVars.contains(name)) {
+
+        auto env = this;
+        while (env->parent) {
+            env = env->parent.get();
+        }
+
+        if (env->variables.count(name)) {
+            return env->variables[name];
+        }
+
+        throw NameErrorException("Undefined variable: " + name);
+    }
+
+    if (nonlocalVars.contains(name)) {
+
+        auto env = parent;
+
+        while (env) {
+            if (env->variables.count(name)) {
+                return env->variables[name];
+            }
+            env = env->parent;
+        }
+
+        throw SyntaxErrorException("No binding for nonlocal " + name);
+    }
+
     if (variables.count(name)) {
         return variables[name];
     }

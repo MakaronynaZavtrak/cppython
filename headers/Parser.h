@@ -849,7 +849,8 @@ public:
 
 class GlobalNode : public ASTNode {
 public:
-    std::vector<QString> names;
+
+    QVector<QString> names;
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
         for (const auto& name : names) {
@@ -858,18 +859,28 @@ public:
         return {};
     }
 
+    [[nodiscard]] QString toString() const override {
+        QString result = "GlobalNode(" + names.join(", ") + ")";
+        return result;
+    }
+
     [[nodiscard]] bool shouldPrint() const override { return false; }
 };
 
 class NonlocalNode : public ASTNode {
 public:
-    std::vector<QString> names;
+    QVector<QString> names;
 
     [[nodiscard]] Value eval(const EnvPtr env) const override {
         for (const auto& name : names) {
             env->nonlocalVars.insert(name);
         }
         return {};
+    }
+
+    [[nodiscard]] QString toString() const override {
+        QString result = "NonlocalNode(" + names.join(", ") + ")";
+        return result;
     }
 
     [[nodiscard]] bool shouldPrint() const override { return false; }
