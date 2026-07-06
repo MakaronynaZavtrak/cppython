@@ -5,6 +5,7 @@
 #ifndef CPPYTHON_BREAKEXCEPTION_H
 #define CPPYTHON_BREAKEXCEPTION_H
 #include "PythonException.h"
+#include "../runtime/Runtime.h"
 /**
  * @class BreakException
  * @brief Исключение, генерируемое для выхода из выполнения цикла.

@@ -5,6 +5,7 @@
 #ifndef CPPYTHON_CONTINUEEXCEPTION_H
 #define CPPYTHON_CONTINUEEXCEPTION_H
 #include "PythonException.h"
+#include "../runtime/Runtime.h"
 /**
  * @class ContinueException
  * @brief Исключение, используемое для реализации оператора continue.

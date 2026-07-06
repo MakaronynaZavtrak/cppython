@@ -6,6 +6,7 @@
 #define CPPYTHON_RETURNEXCEPTION_H
 #include "PythonException.h"
 #include "Value.h"
+#include "../runtime/Runtime.h"
 
 class ReturnException final : public PythonException {
 public:

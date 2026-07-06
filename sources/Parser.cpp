@@ -1,6 +1,42 @@
 #include "Parser.h"
 
 #include "BytesValue.h"
+#include "../ast/assignNode/AssignNode.h"
+#include "../ast/attributeAccessNode/AttributeAccessNode.h"
+#include "../ast/attributeAssignNode/AttributeAssignNode.h"
+#include "../ast/augAssignNode/AugAssignNode.h"
+#include "../ast/binOpNode/BinOpNode.h"
+#include "../ast/breakNode/BreakNode.h"
+#include "../ast/classDefNode/ClassDefNode.h"
+#include "../ast/compareNode/CompareNode.h"
+#include "../ast/continueNode/ContinueNode.h"
+#include "../ast/deleteNode/DeleteNode.h"
+#include "../ast/dictElementNode/dictPairNode/DictPairNode.h"
+#include "../ast/dictElementNode/dictUnpackNode/DictUnpackNode.h"
+#include "../ast/dictNode/DictNode.h"
+#include "../ast/forNode/ForNode.h"
+#include "../ast/functionDefNode/FunctionDefNode.h"
+#include "../ast/globalNode/GlobalNode.h"
+#include "../ast/ifNode/IfNode.h"
+#include "../ast/indexAssignNode/IndexAssignNode.h"
+#include "../ast/indexNode/IndexNode.h"
+#include "../ast/lambdaNode/LambdaNode.h"
+#include "../ast/listNode/ListNode.h"
+#include "../ast/logicalOpNode/LogicalOpNode.h"
+#include "../ast/nonlocalNode/NonlocalNode.h"
+#include "../ast/passNode/PassNode.h"
+#include "../ast/raiseNode/RaiseNode.h"
+#include "../ast/returnNode/ReturnNode.h"
+#include "../ast/setNode/SetNode.h"
+#include "../ast/sliceNode/SliceNode.h"
+#include "../ast/starredNode/StarredNode.h"
+#include "../ast/tryNode/TryNode.h"
+#include "../ast/tupleAssignNode/TupleAssignNode.h"
+#include "../ast/tupleNode/TupleNode.h"
+#include "../ast/unaryOpNode/UnaryOpNode.h"
+#include "../ast/valueNode/ValueNode.h"
+#include "../ast/varNode/VarNode.h"
+#include "../ast/whileNode/WhileNode.h"
 #include "../exception/SyntaxErrorException.h"
 #include "../exception/ValueErrorException.h"
 
@@ -53,7 +89,59 @@ std::shared_ptr<ASTNode> Parser::parse() {
         return parseDecorated();
     }
 
-    return parseExpression();
+    return parseExpressionStatement();
+}
+
+std::shared_ptr<ASTNode> Parser::parseExpressionStatement() {
+
+    std::vector<std::shared_ptr<ASTNode>> targets;
+    targets.push_back(parseStarredExpression());
+
+    bool sawComma = false;
+
+    while (matchAndAdvance(TOKEN_OP, ",")) {
+
+        sawComma = true;
+
+        if (match(TOKEN_OP, "=") ||
+            peek().type == TOKEN_NEWLINE ||
+            peek().type == TOKEN_EOF ||
+            peek().type == TOKEN_DEDENT) {
+            break; // trailing comma: "a, ="
+        }
+
+        targets.push_back(parseStarredExpression());
+    }
+
+    if (!sawComma) {
+        // обычный случай — одна цель/выражение, без изменений в поведении
+        return parseAssignmentTail(targets[0]);
+    }
+
+    if (!matchAndAdvance(TOKEN_OP, "=")) {
+        // нет '=' — это просто голое выражение-кортеж как стейтмент: "1, 2"
+        return std::make_shared<TupleNode>(targets);
+    }
+
+    std::vector<std::shared_ptr<ASTNode>> values;
+    values.push_back(parseStarredExpression());
+
+    while (matchAndAdvance(TOKEN_OP, ",")) {
+
+        if (peek().type == TOKEN_NEWLINE ||
+            peek().type == TOKEN_EOF ||
+            peek().type == TOKEN_DEDENT) {
+            break;
+            }
+
+        values.push_back(parseStarredExpression());
+    }
+
+    std::shared_ptr<ASTNode> rightNode = values.size() > 1
+        ? std::make_shared<TupleNode>(values)
+        : values[0];
+
+    return std::make_shared<TupleAssignNode>(std::move(targets), rightNode);
 }
 
 /**
@@ -74,7 +162,15 @@ std::shared_ptr<ASTNode> Parser::parse() {
  */
 std::shared_ptr<ASTNode> Parser::parseExpression() {
 
-    std::shared_ptr<ASTNode> left = parseOr();
+    const auto left = parseExpressionNoAssign();
+    return parseAssignmentTail(left);
+}
+
+std::shared_ptr<ASTNode> Parser::parseExpressionNoAssign() {
+    return parseOr();
+}
+
+std::shared_ptr<ASTNode> Parser::parseAssignmentTail(std::shared_ptr<ASTNode> left) {
 
     if (matchAny(
         TOKEN_OP,
@@ -93,12 +189,9 @@ std::shared_ptr<ASTNode> Parser::parseExpression() {
     )) {
 
         QString op = advance().value;
-
         auto right = parseOr();
 
-        if (const auto var =
-            std::dynamic_pointer_cast<VarNode>(left)) {
-
+        if (const auto var = std::dynamic_pointer_cast<VarNode>(left)) {
             return std::make_shared<AugAssignNode>(var->name, op, right);
         }
 
@@ -109,30 +202,16 @@ std::shared_ptr<ASTNode> Parser::parseExpression() {
 
         auto right = parseOr();
 
-        if (const auto var =
-            std::dynamic_pointer_cast<VarNode>(left)) {
-
+        if (const auto var = std::dynamic_pointer_cast<VarNode>(left)) {
             return std::make_shared<AssignNode>(var->name, right);
         }
 
-        if (const auto attr =
-            std::dynamic_pointer_cast<AttributeAccessNode>(left)) {
-
-            return std::make_shared<AttributeAssignNode>(
-                attr->object,
-                attr->attr,
-                right
-            );
+        if (const auto attr = std::dynamic_pointer_cast<AttributeAccessNode>(left)) {
+            return std::make_shared<AttributeAssignNode>(attr->object, attr->attr, right);
         }
 
-        if (const auto idx =
-            std::dynamic_pointer_cast<IndexNode>(left)) {
-
-            return std::make_shared<IndexAssignNode>(
-                idx->object,
-                idx->index,
-                right
-            );
+        if (const auto idx = std::dynamic_pointer_cast<IndexNode>(left)) {
+            return std::make_shared<IndexAssignNode>(idx->object, idx->index, right);
         }
 
         throw SyntaxErrorException("Invalid assignment target");
@@ -144,10 +223,12 @@ std::shared_ptr<ASTNode> Parser::parseExpression() {
 std::shared_ptr<ASTNode> Parser::parseStarredExpression() {
 
     if (matchAndAdvance(TOKEN_OP, "*")) {
-        return std::make_shared<StarredNode>(parseExpression());
+        return std::make_shared<StarredNode>(
+            parseExpressionNoAssign()
+        );
     }
 
-    return parseExpression();
+    return parseExpressionNoAssign();
 }
 
 std::shared_ptr<ASTNode> Parser::parseDoubleStarredExpression() {

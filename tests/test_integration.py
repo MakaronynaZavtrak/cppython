@@ -11288,6 +11288,39 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "",
       "outer()"], "'captured'"),
 
+    # распаковка кортежа при присваивании
+    (["a = 5",
+      "b = 6",
+      "a, b = b, a",
+      "a",
+      "b"], ["6", "5"]),
+
+    (["a, b, c = 1, 2, 3",
+      "a",
+      "b",
+      "c"], ["1", "2", "3"]),
+
+    (["a, b = [10, 20]",
+      "a",
+      "b"], ["10", "20"]),
+
+    (["a, *rest, b = [1, 2, 3, 4, 5]",
+      "a",
+      "rest",
+      "b"], ["1", "[2, 3, 4]", "5"]),
+
+    (["try:",
+      "    a, b = (1, 2, 3)",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "'too many values to unpack (expected 2, got 3)'"),
+
+    (["try:",
+      "    a, b, c = (1, 2)",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "'not enough values to unpack (expected 3, got 2)'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

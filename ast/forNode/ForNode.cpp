@@ -1,0 +1,68 @@
+//
+// Created by semyo on 06.07.2026.
+//
+
+#include "ForNode.h"
+
+#include "CallRuntime.h"
+#include "ClassUtils.h"
+#include "Interpreter.h"
+#include "../../exception/BreakException.h"
+#include "../../exception/ContinueException.h"
+#include "../../exception/StopIterationException.h"
+
+ForNode::ForNode(QString varName,
+                 std::shared_ptr<ASTNode> iterable,
+                 std::vector<std::shared_ptr<ASTNode>> body)
+        : varName(std::move(varName)),
+          iterable(std::move(iterable)),
+          body(std::move(body)) {}
+
+Value ForNode::eval(EnvPtr env) const {
+
+    Value iterableValue = iterable->eval(env);
+
+    Value iterMethod = getAttrValue(iterableValue, "__iter__");
+
+    Value iterator = call(iterMethod, {}, {}, env);
+
+    Value last;
+
+    while (true) {
+
+        try {
+
+            Value nextMethod = getAttrValue(iterator, "__next__");
+            Value value = call(nextMethod, {}, {}, env);
+
+            env->set(varName, value);
+
+            try {
+
+                for (const auto& stmt : body) {
+                    last = Interpreter::executeNode(stmt, env);
+                }
+
+            }
+
+            catch ([[maybe_unused]] const ContinueException& e) {}
+            catch ([[maybe_unused]] const BreakException& e) {
+                break;
+            }
+
+        }
+        catch (const StopIterationException&) {
+            break;
+        }
+    }
+
+    return last;
+}
+
+QString ForNode::toString() const {
+    return "for " + varName + " in " + iterable->toString() + ": ...";
+}
+
+bool ForNode::shouldPrint() const {
+    return false;
+}

@@ -13,8 +13,12 @@
 
 #include <unordered_set>
 
+#include "ClassUtils.h"
+#include "IteratorValue.h"
+#include "TupleValue.h"
 #include "../exception/AttributeErrorException.h"
 #include "../exception/LookupErorException.h"
+#include "../exception/ReturnException.h"
 #include "../exception/TypeErrorException.h"
 #include "../exception/ValueErrorException.h"
 #include "../runtime/ArgValidation.h"
@@ -230,6 +234,7 @@ Value callBoundMethod(const Value::BoundMethodPtr &bm,
 
     if (const auto f =
         std::get_if<Value::FunctionPtr>(&bm->callable.data)) {
+
         const auto local = std::make_shared<Environment>((*f)->closure);
 
         local->set("__class__", Value(bm->ownerClass));
