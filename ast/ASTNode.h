@@ -28,6 +28,7 @@ public:
     [[nodiscard]] virtual Value eval(EnvPtr env) const = 0;
     [[nodiscard]] virtual QString toString() const = 0;
     [[nodiscard]] virtual bool shouldPrint() const { return true; }
+    [[nodiscard]] virtual bool containsYield() const { return false; }
 
     static void printIfNeeded(const std::shared_ptr<ASTNode>& stmt, const Value& value) {
         if (stmt->shouldPrint() && !value.isNone()) {

@@ -36,6 +36,8 @@ public:
 
     [[nodiscard]] bool shouldPrint() const override;
 
+    [[nodiscard]] bool containsYield() const override;
+
 private:
     std::shared_ptr<ASTNode> condition;
     std::vector<std::shared_ptr<ASTNode>> body;

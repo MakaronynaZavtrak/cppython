@@ -66,3 +66,11 @@ QString ForNode::toString() const {
 bool ForNode::shouldPrint() const {
     return false;
 }
+
+bool ForNode::containsYield() const {
+
+    return std::any_of(
+        body.begin(),
+        body.end(),
+        [](const auto& stmt) { return stmt->containsYield(); });
+}

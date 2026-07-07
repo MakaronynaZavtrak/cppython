@@ -11321,6 +11321,96 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    str(e)",
       ""], "'not enough values to unpack (expected 3, got 2)'"),
 
+    # генераторы
+    (["def counter():",
+      "    yield 1",
+      "    yield 2",
+      "    yield 3",
+      "",
+      "g = counter()",
+      "next(g)"], "1"),
+
+    (["def counter():",
+      "    yield 1",
+      "    yield 2",
+      "    yield 3",
+      "",
+      "g = counter()",
+      "next(g)",
+      "next(g)",
+      "next(g)"], ["1", "2", "3"]),
+
+    # исчерпание — StopIteration наружу
+    (["def counter():",
+      "    yield 1",
+      "",
+      "g = counter()",
+      "next(g)",
+      "try:",
+      "    next(g)",
+      "except StopIteration:",
+      "    'exhausted'",
+      ""], ["1", "'exhausted'"]),
+
+    # генератор с аргументами
+    (["def repeat_twice(x):",
+      "    yield x",
+      "    yield x",
+      "",
+      "g = repeat_twice('hi')",
+      "next(g)",
+      "next(g)"], ["'hi'", "'hi'"]),
+
+    # for по генератору — проверяет __iter__/__next__ протокол целиком
+    (["def gen():",
+      "    yield 10",
+      "    yield 20",
+      "    yield 30",
+      "",
+      "total = 0",
+      "for x in gen():",
+      "    total = total + x",
+      "",
+      "total"], "60"),
+
+    # генератор без yield вообще — обычная функция, не должен стать генератором
+    (["def normal():",
+      "    return 42",
+      "",
+      "normal()"], "42"),
+
+    # голый yield без значения — None
+    (["def g():",
+      "    yield",
+      "",
+      "gen = g()",
+      "next(gen)"], ""),
+
+    # несколько независимых генераторов не мешают друг другу
+    (["def counter():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "g1 = counter()",
+      "g2 = counter()",
+      "next(g1)",
+      "next(g2)",
+      "next(g1)",
+      "next(g2)"], ["1", "1", "2", "2"]),
+
+    # генератор с обычным return в конце — завершает работу, StopIteration
+    (["def g():",
+      "    yield 1",
+      "    return",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["1", "'done'"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

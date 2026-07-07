@@ -20,6 +20,13 @@ Value FunctionDefNode::eval(const EnvPtr env) const {
 
     const auto func = std::make_shared<FunctionValue>(params, body, env, name);
 
+    for (const auto& stmt : body) {
+        if (stmt->containsYield()) {
+            func->isGenerator = true;
+            break;
+        }
+    }
+
     Value v(func);
 
     // применяем декораторы снизу вверх

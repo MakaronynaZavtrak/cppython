@@ -224,8 +224,13 @@ add_executable(cppython main.cpp
         ast/raiseNode/RaiseNode.h
         ast/tupleAssignNode/TupleAssignNode.cpp
         ast/tupleAssignNode/TupleAssignNode.h
-        common/QStringHash.h
-        common/QStringHash.h)
+        ast/yieldNode/YieldNode.cpp
+        ast/yieldNode/YieldNode.h
+        service/yieldSignal.h
+        headers/GeneratorValue.h
+        sources/GeneratorValue.cpp
+        runtime/builtins/generator/GeneratorMethods.h
+        runtime/builtins/generator/GeneratorMethods.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

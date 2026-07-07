@@ -83,3 +83,36 @@ IfNode::IfNode(std::shared_ptr<ASTNode> condition,
     }
 
     bool IfNode::shouldPrint() const { return false; }
+
+bool IfNode::containsYield() const {
+
+    if (condition->containsYield()) {
+        return true;
+    }
+
+    for (const auto& stmt : body) {
+        if (stmt->containsYield()) {
+            return true;
+        }
+    }
+
+    for (const auto&[fst, snd] : elifs) {
+
+        if (fst->containsYield()) {
+            return true;
+        }
+
+        if (std::any_of(
+            snd.begin(),
+            snd.end(),
+            [](const auto& sub_stmt) { return sub_stmt->containsYield(); })) {
+            return true;
+        }
+    }
+
+    for (const auto& stmt : elseBody)
+        if (stmt->containsYield())
+            return true;
+
+    return false;
+}

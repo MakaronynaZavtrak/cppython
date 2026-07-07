@@ -251,15 +251,15 @@ public:
     [[nodiscard]] bool isByteArray() const;
     [[nodiscard]] ByteArrayPtr asByteArray(const QString& = "") const;
 
-    [[nodiscard]] Value operator+(const Value&) const;
-
-    [[nodiscard]] Value operator-(const Value&) const;
-
     [[nodiscard]] bool isObject() const;
     [[nodiscard]] ObjectPtr asObject() const;
 
     [[nodiscard]] bool isFrozenSet() const;
     [[nodiscard]] FrozenSetPtr asFrozenSet(const QString& = "") const;
+
+    [[nodiscard]] Value operator+(const Value&) const;
+
+    [[nodiscard]] Value operator-(const Value&) const;
 
     [[nodiscard]] Value operator*(const Value&) const;
 

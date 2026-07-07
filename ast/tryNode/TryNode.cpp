@@ -188,3 +188,25 @@ QString TryNode::toString() const {
 }
 
 bool TryNode::shouldPrint() const { return false; }
+
+bool TryNode::containsYield() const {
+
+    for (const auto& stmt : tryBody)
+        if (stmt->containsYield())
+            return true;
+
+    for (const auto&[exceptionExpr, variableName, body]: excepts) {
+        if (exceptionExpr && exceptionExpr->containsYield())
+            return true;
+    }
+
+    for (const auto& stmt : elseBody)
+        if (stmt->containsYield())
+            return true;
+
+    for (const auto& stmt : finallyBody)
+        if (stmt->containsYield())
+            return true;
+
+    return false;
+}

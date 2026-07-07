@@ -14,6 +14,7 @@
 #include <unordered_set>
 
 #include "ClassUtils.h"
+#include "GeneratorValue.h"
 #include "IteratorValue.h"
 #include "TupleValue.h"
 #include "../exception/AttributeErrorException.h"
@@ -26,6 +27,55 @@
 //
 // Created by semyo on 03.05.2026.
 //
+
+void bindParams(const std::shared_ptr<Environment>& local,
+                const Value::FunctionPtr& func,
+                const std::vector<Value>& args,
+                const Kwargs& kwargs) {
+
+    std::unordered_set<QString> assigned;
+
+    for (size_t i = 0; i < args.size(); ++i) {
+
+        if (i >= func->params.size()) {
+            throw ValueErrorException("Too many positional arguments");
+        }
+
+        const QString& paramName = func->params[i].name;
+        local->set(paramName, args[i]);
+        assigned.insert(paramName);
+    }
+
+    for (const auto& [name, value] : kwargs) {
+
+        bool found = false;
+
+        for (const auto& param : func->params) {
+            if (param.name == name) {
+
+                if (assigned.count(name)) {
+                    throw ValueErrorException("multiple values for argument " + name);
+                }
+
+                local->set(name, value);
+                assigned.insert(name);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            throw ValueErrorException("Unknown keyword argument: " + name);
+        }
+    }
+
+    for (const auto& param : func->params) {
+        if (!assigned.count(param.name)) {
+            throw TypeErrorException("Missing argument: " + param.name);
+        }
+    }
+}
+
 Value call(const Value& callee,
            const std::vector<Value>& args,
            const Kwargs& kwargs,
@@ -37,6 +87,19 @@ Value call(const Value& callee,
     }
 
     if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data)) {
+
+        if ((*f)->isGenerator) {
+
+            const auto local = std::make_shared<Environment>((*f)->closure);
+            bindParams(local, *f, args, kwargs);
+
+            auto gen = std::make_shared<GeneratorValue>();
+            gen->func = *f;
+            gen->env = local;
+
+            return Value(gen);
+        }
+
         return callFunction(*f, args, kwargs, nullptr);
     }
 
@@ -69,67 +132,17 @@ Value callFunction(const Value::FunctionPtr& func,
     if (envOverride) {
         for (auto it = envOverride->variables.cbegin();
             it != envOverride->variables.cend(); ++it) {
-
             local->set(it.key(), it.value());
         }
     }
 
-    std::unordered_set<QString> assigned;
-
-    // позиционные аргументы
-    for (size_t i = 0; i < args.size(); ++i) {
-
-        if (i >= func->params.size()) {
-            throw ValueErrorException("Too many positional arguments");
-        }
-
-        const QString& paramName = func->params[i].name;
-
-        local->set(paramName, args[i]);
-        assigned.insert(paramName);
-    }
-
-    // именованные аргументы
-    for (const auto& [name, value] : kwargs) {
-
-        bool found = false;
-
-        for (const auto& param : func->params) {
-
-            if (param.name == name) {
-
-                if (assigned.count(name)) {
-                    throw ValueErrorException("multiple values for argument " + name);
-                }
-
-                local->set(name, value);
-
-                assigned.insert(name);
-
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            throw ValueErrorException("Unknown keyword argument: " + name);
-        }
-    }
-
-    // отсутствие аргументов
-    for (const auto& param : func->params) {
-
-        if (!assigned.count(param.name)) {
-            throw TypeErrorException("Missing argument: " + param.name);
-        }
-    }
+    bindParams(local, func, args, kwargs);
 
     try {
         for (const auto& stmt : func->body) {
-            [[maybe_unused]] auto _ = stmt->eval(local);
+            stmt->eval(local);
         }
-
-        return {};
+        return Value(); // None, если не было явного return
     }
     catch (ReturnException& e) {
         return e.getValue();

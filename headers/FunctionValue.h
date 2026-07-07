@@ -30,6 +30,8 @@ public:
     std::shared_ptr<Environment> closure;
     QString name;
     std::shared_ptr<ClassValue> ownerClass;
+
+    bool isGenerator = false;
 };
 
 #endif //CPPYTHON_FUNCTIONVALUE_H

@@ -63,3 +63,19 @@ QString WhileNode::toString() const {
 }
 
 bool WhileNode::shouldPrint() const { return false; }
+
+bool WhileNode::containsYield() const {
+
+    if (condition->containsYield())
+        return true;
+
+    for (const auto& stmt : body)
+        if (stmt->containsYield())
+            return true;
+
+    return std::any_of(
+        elseBody.begin(),
+        elseBody.end(),
+        [](const auto& stmt) { return stmt->containsYield(); }
+    );
+}

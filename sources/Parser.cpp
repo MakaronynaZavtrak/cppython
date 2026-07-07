@@ -37,6 +37,7 @@
 #include "../ast/valueNode/ValueNode.h"
 #include "../ast/varNode/VarNode.h"
 #include "../ast/whileNode/WhileNode.h"
+#include "../ast/yieldNode/YieldNode.h"
 #include "../exception/SyntaxErrorException.h"
 #include "../exception/ValueErrorException.h"
 
@@ -81,6 +82,7 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::RAISE:    return parseRaiseStatement();
             case Keyword::GLOBAL:   return parseGlobalStatement();
             case Keyword::NONLOCAL: return parseNonlocalStatement();
+            case Keyword::YIELD:    return parseYieldStatement();
             default:                break;
         }
     }
@@ -899,7 +901,22 @@ std::shared_ptr<ASTNode> Parser::parseNonlocalStatement() {
     return node;
 }
 
-std::shared_ptr<ASTNode> Parser::parseClassDef(const std::vector<std::shared_ptr<ASTNode>>& decorators) {
+std::shared_ptr<ASTNode> Parser::parseYieldStatement() {
+
+    advance(); // yield
+
+    if (peek().type == TOKEN_NEWLINE ||
+        peek().type == TOKEN_DEDENT ||
+        peek().type == TOKEN_EOF) {
+
+        return std::make_shared<YieldNode>(nullptr);
+        }
+
+    return std::make_shared<YieldNode>(parseExpression());
+}
+
+std::shared_ptr<ASTNode> Parser::parseClassDef(
+    const std::vector<std::shared_ptr<ASTNode>>& decorators) {
 
     advance(); // class
 

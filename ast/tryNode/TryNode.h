@@ -52,5 +52,7 @@ public:
     [[nodiscard]] QString toString() const override;
 
     [[nodiscard]] bool shouldPrint() const override;
+
+    [[nodiscard]] bool containsYield() const override;
 };
 #endif //CPPYTHON_TRYNODE_H

@@ -11,6 +11,11 @@
 
 using Kwargs = std::vector<std::pair<QString, Value>>;
 
+void bindParams(const std::shared_ptr<Environment>& local,
+                const Value::FunctionPtr& func,
+                const std::vector<Value>& args,
+                const Kwargs& kwargs);
+
 Value call(const Value&,
            const std::vector<Value>&,
            const Kwargs&,
