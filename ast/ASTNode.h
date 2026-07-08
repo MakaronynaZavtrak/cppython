@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "Value.h"
+#include "../service/ResumeContext.h"
 
 /**
  * @class ASTNode
@@ -29,6 +30,10 @@ public:
     [[nodiscard]] virtual QString toString() const = 0;
     [[nodiscard]] virtual bool shouldPrint() const { return true; }
     [[nodiscard]] virtual bool containsYield() const { return false; }
+
+    [[nodiscard]] virtual Value evalResumable(const EnvPtr env, ResumeContext& ctx) const {
+        return eval(env);
+    }
 
     static void printIfNeeded(const std::shared_ptr<ASTNode>& stmt, const Value& value) {
         if (stmt->shouldPrint() && !value.isNone()) {

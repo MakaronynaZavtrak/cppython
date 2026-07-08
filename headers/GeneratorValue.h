@@ -13,7 +13,7 @@ class GeneratorValue : public std::enable_shared_from_this<GeneratorValue>, publ
 public:
     std::shared_ptr<FunctionValue> func;
     std::shared_ptr<Environment> env; // окружение вызова, с уже забинженными аргументами
-    size_t resumeIndex = 0;
+    std::vector<size_t> resumePath;
     bool finished = false;
 
     Value next() override;

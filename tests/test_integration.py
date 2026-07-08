@@ -11411,6 +11411,53 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'done'",
       ""], ["1", "'done'"]),
 
+    # resume if/elif/else
+    (["def g(flag):",
+      "    if flag:",
+      "        yield 'yes-1'",
+      "        yield 'yes-2'",
+      "    else:",
+      "        yield 'no'",
+      "",
+      "gen = g(True)",
+      "next(gen)",
+      "next(gen)"], ["'yes-1'", "'yes-2'"]),
+
+    (["def g(flag):",
+      "    if flag:",
+      "        yield 'yes'",
+      "    else:",
+      "        yield 'no-1'",
+      "        yield 'no-2'",
+      "",
+      "gen = g(False)",
+      "next(gen)",
+      "next(gen)"], ["'no-1'", "'no-2'"]),
+
+    (["def g(n):",
+      "    if n == 1:",
+      "        yield 'one'",
+      "    elif n == 2:",
+      "        yield 'two-a'",
+      "        yield 'two-b'",
+      "    else:",
+      "        yield 'other'",
+      "",
+      "gen = g(2)",
+      "next(gen)",
+      "next(gen)"], ["'two-a'", "'two-b'"]),
+
+    (["def g():",
+      "    yield 'before'",
+      "    if True:",
+      "        yield 'inside'",
+      "    yield 'after'",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)",
+      "next(gen)"], ["'before'", "'inside'", "'after'"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

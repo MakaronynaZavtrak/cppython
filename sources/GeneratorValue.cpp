@@ -6,6 +6,7 @@
 #include "../service/yieldSignal.h"
 #include "../ast/ASTNode.h"
 #include "../exception/StopIterationException.h"
+#include "../service/execBlockResumable.h"
 
 //
 // Created by semyo on 07.07.2026.
@@ -17,20 +18,20 @@ Value GeneratorValue::next() {
         throw StopIterationException();
     }
 
-    size_t i = resumeIndex;
+    ResumeContext ctx;
+    ctx.replayPath = resumePath;
+    ctx.replayCursor = 0;
 
     try {
 
-        for (; i < func->body.size(); ++i) {
-            [[maybe_unused]] auto _ = func->body[i]->eval(env);
-        }
+        Value result = execBlockResumable(func->body, env, ctx);
 
         finished = true;
         throw StopIterationException();
 
     }
     catch (const YieldSignal& sig) {
-        resumeIndex = i + 1;
+        resumePath = ctx.recordedPath;
         return sig.value;
     }
     catch (const ReturnException&) {

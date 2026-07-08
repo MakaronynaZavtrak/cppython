@@ -5,6 +5,7 @@
 #include "IfNode.h"
 
 #include "Interpreter.h"
+#include "../../service/execBlockResumable.h"
 
 IfNode::IfNode(std::shared_ptr<ASTNode> condition,
                std::vector<std::shared_ptr<ASTNode>> body,
@@ -115,4 +116,66 @@ bool IfNode::containsYield() const {
             return true;
 
     return false;
+}
+
+Value IfNode::evalResumable(const EnvPtr env, ResumeContext& ctx) const {
+
+    if (ctx.isReplaying()) {
+
+        const size_t branch = ctx.consumeReplayStep();
+
+        try {
+
+            if (branch == 0) {
+                return execBlockResumable(body, env, ctx);
+            }
+
+            if (branch <= elifs.size()) {
+                return execBlockResumable(elifs[branch - 1].second, env, ctx);
+            }
+
+            return execBlockResumable(elseBody, env, ctx);
+
+        }
+        catch (const YieldSignal&) {
+            ctx.recordedPath.insert(ctx.recordedPath.begin(), branch);
+            throw;
+        }
+    }
+
+    // обычное прямое выполнение (не resume) — как в eval(), но с записью пути при yield
+    if (condition->eval(env).toBool()) {
+        try {
+            return execBlockResumable(body, env, ctx);
+        }
+        catch (const YieldSignal&) {
+            ctx.recordedPath.insert(ctx.recordedPath.begin(), 0);
+            throw;
+        }
+    }
+
+    for (size_t i = 0; i < elifs.size(); ++i) {
+
+        if (elifs[i].first->eval(env).toBool()) {
+            try {
+                return execBlockResumable(elifs[i].second, env, ctx);
+            }
+            catch (const YieldSignal&) {
+                ctx.recordedPath.insert(ctx.recordedPath.begin(), i + 1);
+                throw;
+            }
+        }
+    }
+
+    if (!elseBody.empty()) {
+        try {
+            return execBlockResumable(elseBody, env, ctx);
+        }
+        catch (const YieldSignal&) {
+            ctx.recordedPath.insert(ctx.recordedPath.begin(), elifs.size() + 1);
+            throw;
+        }
+    }
+
+    return {};
 }

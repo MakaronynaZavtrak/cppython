@@ -229,8 +229,8 @@ add_executable(cppython main.cpp
         service/yieldSignal.h
         headers/GeneratorValue.h
         sources/GeneratorValue.cpp
-        runtime/builtins/generator/GeneratorMethods.h
-        runtime/builtins/generator/GeneratorMethods.cpp)
+        service/ResumeContext.h
+        service/execBlockResumable.h)
 
 target_include_directories(cppython PRIVATE headers)
 
