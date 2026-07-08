@@ -14,6 +14,7 @@ public:
     std::shared_ptr<FunctionValue> func;
     std::shared_ptr<Environment> env; // окружение вызова, с уже забинженными аргументами
     std::vector<size_t> resumePath;
+    std::vector<Value> resumeIterators;
     bool finished = false;
 
     Value next() override;

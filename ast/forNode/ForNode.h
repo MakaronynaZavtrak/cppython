@@ -27,5 +27,7 @@ public:
     [[nodiscard]] bool shouldPrint() const override;
 
     [[nodiscard]] bool containsYield() const override;
+
+    [[nodiscard]] Value evalResumable(EnvPtr env, ResumeContext& ctx) const override;
 };
 #endif //CPPYTHON_FORNODE_H

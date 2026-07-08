@@ -10,6 +10,7 @@
 #include "../../exception/BreakException.h"
 #include "../../exception/ContinueException.h"
 #include "../../exception/StopIterationException.h"
+#include "../../service/execBlockResumable.h"
 
 ForNode::ForNode(QString varName,
                  std::shared_ptr<ASTNode> iterable,
@@ -73,4 +74,55 @@ bool ForNode::containsYield() const {
         body.begin(),
         body.end(),
         [](const auto& stmt) { return stmt->containsYield(); });
+}
+
+Value ForNode::evalResumable(const EnvPtr env, ResumeContext& ctx) const {
+
+    Value iterator;
+    bool resuming = false;
+
+    if (ctx.isReplaying()) {
+        iterator = ctx.consumeReplayIterator();
+        resuming = true;
+    } else {
+        Value iterableValue = iterable->eval(env);
+        Value iterMethod = getAttrValue(iterableValue, "__iter__");
+        iterator = call(iterMethod, {}, {}, env);
+    }
+
+    Value last;
+
+    while (true) {
+
+        if (!resuming) {
+
+            Value value;
+
+            try {
+                Value nextMethod = getAttrValue(iterator, "__next__");
+                value = call(nextMethod, {}, {}, env);
+            }
+            catch (const StopIterationException&) {
+                break;
+            }
+
+            env->set(varName, value);
+        }
+
+        resuming = false;
+
+        try {
+            last = execBlockResumable(body, env, ctx);
+        }
+        catch (const YieldSignal&) {
+            ctx.recordedIterators.insert(ctx.recordedIterators.begin(), iterator);
+            throw;
+        }
+        catch ([[maybe_unused]] const ContinueException& e) {}
+        catch ([[maybe_unused]] const BreakException& e) {
+            break;
+        }
+    }
+
+    return last;
 }

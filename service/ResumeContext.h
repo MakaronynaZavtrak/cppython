@@ -6,7 +6,7 @@
 #define CPPYTHON_RESUMECONTEXT_H
 
 #include <vector>
-#include <cstddef>
+#include "Value.h"
 
 class ResumeContext {
 public:
@@ -15,12 +15,21 @@ public:
 
     std::vector<size_t> recordedPath;
 
+    std::vector<Value> replayIterators;
+    size_t iterCursor = 0;
+
+    std::vector<Value> recordedIterators;
+
     [[nodiscard]] bool isReplaying() const {
         return replayCursor < replayPath.size();
     }
 
     size_t consumeReplayStep() {
         return replayPath[replayCursor++];
+    }
+
+    Value consumeReplayIterator() {
+        return replayIterators[iterCursor++];
     }
 };
 
