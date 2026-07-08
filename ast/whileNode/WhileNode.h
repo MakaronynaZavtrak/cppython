@@ -38,6 +38,8 @@ public:
 
     [[nodiscard]] bool containsYield() const override;
 
+    [[nodiscard]] Value evalResumable(EnvPtr env, ResumeContext& ctx) const override;
+
 private:
     std::shared_ptr<ASTNode> condition;
     std::vector<std::shared_ptr<ASTNode>> body;
