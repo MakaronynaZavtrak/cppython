@@ -7,6 +7,7 @@
 #include "Environment.h"
 #include "TupleValue.h"
 #include "../../runtime/Runtime.h"
+#include "../../service/execBlockResumable.h"
 
 ExceptionScopeGuard::ExceptionScopeGuard(const Value::InstancePtr& instance) {
     Runtime::exceptionStack.push_back(instance);
@@ -204,9 +205,159 @@ bool TryNode::containsYield() const {
         if (stmt->containsYield())
             return true;
 
-    for (const auto& stmt : finallyBody)
-        if (stmt->containsYield())
-            return true;
+    return std::any_of(
+        finallyBody.begin(),
+        finallyBody.end(),
+        [](const auto& stmt) { return stmt->containsYield(); }
+    );
+}
 
-    return false;
+Value TryNode::evalResumable(const EnvPtr env, ResumeContext& ctx) const {
+
+    const size_t FINALLY_MARKER = excepts.size() + 2;
+
+    Value result;
+    std::exception_ptr pending = nullptr;
+
+    if (ctx.isReplaying()) {
+
+        const size_t region = ctx.consumeReplayStep();
+
+        if (region == FINALLY_MARKER) {
+
+            pending = ctx.consumeReplayPendingException();
+
+        } else {
+
+            try {
+                result = runTryExceptElse(true, region, env, ctx);
+            }
+            catch (const YieldSignal&) {
+                throw; // путь уже записан внутри runTryExceptElse
+            }
+            catch (...) {
+                pending = std::current_exception();
+            }
+        }
+
+    } else {
+
+        try {
+            result = runTryExceptElse(false, 0, env, ctx);
+        }
+        catch (const YieldSignal&) {
+            throw;
+        }
+        catch (...) {
+            pending = std::current_exception();
+        }
+    }
+
+    try {
+        execBlockResumable(finallyBody, env, ctx);
+    }
+    catch (const YieldSignal&) {
+        ctx.recordedPath.insert(ctx.recordedPath.begin(), FINALLY_MARKER);
+        ctx.recordedPendingExceptions.insert(ctx.recordedPendingExceptions.begin(), pending);
+        throw;
+    }
+
+    if (pending) {
+        std::rethrow_exception(pending);
+    }
+
+    return result;
+}
+
+Value TryNode::runTryExceptElse(bool resumingRegion, size_t region, const EnvPtr &env, ResumeContext& ctx) const {
+
+    Value result;
+    bool completedWithoutException = false;
+
+    if (!resumingRegion || region == 0) {
+
+        try {
+            try {
+                result = execBlockResumable(tryBody, env, ctx);
+                completedWithoutException = true;
+            }
+            catch (const YieldSignal&) {
+                ctx.recordedPath.insert(ctx.recordedPath.begin(), 0);
+                throw;
+            }
+        }
+        catch (const PythonException& e) {
+
+            bool handled = false;
+
+            for (size_t idx = 0; idx < excepts.size(); ++idx) {
+
+                const auto& [exceptionExpr, variableName, body] = excepts[idx];
+
+                if (!exceptionExpr) {
+                    handled = true;
+                } else {
+                    Value value = exceptionExpr->eval(env);
+                    if (!matchesExceptionHandler(value, e.getClass())) continue;
+                    handled = true;
+                }
+
+                if (!variableName.isEmpty()) {
+                    env->set(variableName, Value(e.getInstance()));
+                }
+
+                ExceptionScopeGuard guard(e.getInstance());
+
+                try {
+                    result = execBlockResumable(body, env, ctx);
+                }
+                catch (const YieldSignal&) {
+                    ctx.recordedPath.insert(ctx.recordedPath.begin(), idx + 1);
+                    ctx.recordedGuardInstances.insert(ctx.recordedGuardInstances.begin(), Value(e.getInstance()));
+                    throw;
+                }
+
+                break;
+            }
+
+            if (!handled) throw;
+        }
+
+        if (completedWithoutException) {
+            try {
+                result = execBlockResumable(elseBody, env, ctx);
+            }
+            catch (const YieldSignal&) {
+                ctx.recordedPath.insert(ctx.recordedPath.begin(), excepts.size() + 1);
+                throw;
+            }
+        }
+
+    } else if (region >= 1 && region <= excepts.size()) {
+
+        size_t idx = region - 1;
+        Value savedInstance = ctx.consumeReplayGuardInstance();
+        const auto instance = savedInstance.asInstance();
+        ExceptionScopeGuard guard(instance);
+
+        try {
+            result = execBlockResumable(excepts[idx].body, env, ctx);
+        }
+        catch (const YieldSignal&) {
+            ctx.recordedPath.insert(ctx.recordedPath.begin(), idx + 1);
+            ctx.recordedGuardInstances.insert(ctx.recordedGuardInstances.begin(), savedInstance);
+            throw;
+        }
+
+    } else {
+        try {
+            result = execBlockResumable(elseBody, env, ctx);
+        }
+        catch (const YieldSignal&) {
+            ctx.recordedPath.insert(ctx.recordedPath.begin(), excepts.size() + 1);
+            throw;
+        }
+    }
+
+    return result;
 }

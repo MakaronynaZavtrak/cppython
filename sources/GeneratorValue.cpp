@@ -21,8 +21,15 @@ Value GeneratorValue::next() {
     ResumeContext ctx;
     ctx.replayPath = resumePath;
     ctx.replayCursor = 0;
+
     ctx.replayIterators = resumeIterators;
     ctx.iterCursor = 0;
+
+    ctx.replayGuardInstances = resumeGuardInstances;
+    ctx.guardCursor = 0;
+
+    ctx.replayPendingExceptions = resumePendingExceptions;
+    ctx.pendingCursor = 0;
 
     try {
 
@@ -35,6 +42,8 @@ Value GeneratorValue::next() {
     catch (const YieldSignal& sig) {
         resumePath = ctx.recordedPath;
         resumeIterators = ctx.recordedIterators;
+        resumeGuardInstances = ctx.recordedGuardInstances;
+        resumePendingExceptions = ctx.recordedPendingExceptions;
         return sig.value;
     }
     catch (const ReturnException&) {

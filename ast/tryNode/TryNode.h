@@ -54,5 +54,10 @@ public:
     [[nodiscard]] bool shouldPrint() const override;
 
     [[nodiscard]] bool containsYield() const override;
+
+    [[nodiscard]] Value evalResumable(EnvPtr env, ResumeContext& ctx) const override;
+
+private:
+    Value runTryExceptElse(bool resumingRegion, size_t region, const EnvPtr &env, ResumeContext& ctx) const;
 };
 #endif //CPPYTHON_TRYNODE_H

@@ -15,6 +15,8 @@ public:
     std::shared_ptr<Environment> env; // окружение вызова, с уже забинженными аргументами
     std::vector<size_t> resumePath;
     std::vector<Value> resumeIterators;
+    std::vector<Value> resumeGuardInstances;
+    std::vector<std::exception_ptr> resumePendingExceptions;
     bool finished = false;
 
     Value next() override;

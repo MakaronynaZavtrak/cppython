@@ -12,13 +12,19 @@ class ResumeContext {
 public:
     std::vector<size_t> replayPath;
     size_t replayCursor = 0;
-
     std::vector<size_t> recordedPath;
 
     std::vector<Value> replayIterators;
     size_t iterCursor = 0;
-
     std::vector<Value> recordedIterators;
+
+    std::vector<Value> replayGuardInstances;
+    size_t guardCursor = 0;
+    std::vector<Value> recordedGuardInstances;
+
+    std::vector<std::exception_ptr> replayPendingExceptions;
+    size_t pendingCursor = 0;
+    std::vector<std::exception_ptr> recordedPendingExceptions;
 
     [[nodiscard]] bool isReplaying() const {
         return replayCursor < replayPath.size();
@@ -30,6 +36,14 @@ public:
 
     Value consumeReplayIterator() {
         return replayIterators[iterCursor++];
+    }
+
+    Value consumeReplayGuardInstance() {
+        return replayGuardInstances[guardCursor++];
+    }
+
+    std::exception_ptr consumeReplayPendingException() {
+        return replayPendingExceptions[pendingCursor++];
     }
 };
 
