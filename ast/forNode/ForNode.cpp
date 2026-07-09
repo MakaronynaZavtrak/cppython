@@ -10,7 +10,7 @@
 #include "../../exception/BreakException.h"
 #include "../../exception/ContinueException.h"
 #include "../../exception/StopIterationException.h"
-#include "../../service/execBlockResumable.h"
+#include "../../service/ExecutionHelpers.h"
 
 ForNode::ForNode(QString varName,
                  std::shared_ptr<ASTNode> iterable,

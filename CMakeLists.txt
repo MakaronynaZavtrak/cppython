@@ -230,7 +230,9 @@ add_executable(cppython main.cpp
         headers/GeneratorValue.h
         sources/GeneratorValue.cpp
         service/ResumeContext.h
-        service/execBlockResumable.h)
+        service/ExecutionHelpers.h
+        ast/yieldFromNode/YieldFromNode.cpp
+        ast/yieldFromNode/YieldFromNode.h)
 
 target_include_directories(cppython PRIVATE headers)
 

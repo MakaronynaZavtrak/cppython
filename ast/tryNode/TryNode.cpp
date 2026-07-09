@@ -7,7 +7,7 @@
 #include "Environment.h"
 #include "TupleValue.h"
 #include "../../runtime/Runtime.h"
-#include "../../service/execBlockResumable.h"
+#include "../../service/ExecutionHelpers.h"
 
 ExceptionScopeGuard::ExceptionScopeGuard(const Value::InstancePtr& instance) {
     Runtime::exceptionStack.push_back(instance);

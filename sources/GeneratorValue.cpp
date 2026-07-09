@@ -6,7 +6,7 @@
 #include "../service/yieldSignal.h"
 #include "../ast/ASTNode.h"
 #include "../exception/StopIterationException.h"
-#include "../service/execBlockResumable.h"
+#include "../service/ExecutionHelpers.h"
 
 //
 // Created by semyo on 07.07.2026.
@@ -46,9 +46,9 @@ Value GeneratorValue::next() {
         resumePendingExceptions = ctx.recordedPendingExceptions;
         return sig.value;
     }
-    catch (const ReturnException&) {
+    catch (const ReturnException& e) {
         finished = true;
-        throw StopIterationException();
+        throw StopIterationException(e.getValue());
     }
 }
 

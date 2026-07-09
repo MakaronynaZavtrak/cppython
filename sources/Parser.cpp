@@ -37,6 +37,7 @@
 #include "../ast/valueNode/ValueNode.h"
 #include "../ast/varNode/VarNode.h"
 #include "../ast/whileNode/WhileNode.h"
+#include "../ast/yieldFromNode/YieldFromNode.h"
 #include "../ast/yieldNode/YieldNode.h"
 #include "../exception/SyntaxErrorException.h"
 #include "../exception/ValueErrorException.h"
@@ -904,6 +905,10 @@ std::shared_ptr<ASTNode> Parser::parseNonlocalStatement() {
 std::shared_ptr<ASTNode> Parser::parseYieldStatement() {
 
     advance(); // yield
+
+    if (matchAndAdvance(TOKEN_KEYWORD, "from")) {
+        return std::make_shared<YieldFromNode>(parseExpression());
+    }
 
     if (peek().type == TOKEN_NEWLINE ||
         peek().type == TOKEN_DEDENT ||

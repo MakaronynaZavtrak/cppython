@@ -1,5 +1,5 @@
 //
-// Created by semyo on 08.07.2026.
+// Created by semyo on 09.07.2026.
 //
 
 #ifndef CPPYTHON_EXECUTIONHELPERS_H
@@ -8,9 +8,11 @@
 #include <vector>
 #include <memory>
 
+#include "InstanceValue.h"
 #include "ResumeContext.h"
 #include "YieldSignal.h"
 #include "../ast/ASTNode.h"
+#include "../exception/StopIterationException.h"
 
 inline Value execBlockResumable(
     const std::vector<std::shared_ptr<ASTNode>>& block,
@@ -56,6 +58,12 @@ inline Value execBlockResumable(
     }
 
     return last;
+}
+
+inline Value extractStopIterationValue(const StopIterationException& e) {
+    const auto& fields = e.getInstance()->fields;
+    const auto it = fields.find("value");
+    return it != fields.end() ? it.value() : Value();
 }
 
 #endif //CPPYTHON_EXECUTIONHELPERS_H

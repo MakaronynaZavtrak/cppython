@@ -5,7 +5,7 @@
 #include "IfNode.h"
 
 #include "Interpreter.h"
-#include "../../service/execBlockResumable.h"
+#include "../../service/ExecutionHelpers.h"
 
 IfNode::IfNode(std::shared_ptr<ASTNode> condition,
                std::vector<std::shared_ptr<ASTNode>> body,
