@@ -11770,6 +11770,47 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "g = c()",
       "next(g)"], "1"),
 
+    # generator.send
+    (["def echo():",
+      "    while True:",
+      "        received = yield",
+      "        yield received",
+      "",
+      "g = echo()",
+      "next(g)",
+      "g.send('hello')",
+      "next(g)",
+      "g.send('world')"], ["", "'hello'", "", "'world'"]),
+
+    (["def double_input():",
+      "    x = yield 'ready'",
+      "    yield x * 2",
+      "",
+      "g = double_input()",
+      "next(g)",
+      "g.send(21)"], ["'ready'", "42"]),
+
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "try:",
+      "    gen.send('oops')",
+      "except TypeError as e:",
+      "    str(e)",
+      ""], "\"can't send non-None value to a just-started generator\""),
+
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    gen.send('anything')",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["1", "'done'"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

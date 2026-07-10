@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 
+#include "GeneratorControl.h"
 #include "InstanceValue.h"
 #include "ResumeContext.h"
 #include "YieldSignal.h"
@@ -41,6 +42,20 @@ inline Value execBlockResumable(
             startIndex++; // нырок завершился нормально — идём дальше как обычно
 
         } else {
+
+            if (!block[startIndex]->isBareYieldStatement()) {
+
+                GeneratorControl::pendingSendValues.push_back(ctx.consumeSentValue());
+
+                try {
+                    auto last = block[startIndex]->eval(env);
+                }
+                catch (...) {
+                    GeneratorControl::pendingSendValues.clear();
+                    throw;
+                }
+            }
+
             startIndex++; // это была сама точка yield — пропускаем её
         }
     }

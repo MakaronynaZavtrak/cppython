@@ -6,6 +6,7 @@
 #include "../service/yieldSignal.h"
 #include "../ast/ASTNode.h"
 #include "../exception/StopIterationException.h"
+#include "../exception/TypeErrorException.h"
 #include "../service/ExecutionHelpers.h"
 
 //
@@ -13,6 +14,33 @@
 //
 
 Value GeneratorValue::next() {
+    return send(Value());
+}
+
+bool GeneratorValue::hasNext() const {
+    return !finished;
+}
+
+QString GeneratorValue::getTypeName() const {
+    return "generator";
+}
+
+QString GeneratorValue::toString() const {
+    return "<generator object " + func->name + " at " +
+        QString::number(reinterpret_cast<std::uintptr_t>(this), 16) + ">";
+}
+
+QString GeneratorValue::repr() const {
+    return toString();
+}
+
+Value GeneratorValue::send(const Value& value) {
+
+    if (!started && !value.isNone()) {
+        throw TypeErrorException(
+            "can't send non-None value to a just-started generator"
+        );
+    }
 
     if (finished) {
         throw StopIterationException();
@@ -21,15 +49,15 @@ Value GeneratorValue::next() {
     ResumeContext ctx;
     ctx.replayPath = resumePath;
     ctx.replayCursor = 0;
-
     ctx.replayIterators = resumeIterators;
     ctx.iterCursor = 0;
-
     ctx.replayGuardInstances = resumeGuardInstances;
     ctx.guardCursor = 0;
-
     ctx.replayPendingExceptions = resumePendingExceptions;
     ctx.pendingCursor = 0;
+    ctx.sentValue = value;
+
+    started = true;
 
     try {
 
@@ -50,21 +78,4 @@ Value GeneratorValue::next() {
         finished = true;
         throw StopIterationException(e.getValue());
     }
-}
-
-bool GeneratorValue::hasNext() const {
-    return !finished;
-}
-
-QString GeneratorValue::getTypeName() const {
-    return "generator";
-}
-
-QString GeneratorValue::toString() const {
-    return "<generator object " + func->name + " at " +
-        QString::number(reinterpret_cast<std::uintptr_t>(this), 16) + ">";
-}
-
-QString GeneratorValue::repr() const {
-    return toString();
 }

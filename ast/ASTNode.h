@@ -35,6 +35,8 @@ public:
         return eval(env);
     }
 
+    [[nodiscard]] virtual bool isBareYieldStatement() const { return false; }
+
     static void printIfNeeded(const std::shared_ptr<ASTNode>& stmt, const Value& value) {
         if (stmt->shouldPrint() && !value.isNone()) {
             std::cout << value.display().toStdString() << "\n";

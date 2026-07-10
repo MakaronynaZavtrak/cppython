@@ -23,6 +23,8 @@ public:
     [[nodiscard]] bool shouldPrint() const override { return false; }
 
     [[nodiscard]] bool containsYield() const override { return true; }
+
+    [[nodiscard]] bool isBareYieldStatement() const override;
 };
 
 #endif //CPPYTHON_YIELDFROMNODE_H

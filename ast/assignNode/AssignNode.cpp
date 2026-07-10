@@ -19,4 +19,8 @@ QString AssignNode::toString() const {
     return varName + " = " + valueExpr->toString();
 }
 
+bool AssignNode::containsYield() const {
+    return valueExpr->containsYield();
+}
+
 bool AssignNode::shouldPrint() const { return false; }

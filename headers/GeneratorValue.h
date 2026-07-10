@@ -17,6 +17,7 @@ public:
     std::vector<Value> resumeIterators;
     std::vector<Value> resumeGuardInstances;
     std::vector<std::exception_ptr> resumePendingExceptions;
+    bool started = false;
     bool finished = false;
 
     Value next() override;
@@ -28,5 +29,7 @@ public:
     [[nodiscard]] QString toString() const override;
 
     [[nodiscard]] QString repr() const override;
+
+    Value send(const Value& value);
 };
 #endif //CPPYTHON_GENERATORVALUE_H

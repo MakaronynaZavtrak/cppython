@@ -7,7 +7,6 @@
 #include "ClassUtils.h"
 #include "../../exception/StopIterationException.h"
 #include "../../service/ExecutionHelpers.h"
-#include "../../service/yieldSignal.h"
 
 Value YieldFromNode::eval(const EnvPtr env) const {
     // без возобновляемого контекста (не внутри генератора) — не имеет смысла,
@@ -66,4 +65,8 @@ Value YieldFromNode::evalResumable(const EnvPtr env, ResumeContext& ctx) const {
 
 QString YieldFromNode::toString() const {
     return "YieldFromNode(" + valueExpr->toString() + ")";
+}
+
+bool YieldFromNode::isBareYieldStatement() const {
+     return true;
 }

@@ -28,6 +28,8 @@ public:
 
     [[nodiscard]] QString toString() const override;
 
+    [[nodiscard]] bool containsYield() const override;
+
     [[nodiscard]] bool shouldPrint() const override;
 
 private:

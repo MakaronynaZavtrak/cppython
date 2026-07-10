@@ -232,7 +232,9 @@ add_executable(cppython main.cpp
         service/ResumeContext.h
         service/ExecutionHelpers.h
         ast/yieldFromNode/YieldFromNode.cpp
-        ast/yieldFromNode/YieldFromNode.h)
+        ast/yieldFromNode/YieldFromNode.h
+        service/GeneratorControl.h
+        service/GeneratorControl.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

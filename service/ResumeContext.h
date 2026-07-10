@@ -26,6 +26,8 @@ public:
     size_t pendingCursor = 0;
     std::vector<std::exception_ptr> recordedPendingExceptions;
 
+    Value sentValue;
+
     [[nodiscard]] bool isReplaying() const {
         return replayCursor < replayPath.size();
     }
@@ -45,6 +47,8 @@ public:
     std::exception_ptr consumeReplayPendingException() {
         return replayPendingExceptions[pendingCursor++];
     }
+
+    [[nodiscard]] Value consumeSentValue() const { return sentValue; }
 };
 
 #endif //CPPYTHON_RESUMECONTEXT_H

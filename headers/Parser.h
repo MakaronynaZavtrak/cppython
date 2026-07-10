@@ -168,6 +168,8 @@ private:
 
     std::shared_ptr<ASTNode> parseYieldStatement();
 
+    std::shared_ptr<ASTNode> parseRightHandSide();
+
     std::shared_ptr<ASTNode> parseClassDef(const std::vector<std::shared_ptr<ASTNode>>& decorators = {});
 
     std::shared_ptr<ASTNode> parsePostfix(std::shared_ptr<ASTNode>);

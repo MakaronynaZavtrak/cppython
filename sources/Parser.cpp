@@ -203,7 +203,7 @@ std::shared_ptr<ASTNode> Parser::parseAssignmentTail(std::shared_ptr<ASTNode> le
 
     if (matchAndAdvance(TOKEN_OP, "=")) {
 
-        auto right = parseOr();
+        auto right = parseRightHandSide();
 
         if (const auto var = std::dynamic_pointer_cast<VarNode>(left)) {
             return std::make_shared<AssignNode>(var->name, right);
@@ -918,6 +918,28 @@ std::shared_ptr<ASTNode> Parser::parseYieldStatement() {
         }
 
     return std::make_shared<YieldNode>(parseExpression());
+}
+
+std::shared_ptr<ASTNode> Parser::parseRightHandSide() {
+
+    if (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::YIELD) {
+
+        advance(); // yield
+
+        if (matchAndAdvance(TOKEN_KEYWORD, "from")) {
+            return std::make_shared<YieldFromNode>(parseOr());
+        }
+
+        if (peek().type == TOKEN_NEWLINE ||
+            peek().type == TOKEN_EOF ||
+            peek().type == TOKEN_DEDENT) {
+            return std::make_shared<YieldNode>(nullptr);
+        }
+
+        return std::make_shared<YieldNode>(parseOr());
+    }
+
+    return parseOr();
 }
 
 std::shared_ptr<ASTNode> Parser::parseClassDef(
