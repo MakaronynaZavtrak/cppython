@@ -12009,6 +12009,48 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    str(e.value)",
       ""], ["1", "'normal'"]),
 
+    # вложенная функция сама по себе — полноценный независимый генератор
+    (["def outer():",
+      "    def inner():",
+      "        yield 'from-inner'",
+      "    return inner()",
+      "",
+      "gen = outer()",
+      "next(gen)"], "'from-inner'"),
+
+    # внешняя функция с yield СНАРУЖИ вложенного def — генератор,
+    # при этом вложенная функция остаётся обычной, не смешиваются
+    (["def outer():",
+      "    def helper(x):",
+      "        return x * 2",
+      "    yield helper(5)",
+      "    yield helper(10)",
+      "",
+      "gen = outer()",
+      "next(gen)", "next(gen)"], ["10", "20"]),
+
+    # генератор возвращает другой генератор (вложенный def с yield),
+    # внешняя НЕ становится генератором, хотя body содержит yield где-то глубоко внутри def
+    (["def make_gen():",
+      "    def counter():",
+      "        yield 1",
+      "        yield 2",
+      "    return counter()",
+      "",
+      "g = make_gen()",
+      "next(g)", "next(g)"], ["1", "2"]),
+
+    # рекурсивный вызов генератора самого себя через vложенную обёртку
+    (["def outer():",
+      "    def gen(n):",
+      "        if n > 0:",
+      "            yield n",
+      "            yield from gen(n - 1)",
+      "    yield from gen(3)",
+      "",
+      "g = outer()",
+      "next(g)", "next(g)", "next(g)"], ["3", "2", "1"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):
