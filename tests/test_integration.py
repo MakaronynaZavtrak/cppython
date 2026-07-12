@@ -11868,6 +11868,72 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'closed'",
       ""], ["1", "'closed'"]),
 
+    # генератор без try/finally — GeneratorExit просто пролетает насквозь, close() тихо завершает
+    (["def g():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.close()",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'closed'",
+      ""], ["1", "'closed'"]),
+
+    # генератор ловит GeneratorExit в finally для очистки, потом естественно завершается — штатно
+    (["def g():",
+      "    try:",
+      "        yield 1",
+      "    finally:",
+      "        pass",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.close()"], "1"),
+
+    # close() на ещё не начатом генераторе — просто помечает finished, ничего не исполняя
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "gen.close()",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'never started'",
+      ""], "'never started'"),
+
+    # генератор игнорирует GeneratorExit и продолжает yield'ить — RuntimeError
+    (["def g():",
+      "    try:",
+      "        yield 1",
+      "    except GeneratorExit:",
+      "        yield 'still alive'",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    gen.close()",
+      "except RuntimeError as e:",
+      "    str(e)",
+      ""], ["1", "'generator ignored GeneratorExit'"]),
+
+    # close() на уже исчерпанном генераторе — безопасный no-op
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    pass",
+      "",
+      "gen.close()",
+      "'no crash'"], ["1", "'no crash'"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

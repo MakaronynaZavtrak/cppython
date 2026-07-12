@@ -5,6 +5,7 @@
 #include "../exception/ReturnException.h"
 #include "../service/yieldSignal.h"
 #include "../ast/ASTNode.h"
+#include "../exception/RuntimeErrorException.h"
 #include "../exception/StopIterationException.h"
 #include "../exception/TypeErrorException.h"
 #include "../service/ExecutionHelpers.h"
@@ -135,5 +136,39 @@ Value GeneratorValue::throwInto(const Value& excValue) {
     catch (const PythonException&) {
         finished = true; // не поймано внутри генератора — закрываем его
         throw;
+    }
+}
+
+Value GeneratorValue::close() {
+
+    if (!started || finished) {
+        finished = true;
+        return Value();
+    }
+
+    const auto exitInstance =
+        PythonException::makeInstance(Runtime::generatorExitClass, "");
+
+    try {
+        throwInto(Value(exitInstance));
+
+        // если мы сюда дошли — генератор поймал GeneratorExit и снова сделал yield
+        finished = true;
+        throw RuntimeErrorException("generator ignored GeneratorExit");
+
+    }
+    catch (const StopIterationException&) {
+        finished = true;
+        return Value();
+    }
+    catch (const PythonException& e) {
+
+        finished = true;
+
+        if (e.getClass() == Runtime::generatorExitClass) {
+            return Value(); // генератор сам кинул/пропустил GeneratorExit дальше — штатно
+        }
+
+        throw; // что-то другое — пробрасываем как есть
     }
 }

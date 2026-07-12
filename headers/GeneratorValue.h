@@ -33,5 +33,7 @@ public:
     Value send(const Value& value);
 
     Value throwInto(const Value& excValue);
+
+    Value close();
 };
 #endif //CPPYTHON_GENERATORVALUE_H

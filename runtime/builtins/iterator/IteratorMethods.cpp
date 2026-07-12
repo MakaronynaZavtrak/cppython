@@ -96,11 +96,35 @@ namespace {
         );
     }
 
+    Value make_close_Method(const Value& obj) {
+
+        const auto iter = extract<Value::IteratorPtr>(obj);
+        auto gen = std::dynamic_pointer_cast<GeneratorValue>(iter);
+
+        if (!gen) {
+            throw AttributeErrorException("object has no attribute 'close'");
+        }
+
+        return makeBuiltin(
+            "close",
+
+            [gen](const std::vector<Value>& args,
+                  const Kwargs&,
+                  const std::shared_ptr<Environment>&) -> Value {
+
+                expectArgs(args, 0, "close");
+
+                return gen->close();
+            }
+        );
+    }
+
     const MethodMap ITERATOR_METHODS = {
         REGISTER_METHOD("__iter__", make_iter_Method),
         REGISTER_METHOD("__next__", make_next_Method),
         REGISTER_METHOD("send", make_send_Method),
-        REGISTER_METHOD("throw", make_throw_Method)
+        REGISTER_METHOD("throw", make_throw_Method),
+        REGISTER_METHOD("close", make_close_Method)
     };
 
 }

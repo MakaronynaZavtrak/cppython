@@ -159,6 +159,13 @@ void registerExceptionClasses(const std::shared_ptr<Environment>& env) {
             Runtime::exceptionClass,
             env
         );
+
+    Runtime::generatorExitClass =
+    createExceptionClass(
+        "GeneratorExit",
+        Runtime::baseExceptionClass,
+        env
+    );
 }
 
 Value baseExceptionInit(

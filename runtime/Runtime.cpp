@@ -40,3 +40,4 @@ std::shared_ptr<ClassValue> Runtime::syntaxErrorClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::typeErrorClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::unicodeDecodeClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::valueErrorClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::generatorExitClass = nullptr;

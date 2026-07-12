@@ -56,5 +56,7 @@ public:
     static std::shared_ptr<ClassValue> unicodeDecodeClass;
 
     static std::shared_ptr<ClassValue> valueErrorClass;
+
+    static std::shared_ptr<ClassValue> generatorExitClass;
 };
 #endif //CPPYTHON_RUNTIME_H
