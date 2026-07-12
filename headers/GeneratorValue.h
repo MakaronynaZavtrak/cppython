@@ -31,5 +31,7 @@ public:
     [[nodiscard]] QString repr() const override;
 
     Value send(const Value& value);
+
+    Value throwInto(const Value& excValue);
 };
 #endif //CPPYTHON_GENERATORVALUE_H

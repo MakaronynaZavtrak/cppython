@@ -4,3 +4,4 @@
 #include "GeneratorControl.h"
 
 std::vector<Value> GeneratorControl::pendingSendValues;
+std::vector<Value> GeneratorControl::pendingThrowInstances;

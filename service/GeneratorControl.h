@@ -10,5 +10,6 @@
 class GeneratorControl {
 public:
     static std::vector<Value> pendingSendValues;
+    static std::vector<Value> pendingThrowInstances;
 };
 #endif

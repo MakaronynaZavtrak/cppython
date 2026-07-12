@@ -43,20 +43,31 @@ inline Value execBlockResumable(
 
         } else {
 
-            if (!block[startIndex]->isBareYieldStatement()) {
+            if (block[startIndex]->isBareYieldStatement()) {
 
-                GeneratorControl::pendingSendValues.push_back(ctx.consumeSentValue());
+                if (ctx.hasPendingThrow) {
+                    throw PythonException(ctx.thrownInstance.asInstance());
+                }
+
+            } else {
+
+                if (ctx.hasPendingThrow) {
+                    GeneratorControl::pendingThrowInstances.push_back(ctx.thrownInstance);
+                } else {
+                    GeneratorControl::pendingSendValues.push_back(ctx.consumeSentValue());
+                }
 
                 try {
                     auto last = block[startIndex]->eval(env);
                 }
                 catch (...) {
                     GeneratorControl::pendingSendValues.clear();
+                    GeneratorControl::pendingThrowInstances.clear();
                     throw;
                 }
             }
 
-            startIndex++; // это была сама точка yield — пропускаем её
+            startIndex++;
         }
     }
 

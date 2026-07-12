@@ -28,6 +28,9 @@ public:
 
     Value sentValue;
 
+    bool hasPendingThrow = false;
+    Value thrownInstance;
+
     [[nodiscard]] bool isReplaying() const {
         return replayCursor < replayPath.size();
     }

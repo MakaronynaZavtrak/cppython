@@ -4,10 +4,17 @@
 
 #include "YieldNode.h"
 
+#include "../../exception/PythonException.h"
 #include "../../service/GeneratorControl.h"
 #include "../../service/yieldSignal.h"
 
 Value YieldNode::eval(const EnvPtr env) const {
+
+    if (!GeneratorControl::pendingThrowInstances.empty()) {
+        Value instValue = GeneratorControl::pendingThrowInstances.back();
+        GeneratorControl::pendingThrowInstances.pop_back();
+        throw PythonException(instValue.asInstance());
+    }
 
     if (!GeneratorControl::pendingSendValues.empty()) {
         Value v = GeneratorControl::pendingSendValues.back();

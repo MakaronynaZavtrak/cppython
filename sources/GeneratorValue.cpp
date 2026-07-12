@@ -79,3 +79,61 @@ Value GeneratorValue::send(const Value& value) {
         throw StopIterationException(e.getValue());
     }
 }
+
+Value GeneratorValue::throwInto(const Value& excValue) {
+
+    Value::InstancePtr instance;
+
+    if (excValue.isClass()) {
+        instance = PythonException::makeInstance(excValue.asClass(), "");
+    } else if (excValue.isInstance()) {
+        instance = excValue.asInstance();
+    } else {
+        throw TypeErrorException("exceptions must derive from BaseException");
+    }
+
+    if (!PythonException::isSubclass(instance->klass, Runtime::baseExceptionClass)) {
+        throw TypeErrorException("exceptions must derive from BaseException");
+    }
+
+    if (!started || finished) {
+        finished = true;
+        throw PythonException(instance);
+    }
+
+    ResumeContext ctx;
+    ctx.replayPath = resumePath;
+    ctx.replayCursor = 0;
+    ctx.replayIterators = resumeIterators;
+    ctx.iterCursor = 0;
+    ctx.replayGuardInstances = resumeGuardInstances;
+    ctx.guardCursor = 0;
+    ctx.replayPendingExceptions = resumePendingExceptions;
+    ctx.pendingCursor = 0;
+    ctx.hasPendingThrow = true;
+    ctx.thrownInstance = Value(instance);
+
+    try {
+
+        Value result = execBlockResumable(func->body, env, ctx);
+
+        finished = true;
+        throw StopIterationException();
+
+    }
+    catch (const YieldSignal& sig) {
+        resumePath = ctx.recordedPath;
+        resumeIterators = ctx.recordedIterators;
+        resumeGuardInstances = ctx.recordedGuardInstances;
+        resumePendingExceptions = ctx.recordedPendingExceptions;
+        return sig.value;
+    }
+    catch (const ReturnException& e) {
+        finished = true;
+        throw StopIterationException(e.getValue());
+    }
+    catch (const PythonException&) {
+        finished = true; // не поймано внутри генератора — закрываем его
+        throw;
+    }
+}
