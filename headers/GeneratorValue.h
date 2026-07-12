@@ -19,6 +19,7 @@ public:
     std::vector<std::exception_ptr> resumePendingExceptions;
     bool started = false;
     bool finished = false;
+    bool running = false;
 
     Value next() override;
 

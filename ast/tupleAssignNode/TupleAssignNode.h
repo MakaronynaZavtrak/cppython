@@ -29,5 +29,9 @@ public:
     [[nodiscard]] QString toString() const override;
 
     [[nodiscard]] bool shouldPrint() const override;
+
+    [[nodiscard]] Value evalResumable(EnvPtr env, ResumeContext& ctx) const override;
+
+    [[nodiscard]] bool containsYield() const override;
 };
 #endif //CPPYTHON_TUPLEASSIGNNODE_H

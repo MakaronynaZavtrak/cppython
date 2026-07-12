@@ -234,7 +234,8 @@ add_executable(cppython main.cpp
         ast/yieldFromNode/YieldFromNode.cpp
         ast/yieldFromNode/YieldFromNode.h
         service/GeneratorControl.h
-        service/GeneratorControl.cpp)
+        service/GeneratorControl.cpp
+        service/GeneratorRunningGuard.h)
 
 target_include_directories(cppython PRIVATE headers)
 

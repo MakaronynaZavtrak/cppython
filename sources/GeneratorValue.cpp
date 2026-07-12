@@ -8,7 +8,9 @@
 #include "../exception/RuntimeErrorException.h"
 #include "../exception/StopIterationException.h"
 #include "../exception/TypeErrorException.h"
+#include "../exception/ValueErrorException.h"
 #include "../service/ExecutionHelpers.h"
+#include "../service/GeneratorRunningGuard.h"
 
 //
 // Created by semyo on 07.07.2026.
@@ -37,6 +39,10 @@ QString GeneratorValue::repr() const {
 
 Value GeneratorValue::send(const Value& value) {
 
+    if (running) {
+        throw ValueErrorException("generator already executing");
+    }
+
     if (!started && !value.isNone()) {
         throw TypeErrorException(
             "can't send non-None value to a just-started generator"
@@ -60,12 +66,11 @@ Value GeneratorValue::send(const Value& value) {
 
     started = true;
 
-    bool completedNormally = false;
+    GeneratorRunningGuard guard(this);
 
     try {
 
         Value result = execBlockResumable(func->body, env, ctx);
-        completedNormally = true;
 
     }
     catch (const YieldSignal& sig) {
@@ -95,6 +100,10 @@ Value GeneratorValue::send(const Value& value) {
 }
 
 Value GeneratorValue::throwInto(const Value& excValue) {
+
+    if (running) {
+        throw ValueErrorException("generator already executing");
+    }
 
     Value::InstancePtr instance;
 
@@ -126,6 +135,8 @@ Value GeneratorValue::throwInto(const Value& excValue) {
     ctx.pendingCursor = 0;
     ctx.hasPendingThrow = true;
     ctx.thrownInstance = Value(instance);
+
+    GeneratorRunningGuard guard(this);
 
     try {
 

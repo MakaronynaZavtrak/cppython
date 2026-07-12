@@ -126,23 +126,40 @@ std::shared_ptr<ASTNode> Parser::parseExpressionStatement() {
         return std::make_shared<TupleNode>(targets);
     }
 
-    std::vector<std::shared_ptr<ASTNode>> values;
-    values.push_back(parseStarredExpression());
+    std::shared_ptr<ASTNode> rightNode;
 
-    while (matchAndAdvance(TOKEN_OP, ",")) {
+    if (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::YIELD) {
 
-        if (peek().type == TOKEN_NEWLINE ||
-            peek().type == TOKEN_EOF ||
-            peek().type == TOKEN_DEDENT) {
-            break;
-            }
+        advance(); // yield
 
+        if (matchAndAdvance(TOKEN_KEYWORD, "from")) {
+            rightNode = std::make_shared<YieldFromNode>(parseOr());
+        } else if (peek().type == TOKEN_NEWLINE ||
+                   peek().type == TOKEN_EOF ||
+                   peek().type == TOKEN_DEDENT) {
+            rightNode = std::make_shared<YieldNode>(nullptr);
+                   } else {
+                       rightNode = std::make_shared<YieldNode>(parseOr());
+                   }
+
+    } else {
+
+        std::vector<std::shared_ptr<ASTNode>> values;
         values.push_back(parseStarredExpression());
-    }
 
-    std::shared_ptr<ASTNode> rightNode = values.size() > 1
-        ? std::make_shared<TupleNode>(values)
-        : values[0];
+        while (matchAndAdvance(TOKEN_OP, ",")) {
+            if (peek().type == TOKEN_NEWLINE ||
+                peek().type == TOKEN_EOF ||
+                peek().type == TOKEN_DEDENT) {
+                break;
+                }
+            values.push_back(parseStarredExpression());
+        }
+
+        rightNode = values.size() > 1
+            ? std::make_shared<TupleNode>(values)
+            : values[0];
+    }
 
     return std::make_shared<TupleAssignNode>(std::move(targets), rightNode);
 }

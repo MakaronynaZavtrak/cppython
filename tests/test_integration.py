@@ -12051,6 +12051,62 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "g = outer()",
       "next(g)", "next(g)", "next(g)"], ["3", "2", "1"]),
 
+    # target1, target2 = yield expr
+    (["def g():",
+      "    a, b = yield",
+      "    yield a + b",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.send((3, 4))"], "7"),
+
+    (["def g():",
+      "    x, y = yield 'ready'",
+      "    yield x * y",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.send((6, 7))"], ["'ready'", "42"]),
+
+    # пока не поддерживается
+    # (["def pair_gen():",
+    #   "    yield (1, 'a')",
+    #   "    yield (2, 'b')",
+    #   "",
+    #   "def outer():",
+    #   "    for _ in range(0):",
+    #   "        pass",
+    #   "    x, y = yield from pair_gen()",
+    #   "",
+    #   "def simple():",
+    #   "    n, s = yield from pair_gen()",
+    #   "    yield (n, s)",
+    #   "",
+    #   "g = simple()",
+    #   "next(g)"], "(2, 'b')"),
+
+    # защита от рекурсивного вызова
+    (["def g():",
+      "    yield 1",
+      "    next(gen)",
+      "    yield 2",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], ["1", "'generator already executing'"]),
+
+    (["def g():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)"], "2"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

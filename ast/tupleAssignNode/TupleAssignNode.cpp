@@ -11,11 +11,13 @@
 #include "ListValue.h"
 #include "../../exception/SyntaxErrorException.h"
 #include "../../exception/ValueErrorException.h"
+#include "../../service/yieldSignal.h"
 #include "../attributeAccessNode/AttributeAccessNode.h"
 #include "../indexNode/IndexNode.h"
 #include "../starredNode/StarredNode.h"
 #include "../tupleNode/TupleNode.h"
 #include "../varNode/VarNode.h"
+#include "../yieldFromNode/YieldFromNode.h"
 
 TupleAssignNode::TupleAssignNode(std::vector<std::shared_ptr<ASTNode>> targets,
                                  std::shared_ptr<ASTNode> valueExpr)
@@ -144,3 +146,32 @@ QString TupleAssignNode::toString() const {
 }
 
 bool TupleAssignNode::shouldPrint() const { return false; }
+
+Value TupleAssignNode::evalResumable(const EnvPtr env, ResumeContext& ctx) const {
+
+    if (dynamic_cast<YieldFromNode*>(valueExpr.get())) {
+
+        Value val;
+
+        try {
+            val = valueExpr->evalResumable(env, ctx);
+        }
+        catch (const YieldSignal&) {
+            ctx.recordedPath.insert(ctx.recordedPath.begin(), 0);
+            throw;
+        }
+
+        assignMultiple(targets, val, env);
+        return val;
+    }
+
+    // простой "a, b = yield expr" — доставка значения идёт через
+    // существующий механизм GeneratorControl в execBlockResumable
+    Value val = valueExpr->eval(env);
+    assignMultiple(targets, val, env);
+    return val;
+}
+
+bool TupleAssignNode::containsYield() const {
+    return valueExpr->containsYield();
+}
