@@ -5,6 +5,7 @@
 #include "YieldFromNode.h"
 #include "CallRuntime.h"
 #include "ClassUtils.h"
+#include "../../exception/AttributeErrorException.h"
 #include "../../exception/StopIterationException.h"
 #include "../../service/ExecutionHelpers.h"
 
@@ -29,10 +30,11 @@ Value YieldFromNode::eval(const EnvPtr env) const {
 
 Value YieldFromNode::evalResumable(const EnvPtr env, ResumeContext& ctx) const {
 
+    const bool resuming = ctx.isReplaying();
     Value iterator;
 
-    if (ctx.isReplaying()) {
-        ctx.consumeReplayStep(); // маркер-заглушка, значение не важно
+    if (resuming) {
+        ctx.consumeReplayStep(); // маркер-заглушка
         iterator = ctx.consumeReplayIterator();
     } else {
         Value iterableValue = valueExpr->eval(env);
@@ -40,26 +42,70 @@ Value YieldFromNode::evalResumable(const EnvPtr env, ResumeContext& ctx) const {
         iterator = call(iterMethod, {}, {}, env);
     }
 
-    while (true) {
+    Value value;
+    bool gotStop = false;
+    Value stopValue;
 
-        Value value;
+    try {
 
-        try {
+        if (resuming && ctx.hasPendingThrow) {
+
+            bool hasThrow = true;
+            Value throwMethod;
+
+            try { throwMethod = getAttrValue(iterator, "throw"); }
+            catch (const AttributeErrorException&) { hasThrow = false; }
+
+            if (hasThrow) {
+                value = call(throwMethod, { ctx.thrownInstance }, {}, env);
+            } else {
+
+                try {
+                    Value closeMethod = getAttrValue(iterator, "close");
+                    call(closeMethod, {}, {}, env);
+                }
+                catch (const AttributeErrorException&) {}
+
+                throw PythonException(ctx.thrownInstance.asInstance());
+            }
+
+        } else if (resuming) {
+
+            bool hasSend = true;
+            Value sendMethod;
+
+            try { sendMethod = getAttrValue(iterator, "send"); }
+            catch (const AttributeErrorException&) { hasSend = false; }
+
+            if (hasSend) {
+                value = call(sendMethod, { ctx.sentValue }, {}, env);
+            } else {
+                Value nextMethod = getAttrValue(iterator, "__next__");
+                value = call(nextMethod, {}, {}, env);
+            }
+
+        } else {
             Value nextMethod = getAttrValue(iterator, "__next__");
             value = call(nextMethod, {}, {}, env);
         }
-        catch (const StopIterationException& e) {
-            return extractStopIterationValue(e);
-        }
 
-        try {
-            throw YieldSignal(value);
-        }
-        catch (const YieldSignal&) {
-            ctx.recordedIterators.insert(ctx.recordedIterators.begin(), iterator);
-            ctx.recordedPath.insert(ctx.recordedPath.begin(), 0); // маркер "ещё не закончили"
-            throw;
-        }
+    }
+    catch (const StopIterationException& e) {
+        gotStop = true;
+        stopValue = extractStopIterationValue(e);
+    }
+
+    if (gotStop) {
+        return stopValue;
+    }
+
+    try {
+        throw YieldSignal(value);
+    }
+    catch (const YieldSignal&) {
+        ctx.recordedIterators.insert(ctx.recordedIterators.begin(), iterator);
+        ctx.recordedPath.insert(ctx.recordedPath.begin(), 0);
+        throw;
     }
 }
 

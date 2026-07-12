@@ -11934,6 +11934,41 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "gen.close()",
       "'no crash'"], ["1", "'no crash'"]),
 
+    (["def sub():",
+      "    x = yield 1",
+      "    yield x * 10",
+      "",
+      "def outer():",
+      "    yield from sub()",
+      "",
+      "g = outer()",
+      "next(g)",
+      "g.send(5)"], ["1", "50"]),
+
+    (["def sub():",
+      "    try:",
+      "        yield 1",
+      "    except ValueError:",
+      "        yield 'sub-caught'",
+      "",
+      "def outer():",
+      "    yield from sub()",
+      "",
+      "g = outer()",
+      "next(g)",
+      "g.throw(ValueError('x'))"], ["1", "'sub-caught'"]),
+
+    (["def sub():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "def outer():",
+      "    yield from sub()",
+      "    yield 'outer-after'",
+      "",
+      "g = outer()",
+      "next(g)", "next(g)", "next(g)"], ["1", "2", "'outer-after'"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):
