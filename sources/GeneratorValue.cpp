@@ -60,12 +60,12 @@ Value GeneratorValue::send(const Value& value) {
 
     started = true;
 
+    bool completedNormally = false;
+
     try {
 
         Value result = execBlockResumable(func->body, env, ctx);
-
-        finished = true;
-        throw StopIterationException();
+        completedNormally = true;
 
     }
     catch (const YieldSignal& sig) {
@@ -79,6 +79,19 @@ Value GeneratorValue::send(const Value& value) {
         finished = true;
         throw StopIterationException(e.getValue());
     }
+    catch (const PythonException& e) {
+
+        finished = true;
+
+        if (e.getClass() == Runtime::stopIterationClass) {
+            throw RuntimeErrorException("generator raised StopIteration");
+        }
+
+        throw;
+    }
+
+    finished = true;
+    throw StopIterationException();
 }
 
 Value GeneratorValue::throwInto(const Value& excValue) {
@@ -118,9 +131,6 @@ Value GeneratorValue::throwInto(const Value& excValue) {
 
         Value result = execBlockResumable(func->body, env, ctx);
 
-        finished = true;
-        throw StopIterationException();
-
     }
     catch (const YieldSignal& sig) {
         resumePath = ctx.recordedPath;
@@ -133,10 +143,19 @@ Value GeneratorValue::throwInto(const Value& excValue) {
         finished = true;
         throw StopIterationException(e.getValue());
     }
-    catch (const PythonException&) {
-        finished = true; // не поймано внутри генератора — закрываем его
+    catch (const PythonException& e) {
+
+        finished = true;
+
+        if (e.getClass() == Runtime::stopIterationClass) {
+            throw RuntimeErrorException("generator raised StopIteration");
+        }
+
         throw;
     }
+
+    finished = true;
+    throw StopIterationException();
 }
 
 Value GeneratorValue::close() {

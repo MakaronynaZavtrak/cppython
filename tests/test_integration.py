@@ -11984,6 +11984,31 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "next(g)",
       "next(g)"], ["1", "2", "'done-value'"]),
 
+    # PEP 479
+    (["def g():",
+      "    yield 1",
+      "    raise StopIteration('manual')",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except RuntimeError as e:",
+      "    str(e)",
+      ""], ["1", "'generator raised StopIteration'"]),
+
+    (["def g():",
+      "    yield 1",
+      "    return 'normal'",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration as e:",
+      "    str(e.value)",
+      ""], ["1", "'normal'"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):
