@@ -58,5 +58,7 @@ public:
     static std::shared_ptr<ClassValue> valueErrorClass;
 
     static std::shared_ptr<ClassValue> generatorExitClass;
+
+    static std::shared_ptr<ClassValue> rangeClass;
 };
 #endif //CPPYTHON_RUNTIME_H

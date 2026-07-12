@@ -235,7 +235,13 @@ add_executable(cppython main.cpp
         ast/yieldFromNode/YieldFromNode.h
         service/GeneratorControl.h
         service/GeneratorControl.cpp
-        service/GeneratorRunningGuard.h)
+        service/GeneratorRunningGuard.h
+        headers/RangeValue.h
+        sources/RangeValue.cpp
+        headers/RangeIterator.h
+        sources/RangeIterator.cpp
+        runtime/builtins/range/RangeMethods.cpp
+        runtime/builtins/range/RangeMethods.h)
 
 target_include_directories(cppython PRIVATE headers)
 

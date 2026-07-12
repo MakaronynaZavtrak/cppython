@@ -7,6 +7,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class RangeValue;
 class FrozenSetValue;
 class ObjectValue;
 class ByteArrayValue;
@@ -86,6 +87,8 @@ public:
 
     using FrozenSetPtr = std::shared_ptr<FrozenSetValue>;
 
+    using RangePtr = std::shared_ptr<RangeValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -113,6 +116,7 @@ public:
         ByteArrayPtr,
         ObjectPtr,
         FrozenSetPtr,
+        RangePtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -165,6 +169,8 @@ public:
     explicit Value(const ByteArrayPtr& byteArray) : data(byteArray) {}
 
     explicit Value(const FrozenSetPtr& frozenSet): data(frozenSet) {}
+
+    explicit Value(const RangePtr& range) : data(range) {}
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString repr() const override;
@@ -256,6 +262,9 @@ public:
 
     [[nodiscard]] bool isFrozenSet() const;
     [[nodiscard]] FrozenSetPtr asFrozenSet(const QString& = "") const;
+
+    [[nodiscard]] bool isRange() const;
+    [[nodiscard]] RangePtr asRange(const QString& = "") const;
 
     [[nodiscard]] Value operator+(const Value&) const;
 

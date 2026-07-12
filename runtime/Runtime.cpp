@@ -18,6 +18,8 @@ void Runtime::initialize(const std::shared_ptr<Environment> &env) {
 
     registerExceptionClasses(env);
 
+    registerRangeClass(env);
+
 }
 
 std::shared_ptr<ClassValue> Runtime::objectClass = nullptr;
@@ -41,3 +43,4 @@ std::shared_ptr<ClassValue> Runtime::typeErrorClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::unicodeDecodeClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::valueErrorClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::generatorExitClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::rangeClass = nullptr;

@@ -31,6 +31,8 @@
 
 #include "FrozenSetIterator.h"
 #include "FrozenSetValue.h"
+#include "RangeIterator.h"
+#include "RangeValue.h"
 #include "../exception/ArithmeticErrorException.h"
 #include "../exception/TypeErrorException.h"
 
@@ -161,6 +163,10 @@ QString Value::toString() const {
             },
 
             [](const FrozenSetPtr &p) {
+                return p->toString();
+            },
+
+            [](const RangePtr &p) {
                 return p->toString();
             },
 
@@ -567,7 +573,8 @@ bool Value::isObject() const {
         || isTuple()
         || isDict()
         || isSet()
-        || isFrozenSet();
+        || isFrozenSet()
+        || isRange();
 }
 
 Value::ObjectPtr Value::asObject() const {
@@ -604,6 +611,10 @@ Value::ObjectPtr Value::asObject() const {
         return std::static_pointer_cast<ObjectValue>(asFrozenSet());
     }
 
+    if (isRange()) {
+        return std::static_pointer_cast<ObjectValue>(asRange());
+    }
+
     throw TypeErrorException("Value is not an object");
 }
 
@@ -619,6 +630,17 @@ Value::FrozenSetPtr Value::asFrozenSet(const QString &) const {
 
     return std::get<FrozenSetPtr>(data);
 
+}
+
+bool Value::isRange() const {
+    return std::holds_alternative<RangePtr>(data);
+}
+
+Value::RangePtr Value::asRange(const QString& where) const {
+    if (!isRange()) {
+        throw TypeErrorException(where + " argument must be a range");
+    }
+    return std::get<RangePtr>(data);
 }
 
 Value Value::operator*(const Value &other) const {
@@ -1563,6 +1585,11 @@ Value::IteratorPtr Value::getIterator() const {
                 asFrozenSet()
             )
         );
+    }
+
+    if (isRange()) {
+        return std::static_pointer_cast<IteratorValue>(
+            std::make_shared<RangeIterator>(asRange()));
     }
 
     if (std::holds_alternative<IteratorPtr>(data)) {

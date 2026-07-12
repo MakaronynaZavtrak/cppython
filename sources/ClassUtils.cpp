@@ -19,6 +19,7 @@
 #include "../runtime/builtins/bytearray/ByteArrayMethods.h"
 #include "../runtime/builtins/bytes/BytesMethods.h"
 #include "../runtime/builtins/frozenset/FrozenSetMethods.h"
+#include "../runtime/builtins/range/RangeMethods.h"
 #include "../runtime/builtins/tuple/TupleMethods.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
@@ -145,6 +146,10 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
     if (obj.isFrozenSet()) {
         return getFrozenSetAttr(obj, attr);
+    }
+
+    if (obj.isRange()) {
+        return getRangeAttr(obj, attr);
     }
 
     throw AttributeErrorException(

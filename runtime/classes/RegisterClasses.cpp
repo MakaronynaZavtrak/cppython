@@ -70,3 +70,12 @@ void registerByteArrayClass(const std::shared_ptr<Environment> &env) {
     Runtime::bytearrayClass->attributes["fromhex"] = makeByteArrayFromHexBuiltin();
     Runtime::bytearrayClass->attributes["maketrans"] = makeByteArrayMakeTransBuiltin();
 }
+
+void registerRangeClass(const std::shared_ptr<Environment>& env) {
+
+    Runtime::rangeClass = std::make_shared<ClassValue>("range");
+    Runtime::rangeClass->name = "range";
+    Runtime::rangeClass->bases.push_back(Runtime::objectClass);
+
+    env->set("range", Value(Runtime::rangeClass));
+}

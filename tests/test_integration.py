@@ -6140,6 +6140,21 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
 
     ("[] is []", "False"),
 
+    ("list(range(5))", "[0, 1, 2, 3, 4]"),
+    ("list(range(2, 8))", "[2, 3, 4, 5, 6, 7]"),
+    ("list(range(10, 0, -2))", "[10, 8, 6, 4, 2]"),
+    ("len(range(5))", "5"),
+    ("range(5)[2]", "2"),
+    ("range(10, 20, 3)[2]", "16"),
+    ("3 in range(5)", "True"),
+    ("10 in range(5)", "False"),
+    ("repr(range(5))", "'range(0, 5)'"),
+    ("repr(range(2, 5))", "'range(2, 5)'"),
+    ("repr(range(0, 10, 2))", "'range(0, 10, 2)'"),
+    ("range(5) == range(0, 5, 1)", "True"),
+    ("range(5).count(3)", "1"),
+    ("range(5).index(3)", "3"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12106,6 +12121,16 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "gen = g()",
       "next(gen)",
       "next(gen)"], "2"),
+
+    # range
+    (["def g():",
+      "    for x in range(3):",
+      "        yield x",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)",
+      "next(gen)"], ["0", "1", "2"]),
 
 ])
 

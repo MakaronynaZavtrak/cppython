@@ -54,6 +54,11 @@ inline Value::FrozenSetPtr extract<Value::FrozenSetPtr>(const Value& obj) {
     return std::get<Value::FrozenSetPtr>(obj.data);
 }
 
+template<>
+inline Value::RangePtr extract<Value::RangePtr>(const Value& obj) {
+    return std::get<Value::RangePtr>(obj.data);
+}
+
 template<typename Fn>
 Value makeBuiltin(const QString& name, Fn&& fn) {
     return Value(

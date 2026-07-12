@@ -16,6 +16,7 @@
 #include "ClassUtils.h"
 #include "GeneratorValue.h"
 #include "IteratorValue.h"
+#include "RangeValue.h"
 #include "TupleValue.h"
 #include "../exception/AttributeErrorException.h"
 #include "../exception/LookupErorException.h"
@@ -211,6 +212,34 @@ Value constructClass(const Value::ClassPtr& cls,
                 constructBytesData(args, kwargs)
             )
         );
+    }
+
+    if (cls == Runtime::rangeClass) {
+
+        for (const auto& a : args) {
+            if (!a.isBigInt() && !a.isBool()) {
+                throw TypeErrorException(
+                    "'" + a.repr() + "' object cannot be interpreted as an integer"
+                );
+            }
+        }
+
+        Value::BigInt start = 0, stop, step = 1;
+
+        if (args.size() == 1) {
+            stop = args[0].toBigInt();
+        } else if (args.size() == 2) {
+            start = args[0].toBigInt();
+            stop = args[1].toBigInt();
+        } else if (args.size() == 3) {
+            start = args[0].toBigInt();
+            stop = args[1].toBigInt();
+            step = args[2].toBigInt();
+        } else {
+            throw TypeErrorException("range expected at most 3 arguments, got " + QString::number(args.size()));
+        }
+
+        return Value(std::make_shared<RangeValue>(start, stop, step));
     }
 
     const auto instance = std::make_shared<InstanceValue>(cls);
