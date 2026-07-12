@@ -11969,6 +11969,21 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "g = outer()",
       "next(g)", "next(g)", "next(g)"], ["1", "2", "'outer-after'"]),
 
+    # target = yield from expr
+    (["def sub():",
+      "    yield 1",
+      "    yield 2",
+      "    return 'done-value'",
+      "",
+      "def outer():",
+      "    result = yield from sub()",
+      "    yield result",
+      "",
+      "g = outer()",
+      "next(g)",
+      "next(g)",
+      "next(g)"], ["1", "2", "'done-value'"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

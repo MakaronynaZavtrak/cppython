@@ -5,6 +5,8 @@
 #include "AssignNode.h"
 
 #include "Environment.h"
+#include "../../service/yieldSignal.h"
+#include "../yieldFromNode/YieldFromNode.h"
 
 AssignNode::AssignNode(QString varName, std::shared_ptr<ASTNode> valueExpr) :
     varName(std::move(varName)), valueExpr(std::move(valueExpr)) {}
@@ -24,3 +26,26 @@ bool AssignNode::containsYield() const {
 }
 
 bool AssignNode::shouldPrint() const { return false; }
+
+Value AssignNode::evalResumable(const EnvPtr env, ResumeContext& ctx) const {
+
+    if (dynamic_cast<YieldFromNode*>(valueExpr.get())) {
+
+        Value val;
+
+        try {
+            val = valueExpr->evalResumable(env, ctx);
+        }
+        catch (const YieldSignal&) {
+            ctx.recordedPath.insert(ctx.recordedPath.begin(), 0);
+            throw;
+        }
+
+        env->set(varName, val);
+        return val;
+    }
+
+    Value val = valueExpr->eval(env);
+    env->set(varName, val);
+    return val;
+}

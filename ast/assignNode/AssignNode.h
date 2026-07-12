@@ -32,6 +32,8 @@ public:
 
     [[nodiscard]] bool shouldPrint() const override;
 
+    [[nodiscard]] Value evalResumable(EnvPtr env, ResumeContext& ctx) const override;
+
 private:
     QString varName;
     std::shared_ptr<ASTNode> valueExpr;
