@@ -244,7 +244,11 @@ add_executable(cppython main.cpp
         runtime/builtins/range/RangeMethods.h
         headers/ComprehensionClause.h
         ast/listCompNode/ListCompNode.cpp
-        ast/listCompNode/ListCompNode.h)
+        ast/listCompNode/ListCompNode.h
+        ast/setCompNode/SetCompNode.cpp
+        ast/setCompNode/SetCompNode.h
+        ast/dictCompNode/DictCompNode.cpp
+        ast/dictCompNode/DictCompNode.h)
 
 target_include_directories(cppython PRIVATE headers)
 

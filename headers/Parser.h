@@ -190,6 +190,10 @@ private:
 
     std::shared_ptr<ASTNode> parseDictOrSet();
 
+    std::shared_ptr<ASTNode> parseDictComp();
+
+    std::shared_ptr<ASTNode> parseSetComp();
+
     std::shared_ptr<ASTNode> parseIndexOrSlice();
 
     QString consume(TokenType type, const QString &value);
@@ -233,6 +237,10 @@ private:
     std::shared_ptr<ASTNode> parseAssignmentTail(std::shared_ptr<ASTNode> left);
 
     std::vector<ComprehensionClause> parseComprehensionClauses();
+
+    enum class BraceKind { Dict, DictComp, Set, SetComp };
+
+    BraceKind classifyBraces();
 
     QVector<Token> tokens;
     int current = 0;

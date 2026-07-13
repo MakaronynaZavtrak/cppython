@@ -6162,6 +6162,16 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("[x + y for x in [1, 2] for y in [10, 20]]", "[11, 21, 12, 22]"),
     ("[x for x in range(5) if x > 1 if x < 4]", "[2, 3]"),
 
+
+    # set и dict comprehensions
+    ("{x for x in [1, 2, 2, 3]}", "{1, 2, 3}"),
+    ("{x * 2 for x in [1, 2, 3]}", "{2, 4, 6}"),
+    ("{x: x * x for x in [1, 2, 3]}", "{1: 1, 2: 4, 3: 9}"),
+    ("{x: x for x in [1, 2, 3] if x > 1}", "{2: 2, 3: 3}"),
+    ("{}", "{}"),
+    ("{1, 2, 3}", "{1, 2, 3}"),
+    ("{'a': 1, 'b': 2}", "{'a': 1, 'b': 2}"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12145,6 +12155,11 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
 
     (["x = 'outer'",
       "result = [x for x in [1, 2, 3]]",
+      "x"], "'outer'"),
+
+    # dict comprehension
+    (["x = 'outer'",
+      "result = {x: 1 for x in [1, 2]}",
       "x"], "'outer'"),
 
 ])

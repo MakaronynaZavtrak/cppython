@@ -11,6 +11,7 @@
 #include "../ast/compareNode/CompareNode.h"
 #include "../ast/continueNode/ContinueNode.h"
 #include "../ast/deleteNode/DeleteNode.h"
+#include "../ast/dictCompNode/DictCompNode.h"
 #include "../ast/dictElementNode/dictPairNode/DictPairNode.h"
 #include "../ast/dictElementNode/dictUnpackNode/DictUnpackNode.h"
 #include "../ast/dictNode/DictNode.h"
@@ -28,6 +29,7 @@
 #include "../ast/passNode/PassNode.h"
 #include "../ast/raiseNode/RaiseNode.h"
 #include "../ast/returnNode/ReturnNode.h"
+#include "../ast/setCompNode/SetCompNode.h"
 #include "../ast/setNode/SetNode.h"
 #include "../ast/sliceNode/SliceNode.h"
 #include "../ast/starredNode/StarredNode.h"
@@ -278,6 +280,48 @@ std::vector<ComprehensionClause> Parser::parseComprehensionClauses() {
     }
 
     return clauses;
+}
+
+Parser::BraceKind Parser::classifyBraces() {
+
+    int pos = current + 1; // сразу после "{"
+    int nesting = 0;
+
+    bool sawColonOrUnpack = false;
+    bool sawFor = false;
+
+    while (pos < tokens.size()) {
+
+        const Token& tok = tokens[pos];
+
+        if (tok.type == TOKEN_OP) {
+
+            if (tok.value == "{" || tok.value == "[" || tok.value == "(") {
+                nesting++;
+            }
+            else if (tok.value == "}" || tok.value == "]" || tok.value == ")") {
+                if (nesting == 0) break;
+                nesting--;
+            }
+            else if (nesting == 0 && (tok.value == ":" || tok.value == "**")) {
+                sawColonOrUnpack = true;
+            }
+        }
+
+        if (nesting == 0 &&
+            tok.type == TOKEN_KEYWORD &&
+            tok.keyword == Keyword::FOR) {
+            sawFor = true;
+        }
+
+        pos++;
+    }
+
+    if (sawFor) {
+        return sawColonOrUnpack ? BraceKind::DictComp : BraceKind::SetComp;
+    }
+
+    return sawColonOrUnpack ? BraceKind::Dict : BraceKind::Set;
 }
 
 std::shared_ptr<ASTNode> Parser::parseStarredExpression() {
@@ -1746,12 +1790,41 @@ std::shared_ptr<ASTNode> Parser::parseDictOrSet() {
         return parseDict();
     }
 
-    if (isDictLiteral()) {
-        return parseDict();
+    switch (classifyBraces()) {
+        case BraceKind::DictComp: return parseDictComp();
+        case BraceKind::SetComp:  return parseSetComp();
+        case BraceKind::Dict:     return parseDict();
+        case BraceKind::Set:      return parseSet();
+        default:                  throwUnexpectedTokenError(peek());
     }
+}
 
-    return parseSet();
+std::shared_ptr<ASTNode> Parser::parseDictComp() {
 
+    consume(TOKEN_OP, "{");
+
+    auto key = parseExpression();
+    consume(TOKEN_OP, ":");
+    auto value = parseExpression();
+
+    auto clauses = parseComprehensionClauses();
+
+    consume(TOKEN_OP, "}");
+
+    return std::make_shared<DictCompNode>(key, value, std::move(clauses));
+}
+
+std::shared_ptr<ASTNode> Parser::parseSetComp() {
+
+    consume(TOKEN_OP, "{");
+
+    auto expr = parseStarredExpression();
+
+    auto clauses = parseComprehensionClauses();
+
+    consume(TOKEN_OP, "}");
+
+    return std::make_shared<SetCompNode>(expr, std::move(clauses));
 }
 
 std::shared_ptr<ASTNode> Parser::parseIndexOrSlice() {
