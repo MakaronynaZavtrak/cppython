@@ -15,18 +15,28 @@
 namespace {
 
     Value make_getitem_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("__getitem__",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&) -> Value {
+
                 expectArgs(args, 1, "__getitem__");
                 return range->getItem(args[0]);
             });
     }
 
     Value make_len_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("__len__",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&) -> Value {
+
                 expectArgs(args, 0, "__len__");
                 return Value(Value::BigInt(range->len()));
             });
@@ -47,63 +57,97 @@ namespace {
     }
 
     Value make_eq_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("__eq__",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&) -> Value {
                 expectArgs(args, 1, "__eq__");
                 return Value(range->equal(args[0]));
             });
     }
 
     Value make_ne_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("__ne__",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                const Kwargs&,
+                const std::shared_ptr<Environment>&) -> Value {
+
                 expectArgs(args, 1, "__ne__");
                 return Value(range->notEqual(args[0]));
             });
     }
 
     Value make_hash_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("__hash__",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&) -> Value {
+
                 expectArgs(args, 0, "__hash__");
                 return Value(Value::BigInt(range->hash()));
             });
     }
 
     Value make_repr_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("__repr__",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&) -> Value {
+
                 expectArgs(args, 0, "__repr__");
                 return Value(range->repr());
             });
     }
 
     Value make_bool_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("__bool__",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&) -> Value {
+
                 expectArgs(args, 0, "__bool__");
                 return Value(range->toBool());
             });
     }
 
     Value make_count_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("count",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&) -> Value {
+
                 expectArgs(args, 1, "count");
                 return range->count(args[0]);
             });
     }
 
     Value make_index_Method(const Value& obj) {
+
         auto range = extract<Value::RangePtr>(obj);
+
         return makeBuiltin("index",
-            [range](const std::vector<Value>& args, const Kwargs&, const std::shared_ptr<Environment>&) -> Value {
+            [range](const std::vector<Value>& args,
+                        const Kwargs&,
+                        const std::shared_ptr<Environment>&) -> Value {
+
                 expectArgs(args, 1, "index");
                 return range->index(args[0]);
             });

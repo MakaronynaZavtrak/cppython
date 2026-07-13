@@ -241,7 +241,10 @@ add_executable(cppython main.cpp
         headers/RangeIterator.h
         sources/RangeIterator.cpp
         runtime/builtins/range/RangeMethods.cpp
-        runtime/builtins/range/RangeMethods.h)
+        runtime/builtins/range/RangeMethods.h
+        headers/ComprehensionClause.h
+        ast/listCompNode/ListCompNode.cpp
+        ast/listCompNode/ListCompNode.h)
 
 target_include_directories(cppython PRIVATE headers)
 

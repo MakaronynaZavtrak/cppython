@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "../exception/PythonException.h"
 #include "../runtime/Runtime.h"
 #include "../runtime/exceptions/RegisterExceptionClasses.h"
 

@@ -21,6 +21,7 @@
 #include "../ast/indexAssignNode/IndexAssignNode.h"
 #include "../ast/indexNode/IndexNode.h"
 #include "../ast/lambdaNode/LambdaNode.h"
+#include "../ast/listCompNode/ListCompNode.h"
 #include "../ast/listNode/ListNode.h"
 #include "../ast/logicalOpNode/LogicalOpNode.h"
 #include "../ast/nonlocalNode/NonlocalNode.h"
@@ -238,6 +239,45 @@ std::shared_ptr<ASTNode> Parser::parseAssignmentTail(std::shared_ptr<ASTNode> le
     }
 
     return left;
+}
+
+std::vector<ComprehensionClause> Parser::parseComprehensionClauses() {
+
+    std::vector<ComprehensionClause> clauses;
+
+    while (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::FOR) {
+
+        advance(); // for
+
+        if (peek().type != TOKEN_ID) {
+            throw SyntaxErrorException("Expected identifier after 'for' in comprehension");
+        }
+
+        const QString varName = advance().value;
+
+        if (!(peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::IN)) {
+            throw SyntaxErrorException("Expected 'in' in comprehension");
+        }
+
+        advance(); // in
+
+        auto iterable = parseOr();
+
+        std::vector<std::shared_ptr<ASTNode>> conditions;
+
+        while (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::IF) {
+            advance(); // if
+            conditions.push_back(parseOr());
+        }
+
+        clauses.push_back(ComprehensionClause{varName, iterable, std::move(conditions)});
+    }
+
+    if (clauses.empty()) {
+        throw SyntaxErrorException("Expected 'for' in comprehension");
+    }
+
+    return clauses;
 }
 
 std::shared_ptr<ASTNode> Parser::parseStarredExpression() {
@@ -1098,29 +1138,39 @@ std::shared_ptr<ASTNode> Parser::parseDecorated() {
 
 std::shared_ptr<ASTNode> Parser::parseList() {
 
-    std::vector<std::shared_ptr<ASTNode>> elements;
     advance(); // [
 
-    // пустой список: []
     if (matchAndAdvance(TOKEN_OP, "]")) {
-        return std::make_shared<ListNode>(std::move(elements));
+        return std::make_shared<ListNode>(std::vector<std::shared_ptr<ASTNode>>{});
     }
+
+    auto first = parseStarredExpression();
+
+    // list comprehension: [expr for ...]
+    if (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::FOR) {
+
+        auto clauses = parseComprehensionClauses();
+        consume(TOKEN_OP, "]");
+
+        return std::make_shared<ListCompNode>(first, std::move(clauses));
+    }
+
+    std::vector<std::shared_ptr<ASTNode>> elements;
+    elements.push_back(first);
 
     while (true) {
 
-        elements.push_back(parseStarredExpression());
-
-        // конец списка, например [1, 2, 3]
-        if  (matchAndAdvance(TOKEN_OP, "]")) {
+        if (matchAndAdvance(TOKEN_OP, "]")) {
             break;
         }
 
         consume(TOKEN_OP, ",");
 
-        // запятая в конце ([1, 2,])
         if (matchAndAdvance(TOKEN_OP, "]")) {
             break;
         }
+
+        elements.push_back(parseStarredExpression());
     }
 
     return std::make_shared<ListNode>(std::move(elements));

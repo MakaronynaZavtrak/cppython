@@ -4,9 +4,7 @@
 #include "Lexer.h"
 #include <memory>
 
-#include "FunctionValue.h"
-#include "ListValue.h"
-#include "SetValue.h"
+#include "ComprehensionClause.h"
 #include "../ast/callNode/CallNode.h"
 
 /**
@@ -233,6 +231,8 @@ private:
     std::shared_ptr<ASTNode> parseExpressionStatement();
 
     std::shared_ptr<ASTNode> parseAssignmentTail(std::shared_ptr<ASTNode> left);
+
+    std::vector<ComprehensionClause> parseComprehensionClauses();
 
     QVector<Token> tokens;
     int current = 0;

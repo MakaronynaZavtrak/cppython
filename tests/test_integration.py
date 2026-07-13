@@ -6155,6 +6155,13 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("range(5).count(3)", "1"),
     ("range(5).index(3)", "3"),
 
+    # list comprehensions
+    ("[x for x in [1, 2, 3]]", "[1, 2, 3]"),
+    ("[x * 2 for x in [1, 2, 3]]", "[2, 4, 6]"),
+    ("[x for x in [1, 2, 3, 4, 5] if x % 2 == 0]", "[2, 4]"),
+    ("[x + y for x in [1, 2] for y in [10, 20]]", "[11, 21, 12, 22]"),
+    ("[x for x in range(5) if x > 1 if x < 4]", "[2, 3]"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12131,6 +12138,14 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "next(gen)",
       "next(gen)",
       "next(gen)"], ["0", "1", "2"]),
+
+    # list comprehensions
+    (["n = 3",
+      "[x for x in range(n)]"], "[0, 1, 2]"),
+
+    (["x = 'outer'",
+      "result = [x for x in [1, 2, 3]]",
+      "x"], "'outer'"),
 
 ])
 
