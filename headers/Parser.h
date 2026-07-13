@@ -121,7 +121,7 @@ private:
      * @brief Выбрасывает ошибку о неожиданном токене
      * @param token Неожиданный токен
      */
-    static void throwUnexpectedTokenError(const Token &token);
+    [[noreturn]] static void throwUnexpectedTokenError(const Token &token);
 
     /**
      * @brief Разбирает конструкцию условного оператора (`if`) и возвращает соответствующий узел AST.

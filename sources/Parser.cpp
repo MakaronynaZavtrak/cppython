@@ -17,6 +17,7 @@
 #include "../ast/dictNode/DictNode.h"
 #include "../ast/forNode/ForNode.h"
 #include "../ast/functionDefNode/FunctionDefNode.h"
+#include "../ast/genExprNode/GenExprNode.h"
 #include "../ast/globalNode/GlobalNode.h"
 #include "../ast/ifNode/IfNode.h"
 #include "../ast/indexAssignNode/IndexAssignNode.h"
@@ -663,39 +664,35 @@ std::shared_ptr<ASTNode> Parser::parseParenthesizedExpression() {
 
     // ()
     if (matchAndAdvance(TOKEN_OP, ")")) {
-
-        return std::make_shared<TupleNode>(
-            std::vector<std::shared_ptr<ASTNode>>{}
-        );
+        return std::make_shared<TupleNode>(std::vector<std::shared_ptr<ASTNode>>{});
     }
 
     auto first = parseStarredExpression();
 
-    // tuple?
+    // генераторное выражение: (expr for ...)
+    if (peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::FOR) {
+
+        auto clauses = parseComprehensionClauses();
+        consume(TOKEN_OP, ")");
+
+        return std::make_shared<GenExprNode>(first, std::move(clauses));
+    }
+
     if (match(TOKEN_OP, ",")) {
 
         std::vector<std::shared_ptr<ASTNode>> elements;
         elements.push_back(first);
 
         while (matchAndAdvance(TOKEN_OP, ",")) {
-
-            // trailing comma: (1,)
-            if (match(TOKEN_OP, ")")) {
-                break;
-            }
-
+            if (match(TOKEN_OP, ")")) break;
             elements.push_back(parseStarredExpression());
         }
 
         consume(TOKEN_OP, ")");
-
-        return std::make_shared<TupleNode>(
-            std::move(elements)
-        );
+        return std::make_shared<TupleNode>(std::move(elements));
     }
 
     consume(TOKEN_OP, ")");
-
     return first;
 }
 
@@ -1615,6 +1612,8 @@ ParsedCallArgs Parser::parseCallArguments() {
         return result;
     }
 
+    bool first = true;
+
     while (true) {
 
         if (peek().type == TOKEN_ID &&
@@ -1631,8 +1630,34 @@ ParsedCallArgs Parser::parseCallArguments() {
 
         }
         else {
-            result.positional.push_back(parseExpression());
+
+            auto value = parseExpression();
+
+            // sum(x for x in range(10)) — генераторное выражение
+            // без обёрточных скобок, разрешено ТОЛЬКО как единственный аргумент
+            if (first &&
+                peek().type == TOKEN_KEYWORD &&
+                peek().keyword == Keyword::FOR) {
+
+                auto clauses = parseComprehensionClauses();
+
+                if (!match(TOKEN_OP, ")")) {
+                    throw SyntaxErrorException(
+                        "Generator expression must be parenthesized if not sole argument"
+                    );
+                }
+
+                result.positional.push_back(
+                    std::make_shared<GenExprNode>(value, std::move(clauses))
+                );
+
+                return result;
+                }
+
+            result.positional.push_back(value);
         }
+
+        first = false;
 
         if (matchAndAdvance(TOKEN_OP, ",")) {
             continue;

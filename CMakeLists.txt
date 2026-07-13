@@ -248,7 +248,9 @@ add_executable(cppython main.cpp
         ast/setCompNode/SetCompNode.cpp
         ast/setCompNode/SetCompNode.h
         ast/dictCompNode/DictCompNode.cpp
-        ast/dictCompNode/DictCompNode.h)
+        ast/dictCompNode/DictCompNode.h
+        ast/genExprNode/GenExprNode.cpp
+        ast/genExprNode/GenExprNode.h)
 
 target_include_directories(cppython PRIVATE headers)
 

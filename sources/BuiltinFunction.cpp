@@ -18,6 +18,7 @@
 #include "TupleValue.h"
 #include "Value.h"
 #include "../exception/AttributeErrorException.h"
+#include "../exception/StopIterationException.h"
 #include "../exception/TypeErrorException.h"
 #include "../runtime/ArgValidation.h"
 #include "../runtime/RuntimeUtils.h"
@@ -343,9 +344,14 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      std::vector<Value> items;
 
-                     while (it->hasNext()) {
+                     while (true) {
+                     try {
                          items.push_back(it->next());
                      }
+                     catch (const StopIterationException&) {
+                         break;
+                     }
+                 }
 
                      return Value(std::make_shared<ListValue>(items));
                  }
@@ -371,9 +377,14 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      std::vector<Value> items;
 
-                     while (it->hasNext()) {
+                     while (true) {
+                     try {
                          items.push_back(it->next());
                      }
+                     catch (const StopIterationException&) {
+                         break;
+                     }
+                 }
 
                      return Value(std::make_shared<TupleValue>(items));
                  }
@@ -399,9 +410,14 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      const auto set = std::make_shared<SetValue>();
 
-                     while (it->hasNext()) {
+                     while (true) {
+                     try {
                          set->add(it->next());
                      }
+                     catch (const StopIterationException&) {
+                         break;
+                     }
+                 }
 
                      return Value(set);
                  }
@@ -427,17 +443,21 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      const auto dict = std::make_shared<DictValue>();
 
-                     while (it->hasNext()) {
+                     while (true) {
 
-                         Value item = it->next();
+                         try {
+                             Value item = it->next();
 
-                         const auto tup = item.asTuple("dict()");
+                             const auto tup = item.asTuple("dict()");
 
-                         if (tup->items.size() != 2) {
-                             throw TypeErrorException("dict() expects (key, value) pairs");
+                             if (tup->items.size() != 2) {
+                                 throw TypeErrorException("dict() expects (key, value) pairs");
+                             }
+
+                             dict->setItem(tup->items[0], tup->items[1]);
+                         } catch (StopIterationException) {
+                             break;
                          }
-
-                         dict->setItem(tup->items[0], tup->items[1]);
                      }
 
                      return Value(dict);
@@ -467,10 +487,14 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                 QSet<Value> elements;
 
-                while (iterator->hasNext()) {
-                    elements.insert(
-                        iterator->next()
-                    );
+                while (true) {
+                    try {
+                        elements.insert(
+                            iterator->next()
+                        );
+                    } catch (StopIterationException) {
+                        break;
+                    }
                 }
 
                 return Value(

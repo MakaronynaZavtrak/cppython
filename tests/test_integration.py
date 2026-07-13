@@ -6172,6 +6172,12 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("{1, 2, 3}", "{1, 2, 3}"),
     ("{'a': 1, 'b': 2}", "{'a': 1, 'b': 2}"),
 
+    # generator comprehensions
+    ("list((x for x in []))", "[]"),
+    ("tuple(x for x in [1, 2, 3])", "(1, 2, 3)"),
+    ("set(x % 3 for x in range(10))", "{0, 1, 2}"),
+    ("dict((x, x*x) for x in [1, 2, 3])", "{1: 1, 2: 4, 3: 9}"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12161,6 +12167,44 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     (["x = 'outer'",
       "result = {x: 1 for x in [1, 2]}",
       "x"], "'outer'"),
+
+    # generator comprehensions
+    (["g = (x for x in [1, 2, 3])",
+      "next(g)",
+      "next(g)",
+      "next(g)"], ["1", "2", "3"]),
+
+    (["g = (x * 2 for x in [1, 2, 3])",
+      "list(g)"], "[2, 4, 6]"),
+
+    (["g = (x for x in range(10) if x % 2 == 0)",
+      "list(g)"], "[0, 2, 4, 6, 8]"),
+
+    (["g = (x + y for x in [1, 2] for y in [10, 20])",
+      "list(g)"], "[11, 21, 12, 22]"),
+
+    # первый iterable вычисляется немедленно
+    (["n = 3",
+      "g = (x for x in range(n))",
+      "n = 100",
+      "list(g)"], "[0, 1, 2]"),
+
+    # ленивость — тело не исполняется до первого next()
+    (["def make():",
+      "    print('creating')",
+      "    return [1, 2, 3]",
+      "",
+      "g = (x for x in make())"], "creating"),
+
+    # генераторное выражение поддерживает send/close как полноценный генератор
+    (["g = (x for x in [1, 2, 3])",
+      "next(g)",
+      "g.close()",
+      "try:",
+      "    next(g)",
+      "except StopIteration:",
+      "    'closed'",
+      ""], ["1", "'closed'"]),
 
 ])
 
