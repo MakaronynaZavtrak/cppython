@@ -17,9 +17,9 @@
 QVector<Token> Lexer::tokenize(const QString& code) {
 
     QVector<Token> tokens;
-    pos = 0; //текущая позиция в коде
+    pos = 0;
     line = 1;
-    column = 1;
+    lineStartPos = 0;
     indentStack.clear();
     indentStack.push_back(0);
 
@@ -30,7 +30,7 @@ QVector<Token> Lexer::tokenize(const QString& code) {
             tokens.push_back(Token(TOKEN_NEWLINE, "", line));
             pos++;
             line++;
-            column = 1;
+            lineStartPos = pos;   // было: column = 1;
 
             int spaceCount = 0, tmpPos = pos;
 
@@ -39,12 +39,11 @@ QVector<Token> Lexer::tokenize(const QString& code) {
 
                 if (code[tmpPos] == ' ')
                     spaceCount++;
-
                 else if (code[tmpPos] == '\t')
-                    spaceCount +=4;
+                    spaceCount += 4;
 
                 tmpPos++;
-            }
+                }
 
             if (spaceCount > indentStack.last()) {
 
@@ -53,8 +52,8 @@ QVector<Token> Lexer::tokenize(const QString& code) {
 
             } else while (spaceCount < indentStack.last()) {
 
-                    indentStack.pop_back();
-                    tokens.push_back(Token(TOKEN_DEDENT, "", line));
+                indentStack.pop_back();
+                tokens.push_back(Token(TOKEN_DEDENT, "", line));
             }
 
             pos = tmpPos;
@@ -69,6 +68,7 @@ QVector<Token> Lexer::tokenize(const QString& code) {
 
         tokens.append(token);
     }
+
     while (indentStack.size() > 1) {
         indentStack.pop_back();
         tokens.push_back(Token(TOKEN_DEDENT, "", line));
@@ -77,6 +77,10 @@ QVector<Token> Lexer::tokenize(const QString& code) {
     tokens.push_back(Token(TOKEN_EOF, "", line));
 
     return tokens;
+}
+
+int Lexer::currentColumn() const {
+    return pos - lineStartPos + 1;
 }
 
 /**
@@ -103,30 +107,43 @@ Token Lexer::nextToken(const QString& code) {
     }
 
     if (pos >= code.length()) {
-        return {TOKEN_EOF, "", line};
+        Token tok{TOKEN_EOF, "", line};
+        tok.startColumn = currentColumn();
+        tok.endColumn = currentColumn();
+        return tok;
     }
+
+    const int startCol = currentColumn();
 
     const QChar ch = code[pos];
 
-    if (ch.isDigit()) {
-        return readNumber(code);
-    }
+    Token token = [&]() -> Token {
 
-    if ((ch == 'b' || ch == 'B') &&
-    pos + 1 < code.length() &&
-    (code[pos + 1] == '"' || code[pos + 1] == '\'')) {
-        return readBytes(code);
-    }
+        if (ch.isDigit()) {
+            return readNumber(code);
+        }
 
-    if (ch == '\"' || ch == '\'') {
-        return readString(code);
-    }
+        if ((ch == 'b' || ch == 'B') &&
+            pos + 1 < code.length() &&
+            (code[pos + 1] == '"' || code[pos + 1] == '\'')) {
+            return readBytes(code);
+            }
 
-    if (ch.isLetter() || ch == '_') {
-        return readIdentifierOrBool(code);
-    }
+        if (ch == '\"' || ch == '\'') {
+            return readString(code);
+        }
 
-    return readOperator(code);
+        if (ch.isLetter() || ch == '_') {
+            return readIdentifierOrBool(code);
+        }
+
+        return readOperator(code);
+    }();
+
+    token.startColumn = startCol;
+    token.endColumn = currentColumn();
+
+    return token;
 }
 
 /**
@@ -391,7 +408,6 @@ Token Lexer::readOperator(const QString& code) {
 void Lexer::skipWhitespace(const QString& code) {
     while (pos < code.length() && code[pos].isSpace() && code[pos] != '\n') {
         pos++;
-        column++;
     }
 }
 
@@ -405,11 +421,13 @@ void Lexer::skipWhitespace(const QString& code) {
  */
 void Lexer::skipComment(const QString& code) {
     if (pos < code.length() && code[pos] == '#') {
+
         while (pos < code.length() && code[pos] != '\n') {
             pos++;
         }
-        column = 1;
+
         line++;
         pos++;
+        lineStartPos = pos;
     }
 }

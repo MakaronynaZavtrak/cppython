@@ -45,6 +45,15 @@ Value Interpreter::executeNode(
     const std::shared_ptr<ASTNode>& node,
     const std::shared_ptr<Environment>& env) {
 
+    if (!Runtime::callStack.empty()) {
+
+        auto& frame = Runtime::callStack.back();
+
+        frame.currentLine = node->line;
+        frame.sourceId = node->sourceId;
+        frame.columnCaptured = false;
+    }
+
     const Value result = node->eval(env);
 
     if (node->shouldPrint() && !result.isNone()) {
@@ -69,17 +78,61 @@ void Interpreter::executeCode(
     const std::string& code, Lexer& lexer,
     const std::shared_ptr<Environment> &env) {
 
+    QString normalizedCode = QString::fromStdString(code);
+    normalizedCode.replace('\t', "    ");
+
+    const int srcId = Runtime::registerSource(normalizedCode);
+
+    CallStackGuard moduleGuard("<module>", srcId);
+
     try {
 
-        const QVector<Token> tokens = lexer.tokenize(QString::fromStdString(code));
+        const QVector<Token> tokens = lexer.tokenize(normalizedCode);
         Parser parser(tokens);
         const std::shared_ptr<ASTNode> ast = parser.parse();
 
         executeNode(ast, env);
 
     } catch (const PythonException& e) {
-        std::cout << e.what() << "\n";
+        printTraceback(e);
     }
+}
+
+void Interpreter::printTraceback(const PythonException& e) {
+
+    if (!e.hasTraceback || e.traceback.empty()) {
+        std::cout << e.what() << "\n";
+        return;
+    }
+
+    std::cout << "Traceback (most recent call last):\n";
+
+    for (const auto& frame : e.traceback) {
+
+        std::cout << "  File \"" << Runtime::getSourceLabel(frame.sourceId).toStdString()
+                   << "\", line " << frame.currentLine
+                   << ", in " << frame.functionName.toStdString() << "\n";
+
+        QString srcLine = Runtime::getSourceLine(frame.sourceId, frame.currentLine);
+
+        std::cout << "    " << srcLine.toStdString() << "\n";
+
+        if (frame.columnCaptured) {
+
+            QString caretLine(srcLine.length(), ' ');
+
+            const int startIdx = std::max(0, frame.currentStartColumn - 1);
+            const int endIdx = std::min(static_cast<int>(srcLine.length()), frame.currentEndColumn - 1);
+
+            for (int i = startIdx; i < endIdx; ++i) {
+                caretLine[i] = '^';
+            }
+
+            std::cout << "    " << caretLine.toStdString() << "\n";
+        }
+    }
+
+    std::cout << e.what() << "\n";
 }
 
 

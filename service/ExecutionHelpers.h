@@ -11,7 +11,7 @@
 #include "GeneratorControl.h"
 #include "InstanceValue.h"
 #include "ResumeContext.h"
-#include "YieldSignal.h"
+#include "../service/yieldSignal.h"
 #include "../ast/ASTNode.h"
 #include "../exception/StopIterationException.h"
 
@@ -31,6 +31,14 @@ inline Value execBlockResumable(
         if (ctx.isReplaying()) {
 
             try {
+
+                if (!Runtime::callStack.empty()) {
+                    auto& frame = Runtime::callStack.back();
+                    frame.currentLine = block[startIndex]->line;
+                    frame.sourceId = block[startIndex]->sourceId;
+                    frame.columnCaptured = false;
+                }
+
                 carried = block[startIndex]->evalResumable(env, ctx);
                 haveCarried = true;
             }
@@ -58,6 +66,14 @@ inline Value execBlockResumable(
                 }
 
                 try {
+
+                    if (!Runtime::callStack.empty()) {
+                        auto& frame = Runtime::callStack.back();
+                        frame.currentLine = block[startIndex]->line;
+                        frame.sourceId = block[startIndex]->sourceId;
+                        frame.columnCaptured = false;
+                    }
+
                     auto last = block[startIndex]->eval(env);
                 }
                 catch (...) {
@@ -75,6 +91,14 @@ inline Value execBlockResumable(
 
     for (size_t i = startIndex; i < block.size(); ++i) {
         try {
+
+            if (!Runtime::callStack.empty()) {
+                auto& frame = Runtime::callStack.back();
+                frame.currentLine = block[i]->line;
+                frame.sourceId = block[i]->sourceId;
+                frame.columnCaptured = false;
+            }
+
             last = block[i]->evalResumable(env, ctx);
         }
         catch (const YieldSignal&) {

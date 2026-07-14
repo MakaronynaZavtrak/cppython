@@ -8,6 +8,7 @@
 #include "../../exception/BreakException.h"
 #include "../../exception/ContinueException.h"
 #include "../../service/ExecutionHelpers.h"
+#include "../../service/yieldSignal.h"
 
 WhileNode::WhileNode(std::shared_ptr<ASTNode> condition,
                      std::vector<std::shared_ptr<ASTNode>> body,

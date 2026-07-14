@@ -7,6 +7,14 @@
 #include "ComprehensionClause.h"
 #include "../ast/callNode/CallNode.h"
 
+template<typename NodePtr>
+NodePtr withPosition(NodePtr node, const Token& startTok, const Token& endTok) {
+    node->line = startTok.line;
+    node->startColumn = startTok.startColumn;
+    node->endColumn = endTok.endColumn;
+    return node;
+}
+
 /**
  * @class Parser
  * @brief Выполняет разбор последовательности токенов в абстрактное синтаксическое дерево (AST).
@@ -47,6 +55,9 @@ private:
      * @return Узел сравнения или выражение более высокого приоритета
      */
     std::shared_ptr<ASTNode> parseComparison();
+
+    static std::shared_ptr<ASTNode> makeBinOp(std::shared_ptr<ASTNode> left, const QString &op,
+                                              std::shared_ptr<ASTNode> right);
 
     /**
      * @brief Разбирает операции сложения и вычитания (+, -)

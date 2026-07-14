@@ -69,34 +69,46 @@ Parser::Parser(const QVector<Token>& tokens) : tokens(tokens) {}
  */
 std::shared_ptr<ASTNode> Parser::parse() {
 
+    const Token startTok = peek();
+
+    std::shared_ptr<ASTNode> node;
+
     if (peek().type == TOKEN_KEYWORD) {
 
         switch (peek().keyword.value()) {
-            case Keyword::IF:       return parseIfStatement();
-            case Keyword::WHILE:    return parseWhileStatement();
-            case Keyword::BREAK:    return parseBreakStatement();
-            case Keyword::CONTINUE: return parseContinueStatement();
-            case Keyword::DEF:      return parseFunctionDef();
-            case Keyword::RETURN:   return parseReturn();
-            case Keyword::PASS:     return parsePass();
-            case Keyword::CLASS:    return parseClassDef();
-            case Keyword::LAMBDA:   return parseLambda();
-            case Keyword::FOR:      return parseForStatement();
-            case Keyword::DEL:      return parseDelStatement();
-            case Keyword::TRY:      return parseTryStatement();
-            case Keyword::RAISE:    return parseRaiseStatement();
-            case Keyword::GLOBAL:   return parseGlobalStatement();
-            case Keyword::NONLOCAL: return parseNonlocalStatement();
-            case Keyword::YIELD:    return parseYieldStatement();
+            case Keyword::IF:       node = parseIfStatement(); break;
+            case Keyword::WHILE:    node = parseWhileStatement(); break;
+            case Keyword::BREAK:    node = parseBreakStatement(); break;
+            case Keyword::CONTINUE: node = parseContinueStatement(); break;
+            case Keyword::DEF:      node = parseFunctionDef(); break;
+            case Keyword::RETURN:   node = parseReturn(); break;
+            case Keyword::PASS:     node = parsePass(); break;
+            case Keyword::CLASS:    node = parseClassDef(); break;
+            case Keyword::LAMBDA:   node = parseLambda(); break;
+            case Keyword::FOR:      node = parseForStatement(); break;
+            case Keyword::DEL:      node = parseDelStatement(); break;
+            case Keyword::TRY:      node = parseTryStatement(); break;
+            case Keyword::RAISE:    node = parseRaiseStatement(); break;
+            case Keyword::GLOBAL:   node = parseGlobalStatement(); break;
+            case Keyword::NONLOCAL: node = parseNonlocalStatement(); break;
             default:                break;
         }
     }
 
-    if (peek().type == TOKEN_AT) {
-        return parseDecorated();
+    if (!node) {
+        if (peek().type == TOKEN_AT) {
+            node = parseDecorated();
+        } else {
+            node = parseExpressionStatement();
+        }
     }
 
-    return parseExpressionStatement();
+    const Token& endTok = tokens[current > 0 ? current - 1 : current];
+    node->line = startTok.line;
+    node->startColumn = startTok.startColumn;
+    node->endColumn = endTok.endColumn;
+    node->sourceId = Runtime::currentSourceId;
+    return node;
 }
 
 std::shared_ptr<ASTNode> Parser::parseExpressionStatement() {
@@ -381,6 +393,21 @@ std::shared_ptr<ASTNode> Parser::parseComparison() {
     );
 }
 
+std::shared_ptr<ASTNode> Parser::makeBinOp(
+    std::shared_ptr<ASTNode> left,
+    const QString& op,
+    std::shared_ptr<ASTNode> right) {
+
+    auto node = std::make_shared<BinOpNode>(left, op, right);
+
+    node->line = left->line;
+    node->startColumn = left->startColumn;
+    node->endColumn = right->endColumn;
+    node->sourceId = left->sourceId;
+
+    return node;
+}
+
 /**
  * Разбирает выражения с операциями сложения (+) и вычитания (-).
  *
@@ -400,9 +427,9 @@ std::shared_ptr<ASTNode> Parser::parseAdditionAndSubtraction() {
 
         QString op = advance().value;
 
-        std::shared_ptr<ASTNode> right = parseTerm();
+        const std::shared_ptr<ASTNode> right = parseTerm();
 
-        left = std::make_shared<BinOpNode>(left, op, right);
+        left = makeBinOp(left, op, right);
     }
 
     return left;
@@ -427,9 +454,9 @@ std::shared_ptr<ASTNode> Parser::parseTerm() {
 
         QString op = advance().value;
 
-        std::shared_ptr<ASTNode> right = parseUnary();
+        const std::shared_ptr<ASTNode> right = parseUnary();
 
-        left = std::make_shared<BinOpNode>(left, op, right);
+        left = makeBinOp(left, op, right);
     }
 
     return left;
@@ -448,8 +475,8 @@ std::shared_ptr<ASTNode> Parser::parseTerm() {
  *         может быть либо отдельным фактором, либо узлом бинарной операции
  *         возведения в степень.
  */
-std::shared_ptr<ASTNode> Parser::parsePower()
-{
+std::shared_ptr<ASTNode> Parser::parsePower() {
+
     std::shared_ptr<ASTNode> left = parsePrimary();
 
     if (match(TOKEN_OP, "**")) {
@@ -458,7 +485,7 @@ std::shared_ptr<ASTNode> Parser::parsePower()
 
         std::shared_ptr<ASTNode> right = parseUnary();
 
-        left = std::make_shared<BinOpNode>(left, op, right);
+        left = makeBinOp(left, op, right);
     }
 
     return left;
@@ -488,6 +515,9 @@ std::shared_ptr<ASTNode> Parser::parseNoneToken() {
  *         или при обнаружении неожиданного токена.
  */
 std::shared_ptr<ASTNode> Parser::parsePrimary() {
+
+    const Token startTok = peek();
+
     std::shared_ptr<ASTNode> node;
 
     switch (const Token token = peek(); token.type) {
@@ -499,17 +529,19 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
         case TOKEN_ID:     node = parseIdentifierToken(); break;
 
         case TOKEN_KEYWORD:
-            if (token.keyword.value() == Keyword::LAMBDA)
-                return parseLambda();
+            if (token.keyword.value() == Keyword::LAMBDA) {
+                node = parseLambda();
+                break;
+            }
+            [[fallthrough]];
 
         case TOKEN_OP:
             if (token.value == "(")
                 node = parseParenthesizedExpression();
             else if (token.value == "[")
                 node = parseList();
-            else if (token.value == "{") {
+            else if (token.value == "{")
                 node = parseDictOrSet();
-            }
             else
                 throwUnexpectedTokenError(token);
             break;
@@ -518,7 +550,20 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
         default: throwUnexpectedTokenError(token);
     }
 
-    return parsePostfix(node);
+    const Token& midTok = tokens[current > 0 ? current - 1 : current];
+    node->line = startTok.line;
+    node->startColumn = startTok.startColumn;
+    node->endColumn = midTok.endColumn;
+
+    auto result = parsePostfix(node);
+
+    const Token& endTok = tokens[current > 0 ? current - 1 : current];
+    node->line = startTok.line;
+    node->startColumn = startTok.startColumn;
+    node->endColumn = endTok.endColumn;
+    node->sourceId = Runtime::currentSourceId;
+
+    return result;
 }
 
 /**
@@ -1437,13 +1482,9 @@ std::shared_ptr<ASTNode> Parser::parseBitOr() {
 
     while (matchAndAdvance(TOKEN_OP, "|")) {
 
-        auto right = parseBitXor();
+        const auto right = parseBitXor();
 
-        left = std::make_shared<BinOpNode>(
-            left,
-            "|",
-            right
-        );
+        left = makeBinOp(left, "|", right);
     }
 
     return left;
@@ -1455,13 +1496,9 @@ std::shared_ptr<ASTNode> Parser::parseBitXor() {
 
     while (matchAndAdvance(TOKEN_OP, "^")) {
 
-        auto right = parseBitAnd();
+        const auto right = parseBitAnd();
 
-        left = std::make_shared<BinOpNode>(
-            left,
-            "^",
-            right
-        );
+        left = makeBinOp(left, "^", right);
     }
 
     return left;
@@ -1473,13 +1510,9 @@ std::shared_ptr<ASTNode> Parser::parseBitAnd() {
 
     while (matchAndAdvance(TOKEN_OP, "&")) {
 
-        auto right = parseShift();
+        const auto right = parseShift();
 
-        left = std::make_shared<BinOpNode>(
-            left,
-            "&",
-            right
-        );
+        left = makeBinOp(left, "&", right);
     }
 
     return left;

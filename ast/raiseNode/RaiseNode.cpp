@@ -14,33 +14,35 @@ RaiseNode::RaiseNode(
     : exceptionExpr(std::move(exceptionExpr)),
       causeExpr(std::move(causeExpr)) {}
 
-    void RaiseNode::raiseException(const Value& value, const Value& cause, bool hasCause) {
+void RaiseNode::raiseException(const Value& value, const Value& cause, bool hasCause) {
 
-        if (!value.isInstance()) {
-            throw TypeErrorException(
-                "exceptions must derive from BaseException"
-            );
-        }
-
-        const auto instance = value.asInstance();
-
-        if (!PythonException::isSubclass(
-                instance->klass,
-                Runtime::baseExceptionClass)) {
-            throw TypeErrorException(
-                "exceptions must derive from BaseException"
-            );
-        }
-
-        if (hasCause) {
-            instance->fields["__cause__"] = cause;
-            instance->fields["__suppress_context__"] = Value(true);
-        }
-
-        throw PythonException(instance);
+    if (!value.isInstance()) {
+        throw TypeErrorException(
+            "exceptions must derive from BaseException"
+        );
     }
 
-    Value RaiseNode::eval(const EnvPtr env) const {
+    const auto instance = value.asInstance();
+
+    if (!PythonException::isSubclass(
+            instance->klass,
+            Runtime::baseExceptionClass)) {
+        throw TypeErrorException(
+            "exceptions must derive from BaseException"
+        );
+    }
+
+    if (hasCause) {
+        instance->fields["__cause__"] = cause;
+        instance->fields["__suppress_context__"] = Value(true);
+    }
+
+    throw PythonException(instance);
+}
+
+Value RaiseNode::eval(const EnvPtr env) const {
+
+    try {
 
         if (!exceptionExpr) {
 
@@ -118,19 +120,27 @@ RaiseNode::RaiseNode(
         throw TypeErrorException(
             "exceptions must derive from BaseException"
         );
+
+    }
+    catch (PythonException& e) {
+        e.setPositionIfMissing(line, startColumn, endColumn, sourceId);
+        e.recordFramePosition(startColumn, endColumn);
+        e.captureTracebackIfMissing();
+        throw;
+    }
+}
+
+QString RaiseNode::toString() const {
+
+    if (!exceptionExpr) {
+        return "RaiseNode()";
     }
 
-    QString RaiseNode::toString() const {
-
-        if (!exceptionExpr) {
-            return "RaiseNode()";
-        }
-
-        if (causeExpr) {
-            return QString("RaiseNode(%1 from %2)")
-                .arg(exceptionExpr->toString(), causeExpr->toString());
-        }
-
-        return QString("RaiseNode(%1)")
-            .arg(exceptionExpr->toString());
+    if (causeExpr) {
+        return QString("RaiseNode(%1 from %2)")
+            .arg(exceptionExpr->toString(), causeExpr->toString());
     }
+
+    return QString("RaiseNode(%1)")
+        .arg(exceptionExpr->toString());
+}

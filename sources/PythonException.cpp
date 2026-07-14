@@ -75,6 +75,45 @@ QString PythonException::getMessage() const {
     return it.value().asString()->getValue();
 }
 
+void PythonException::setPositionIfMissing(const int l,
+                                            const int startCol,
+                                            const int endCol,
+                                            const int srcId) {
+    if (!hasPosition) {
+        line = l;
+        startColumn = startCol;
+        endColumn = endCol;
+        sourceId = srcId;
+        hasPosition = true;
+    }
+}
+
+void PythonException::captureTracebackIfMissing() {
+    if (!hasTraceback) {
+        traceback = Runtime::callStack;
+        hasTraceback = true;
+    }
+}
+
+void PythonException::recordFramePosition(const int startCol, const int endCol) {
+    if (Runtime::callStack.empty()) return;
+
+    const size_t idx = Runtime::callStack.size() - 1;
+    auto& live = Runtime::callStack[idx];
+
+    if (!live.columnCaptured) {
+        live.currentStartColumn = startCol;
+        live.currentEndColumn = endCol;
+        live.columnCaptured = true;
+    }
+
+    if (hasTraceback && idx < traceback.size() && !traceback[idx].columnCaptured) {
+        traceback[idx].currentStartColumn = startCol;
+        traceback[idx].currentEndColumn = endCol;
+        traceback[idx].columnCaptured = true;
+    }
+}
+
 bool PythonException::isSubclass(
     const Value::ClassPtr& child,
     const Value::ClassPtr& parent) {

@@ -5,6 +5,7 @@
 #include "CallNode.h"
 
 #include "CallRuntime.h"
+#include "../../exception/PythonException.h"
 
 CallNode::CallNode(std::shared_ptr<ASTNode> callee,
                    std::vector<std::shared_ptr<ASTNode>> args,
@@ -14,6 +15,7 @@ CallNode::CallNode(std::shared_ptr<ASTNode> callee,
         kwargs(std::move(kwargs)) {}
 
 [[nodiscard]] Value CallNode::eval(const EnvPtr env) const {
+
     const Value calleeVal = callee->eval(env);
 
     // positional
@@ -28,14 +30,18 @@ CallNode::CallNode(std::shared_ptr<ASTNode> callee,
     evaluatedKwargs.reserve(kwargs.size());
 
     for (const auto&[name, value] : kwargs) {
-
-        evaluatedKwargs.emplace_back(
-            name,
-            value->eval(env)
-        );
+        evaluatedKwargs.emplace_back(name, value->eval(env));
     }
 
-    return call(calleeVal, evaluatedArgs, evaluatedKwargs, env);
+    try {
+        return call(calleeVal, evaluatedArgs, evaluatedKwargs, env);
+    }
+    catch (PythonException& e) {
+        e.setPositionIfMissing(line, startColumn, endColumn, sourceId);
+        e.recordFramePosition(startColumn, endColumn);
+        e.captureTracebackIfMissing();
+        throw;
+    }
 }
 
 [[nodiscard]] QString CallNode::toString() const {

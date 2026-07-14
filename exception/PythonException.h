@@ -7,6 +7,7 @@
 #include <exception>
 
 #include "Value.h"
+#include "../runtime/Runtime.h"
 
 class PythonException : public std::exception {
 
@@ -15,6 +16,15 @@ protected:
     std::string cachedWhat;
 
 public:
+
+    int line = 0;
+    int startColumn = 0;
+    int endColumn = 0;
+    int sourceId = 0;
+    bool hasPosition = false;
+
+    std::vector<TracebackFrame> traceback;
+    bool hasTraceback = false;
 
     explicit PythonException(Value::InstancePtr  instance);
 
@@ -35,6 +45,12 @@ public:
     [[nodiscard]] QString getMessage() const;
 
     [[nodiscard]] virtual bool isCatchable() const { return true; }
+
+    void setPositionIfMissing(int l, int startCol, int endCol, int srcId);
+
+    void captureTracebackIfMissing();
+
+    void recordFramePosition(int startCol, int endCol);
 
     [[nodiscard]] static bool isSubclass(
         const Value::ClassPtr& child,

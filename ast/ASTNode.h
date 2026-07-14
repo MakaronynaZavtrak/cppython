@@ -25,6 +25,12 @@
 class ASTNode {
 public:
     using EnvPtr = std::shared_ptr<Environment>;
+
+    int line = 0;
+    int startColumn = 0;
+    int endColumn = 0;
+    int sourceId = 0;
+
     virtual ~ASTNode() = default;
     [[nodiscard]] virtual Value eval(EnvPtr env) const = 0;
     [[nodiscard]] virtual QString toString() const = 0;

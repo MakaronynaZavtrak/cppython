@@ -11,6 +11,15 @@
 class Environment;
 class ClassValue;
 
+struct TracebackFrame {
+    QString functionName;
+    int sourceId = 0;
+    int currentLine = 0;
+    int currentStartColumn = 0;
+    int currentEndColumn = 0;
+    bool columnCaptured = false;
+};
+
 class Runtime {
 
 public:
@@ -60,5 +69,14 @@ public:
     static std::shared_ptr<ClassValue> generatorExitClass;
 
     static std::shared_ptr<ClassValue> rangeClass;
+
+    static int currentSourceId;
+    static QHash<int, QStringList> sourceRegistry;
+
+    static std::vector<TracebackFrame> callStack;
+
+    static int registerSource(const QString& code);
+    static QString getSourceLine(int sourceId, int line);
+    static QString getSourceLabel(int sourceId);
 };
 #endif //CPPYTHON_RUNTIME_H

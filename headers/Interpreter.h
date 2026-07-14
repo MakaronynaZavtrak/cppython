@@ -4,6 +4,7 @@
 #include "Environment.h"
 #include "Lexer.h"
 
+class PythonException;
 class ASTNode;
 /**
  * @class Interpreter
@@ -48,6 +49,8 @@ class Interpreter {
          * @param env Окружение для выполнения кода
          */
         static void executeCode(const std::string& code, Lexer& lexer, const std::shared_ptr<Environment> &env);
+
+        static void printTraceback(const PythonException& e);
 
 
 };

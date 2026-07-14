@@ -6,6 +6,7 @@
 
 #include "CallRuntime.h"
 #include "ClassUtils.h"
+#include "../../exception/PythonException.h"
 
 IndexNode::IndexNode(std::shared_ptr<ASTNode> object,
                      std::shared_ptr<ASTNode> index)
@@ -17,9 +18,16 @@ Value IndexNode::eval(EnvPtr env) const {
     Value obj = object->eval(env);
     Value idx = index->eval(env);
 
-    Value getter = genericGetAttr(obj, "__getitem__");
-
-    return call(getter, {idx}, {}, env);
+    try {
+        Value getter = genericGetAttr(obj, "__getitem__");
+        return call(getter, {idx}, {}, env);
+    }
+    catch (PythonException& e) {
+        e.setPositionIfMissing(line, startColumn, endColumn, sourceId);
+        e.recordFramePosition(startColumn, endColumn);
+        e.captureTracebackIfMissing();
+        throw;
+    }
 }
 
 QString IndexNode::toString() const {

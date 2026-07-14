@@ -60,18 +60,28 @@ Value CompareNode::eval(const EnvPtr env) const {
 
     Value a = left->eval(env);
 
-    for (size_t i = 0; i < ops.size(); ++i) {
+    try {
 
-        Value b = rights[i]->eval(env);
+        for (size_t i = 0; i < ops.size(); ++i) {
 
-        if (!compare(a, b, parseOperation(ops[i]))) {
-            return Value(false);
+            Value b = rights[i]->eval(env);
+
+            if (!compare(a, b, parseOperation(ops[i]))) {
+                return Value(false);
+            }
+
+            a = std::move(b);
         }
 
-        a = std::move(b);
-    }
+        return Value(true);
 
-    return Value(true);
+    }
+    catch (PythonException& e) {
+        e.setPositionIfMissing(line, startColumn, endColumn, sourceId);
+        e.recordFramePosition(startColumn, endColumn);
+        e.captureTracebackIfMissing();
+        throw;
+    }
 }
 
 QString CompareNode::toString() const {

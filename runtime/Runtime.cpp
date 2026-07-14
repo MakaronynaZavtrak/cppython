@@ -44,3 +44,35 @@ std::shared_ptr<ClassValue> Runtime::unicodeDecodeClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::valueErrorClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::generatorExitClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::rangeClass = nullptr;
+
+int Runtime::currentSourceId = 0;
+QHash<int, QStringList> Runtime::sourceRegistry;
+
+std::vector<TracebackFrame> Runtime::callStack;
+
+int Runtime::registerSource(const QString& code) {
+    ++currentSourceId;
+    sourceRegistry[currentSourceId] = code.split('\n');
+    return currentSourceId;
+}
+
+QString Runtime::getSourceLine(const int sourceId, const int line) {
+
+    const auto it = sourceRegistry.find(sourceId);
+
+    if (it == sourceRegistry.end()) {
+        return "";
+    }
+
+    const auto& lines = it.value();
+
+    if (line < 1 || line > lines.size()) {
+        return "";
+    }
+
+    return lines[line - 1];
+}
+
+QString Runtime::getSourceLabel(const int sourceId) {
+    return QString("<python-input-%1>").arg(sourceId);
+}

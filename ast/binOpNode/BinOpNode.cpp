@@ -20,19 +20,29 @@ Value BinOpNode::eval(const EnvPtr env) const {
     const Value l = left->eval(env);
     const Value r = right->eval(env);
 
-    switch (parseOperation(op)) {
-        case Operation::Add:            return l + r;
-        case Operation::Subtract:       return l - r;
-        case Operation::Multiply:       return l * r;
-        case Operation::Power:          return l.power(r);
-        case Operation::Divide:         return l / r;
-        case Operation::Modulo:         return l % r;
-        case Operation::IntDivide:      return l.intDivide(r);
-        case Operation::BitOr:          return l | r;
-        case Operation::BitAnd:         return l & r;
-        case Operation::BitXor:         return l ^ r;
+    try {
 
-        default: throw SyntaxErrorException("Unsupported operation: " + op);
+        switch (parseOperation(op)) {
+            case Operation::Add:            return l + r;
+            case Operation::Subtract:       return l - r;
+            case Operation::Multiply:       return l * r;
+            case Operation::Power:          return l.power(r);
+            case Operation::Divide:         return l / r;
+            case Operation::Modulo:         return l % r;
+            case Operation::IntDivide:      return l.intDivide(r);
+            case Operation::BitOr:          return l | r;
+            case Operation::BitAnd:         return l & r;
+            case Operation::BitXor:         return l ^ r;
+
+            default: throw SyntaxErrorException("Unsupported operation: " + op);
+        }
+
+    }
+    catch (PythonException& e) {
+        e.setPositionIfMissing(line, startColumn, endColumn, sourceId);
+        e.recordFramePosition(startColumn, endColumn);
+        e.captureTracebackIfMissing();
+        throw;
     }
 }
 

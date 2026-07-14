@@ -15,6 +15,7 @@
 
 #include "ClassUtils.h"
 #include "GeneratorValue.h"
+#include "Interpreter.h"
 #include "IteratorValue.h"
 #include "RangeValue.h"
 #include "TupleValue.h"
@@ -139,11 +140,14 @@ Value callFunction(const Value::FunctionPtr& func,
 
     bindParams(local, func, args, kwargs);
 
+    const int srcId = func->body.empty() ? 0 : func->body[0]->sourceId;
+    CallStackGuard guard(func->name, srcId);
+
     try {
         for (const auto& stmt : func->body) {
-            stmt->eval(local);
+            Interpreter::executeNode(stmt, local);
         }
-        return Value(); // None, если не было явного return
+        return Value();
     }
     catch (ReturnException& e) {
         return e.getValue();

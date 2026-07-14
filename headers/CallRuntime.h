@@ -8,8 +8,21 @@
 
 #include "Environment.h"
 #include "Value.h"
+#include "../runtime/Runtime.h"
 
 using Kwargs = std::vector<std::pair<QString, Value>>;
+
+class CallStackGuard {
+public:
+    explicit CallStackGuard(const QString& functionName, const int sourceId) {
+        Runtime::callStack.push_back(TracebackFrame{functionName, sourceId, 0});
+    }
+    ~CallStackGuard() {
+        Runtime::callStack.pop_back();
+    }
+    CallStackGuard(const CallStackGuard&) = delete;
+    CallStackGuard& operator=(const CallStackGuard&) = delete;
+};
 
 void bindParams(const std::shared_ptr<Environment>& local,
                 const Value::FunctionPtr& func,

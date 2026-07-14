@@ -69,6 +69,14 @@ Value TryNode::eval(const EnvPtr env) const {
 
         try {
             for (const auto &stmt: tryBody) {
+
+                if (!Runtime::callStack.empty()) {
+                    auto& frame = Runtime::callStack.back();
+                    frame.currentLine = stmt->line;
+                    frame.sourceId = stmt->sourceId;
+                    frame.columnCaptured = false;
+                }
+
                 result = stmt->eval(env);
                 printIfNeeded(stmt, result);
             }
@@ -103,6 +111,14 @@ Value TryNode::eval(const EnvPtr env) const {
                     ExceptionScopeGuard guard(e.getInstance());
 
                     for (const auto &stmt: body) {
+
+                        if (!Runtime::callStack.empty()) {
+                            auto& frame = Runtime::callStack.back();
+                            frame.currentLine = stmt->line;
+                            frame.sourceId = stmt->sourceId;
+                            frame.columnCaptured = false;
+                        }
+
                         result = stmt->eval(env);
                         printIfNeeded(stmt, result);
                     }
@@ -118,6 +134,14 @@ Value TryNode::eval(const EnvPtr env) const {
 
         if (completedWithoutException) {
             for (const auto &stmt: elseBody) {
+
+                if (!Runtime::callStack.empty()) {
+                    auto& frame = Runtime::callStack.back();
+                    frame.currentLine = stmt->line;
+                    frame.sourceId = stmt->sourceId;
+                    frame.columnCaptured = false;
+                }
+
                 result = stmt->eval(env);
                 printIfNeeded(stmt, result);
             }
@@ -126,6 +150,14 @@ Value TryNode::eval(const EnvPtr env) const {
     } catch (...) {
 
         for (const auto &stmt: finallyBody) {
+
+            if (!Runtime::callStack.empty()) {
+                auto& frame = Runtime::callStack.back();
+                frame.currentLine = stmt->line;
+                frame.sourceId = stmt->sourceId;
+                frame.columnCaptured = false;
+            }
+
             const Value finallyResult = stmt->eval(env);
             printIfNeeded(stmt, finallyResult);
         }
@@ -134,6 +166,14 @@ Value TryNode::eval(const EnvPtr env) const {
     }
 
     for (const auto &stmt: finallyBody) {
+
+        if (!Runtime::callStack.empty()) {
+            auto& frame = Runtime::callStack.back();
+            frame.currentLine = stmt->line;
+            frame.sourceId = stmt->sourceId;
+            frame.columnCaptured = false;
+        }
+
         const Value finallyResult = stmt->eval(env);
         printIfNeeded(stmt, finallyResult);
     }
