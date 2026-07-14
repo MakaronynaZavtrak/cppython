@@ -95,7 +95,17 @@ void PythonException::captureTracebackIfMissing() {
     }
 }
 
-void PythonException::recordFramePosition(const int startCol, const int endCol) {
+void PythonException::recordFramePosition(const int startCol,
+                                          const int endCol,
+                                          const int anchorStart,
+                                          const int anchorEnd,
+                                          bool anchor) {
+
+    // защита: если якорь бессмысленный — откат на сплошной ^
+    if (anchor && (anchorStart <= 0 || anchorEnd <= anchorStart)) {
+        anchor = false;
+    }
+
     if (Runtime::callStack.empty()) return;
 
     const size_t idx = Runtime::callStack.size() - 1;
@@ -104,12 +114,18 @@ void PythonException::recordFramePosition(const int startCol, const int endCol) 
     if (!live.columnCaptured) {
         live.currentStartColumn = startCol;
         live.currentEndColumn = endCol;
+        live.anchorStartColumn = anchorStart;
+        live.anchorEndColumn = anchorEnd;
+        live.hasAnchor = anchor;
         live.columnCaptured = true;
     }
 
     if (hasTraceback && idx < traceback.size() && !traceback[idx].columnCaptured) {
         traceback[idx].currentStartColumn = startCol;
         traceback[idx].currentEndColumn = endCol;
+        traceback[idx].anchorStartColumn = anchorStart;
+        traceback[idx].anchorEndColumn = anchorEnd;
+        traceback[idx].hasAnchor = anchor;
         traceback[idx].columnCaptured = true;
     }
 }

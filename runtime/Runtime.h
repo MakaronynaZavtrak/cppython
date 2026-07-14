@@ -17,6 +17,9 @@ struct TracebackFrame {
     int currentLine = 0;
     int currentStartColumn = 0;
     int currentEndColumn = 0;
+    int anchorStartColumn = 0;
+    int anchorEndColumn = 0;
+    bool hasAnchor = false;
     bool columnCaptured = false;
 };
 

@@ -38,7 +38,7 @@ CallNode::CallNode(std::shared_ptr<ASTNode> callee,
     }
     catch (PythonException& e) {
         e.setPositionIfMissing(line, startColumn, endColumn, sourceId);
-        e.recordFramePosition(startColumn, endColumn);
+        e.recordFramePosition(startColumn, endColumn, calleeEndColumn, endColumn, true);
         e.captureTracebackIfMissing();
         throw;
     }

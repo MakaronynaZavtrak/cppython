@@ -12,6 +12,8 @@ public:
     std::shared_ptr<ASTNode> object;
     QString attr;
 
+    int objectEndColumn;
+
     AttributeAccessNode(std::shared_ptr<ASTNode> object, QString attr);
 
     [[nodiscard]] Value eval(EnvPtr env) const override;

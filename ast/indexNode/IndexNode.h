@@ -12,6 +12,8 @@ public:
     std::shared_ptr<ASTNode> object;
     std::shared_ptr<ASTNode> index;
 
+    int objectEndColumn;
+
     IndexNode(std::shared_ptr<ASTNode> object,
               std::shared_ptr<ASTNode> index);
 

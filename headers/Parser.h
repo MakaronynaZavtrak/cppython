@@ -6,6 +6,7 @@
 
 #include "ComprehensionClause.h"
 #include "../ast/callNode/CallNode.h"
+#include "../exception/SyntaxErrorException.h"
 
 template<typename NodePtr>
 NodePtr withPosition(NodePtr node, const Token& startTok, const Token& endTok) {
@@ -56,7 +57,8 @@ private:
      */
     std::shared_ptr<ASTNode> parseComparison();
 
-    static std::shared_ptr<ASTNode> makeBinOp(std::shared_ptr<ASTNode> left, const QString &op,
+    static std::shared_ptr<ASTNode> makeBinOp(std::shared_ptr<ASTNode> left,
+                                              const Token& opToken,
                                               std::shared_ptr<ASTNode> right);
 
     /**
@@ -252,6 +254,8 @@ private:
     enum class BraceKind { Dict, DictComp, Set, SetComp };
 
     BraceKind classifyBraces();
+
+    static SyntaxErrorException makeSyntaxError(const QString& msg, const Token& tok);
 
     QVector<Token> tokens;
     int current = 0;

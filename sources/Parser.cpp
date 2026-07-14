@@ -91,6 +91,7 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::RAISE:    node = parseRaiseStatement(); break;
             case Keyword::GLOBAL:   node = parseGlobalStatement(); break;
             case Keyword::NONLOCAL: node = parseNonlocalStatement(); break;
+            case Keyword::YIELD:    node = parseYieldStatement(); break;
             default:                break;
         }
     }
@@ -395,15 +396,18 @@ std::shared_ptr<ASTNode> Parser::parseComparison() {
 
 std::shared_ptr<ASTNode> Parser::makeBinOp(
     std::shared_ptr<ASTNode> left,
-    const QString& op,
+    const Token& opToken,
     std::shared_ptr<ASTNode> right) {
 
-    auto node = std::make_shared<BinOpNode>(left, op, right);
+    auto node = std::make_shared<BinOpNode>(left, opToken.value, right);
 
     node->line = left->line;
     node->startColumn = left->startColumn;
     node->endColumn = right->endColumn;
     node->sourceId = left->sourceId;
+
+    node->opStartColumn = opToken.startColumn;
+    node->opEndColumn = opToken.endColumn;
 
     return node;
 }
@@ -425,11 +429,12 @@ std::shared_ptr<ASTNode> Parser::parseAdditionAndSubtraction() {
 
     while (matchAny(TOKEN_OP, {"+", "-"})) {
 
-        QString op = advance().value;
+        Token opToken = peek();
+        advance();
 
         const std::shared_ptr<ASTNode> right = parseTerm();
 
-        left = makeBinOp(left, op, right);
+        left = makeBinOp(left, opToken, right);
     }
 
     return left;
@@ -452,11 +457,12 @@ std::shared_ptr<ASTNode> Parser::parseTerm() {
 
     while (matchAny(TOKEN_OP, {"*", "/", "//", "%"})) {
 
-        QString op = advance().value;
+        Token opToken = peek();
+        advance();
 
         const std::shared_ptr<ASTNode> right = parseUnary();
 
-        left = makeBinOp(left, op, right);
+        left = makeBinOp(left, opToken, right);
     }
 
     return left;
@@ -481,11 +487,12 @@ std::shared_ptr<ASTNode> Parser::parsePower() {
 
     if (match(TOKEN_OP, "**")) {
 
-        QString op = advance().value;
+        Token opToken = peek();
+        advance();
 
-        std::shared_ptr<ASTNode> right = parseUnary();
+        const std::shared_ptr<ASTNode> right = parseUnary();
 
-        left = makeBinOp(left, op, right);
+        left = makeBinOp(left, opToken, right);
     }
 
     return left;
@@ -546,7 +553,7 @@ std::shared_ptr<ASTNode> Parser::parsePrimary() {
                 throwUnexpectedTokenError(token);
             break;
 
-        case TOKEN_EOF: return nullptr;
+        case TOKEN_EOF: throw makeSyntaxError("invalid syntax", peek());
         default: throwUnexpectedTokenError(token);
     }
 
@@ -660,34 +667,58 @@ std::shared_ptr<ASTNode> Parser::parseBoolToken() {
  * @return Умный указатель на вновь созданный узел VarNode, представляющий переменную.
  */
 std::shared_ptr<ASTNode> Parser::parseIdentifierToken() {
+
+    const Token nameTok = peek();
     QString name = advance().value;
 
-    if (matchAndAdvance(TOKEN_OP, "(")) {
+    if (match(TOKEN_OP, "(")) {
+
+        const Token openParen = peek();   // позиция "(" — граница callee/args
+        advance();
 
         auto parsedArgs = parseCallArguments();
 
+
         if (!match(TOKEN_OP, ")")) {
-
             while (true) {
-
                 if (matchAndAdvance(TOKEN_OP, ",")) {
                     continue;
                 }
-
                 break;
             }
         }
 
+        const Token closeParen = peek();
         consume(TOKEN_OP, ")");
 
-        return std::make_shared<CallNode>(
-            std::make_shared<VarNode>(name),
+        auto callee = std::make_shared<VarNode>(name);
+        callee->line = nameTok.line;
+        callee->startColumn = nameTok.startColumn;
+        callee->endColumn = nameTok.endColumn;
+        callee->sourceId = Runtime::currentSourceId;
+
+        auto callNode = std::make_shared<CallNode>(
+            callee,
             parsedArgs.positional,
             parsedArgs.keyword
         );
+
+        callNode->calleeEndColumn = openParen.startColumn;
+        callNode->line = nameTok.line;
+        callNode->startColumn = nameTok.startColumn;
+        callNode->endColumn = closeParen.endColumn;
+        callNode->sourceId = Runtime::currentSourceId;
+
+        return callNode;
     }
 
-    return std::make_shared<VarNode>(name);
+    auto var = std::make_shared<VarNode>(name);
+    var->line = nameTok.line;
+    var->startColumn = nameTok.startColumn;
+    var->endColumn = nameTok.endColumn;
+    var->sourceId = Runtime::currentSourceId;
+
+    return var;
 }
 
 /**
@@ -1137,50 +1168,78 @@ std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
     while (peek().type != TOKEN_EOF) {
 
         // a.b
-        if (matchAndAdvance(TOKEN_OP, ".")) {
+        if (match(TOKEN_OP, ".")) {
+
+            const int objectEnd = node->endColumn;   // конец объекта = начало ".attr"
+            advance(); // .
 
             if (peek().type != TOKEN_ID)
                 throw SyntaxErrorException("Expected attribute name after '.'");
 
+            const Token attrTok = peek();
             QString attr = advance().value;
-            node = std::make_shared<AttributeAccessNode>(node, attr);
 
+            auto attrNode = std::make_shared<AttributeAccessNode>(node, attr);
+            attrNode->objectEndColumn = objectEnd;
+            attrNode->line = node->line;
+            attrNode->startColumn = node->startColumn;
+            attrNode->endColumn = attrTok.endColumn;
+            attrNode->sourceId = Runtime::currentSourceId;
+
+            node = attrNode;
             continue;
         }
 
         // вызов: obj(...)
-        if (matchAndAdvance(TOKEN_OP, "(")) {
+        if (match(TOKEN_OP, "(")) {
+
+            const int objectEnd = node->endColumn;   // конец callee = начало "("
+            advance(); // (
 
             auto parsedArgs = parseCallArguments();
 
             if (!match(TOKEN_OP, ")")) {
-
                 while (true) {
-
                     if (matchAndAdvance(TOKEN_OP, ",")) {
                         continue;
                     }
-
                     break;
                 }
             }
 
+            const Token closeParen = peek();
             consume(TOKEN_OP, ")");
 
-            node = std::make_shared<CallNode>(node, parsedArgs.positional, parsedArgs.keyword);
+            auto callNode = std::make_shared<CallNode>(node, parsedArgs.positional, parsedArgs.keyword);
+            callNode->calleeEndColumn = objectEnd;
+            callNode->line = node->line;
+            callNode->startColumn = node->startColumn;
+            callNode->endColumn = closeParen.endColumn;
+            callNode->sourceId = Runtime::currentSourceId;
 
+            node = callNode;
             continue;
         }
 
         // obj[index]
-        if (matchAndAdvance(TOKEN_OP, "[")) {
+        if (match(TOKEN_OP, "[")) {
+
+            const int objectEnd = node->endColumn;   // конец объекта = начало "["
+            advance(); // [
 
             auto index = parseIndexOrSlice();
 
+            const Token closeBracket = peek();
             consume(TOKEN_OP, "]");
 
-            node = std::make_shared<IndexNode>(node, index);
+            auto indexNode = std::make_shared<IndexNode>(node, index);
+            indexNode->objectEndColumn = objectEnd;
+            indexNode->line = node->line;
+            indexNode->startColumn = node->startColumn;
+            indexNode->endColumn = closeBracket.endColumn;
+            indexNode->sourceId = Runtime::currentSourceId;
 
+            node = indexNode;
             continue;
         }
 
@@ -1296,7 +1355,7 @@ std::shared_ptr<ASTNode> Parser::parseLambda() {
 QString Parser::consume(const TokenType type, const QString& value) {
 
     if (peek().type != type || peek().value != value) {
-        throw SyntaxErrorException("Expected token: " + value);
+        throw makeSyntaxError("invalid syntax", peek());
     }
 
     return advance().value;
@@ -1480,11 +1539,14 @@ std::shared_ptr<ASTNode> Parser::parseBitOr() {
 
     auto left = parseBitXor();
 
-    while (matchAndAdvance(TOKEN_OP, "|")) {
+    while (match(TOKEN_OP, "|")) {
+
+        const Token opToken = peek();
+        advance();
 
         const auto right = parseBitXor();
 
-        left = makeBinOp(left, "|", right);
+        left = makeBinOp(left, opToken, right);
     }
 
     return left;
@@ -1494,11 +1556,14 @@ std::shared_ptr<ASTNode> Parser::parseBitXor() {
 
     auto left = parseBitAnd();
 
-    while (matchAndAdvance(TOKEN_OP, "^")) {
+    while (match(TOKEN_OP, "^")) {
+
+        const Token opToken = peek();
+        advance();
 
         const auto right = parseBitAnd();
 
-        left = makeBinOp(left, "^", right);
+        left = makeBinOp(left, opToken, right);
     }
 
     return left;
@@ -1508,11 +1573,14 @@ std::shared_ptr<ASTNode> Parser::parseBitAnd() {
 
     auto left = parseShift();
 
-    while (matchAndAdvance(TOKEN_OP, "&")) {
+    while (match(TOKEN_OP, "&")) {
+
+        const Token opToken = peek();
+        advance();
 
         const auto right = parseShift();
 
-        left = makeBinOp(left, "&", right);
+        left = makeBinOp(left, opToken, right);
     }
 
     return left;
@@ -1980,4 +2048,14 @@ Token Parser::advance() {
     return current < tokens.size()
     ? tokens[current++]
     : Token(TOKEN_EOF, "", 0);
+}
+
+SyntaxErrorException Parser::makeSyntaxError(const QString& msg, const Token& tok) {
+    SyntaxErrorException e(msg);
+    e.line = tok.line;
+    e.startColumn = tok.startColumn;
+    e.endColumn = tok.endColumn;
+    e.sourceId = Runtime::currentSourceId;
+    e.hasPosition = true;
+    return e;
 }

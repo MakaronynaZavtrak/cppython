@@ -63,6 +63,76 @@ Value Interpreter::executeNode(
     return result;
 }
 
+void Interpreter::printSyntaxError(const SyntaxErrorException& e) {
+
+    if (e.hasPosition) {
+        std::cout << "  File \"" << Runtime::getSourceLabel(e.sourceId).toStdString()
+                   << "\", line " << e.line << "\n";
+
+        QString srcLine = Runtime::getSourceLine(e.sourceId, e.line);
+        std::cout << "    " << srcLine.toStdString() << "\n";
+
+        QString caretLine(srcLine.length() + 1, ' ');
+        const int caretIdx = std::max(0, e.startColumn - 1);
+        if (caretIdx < caretLine.length()) {
+            caretLine[caretIdx] = '^';
+        }
+        std::cout << "    " << caretLine.toStdString() << "\n";
+    }
+
+    std::cout << e.what() << "\n";
+}
+
+bool Interpreter::hasUnclosedBrackets(const std::vector<std::string>& lines) {
+
+    int depth = 0;
+    char stringChar = 0;   // 0 = не в строке, иначе ' или "
+
+    for (const auto& line : lines) {
+
+        for (size_t i = 0; i < line.size(); ++i) {
+
+            const char c = line[i];
+
+            if (stringChar != 0) {
+                // внутри строки — ждём закрывающую кавычку, уважая экранирование
+                if (c == '\\') {
+                    ++i; // пропускаем следующий символ
+                    continue;
+                }
+                if (c == stringChar) {
+                    stringChar = 0;
+                }
+                continue;
+            }
+
+            if (c == '"' || c == '\'') {
+                stringChar = c;
+                continue;
+            }
+
+            if (c == '#') {
+                break; // комментарий — остаток строки игнорируем
+            }
+
+            if (c == '(' || c == '[' || c == '{') {
+                ++depth;
+            }
+            else if (c == ')' || c == ']' || c == '}') {
+                if (depth > 0) --depth;
+            }
+        }
+
+        // строковый литерал не закрылся к концу строки —
+        // (для простых '...'/"..." это ошибка, но тройные кавычки
+        //  потребовали бы отдельной логики; для MVP считаем, что
+        //  одиночные строки закрываются в пределах строки)
+        stringChar = 0;
+    }
+
+    return depth > 0;
+}
+
 /**
  * Выполняет интерпретацию кода, переданного в виде строки. Разбивает код на токены
  * с помощью лексера, создает абстрактное синтаксическое дерево (AST) с помощью парсера
@@ -86,14 +156,16 @@ void Interpreter::executeCode(
     CallStackGuard moduleGuard("<module>", srcId);
 
     try {
-
         const QVector<Token> tokens = lexer.tokenize(normalizedCode);
         Parser parser(tokens);
         const std::shared_ptr<ASTNode> ast = parser.parse();
 
         executeNode(ast, env);
 
-    } catch (const PythonException& e) {
+    } catch (const SyntaxErrorException& e) {
+        printSyntaxError(e);
+    }
+    catch (const PythonException& e) {
         printTraceback(e);
     }
 }
@@ -124,8 +196,23 @@ void Interpreter::printTraceback(const PythonException& e) {
             const int startIdx = std::max(0, frame.currentStartColumn - 1);
             const int endIdx = std::min(static_cast<int>(srcLine.length()), frame.currentEndColumn - 1);
 
-            for (int i = startIdx; i < endIdx; ++i) {
-                caretLine[i] = '^';
+            if (frame.hasAnchor) {
+
+                const int anchorStart = std::max(0, frame.anchorStartColumn - 1);
+                const int anchorEnd = std::min(static_cast<int>(srcLine.length()), frame.anchorEndColumn - 1);
+
+                for (int i = startIdx; i < endIdx; ++i) {
+
+                    if (i >= anchorStart && i < anchorEnd) {
+                        caretLine[i] = '^';
+                    } else {
+                        caretLine[i] = '~';
+                    }
+                }
+            } else {
+                for (int i = startIdx; i < endIdx; ++i) {
+                    caretLine[i] = '^';
+                }
             }
 
             std::cout << "    " << caretLine.toStdString() << "\n";
@@ -151,9 +238,7 @@ void Interpreter::run(int argc, char* argv[]) {
 
     const auto globalEnv = std::make_shared<Environment>();
     BuiltinFunction::registerBuiltins(globalEnv);
-
     Runtime::initialize(globalEnv);
-
     registerExceptionClasses(globalEnv);
 
     Lexer lexer;
@@ -161,38 +246,49 @@ void Interpreter::run(int argc, char* argv[]) {
     bool isInBlock = false;
 
     while (true) {
-        std::cout << (isInBlock ? CONTINUATION_PROMPT : MAIN_PROMPT);
+        std::cout << ((isInBlock || !buffer.empty()) ? CONTINUATION_PROMPT : MAIN_PROMPT);
 
         std::string line;
         if (!std::getline(std::cin, line)) break;
 
-        if (!isInBlock && isExitCommand(line)) break;
+        if (!isInBlock && buffer.empty() && isExitCommand(line)) break;
 
         if (isInBlock) {
             if (line.empty()) {
-                isInBlock = false;
+                // пустая строка завершает блок — НО только если скобки сбалансированы
+                if (!hasUnclosedBrackets(buffer)) {
+                    isInBlock = false;
+                } else {
+                    buffer.push_back(line);
+                    continue;
+                }
             } else {
                 buffer.push_back(line);
                 continue;
             }
         } else {
-            if (line.empty()) {
+
+            buffer.push_back(line);
+
+            // незакрытые скобки — продолжаем ввод, не выполняем
+            if (hasUnclosedBrackets(buffer)) {
                 continue;
             }
-            buffer.push_back(line);
-            if (line.back() == ':') {
+
+            if (!line.empty() && line.back() == ':') {
                 isInBlock = true;
                 continue;
             }
 
-            // если предыдущая строка была декоратором
-            if (!buffer.empty()) {
-                const std::string& prev = buffer.back();
+            if (buffer.size() == 1 && line.empty()) {
+                buffer.clear();
+                continue;
+            }
 
-                if (!prev.empty() && prev[0] == '@') {
-                    isInBlock = true;
-                    continue;
-                }
+            const std::string& prev = buffer.back();
+            if (!prev.empty() && prev[0] == '@') {
+                isInBlock = true;
+                continue;
             }
         }
 

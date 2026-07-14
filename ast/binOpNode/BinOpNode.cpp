@@ -40,7 +40,7 @@ Value BinOpNode::eval(const EnvPtr env) const {
     }
     catch (PythonException& e) {
         e.setPositionIfMissing(line, startColumn, endColumn, sourceId);
-        e.recordFramePosition(startColumn, endColumn);
+        e.recordFramePosition(startColumn, endColumn, opStartColumn, opEndColumn, true);
         e.captureTracebackIfMissing();
         throw;
     }

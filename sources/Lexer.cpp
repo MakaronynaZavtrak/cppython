@@ -23,14 +23,24 @@ QVector<Token> Lexer::tokenize(const QString& code) {
     indentStack.clear();
     indentStack.push_back(0);
 
+    int bracketDepth = 0;
+
     while (pos < code.length()) {
 
         if (QChar ch = code[pos]; ch == '\n') {
 
+            // implicit line joining
+            if (bracketDepth > 0) {
+                pos++;
+                line++;
+                lineStartPos = pos;
+                continue;   // не генерируем NEWLINE/INDENT/DEDENT
+            }
+
             tokens.push_back(Token(TOKEN_NEWLINE, "", line));
             pos++;
             line++;
-            lineStartPos = pos;   // было: column = 1;
+            lineStartPos = pos;
 
             int spaceCount = 0, tmpPos = pos;
 
@@ -43,15 +53,12 @@ QVector<Token> Lexer::tokenize(const QString& code) {
                     spaceCount += 4;
 
                 tmpPos++;
-                }
+            }
 
             if (spaceCount > indentStack.last()) {
-
                 indentStack.append(spaceCount);
                 tokens.push_back(Token(TOKEN_INDENT, "", line));
-
             } else while (spaceCount < indentStack.last()) {
-
                 indentStack.pop_back();
                 tokens.push_back(Token(TOKEN_DEDENT, "", line));
             }
@@ -66,6 +73,16 @@ QVector<Token> Lexer::tokenize(const QString& code) {
             break;
         }
 
+        // отслеживаем глубину скобок
+        if (token.type == TOKEN_OP) {
+            if (token.value == "(" || token.value == "[" || token.value == "{") {
+                ++bracketDepth;
+            }
+            else if (token.value == ")" || token.value == "]" || token.value == "}") {
+                if (bracketDepth > 0) --bracketDepth;
+            }
+        }
+
         tokens.append(token);
     }
 
@@ -74,7 +91,10 @@ QVector<Token> Lexer::tokenize(const QString& code) {
         tokens.push_back(Token(TOKEN_DEDENT, "", line));
     }
 
-    tokens.push_back(Token(TOKEN_EOF, "", line));
+    Token eofTok(TOKEN_EOF, "", line);
+    eofTok.startColumn = currentColumn();
+    eofTok.endColumn = currentColumn();
+    tokens.push_back(eofTok);
 
     return tokens;
 }

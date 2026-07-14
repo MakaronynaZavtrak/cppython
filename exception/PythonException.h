@@ -50,7 +50,11 @@ public:
 
     void captureTracebackIfMissing();
 
-    void recordFramePosition(int startCol, int endCol);
+    void recordFramePosition(int startCol,
+                             int endCol,
+                             int anchorStart = 0,
+                             int anchorEnd = 0,
+                             bool anchor = false);
 
     [[nodiscard]] static bool isSubclass(
         const Value::ClassPtr& child,

@@ -32,6 +32,9 @@ class BinOpNode final : public ASTNode {
 
 public:
 
+    int opStartColumn = 0;
+    int opEndColumn = 0;
+
     BinOpNode(std::shared_ptr<ASTNode> left, QString  op, std::shared_ptr<ASTNode> right);
 
     [[nodiscard]] QString toString() const override;

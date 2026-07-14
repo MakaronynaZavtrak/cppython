@@ -23,6 +23,8 @@ public:
     std::vector<std::shared_ptr<ASTNode>> args;
     std::vector<KeywordArg> kwargs;
 
+    int calleeEndColumn = 0;
+
     CallNode(std::shared_ptr<ASTNode> callee,
         std::vector<std::shared_ptr<ASTNode>> args,
         std::vector<KeywordArg> kwargs);
