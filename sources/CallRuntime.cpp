@@ -14,6 +14,7 @@
 #include <unordered_set>
 
 #include "ClassUtils.h"
+#include "DictValue.h"
 #include "GeneratorValue.h"
 #include "Interpreter.h"
 #include "IteratorValue.h"
@@ -39,16 +40,19 @@ void bindParams(const std::shared_ptr<Environment>& local,
 
     // индекс varargs-параметра, если он есть
     int varArgsIdx = -1;
+    int kwArgsIdx = -1;
+
     for (size_t i = 0; i < func->params.size(); ++i) {
-        if (func->params[i].isVarArgs) {
-            varArgsIdx = static_cast<int>(i);
-            break;
-        }
+        if (func->params[i].isVarArgs) varArgsIdx = static_cast<int>(i);
+        if (func->params[i].isKwArgs)  kwArgsIdx = static_cast<int>(i);
     }
 
-    const size_t positionalLimit = (varArgsIdx >= 0)
-        ? static_cast<size_t>(varArgsIdx)
-        : func->params.size();
+    size_t positionalLimit = func->params.size();
+    if (varArgsIdx >= 0) {
+        positionalLimit = static_cast<size_t>(varArgsIdx);
+    } else if (kwArgsIdx >= 0) {
+        positionalLimit = static_cast<size_t>(kwArgsIdx);
+    }
 
     // обычные позиционные
     for (size_t i = 0; i < args.size() && i < positionalLimit; ++i) {
@@ -57,17 +61,18 @@ void bindParams(const std::shared_ptr<Environment>& local,
         assigned.insert(paramName);
     }
 
-    // лишние позиционные
+    // лишние позиционные -> *args
     if (args.size() > positionalLimit) {
 
         if (varArgsIdx < 0) {
             throw TypeErrorException(
-                func->name + "() takes " + QString::number(func->params.size()) +
+                func->name + "() takes " + QString::number(positionalLimit) +
                 " positional arguments but " + QString::number(args.size()) + " were given"
             );
         }
 
-        std::vector<Value> extra(args.begin() + static_cast<long>(positionalLimit), args.end());
+        std::vector extra(args.begin() + positionalLimit, args.end());
+
         local->set(func->params[varArgsIdx].name,
                    Value(std::make_shared<TupleValue>(extra)));
         assigned.insert(func->params[varArgsIdx].name);
@@ -80,13 +85,15 @@ void bindParams(const std::shared_ptr<Environment>& local,
     }
 
     // именованные
+    const auto kwDict = std::make_shared<DictValue>();
+
     for (const auto& [name, value] : kwargs) {
 
         bool found = false;
 
         for (const auto& param : func->params) {
 
-            if (param.isVarArgs) continue;   // в *args по имени не попасть
+            if (param.isVarArgs || param.isKwArgs) continue;
 
             if (param.name == name) {
 
@@ -104,10 +111,20 @@ void bindParams(const std::shared_ptr<Environment>& local,
         }
 
         if (!found) {
-            throw TypeErrorException(
-                func->name + "() got an unexpected keyword argument '" + name + "'"
-            );
+
+            if (kwArgsIdx < 0) {
+                throw TypeErrorException(
+                    func->name + "() got an unexpected keyword argument '" + name + "'"
+                );
+            }
+
+            kwDict->setItem(Value(name), value);
         }
+    }
+
+    if (kwArgsIdx >= 0) {
+        local->set(func->params[kwArgsIdx].name, Value(kwDict));
+        assigned.insert(func->params[kwArgsIdx].name);
     }
 
     // недостающие — дефолты

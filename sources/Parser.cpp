@@ -963,8 +963,34 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
 
         bool seenDefault = false;
         bool seenVarArgs = false;
+        bool seenKwArgs = false;
 
         while (true) {
+            // **kwargs
+            if (matchAndAdvance(TOKEN_OP, "**")) {
+                if (seenKwArgs) {
+                    throw SyntaxErrorException("multiple ** arguments are not allowed");
+                }
+
+                if (peek().type != TOKEN_ID)
+                    throw SyntaxErrorException("Expected parameter name after '**'");
+
+                Param param;
+                param.name = advance().value;
+                param.isKwArgs = true;
+
+                params.push_back(param);
+                seenKwArgs = true;
+
+                if (matchAndAdvance(TOKEN_OP, ",")) {
+                    continue;
+                }
+                break;
+            }
+
+            if (seenKwArgs) {
+                throw SyntaxErrorException("arguments cannot follow **kwargs");
+            }
 
             // *args
             if (matchAndAdvance(TOKEN_OP, "*")) {
@@ -976,7 +1002,10 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
                 if (peek().type != TOKEN_ID)
                     throw SyntaxErrorException("Expected parameter name after '*'");
 
-                Param param {advance().value, "", nullptr, true};
+                Param param;
+                param.name = advance().value;
+                param.isVarArgs = true;
+
                 params.push_back(param);
                 seenVarArgs = true;
 
@@ -987,15 +1016,14 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
             }
 
             if (seenVarArgs) {
-                throw SyntaxErrorException(
-                    "parameters after *args are not supported"
-                );
+                throw SyntaxErrorException("parameters after *args are not supported");
             }
 
             if (peek().type != TOKEN_ID)
                 throw SyntaxErrorException("Expected parameter name");
 
-            Param param {advance().value, "", nullptr, false};
+            Param param;
+            param.name = advance().value;
 
             if (matchAndAdvance(TOKEN_OP, ":")) {
                 if (peek().type != TOKEN_ID)
@@ -1006,8 +1034,7 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
             if (matchAndAdvance(TOKEN_OP, "=")) {
                 param.defaultExpr = parseOr();
                 seenDefault = true;
-            }
-            else if (seenDefault) {
+            } else if (seenDefault) {
                 throw SyntaxErrorException(
                     "parameter without a default follows parameter with a default"
                 );
@@ -1754,9 +1781,21 @@ ParsedCallArgs Parser::parseCallArguments() {
 
     while (true) {
 
-        if (peek().type == TOKEN_ID &&
-            tokens[current + 1].type == TOKEN_OP &&
-            tokens[current + 1].value == "=") {
+        // **expr — распаковка словаря
+        if (matchAndAdvance(TOKEN_OP, "**")) {
+
+            auto expr = parseOr();
+            result.keyword.push_back({"", expr});   // пустое имя = маркер распаковки
+        }
+        // *expr — распаковка итерируемого
+        else if (matchAndAdvance(TOKEN_OP, "*")) {
+
+            auto expr = parseOr();
+            result.positional.push_back(std::make_shared<StarredNode>(expr));
+        }
+        else if (peek().type == TOKEN_ID &&
+                 tokens[current + 1].type == TOKEN_OP &&
+                 tokens[current + 1].value == "=") {
 
             const QString name = advance().value;
 

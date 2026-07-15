@@ -12,5 +12,6 @@ struct Param {
     QString type;
     std::shared_ptr<ASTNode> defaultExpr = nullptr;
     bool isVarArgs = false;
+    bool isKwArgs = false;
 };
 #endif //CPPYTHON_PARAM_H

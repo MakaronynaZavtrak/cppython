@@ -12312,6 +12312,107 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "",
       "list(g(1, 2, 3))"], "[1, 2, 3]"),
 
+    (["def f(a, b, c):",
+      "    return a + b + c",
+      "",
+      "f(*[1, 2, 3])"], "6"),
+
+    (["def f(a, b):",
+      "    return (a, b)",
+      "",
+      "f(*(1, 2))"], "(1, 2)"),
+
+    (["def f(a, b, c):",
+      "    return a + b + c",
+      "",
+      "f(1, *[2, 3])"], "6"),
+
+    (["def f(**kw):",
+      "    return kw",
+      "",
+      "d = {'a': 1, 'b': 2}",
+      "f(**d)"], "{'a': 1, 'b': 2}"),
+
+    (["def f(x, y):",
+      "    return x - y",
+      "",
+      "f(**{'x': 10, 'y': 3})"], "7"),
+
+    (["def f(*args, **kw):",
+      "    return (args, kw)",
+      "",
+      "f(*[1, 2], **{'k': 3})"], "((1, 2), {'k': 3})"),
+
+    (["def f(a, b):",
+      "    return a * b",
+      "",
+      "def gen():",
+      "    yield 3",
+      "    yield 4",
+      "",
+      "f(*gen())"], "12"),
+
+    # распаковка именованных параметров
+    (["def h(**kw):",
+      "    return kw",
+      "",
+      "h(a=1, b=2)"], "{'a': 1, 'b': 2}"),
+
+    (["def h(**kw):",
+      "    return kw",
+      "",
+      "h()"], "{}"),
+
+    (["def h(x, **kw):",
+      "    return (x, kw)",
+      "",
+      "h(1, a=2)"], "(1, {'a': 2})"),
+
+    (["def h(x, y=5,"
+      " **kw):",
+      "    return (x, y, kw)",
+      "",
+      "h(1, z=9)"], "(1, 5, {'z': 9})"),
+
+    (["def h(x, y=5, **kw):",
+      "    return (x, y, kw)",
+      "",
+      "h(1, y=2, z=9)"], "(1, 2, {'z': 9})"),
+
+    (["def h(*args, **kw):",
+      "    return (args, kw)",
+      "",
+      "h(1, 2, a=3)"], "((1, 2), {'a': 3})"),
+
+    (["def h(*args, **kw):",
+      "    return (args, kw)",
+      "",
+      "h()"], "((), {})"),
+
+    (["def h(**kw):",
+      "    return len(kw)",
+      "",
+      "h(a=1, b=2, c=3)"], "3"),
+
+    # кэширующший декоратор
+    (["def cache(func):",
+      "    stored = {}",
+      "    def wrapper(*args):",
+      "        if args in stored:",
+      "            return stored[args]",
+      "        result = func(*args)",
+      "        stored[args] = result",
+      "        return result",
+      "    return wrapper",
+      "",
+      "@cache",
+      "def fib(n):",
+      "    if n < 2:",
+      "        return n",
+      "    return fib(n-1) + fib(n-2)",
+      "",
+      "fib(400)"], "176023680645013966468226945392411250770384383304492191886725992896575345044216019675"),
+
 ])
 
 def test_multiline_expressions(commands, expected):
