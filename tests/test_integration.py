@@ -12394,6 +12394,11 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "",
       "h(a=1, b=2, c=3)"], "3"),
 
+    (["def f(x: int, y: int = 5) -> int:",
+      "    return x + y",
+      "",
+      "f(1)"], "6"),
+
     # кэширующший декоратор
     (["def cache(func):",
       "    stored = {}",
@@ -12412,6 +12417,115 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    return fib(n-1) + fib(n-2)",
       "",
       "fib(400)"], "176023680645013966468226945392411250770384383304492191886725992896575345044216019675"),
+
+    # lambda: базовые
+    (["f = lambda x: x * 2",
+      "f(5)"], "10"),
+
+    (["f = lambda: 42",
+      "f()"], "42"),
+
+    (["f = lambda x, y: x + y",
+      "f(3, 4)"], "7"),
+
+    # lambda: дефолты
+    (["f = lambda x, y=10: x + y",
+      "f(5)"], "15"),
+
+    (["f = lambda x, y=10: x + y",
+      "f(5, 20)"], "25"),
+
+    (["f = lambda x, y=10: x + y",
+      "f(5, y=7)"], "12"),
+
+    (["f = lambda a=1, b=2: (a, b)",
+      "f()"], "(1, 2)"),
+
+    (["f = lambda a=1, b=2: (a, b)",
+      "f(9)"], "(9, 2)"),
+
+    (["f = lambda a=1, b=2: (a, b)",
+      "f(b=99)"], "(1, 99)"),
+
+    # lambda: дефолт вычисляется один раз, при создании
+    (["n = 5",
+      "f = lambda x=n: x",
+      "n = 100", "f()"], "5"),
+
+    # lambda: *args
+    (["g = lambda *args: len(args)",
+      "g(1, 2, 3)"], "3"),
+
+    (["g = lambda *args: args",
+      "g()"], "()"),
+
+    (["g = lambda *args: args",
+      "g(1, 2)"], "(1, 2)"),
+
+    (["g = lambda x, *rest: (x, rest)",
+      "g(1, 2, 3)"], "(1, (2, 3))"),
+
+    # lambda: **kwargs
+    (["h = lambda **kw: kw",
+      "h(a=1, b=2)"], "{'a': 1, 'b': 2}"),
+
+    (["h = lambda **kw: kw",
+      "h()"], "{}"),
+
+    (["h = lambda x, **kw: (x, kw)",
+      "h(1, a=2)"], "(1, {'a': 2})"),
+
+    (["h = lambda *a, **kw: (a, kw)",
+      "h(1, 2, k=3)"], "((1, 2), {'k': 3})"),
+
+    # lambda: комбинации
+    (["f = lambda x, y=2, *a, **kw: (x, y, a, kw)",
+      "f(1)"], "(1, 2, (), {})"),
+
+    (["f = lambda x, y=2, *a, **kw: (x, y, a, kw)",
+      "f(1, 5, 6, 7, z=8)"], "(1, 5, (6, 7), {'z': 8})"),
+
+    # lambda: распаковка при вызове
+    (["f = lambda a, b: a + b",
+      "f(*[3, 4])"], "7"),
+
+    (["f = lambda a, b: a - b",
+      "f(**{'a': 10, 'b': 3})"], "7"),
+
+    # lambda: замыкания
+    (["def make(n):",
+      "    return lambda x: x + n",
+      "",
+      "add5 = make(5)",
+      "add5(10)"], "15"),
+
+    (["fs = []",
+      "def build():",
+      "    for i in [1, 2, 3]:",
+      "        fs.append(lambda x, k=i: x * k)",
+      "",
+      "build()",
+      "fs[0](10)",
+      "fs[2](10)"], ["10", "30"]),
+
+    # lambda как аргумент
+    (["def apply(fn, v):",
+      "    return fn(v)",
+      "",
+      "apply(lambda x: x * 3, 7)"], "21"),
+
+    # lambda: ошибки
+    (["f = lambda a=1, b: a",
+      ""], "SyntaxError: parameter without a default follows parameter with a default"),
+
+    (["f = lambda x: x",
+      "f()"], "TypeError: <lambda>() missing required positional argument: 'x'"),
+
+    (["f = lambda x: x",
+      "f(1, 2)"], "TypeError: <lambda>() takes 1 positional arguments but 2 were given"),
+
+    (["h = lambda **kw: kw",
+      "h(1)"], "TypeError: <lambda>() takes 0 positional arguments but 1 were given"),
 
 ])
 

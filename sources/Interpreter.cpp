@@ -133,6 +133,25 @@ bool Interpreter::hasUnclosedBrackets(const std::vector<std::string>& lines) {
     return depth > 0;
 }
 
+bool Interpreter::hasDefiniteSyntaxError(const std::string& code, Lexer& lexer) {
+
+    QString normalized = QString::fromStdString(code);
+    normalized.replace('\t', "    ");
+
+    try {
+        const QVector<Token> tokens = lexer.tokenize(normalized);
+        Parser parser(tokens);
+        (void)parser.parse();
+        return false;
+    }
+    catch (const SyntaxErrorException& e) {
+        return !e.incompleteInput;
+    }
+    catch (...) {
+        return false;   // не синтаксис — разберёмся при реальном выполнении
+    }
+}
+
 /**
  * Выполняет интерпретацию кода, переданного в виде строки. Разбивает код на токены
  * с помощью лексера, создает абстрактное синтаксическое дерево (AST) с помощью парсера
@@ -254,6 +273,7 @@ void Interpreter::run(int argc, char* argv[]) {
         if (!isInBlock && buffer.empty() && isExitCommand(line)) break;
 
         if (isInBlock) {
+
             if (line.empty()) {
                 // пустая строка завершает блок — НО только если скобки сбалансированы
                 if (!hasUnclosedBrackets(buffer)) {
@@ -263,10 +283,30 @@ void Interpreter::run(int argc, char* argv[]) {
                     continue;
                 }
             } else {
+
                 buffer.push_back(line);
+
+                if (!hasUnclosedBrackets(buffer) &&
+                    hasDefiniteSyntaxError(assembleCode(buffer), lexer)) {
+
+                    executeCode(assembleCode(buffer), lexer, globalEnv);
+                    buffer.clear();
+                    isInBlock = false;
+                    }
+
                 continue;
             }
+
         } else {
+
+            if (line.empty()) {
+
+                if (buffer.empty()) continue;
+
+                executeCode(assembleCode(buffer), lexer, globalEnv);
+                buffer.clear();
+                continue;
+            }
 
             buffer.push_back(line);
 
@@ -275,13 +315,14 @@ void Interpreter::run(int argc, char* argv[]) {
                 continue;
             }
 
-            if (!line.empty() && line.back() == ':') {
-                isInBlock = true;
+            if (hasDefiniteSyntaxError(assembleCode(buffer), lexer)) {
+                executeCode(assembleCode(buffer), lexer, globalEnv);
+                buffer.clear();
                 continue;
             }
 
-            if (buffer.size() == 1 && line.empty()) {
-                buffer.clear();
+            if (!line.empty() && line.back() == ':') {
+                isInBlock = true;
                 continue;
             }
 

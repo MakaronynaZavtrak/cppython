@@ -9,6 +9,9 @@
 
 class SyntaxErrorException : public PythonException {
 public:
+
+    bool incompleteInput = false;
+
     explicit SyntaxErrorException(const QString& msg)
         : PythonException(Runtime::syntaxErrorClass, msg) {}
 };

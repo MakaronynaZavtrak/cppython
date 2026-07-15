@@ -57,5 +57,7 @@ class Interpreter {
 
         static bool hasUnclosedBrackets(const std::vector<std::string>& lines);
 
+        static bool hasDefiniteSyntaxError(const std::string& code, Lexer& lexer);
+
 };
 #endif //INTERPRETER_H

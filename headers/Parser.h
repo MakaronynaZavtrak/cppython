@@ -8,6 +8,8 @@
 #include "../ast/callNode/CallNode.h"
 #include "../exception/SyntaxErrorException.h"
 
+struct Param;
+
 template<typename NodePtr>
 NodePtr withPosition(NodePtr node, const Token& startTok, const Token& endTok) {
     node->line = startTok.line;
@@ -134,7 +136,7 @@ private:
      * @brief Выбрасывает ошибку о неожиданном токене
      * @param token Неожиданный токен
      */
-    [[noreturn]] static void throwUnexpectedTokenError(const Token &token);
+    [[noreturn]] void throwUnexpectedTokenError(const Token &token) const;
 
     /**
      * @brief Разбирает конструкцию условного оператора (`if`) и возвращает соответствующий узел AST.
@@ -255,9 +257,13 @@ private:
 
     BraceKind classifyBraces();
 
-    static SyntaxErrorException makeSyntaxError(const QString& msg, const Token& tok);
+    SyntaxErrorException makeSyntaxError(const QString& msg, const Token& tok) const;
 
     QVector<Token> tokens;
     int current = 0;
+
+    std::vector<Param> parseParamList(bool isLambda);
+
+    [[nodiscard]] bool isAtEndOfInput() const;
 };
 #endif //PARSER_H

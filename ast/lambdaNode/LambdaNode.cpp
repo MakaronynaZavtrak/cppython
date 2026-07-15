@@ -20,6 +20,16 @@ Value LambdaNode::eval(EnvPtr env) const {
 
     const auto fn = std::make_shared<FunctionValue>(params, functionBody, env, "<lambda>");
 
+    fn->defaults.reserve(params.size());
+
+    for (const auto& p : params) {
+        if (p.defaultExpr) {
+            fn->defaults.emplace_back(p.defaultExpr->eval(env));
+        } else {
+            fn->defaults.emplace_back(std::nullopt);
+        }
+    }
+
     return Value(fn);
 }
 

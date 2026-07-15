@@ -232,7 +232,7 @@ std::shared_ptr<ASTNode> Parser::parseAssignmentTail(std::shared_ptr<ASTNode> le
             return std::make_shared<AugAssignNode>(var->name, op, right);
         }
 
-        throw SyntaxErrorException("Invalid augmented assignment target");
+        throw makeSyntaxError("Invalid augmented assignment target", peek());
     }
 
     if (matchAndAdvance(TOKEN_OP, "=")) {
@@ -251,7 +251,7 @@ std::shared_ptr<ASTNode> Parser::parseAssignmentTail(std::shared_ptr<ASTNode> le
             return std::make_shared<IndexAssignNode>(idx->object, idx->index, right);
         }
 
-        throw SyntaxErrorException("Invalid assignment target");
+        throw makeSyntaxError("Invalid assignment target", peek());
     }
 
     return left;
@@ -266,13 +266,13 @@ std::vector<ComprehensionClause> Parser::parseComprehensionClauses() {
         advance(); // for
 
         if (peek().type != TOKEN_ID) {
-            throw SyntaxErrorException("Expected identifier after 'for' in comprehension");
+            throw makeSyntaxError("Expected identifier after 'for' in comprehension", peek());
         }
 
         const QString varName = advance().value;
 
         if (!(peek().type == TOKEN_KEYWORD && peek().keyword == Keyword::IN)) {
-            throw SyntaxErrorException("Expected 'in' in comprehension");
+            throw makeSyntaxError("Expected 'in' in comprehension", peek());
         }
 
         advance(); // in
@@ -290,7 +290,7 @@ std::vector<ComprehensionClause> Parser::parseComprehensionClauses() {
     }
 
     if (clauses.empty()) {
-        throw SyntaxErrorException("Expected 'for' in comprehension");
+        throw makeSyntaxError("Expected 'for' in comprehension", peek());
     }
 
     return clauses;
@@ -781,8 +781,8 @@ std::shared_ptr<ASTNode> Parser::parseParenthesizedExpression() {
  *
  * @param token Токен, который оказался неожиданным в текущем контексте.
  */
-void Parser::throwUnexpectedTokenError(const Token &token) {
-    throw SyntaxErrorException("Unexpected token: \"" + token.value + "\"");
+void Parser::throwUnexpectedTokenError(const Token &token) const {
+    throw makeSyntaxError("Unexpected token: \"" + token.value + "\"", peek());
 }
 
 /**
@@ -853,13 +853,15 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement() {
      */
 std::vector<std::shared_ptr<ASTNode>> Parser::parseBlock() {
 
-    if (peek().type != TOKEN_NEWLINE)
-        throw SyntaxErrorException("Expected newline after statement");
+    if (peek().type != TOKEN_NEWLINE) {
+        throw makeSyntaxError("Expected newline after statement", peek());
+    }
 
     advance();
 
-    if (peek().type != TOKEN_INDENT)
-        throw SyntaxErrorException("Expected indent after statement");
+    if (peek().type != TOKEN_INDENT) {
+        throw makeSyntaxError("expected an indented block", peek());
+    }
 
     advance();
 
@@ -868,16 +870,14 @@ std::vector<std::shared_ptr<ASTNode>> Parser::parseBlock() {
     while (peek().type != TOKEN_DEDENT && peek().type != TOKEN_EOF) {
 
         statements.push_back(parse());
-
-        if (peek().type == TOKEN_NEWLINE)
-            advance();
+        if (peek().type == TOKEN_NEWLINE) advance();
     }
 
     if (peek().type == TOKEN_DEDENT) {
         advance();
     }
     else {
-        throw SyntaxErrorException("Expected dedent after block");
+        throw makeSyntaxError("Expected dedent after block", peek());
     }
 
     return statements;
@@ -947,115 +947,24 @@ std::shared_ptr<ASTNode> Parser::parseContinueStatement() {
 
 std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_ptr<ASTNode>>& decorators) {
 
-    advance();
+    advance(); // def
 
     if (peek().type != TOKEN_ID) {
-        throw SyntaxErrorException("Expected function name");
+        throw makeSyntaxError("Expected function name", peek());
     }
 
     QString name = advance().value;
 
     consume(TOKEN_OP, "(");
 
-    std::vector<Param> params;
+    std::vector<Param> params = parseParamList(false);
 
-    if (!match(TOKEN_OP, ")")) {
-
-        bool seenDefault = false;
-        bool seenVarArgs = false;
-        bool seenKwArgs = false;
-
-        while (true) {
-            // **kwargs
-            if (matchAndAdvance(TOKEN_OP, "**")) {
-                if (seenKwArgs) {
-                    throw SyntaxErrorException("multiple ** arguments are not allowed");
-                }
-
-                if (peek().type != TOKEN_ID)
-                    throw SyntaxErrorException("Expected parameter name after '**'");
-
-                Param param;
-                param.name = advance().value;
-                param.isKwArgs = true;
-
-                params.push_back(param);
-                seenKwArgs = true;
-
-                if (matchAndAdvance(TOKEN_OP, ",")) {
-                    continue;
-                }
-                break;
-            }
-
-            if (seenKwArgs) {
-                throw SyntaxErrorException("arguments cannot follow **kwargs");
-            }
-
-            // *args
-            if (matchAndAdvance(TOKEN_OP, "*")) {
-
-                if (seenVarArgs) {
-                    throw SyntaxErrorException("multiple * arguments are not allowed");
-                }
-
-                if (peek().type != TOKEN_ID)
-                    throw SyntaxErrorException("Expected parameter name after '*'");
-
-                Param param;
-                param.name = advance().value;
-                param.isVarArgs = true;
-
-                params.push_back(param);
-                seenVarArgs = true;
-
-                if (matchAndAdvance(TOKEN_OP, ",")) {
-                    continue;
-                }
-                break;
-            }
-
-            if (seenVarArgs) {
-                throw SyntaxErrorException("parameters after *args are not supported");
-            }
-
-            if (peek().type != TOKEN_ID)
-                throw SyntaxErrorException("Expected parameter name");
-
-            Param param;
-            param.name = advance().value;
-
-            if (matchAndAdvance(TOKEN_OP, ":")) {
-                if (peek().type != TOKEN_ID)
-                    throw SyntaxErrorException("Expected type after ':'");
-                param.type = advance().value;
-            }
-
-            if (matchAndAdvance(TOKEN_OP, "=")) {
-                param.defaultExpr = parseOr();
-                seenDefault = true;
-            } else if (seenDefault) {
-                throw SyntaxErrorException(
-                    "parameter without a default follows parameter with a default"
-                );
-            }
-
-            params.push_back(param);
-
-            if (matchAndAdvance(TOKEN_OP, ",")) {
-                continue;
-            }
-
-            break;
-        }
-    }
-
-    matchAndAdvance(TOKEN_OP, ")");
+    consume(TOKEN_OP, ")");
 
     if (matchAndAdvance(TOKEN_OP, "->")) {
 
         if (peek().type != TOKEN_ID)
-            throw SyntaxErrorException("Expected return type after '->'");
+            throw makeSyntaxError("Expected return type after '->'", peek());
 
         advance();
     }
@@ -1093,7 +1002,7 @@ std::shared_ptr<ASTNode> Parser::parseGlobalStatement() {
     QVector<QString> names;
 
     if (peek().type != TOKEN_ID) {
-        throw SyntaxErrorException("Expected identifier after 'global'");
+        throw makeSyntaxError("Expected identifier after 'global'", peek());
     }
 
     names.push_back(advance().value);
@@ -1101,7 +1010,7 @@ std::shared_ptr<ASTNode> Parser::parseGlobalStatement() {
     while (matchAndAdvance(TOKEN_OP, ",")) {
 
         if (peek().type != TOKEN_ID) {
-            throw SyntaxErrorException("Expected identifier after ','");
+            throw makeSyntaxError("Expected identifier after ','", peek());
         }
 
         names.push_back(advance().value);
@@ -1120,7 +1029,7 @@ std::shared_ptr<ASTNode> Parser::parseNonlocalStatement() {
     QVector<QString> names;
 
     if (peek().type != TOKEN_ID) {
-        throw SyntaxErrorException("Expected identifier after 'nonlocal'");
+        throw makeSyntaxError("Expected identifier after 'nonlocal'", peek());
     }
 
     names.push_back(advance().value);
@@ -1128,7 +1037,7 @@ std::shared_ptr<ASTNode> Parser::parseNonlocalStatement() {
     while (matchAndAdvance(TOKEN_OP, ",")) {
 
         if (peek().type != TOKEN_ID) {
-            throw SyntaxErrorException("Expected identifier after ','");
+            throw makeSyntaxError("Expected identifier after ','", peek());
         }
 
         names.push_back(advance().value);
@@ -1186,7 +1095,7 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
     advance(); // class
 
     if (peek().type != TOKEN_ID) {
-        throw SyntaxErrorException("Expected class name");
+        throw makeSyntaxError("Expected class name", peek());
     }
 
     QString name = advance().value;
@@ -1238,7 +1147,7 @@ std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {
             advance(); // .
 
             if (peek().type != TOKEN_ID)
-                throw SyntaxErrorException("Expected attribute name after '.'");
+                throw makeSyntaxError("Expected attribute name after '.'", peek());
 
             const Token attrTok = peek();
             QString attr = advance().value;
@@ -1329,7 +1238,7 @@ std::shared_ptr<ASTNode> Parser::parseDecorated() {
     }
 
     if (peek().type != TOKEN_KEYWORD) {
-        throw SyntaxErrorException("Expected def or class after decorator");
+        throw makeSyntaxError("Expected def or class after decorator", peek());
     }
 
     const auto kw = peek().keyword.value();
@@ -1342,7 +1251,7 @@ std::shared_ptr<ASTNode> Parser::parseDecorated() {
         return parseClassDef(decorators);
     }
 
-    throw SyntaxErrorException("Decorator can only be applied to def/class");
+    throw makeSyntaxError("Decorator can only be applied to def/class", peek());
 }
 
 std::shared_ptr<ASTNode> Parser::parseList() {
@@ -1389,29 +1298,11 @@ std::shared_ptr<ASTNode> Parser::parseLambda() {
 
     advance(); // lambda
 
-    std::vector<Param> params;
-
-    if (!match(TOKEN_OP, ":")) {
-
-        while (true) {
-
-            if (peek().type != TOKEN_ID) {
-                throw SyntaxErrorException("Expected parameter name in lambda");
-            }
-
-            params.push_back(Param{advance().value, ""});
-
-            if (matchAndAdvance(TOKEN_OP, ",")) {
-                continue;
-            }
-
-            break;
-        }
-    }
+    std::vector<Param> params = parseParamList(true);
 
     consume(TOKEN_OP, ":");
 
-    auto expr = parseExpression();
+    auto expr = parseOr();
 
     return std::make_shared<LambdaNode>(std::move(params), expr);
 }
@@ -1517,7 +1408,7 @@ QString Parser::parseComparisonOperator() {
 
         if (peek().type != TOKEN_KEYWORD ||
             peek().keyword != Keyword::IN) {
-            throw SyntaxErrorException("Expected 'in' after 'not'");
+            throw makeSyntaxError("Expected 'in' after 'not'", peek());
         }
 
         advance();
@@ -1666,7 +1557,7 @@ std::shared_ptr<ASTNode>Parser::parseDelStatement() {
     !std::dynamic_pointer_cast<IndexNode>(target) &&
     !std::dynamic_pointer_cast<AttributeAccessNode>(target)) {
 
-        throw SyntaxErrorException("cannot delete expression");
+        throw makeSyntaxError("cannot delete expression", peek());
     }
 
     return std::make_shared<DeleteNode>(target);
@@ -1694,8 +1585,9 @@ std::shared_ptr<ASTNode> Parser::parseTryStatement() {
             if (matchAndAdvance(TOKEN_KEYWORD, "as")) {
 
                 if (peek().type != TOKEN_ID)
-                    throw SyntaxErrorException(
-                        "Expected identifier after 'as'"
+                    throw makeSyntaxError(
+                        "Expected identifier after 'as'",
+                        peek()
                     );
 
                 variableName = advance().value;
@@ -1734,8 +1626,8 @@ std::shared_ptr<ASTNode> Parser::parseTryStatement() {
     }
 
     if (excepts.empty() && finallyBody.empty()) {
-        throw SyntaxErrorException(
-            "expected except or finally"
+        throw makeSyntaxError(
+            "expected except or finally", peek()
         );
     }
 
@@ -1819,8 +1711,9 @@ ParsedCallArgs Parser::parseCallArguments() {
                 auto clauses = parseComprehensionClauses();
 
                 if (!match(TOKEN_OP, ")")) {
-                    throw SyntaxErrorException(
-                        "Generator expression must be parenthesized if not sole argument"
+                    throw makeSyntaxError(
+                        "Generator expression must be parenthesized if not sole argument",
+                        peek()
                     );
                 }
 
@@ -1956,7 +1849,7 @@ std::shared_ptr<ASTNode> Parser::parseForStatement() {
     advance(); // for
 
     if (peek().type != TOKEN_ID) {
-        throw SyntaxErrorException("Expected variable name after 'for'");
+        throw makeSyntaxError("Expected variable name after 'for'", peek());
     }
 
     QString varName = advance().value;
@@ -2126,12 +2019,139 @@ Token Parser::advance() {
     : Token(TOKEN_EOF, "", 0);
 }
 
-SyntaxErrorException Parser::makeSyntaxError(const QString& msg, const Token& tok) {
+SyntaxErrorException Parser::makeSyntaxError(const QString& msg, const Token& tok) const {
     SyntaxErrorException e(msg);
     e.line = tok.line;
     e.startColumn = tok.startColumn;
     e.endColumn = tok.endColumn;
     e.sourceId = Runtime::currentSourceId;
     e.hasPosition = true;
+    e.incompleteInput = isAtEndOfInput();
     return e;
+}
+
+std::vector<Param> Parser::parseParamList(const bool isLambda) {
+
+    std::vector<Param> params;
+
+    auto atEnd = [&]() {
+        return isLambda ? match(TOKEN_OP, ":") : match(TOKEN_OP, ")");
+    };
+
+    if (atEnd()) {
+        return params;
+    }
+
+    bool seenDefault = false;
+    bool seenVarArgs = false;
+    bool seenKwArgs = false;
+
+    while (true) {
+
+        // **kwargs
+        if (matchAndAdvance(TOKEN_OP, "**")) {
+
+            if (seenKwArgs) {
+                throw makeSyntaxError("multiple ** arguments are not allowed", peek());
+            }
+
+            if (peek().type != TOKEN_ID)
+                throw makeSyntaxError("Expected parameter name after '**'", peek());
+
+            Param param;
+            param.name = advance().value;
+            param.isKwArgs = true;
+
+            params.push_back(param);
+            seenKwArgs = true;
+
+            if (matchAndAdvance(TOKEN_OP, ",")) continue;
+            break;
+        }
+
+        if (seenKwArgs) {
+            throw makeSyntaxError("arguments cannot follow **kwargs", peek());
+        }
+
+        // *args
+        if (matchAndAdvance(TOKEN_OP, "*")) {
+
+            if (seenVarArgs) {
+                throw makeSyntaxError("multiple * arguments are not allowed", peek());
+            }
+
+            if (peek().type != TOKEN_ID)
+                throw makeSyntaxError("Expected parameter name after '*'", peek());
+
+            Param param;
+            param.name = advance().value;
+            param.isVarArgs = true;
+
+            params.push_back(param);
+            seenVarArgs = true;
+
+            if (matchAndAdvance(TOKEN_OP, ",")) continue;
+            break;
+        }
+
+        if (seenVarArgs) {
+            throw makeSyntaxError("parameters after *args are not supported", peek());
+        }
+
+        // обычный параметр
+        if (peek().type != TOKEN_ID)
+            throw makeSyntaxError(
+                isLambda ? "Expected parameter name in lambda" : "Expected parameter name",
+                peek()
+            );
+
+        const Token nameTok = peek();
+
+        Param param;
+        param.name = advance().value;
+
+        // аннотация типа — только для def, в lambda ':' завершает список параметров
+        if (!isLambda && matchAndAdvance(TOKEN_OP, ":")) {
+
+            if (peek().type != TOKEN_ID)
+                throw makeSyntaxError("Expected type after ':'", peek());
+
+            param.type = advance().value;
+        }
+
+        if (matchAndAdvance(TOKEN_OP, "=")) {
+            param.defaultExpr = parseOr();
+            seenDefault = true;
+        }
+        else if (seenDefault) {
+            throw makeSyntaxError(
+                "parameter without a default follows parameter with a default",
+                nameTok
+            );
+        }
+
+        params.push_back(param);
+
+        if (matchAndAdvance(TOKEN_OP, ",")) continue;
+        break;
+    }
+
+    return params;
+}
+
+bool Parser::isAtEndOfInput() const {
+
+    for (int i = current; i < tokens.size(); ++i) {
+
+        const auto t = tokens[i].type;
+
+        if (t != TOKEN_NEWLINE &&
+            t != TOKEN_INDENT  &&
+            t != TOKEN_DEDENT  &&
+            t != TOKEN_EOF) {
+            return false;
+            }
+    }
+
+    return true;
 }
