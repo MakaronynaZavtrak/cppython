@@ -12259,6 +12259,58 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "        yield i",
       "",
       "list(g())"], "[0, 1, 2]"),
+    
+    # распаковка позиционных параметров
+    (["def g(*args):",
+      "    return args",
+      "",
+      "g(1, 2, 3)"], "(1, 2, 3)"),
+
+    (["def g(*args):",
+      "    return args",
+      "",
+      "g()"], "()"),
+
+    (["def g(x, *args):",
+      "    return (x, args)",
+      "",
+      "g(1, 2, 3)"], "(1, (2, 3))"),
+
+    (["def g(x, *args):",
+      "    return (x, args)",
+      "",
+      "g(1)"], "(1, ())"),
+
+    (["def g(x, y=10, *args):",
+      "    return (x, y, args)",
+      "",
+      "g(1)"], "(1, 10, ())"),
+
+    (["def g(x, y=10, *args):",
+      "    return (x, y, args)",
+      "",
+      "g(1, 2, 3, 4)"], "(1, 2, (3, 4))"),
+
+    (["def g(*args):",
+      "    return len(args)",
+      "",
+      "g(1, 2, 3, 4, 5)"], "5"),
+
+    # сумма через *args
+    (["def total(*nums):",
+      "    s = 0",
+      "    for n in nums:",
+      "        s = s + n",
+      "    return s",
+      "",
+      "total(1, 2, 3, 4)"], "10"),
+
+    # генератор с *args
+    (["def g(*args):",
+      "    for a in args:",
+      "        yield a",
+      "",
+      "list(g(1, 2, 3))"], "[1, 2, 3]"),
 
 ])
 

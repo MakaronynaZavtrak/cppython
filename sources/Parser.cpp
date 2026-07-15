@@ -962,19 +962,44 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
     if (!match(TOKEN_OP, ")")) {
 
         bool seenDefault = false;
+        bool seenVarArgs = false;
 
         while (true) {
+
+            // *args
+            if (matchAndAdvance(TOKEN_OP, "*")) {
+
+                if (seenVarArgs) {
+                    throw SyntaxErrorException("multiple * arguments are not allowed");
+                }
+
+                if (peek().type != TOKEN_ID)
+                    throw SyntaxErrorException("Expected parameter name after '*'");
+
+                Param param {advance().value, "", nullptr, true};
+                params.push_back(param);
+                seenVarArgs = true;
+
+                if (matchAndAdvance(TOKEN_OP, ",")) {
+                    continue;
+                }
+                break;
+            }
+
+            if (seenVarArgs) {
+                throw SyntaxErrorException(
+                    "parameters after *args are not supported"
+                );
+            }
 
             if (peek().type != TOKEN_ID)
                 throw SyntaxErrorException("Expected parameter name");
 
-            Param param {advance().value, "", nullptr};
+            Param param {advance().value, "", nullptr, false};
 
             if (matchAndAdvance(TOKEN_OP, ":")) {
-
                 if (peek().type != TOKEN_ID)
                     throw SyntaxErrorException("Expected type after ':'");
-
                 param.type = advance().value;
             }
 

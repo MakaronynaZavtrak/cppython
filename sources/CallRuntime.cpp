@@ -37,25 +37,57 @@ void bindParams(const std::shared_ptr<Environment>& local,
 
     std::unordered_set<QString> assigned;
 
-    for (size_t i = 0; i < args.size(); ++i) {
+    // индекс varargs-параметра, если он есть
+    int varArgsIdx = -1;
+    for (size_t i = 0; i < func->params.size(); ++i) {
+        if (func->params[i].isVarArgs) {
+            varArgsIdx = static_cast<int>(i);
+            break;
+        }
+    }
 
-        if (i >= func->params.size()) {
+    const size_t positionalLimit = (varArgsIdx >= 0)
+        ? static_cast<size_t>(varArgsIdx)
+        : func->params.size();
+
+    // обычные позиционные
+    for (size_t i = 0; i < args.size() && i < positionalLimit; ++i) {
+        const QString& paramName = func->params[i].name;
+        local->set(paramName, args[i]);
+        assigned.insert(paramName);
+    }
+
+    // лишние позиционные
+    if (args.size() > positionalLimit) {
+
+        if (varArgsIdx < 0) {
             throw TypeErrorException(
                 func->name + "() takes " + QString::number(func->params.size()) +
                 " positional arguments but " + QString::number(args.size()) + " were given"
             );
         }
 
-        const QString& paramName = func->params[i].name;
-        local->set(paramName, args[i]);
-        assigned.insert(paramName);
+        std::vector<Value> extra(args.begin() + static_cast<long>(positionalLimit), args.end());
+        local->set(func->params[varArgsIdx].name,
+                   Value(std::make_shared<TupleValue>(extra)));
+        assigned.insert(func->params[varArgsIdx].name);
+    }
+    else if (varArgsIdx >= 0) {
+        // *args есть, но лишних аргументов нет — пустой кортеж
+        local->set(func->params[varArgsIdx].name,
+                   Value(std::make_shared<TupleValue>(std::vector<Value>{})));
+        assigned.insert(func->params[varArgsIdx].name);
     }
 
+    // именованные
     for (const auto& [name, value] : kwargs) {
 
         bool found = false;
 
         for (const auto& param : func->params) {
+
+            if (param.isVarArgs) continue;   // в *args по имени не попасть
+
             if (param.name == name) {
 
                 if (assigned.count(name)) {
@@ -78,14 +110,12 @@ void bindParams(const std::shared_ptr<Environment>& local,
         }
     }
 
-    // недостающие — подставляем дефолты, если есть
+    // недостающие — дефолты
     for (size_t i = 0; i < func->params.size(); ++i) {
 
         const auto& param = func->params[i];
 
-        if (assigned.count(param.name)) {
-            continue;
-        }
+        if (assigned.count(param.name)) continue;
 
         if (i < func->defaults.size() && func->defaults[i].has_value()) {
             local->set(param.name, func->defaults[i].value());
