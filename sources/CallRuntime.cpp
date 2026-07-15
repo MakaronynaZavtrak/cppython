@@ -40,7 +40,10 @@ void bindParams(const std::shared_ptr<Environment>& local,
     for (size_t i = 0; i < args.size(); ++i) {
 
         if (i >= func->params.size()) {
-            throw ValueErrorException("Too many positional arguments");
+            throw TypeErrorException(
+                func->name + "() takes " + QString::number(func->params.size()) +
+                " positional arguments but " + QString::number(args.size()) + " were given"
+            );
         }
 
         const QString& paramName = func->params[i].name;
@@ -56,7 +59,9 @@ void bindParams(const std::shared_ptr<Environment>& local,
             if (param.name == name) {
 
                 if (assigned.count(name)) {
-                    throw ValueErrorException("multiple values for argument " + name);
+                    throw TypeErrorException(
+                        func->name + "() got multiple values for argument '" + name + "'"
+                    );
                 }
 
                 local->set(name, value);
@@ -67,14 +72,29 @@ void bindParams(const std::shared_ptr<Environment>& local,
         }
 
         if (!found) {
-            throw ValueErrorException("Unknown keyword argument: " + name);
+            throw TypeErrorException(
+                func->name + "() got an unexpected keyword argument '" + name + "'"
+            );
         }
     }
 
-    for (const auto& param : func->params) {
-        if (!assigned.count(param.name)) {
-            throw TypeErrorException("Missing argument: " + param.name);
+    // недостающие — подставляем дефолты, если есть
+    for (size_t i = 0; i < func->params.size(); ++i) {
+
+        const auto& param = func->params[i];
+
+        if (assigned.count(param.name)) {
+            continue;
         }
+
+        if (i < func->defaults.size() && func->defaults[i].has_value()) {
+            local->set(param.name, func->defaults[i].value());
+            continue;
+        }
+
+        throw TypeErrorException(
+            func->name + "() missing required positional argument: '" + param.name + "'"
+        );
     }
 }
 

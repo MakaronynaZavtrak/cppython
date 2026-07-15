@@ -12206,6 +12206,60 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'closed'",
       ""], ["1", "'closed'"]),
 
+    # параметры по умолчанию внутри функций
+    (["def f(x, y=10):",
+      "    return x + y",
+      "",
+      "f(5)"], "15"),
+
+    (["def f(x, y=10):",
+      "    return x + y",
+      "",
+      "f(5, 20)"], "25"),
+
+    (["def f(x, y=10):",
+      "    return x + y",
+      "",
+      "f(5, y=7)"], "12"),
+
+    (["def f(a=1, b=2, c=3):",
+      "    return (a, b, c)",
+      "",
+      "f()"], "(1, 2, 3)"),
+
+    (["def f(a=1, b=2, c=3):",
+      "    return (a, b, c)",
+      "",
+      "f(9)"], "(9, 2, 3)"),
+
+    (["def f(a=1, b=2, c=3):",
+      "    return (a, b, c)",
+      "",
+      "f(c=99)"], "(1, 2, 99)"),
+
+    # дефолт вычисляется ОДИН раз — мутабельная ловушка Python
+    (["def bad(x=[]):",
+      "    x.append(1)",
+      "    return x",
+      "",
+      "bad()",
+      "bad()"], ["[1]", "[1, 1]"]),
+
+    # дефолт видит окружение на момент def, а не вызова
+    (["n = 5",
+      "def f(x=n):",
+      "    return x",
+      "",
+      "n = 100",
+      "f()"], "5"),
+
+    # генератор с дефолтом
+    (["def g(n=3):",
+      "    for i in range(n):",
+      "        yield i",
+      "",
+      "list(g())"], "[0, 1, 2]"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

@@ -30,6 +30,7 @@ public:
     std::shared_ptr<Environment> closure;
     QString name;
     std::shared_ptr<ClassValue> ownerClass;
+    std::vector<std::optional<Value>> defaults;
 
     bool isGenerator = false;
 };

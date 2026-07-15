@@ -961,12 +961,14 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
 
     if (!match(TOKEN_OP, ")")) {
 
+        bool seenDefault = false;
+
         while (true) {
 
             if (peek().type != TOKEN_ID)
                 throw SyntaxErrorException("Expected parameter name");
 
-            Param param {advance().value, ""};
+            Param param {advance().value, "", nullptr};
 
             if (matchAndAdvance(TOKEN_OP, ":")) {
 
@@ -974,6 +976,16 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
                     throw SyntaxErrorException("Expected type after ':'");
 
                 param.type = advance().value;
+            }
+
+            if (matchAndAdvance(TOKEN_OP, "=")) {
+                param.defaultExpr = parseOr();
+                seenDefault = true;
+            }
+            else if (seenDefault) {
+                throw SyntaxErrorException(
+                    "parameter without a default follows parameter with a default"
+                );
             }
 
             params.push_back(param);

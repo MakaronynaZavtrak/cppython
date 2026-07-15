@@ -20,6 +20,17 @@ Value FunctionDefNode::eval(const EnvPtr env) const {
 
     const auto func = std::make_shared<FunctionValue>(params, body, env, name);
 
+    func->defaults.reserve(params.size());
+
+    for (const auto& p : params) {
+
+        if (p.defaultExpr) {
+            func->defaults.push_back(p.defaultExpr->eval(env));
+        } else {
+            func->defaults.emplace_back(std::nullopt);
+        }
+    }
+
     for (const auto& stmt : body) {
         if (stmt->containsYield()) {
             func->isGenerator = true;
