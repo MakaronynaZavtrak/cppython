@@ -20,11 +20,60 @@
 #include "../exception/AttributeErrorException.h"
 #include "../exception/StopIterationException.h"
 #include "../exception/TypeErrorException.h"
+#include "../exception/ValueErrorException.h"
 #include "../runtime/ArgValidation.h"
 #include "../runtime/RuntimeUtils.h"
 //
 // Created by semyo on 04.05.2026.
 //
+
+Value::BigInt parseIntLiteral(const QString& raw, int base) {
+
+    auto fail = [&]() {
+        throw ValueErrorException(
+            "invalid literal for int() with base " +
+            QString::number(base == 0 ? 10 : base) + ": '" + raw + "'"
+        );
+    };
+
+    QString s = raw.trimmed();
+    s.remove('_');
+
+    if (s.isEmpty()) fail();
+
+    bool negative = false;
+    if (s.startsWith('+'))      s = s.mid(1);
+    else if (s.startsWith('-')) { negative = true; s = s.mid(1); }
+
+    if (base == 0) {
+        if      (s.startsWith("0x", Qt::CaseInsensitive)) { base = 16; s = s.mid(2); }
+        else if (s.startsWith("0b", Qt::CaseInsensitive)) { base = 2;  s = s.mid(2); }
+        else if (s.startsWith("0o", Qt::CaseInsensitive)) { base = 8;  s = s.mid(2); }
+        else base = 10;
+    }
+    else if (base == 16 && s.startsWith("0x", Qt::CaseInsensitive)) s = s.mid(2);
+    else if (base == 2  && s.startsWith("0b", Qt::CaseInsensitive)) s = s.mid(2);
+    else if (base == 8  && s.startsWith("0o", Qt::CaseInsensitive)) s = s.mid(2);
+
+    if (s.isEmpty()) fail();
+
+    Value::BigInt result = 0;
+
+    for (const QChar& c : s) {
+
+        int digit;
+
+        if (c.isDigit())       digit = c.unicode() - '0';
+        else if (c.isLetter()) digit = c.toLower().unicode() - 'a' + 10;
+        else                   { fail(); digit = 0; }
+
+        if (digit >= base) fail();
+
+        result = result * base + digit;
+    }
+
+    return negative ? -result : result;
+}
 
 const Value* findKwarg(const Kwargs& kwargs, const QString& name) {
 
@@ -804,6 +853,142 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     )
 );
+
+    env->set("int",
+         makeBuiltin(
+             "int",
+
+             [](const std::vector<Value> &args,
+                const Kwargs &,
+                const std::shared_ptr<Environment> &) -> Value {
+
+                 expectArgsRange(args, 0, 2, "int");
+
+                 if (args.empty()) {
+                     return Value(Value::BigInt(0));
+                 }
+
+                 const Value &obj = args[0];
+
+                 // int(x, base) — только для строк
+                 if (args.size() == 2) {
+
+                     if (!obj.isString()) {
+                         throw TypeErrorException(
+                             "int() can't convert non-string with explicit base"
+                         );
+                     }
+
+                     const auto base = args[1].toBigInt().convert_to<int>();
+
+                     if (base != 0 && (base < 2 || base > 36)) {
+                         throw ValueErrorException("int() base must be >= 2 and <= 36, or 0");
+                     }
+
+                     return Value(parseIntLiteral(obj.asString()->toString(), base));
+                 }
+
+                 if (obj.isBool()) {
+                     return Value(Value::BigInt(obj.toBool() ? 1 : 0));
+                 }
+
+                 if (obj.isBigInt()) {
+                     return obj;
+                 }
+
+                 // усечение К НУЛЮ: int(-5.7) == -5, не -6
+                 if (obj.isBigFloat()) {
+                     return Value(obj.asBigFloat().convert_to<Value::BigInt>());
+                 }
+
+                 if (obj.isString()) {
+                     return Value(parseIntLiteral(obj.asString()->toString(), 10));
+                 }
+
+                 try {
+                     Value method = getAttrValue(obj, "__int__");
+                     Value result = call(method, {}, {}, nullptr);
+
+                     if (!result.isBigInt()) {
+                         throw TypeErrorException("__int__ returned non-int");
+                     }
+
+                     return result;
+                 }
+                 catch (const AttributeErrorException &) {}
+
+                 throw TypeErrorException(
+                     "int() argument must be a string, a bytes-like object or a real number, not '"
+                     + obj.getTypeName() + "'"
+                 );
+             }
+         ));
+
+    env->set("bool",
+         makeBuiltin(
+             "bool",
+
+             [](const std::vector<Value> &args,
+                const Kwargs &,
+                const std::shared_ptr<Environment> &) -> Value {
+
+                 expectArgsRange(args, 0, 1, "bool");
+
+                 if (args.empty()) {
+                     return Value(false);
+                 }
+
+                 return Value(args[0].toBool());
+             }
+         ));
+
+    env->set("float",
+         makeBuiltin(
+             "float",
+
+             [](const std::vector<Value> &args,
+                const Kwargs &,
+                const std::shared_ptr<Environment> &) -> Value {
+
+                 expectArgsRange(args, 0, 1, "float");
+
+                 if (args.empty()) {
+                     return Value(Value::BigFloat(0));
+                 }
+
+                 const Value &obj = args[0];
+
+                 if (obj.isNumeric()) {
+                     return Value(obj.toBigFloat());
+                 }
+
+                 if (obj.isString()) {
+
+                     QString s = obj.asString()->toString().trimmed();
+                     s.remove('_');
+
+                     try {
+                         return Value(Value::BigFloat(s.toStdString()));
+                     }
+                     catch (...) {
+                         throw ValueErrorException(
+                             "could not convert string to float: '" +
+                             obj.asString()->toString() + "'"
+                         );
+                     }
+                 }
+
+                 try {
+                     const Value method = getAttrValue(obj, "__float__");
+                     return call(method, {}, {}, nullptr);
+                 }
+                 catch (const AttributeErrorException &) {}
+
+                 throw TypeErrorException(
+                     "float() argument must be a string or a real number, not '" + obj.getTypeName() + "'"
+                 );
+             }
+         ));
 
 }
 

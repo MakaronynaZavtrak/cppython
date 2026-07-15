@@ -338,6 +338,8 @@ public:
 
     static QString formatFloat(const BigFloat& num);
 
+    [[nodiscard]] QString getTypeName() const;
+
 };
 
 size_t qHash(const Value& value, size_t seed = 0);

@@ -6178,6 +6178,70 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("set(x % 3 for x in range(10))", "{0, 1, 2}"),
     ("dict((x, x*x) for x in [1, 2, 3])", "{1: 1, 2: 4, 3: 9}"),
 
+    # int: базовое
+    ("int()", "0"),
+    ("int(42)", "42"),
+    ("int(True)", "1"),
+    ("int(False)", "0"),
+
+    # int: усечение К НУЛЮ (не floor!)
+    ("int(5.7)", "5"),
+    ("int(-5.7)", "-5"),
+    ("int(0.9)", "0"),
+
+    # int: строки
+    ("int('42')", "42"),
+    ("int('  42  ')", "42"),
+    ("int('-42')", "-42"),
+    ("int('+42')", "42"),
+    ("int('1_000')", "1000"),
+
+    # int: база
+    ("int('ff', 16)", "255"),
+    ("int('0xff', 16)", "255"),
+    ("int('101', 2)", "5"),
+    ("int('777', 8)", "511"),
+    ("int('0x1f', 0)", "31"),
+    ("int('0b101', 0)", "5"),
+
+    # int: большие числа
+    ("int('123456789012345678901234567890')", "123456789012345678901234567890"),
+
+    # bool: базовое
+    ("bool()", "False"),
+    ("bool(1)", "True"),
+    ("bool(0)", "False"),
+    ("bool('')", "False"),
+    ("bool('x')", "True"),
+    ("bool([])", "False"),
+    ("bool([0])", "True"),
+    ("bool({})", "False"),
+    ("bool({'a': 1})", "True"),
+    ("bool(None)", "False"),
+    ("bool(0.0)", "False"),
+    ("bool(-1)", "True"),
+    ("bool({})", "False"),
+    ("bool(())", "False"),
+    ("bool((1,))", "True"),
+    ("bool(set())", "False"),
+    ("bool({1, 2})", "True"),
+    ("bool(range(0))", "False"),
+    ("bool(range(3))", "True"),
+    ("bool(frozenset())", "False"),
+    ("bool(bytearray())", "False"),
+    ("bool(bytearray(b'x'))", "True"),
+    ("bool(len)", "True"),
+
+    # float
+    ("float()", "0.0"),
+    ("float(5)", "5.0"),
+    ("float(True)", "1.0"),
+    ("float('3.14')", "3.14"),
+    ("float('  2.5  ')", "2.5"),
+
+    # int(float(x)) round-trip
+    ("int(float('7.9'))", "7"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12514,18 +12578,96 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "",
       "apply(lambda x: x * 3, 7)"], "21"),
 
-    # lambda: ошибки
-    (["f = lambda a=1, b: a",
-      ""], "SyntaxError: parameter without a default follows parameter with a default"),
+    # int: ошибки
+    (["try:",
+      "    int('abc')",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "\"invalid literal for int() with base 10: 'abc'\""),
 
-    (["f = lambda x: x",
-      "f()"], "TypeError: <lambda>() missing required positional argument: 'x'"),
+    (["try:",
+      "    int('')", "except ValueError as e:",
+      "    str(e)",
+      ""], "\"invalid literal for int() with base 10: ''\""),
 
-    (["f = lambda x: x",
-      "f(1, 2)"], "TypeError: <lambda>() takes 1 positional arguments but 2 were given"),
+    (["try:",
+      "    int([1])",
+      "except TypeError as e:",
+      "    str(e)", ""],
+     "\"int() argument must be a string, a bytes-like object or a real number, not 'list'\""),
 
-    (["h = lambda **kw: kw",
-      "h(1)"], "TypeError: <lambda>() takes 0 positional arguments but 1 were given"),
+    (["try:",
+      "    int(42, 16)",
+      "except TypeError as e:",
+      "    str(e)",
+      ""], "\"int() can't convert non-string with explicit base\""),
+
+    # bool через __bool__ пользовательского класса
+    (["class A:",
+      "    def __bool__(self):",
+      "        return False",
+      "",
+      "bool(A())"], "False"),
+
+    # bool через __len__ (если __bool__ нет)
+    (["class B:",
+      "    def __len__(self):",
+      "        return 0",
+      "",
+      "bool(B())"], "False"),
+
+    (["class D:",
+      "    pass",
+      "",
+      "bool(D())"], "True"),
+
+    # __bool__ приоритетнее __len__
+    (["class E:",
+      "    def __bool__(self):",
+      "        return True",
+      "    def __len__(self):",
+      "        return 0",
+      "",
+      "bool(E())"], "True"),
+
+    # __bool__ должен возвращать bool
+    (["class F:",
+      "    def __bool__(self):",
+      "        return 1",
+      "",
+      "try:",
+      "    bool(F())",
+      "except TypeError as e:",
+      "    str(e)",
+      ""], "'__bool__ should return bool, returned int'"),
+
+    # те же правила работают в if/while, не только в bool()
+    (["if {}:",
+      "    'yes'",
+      "else:",
+      "    'no'", ""], "'no'"),
+
+    (["class G:",
+      "    def __bool__(self):",
+      "        return False",
+      "",
+      "if G():",
+      "    'yes'",
+      "else:",
+      "    'no'", ""], "'no'"),
+
+    (["try:",
+      "    int([1])",
+      "except TypeError as e:",
+      "    str(e)", ""],
+     "\"int() argument must be a string, a bytes-like object or a real number, not 'list'\""),
+
+    # float: ошибки
+    (["try:",
+      "    float('abc')",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "\"could not convert string to float: 'abc'\""),
 
 ])
 

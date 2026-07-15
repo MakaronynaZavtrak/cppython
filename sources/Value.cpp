@@ -29,11 +29,13 @@
 
 #include <QDebug>
 
+#include "ClassUtils.h"
 #include "FrozenSetIterator.h"
 #include "FrozenSetValue.h"
 #include "RangeIterator.h"
 #include "RangeValue.h"
 #include "../exception/ArithmeticErrorException.h"
+#include "../exception/AttributeErrorException.h"
 #include "../exception/TypeErrorException.h"
 
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
@@ -243,75 +245,54 @@ QString Value::repr() const {
  */
 bool Value::toBool() const {
 
-    if (isBigInt()) {
-        return std::get<BigInt>(data) != 0;
-    }
-
-    if (isBigFloat()) {
-        return std::get<BigFloat>(data) != 0.0;
-    }
-
     if (std::holds_alternative<bool>(data)) {
         return std::get<bool>(data);
     }
 
-    if (isString()) {
-        return std::get<StrPtr>(data)->len() != 0;
-    }
+    if (isBigInt())   return std::get<BigInt>(data) != 0;
+    if (isBigFloat()) return std::get<BigFloat>(data) != 0;
 
-    if (isBytes()) {
-        return !std::get<BytesPtr>(data)->bytes().isEmpty();
-    }
+    if (isNone()) return false;
 
-    if (isList()) {
-        return !std::get<ListPtr>(data)->elements.empty();
-    }
+    if (isString())    return std::get<StrPtr>(data)->len() != 0;
+    if (isBytes())     return !std::get<BytesPtr>(data)->bytes().isEmpty();
+    if (isByteArray()) return !std::get<ByteArrayPtr>(data)->bytes().isEmpty();
+    if (isList())      return !std::get<ListPtr>(data)->elements.empty();
+    if (isDict())      return std::get<DictPtr>(data)->len() != 0;
+    if (isTuple())     return !std::get<TuplePtr>(data)->items.empty();
+    if (isSet())       return std::get<SetPtr>(data)->len() != 0;
+    if (isFrozenSet()) return std::get<FrozenSetPtr>(data)->len() != 0;
+    if (isRange())     return std::get<RangePtr>(data)->len() != 0;
 
-    if (isDict()) {
-        return std::get<DictPtr>(data) != nullptr;
-    }
-
-    if (isNone()) {
-        return false;
-    }
-
-    if (isFunction()) {
-        return std::get<FunctionPtr>(data) != nullptr;
-    }
-
-    if (isClass()) {
-        return std::get<ClassPtr>(data) != nullptr;
-    }
-
+    // пользовательские классы: __bool__, потом __len__, иначе True
     if (isInstance()) {
-        return std::get<InstancePtr>(data) != nullptr;
+
+        try {
+            const Value method = getAttrValue(*this, "__bool__");
+            const Value result = call(method, {}, {}, nullptr);
+
+            if (!std::holds_alternative<bool>(result.data)) {
+                throw TypeErrorException(
+                    "__bool__ should return bool, returned " + result.getTypeName()
+                );
+            }
+
+            return std::get<bool>(result.data);
+        }
+        catch (const AttributeErrorException&) {}
+
+        try {
+            const Value method = getAttrValue(*this, "__len__");
+            const Value result = call(method, {}, {}, nullptr);
+            return result.toBigInt() != 0;
+        }
+        catch (const AttributeErrorException&) {}
+
+        return true;
     }
 
-    if (isBoundMethod()) {
-        return std::get<BoundMethodPtr>(data) != nullptr;
-    }
-
-    if (isSuper()) {
-        return std::get<SuperPtr>(data) != nullptr;
-    }
-
-    if (isBuiltinFunction()) {
-        return std::get<BuiltinFunctionPtr>(data) != nullptr;
-    }
-
-    if (isProperty()) {
-        return std::get<PropertyPtr>(data) != nullptr;
-    }
-
-    if (isStaticMethod()) {
-        return std::get<StaticMethodPtr>(data) != nullptr;
-    }
-
-    if (isClassMethod()) {
-        return std::get<ClassMethodPtr>(data) != nullptr;
-    }
-
-    throw TypeErrorException("Unsupported type");
+    // всё остальное (функции, классы, методы, итераторы, слайсы...) — истинно
+    return true;
 }
 
 /**
@@ -1126,6 +1107,42 @@ QString Value::formatFloat(const BigFloat& num) {
     }
 
     return QString::fromStdString(s);
+}
+
+QString Value::getTypeName() const {
+
+    if (isBool())          return "bool";
+    if (isBigInt())        return "int";
+    if (isBigFloat())      return "float";
+    if (isString())        return "str";
+    if (isBytes())         return "bytes";
+    if (isByteArray())     return "bytearray";
+    if (isList())          return "list";
+    if (isDict())          return "dict";
+    if (isTuple())         return "tuple";
+    if (isSet())           return "set";
+    if (isFrozenSet())     return "frozenset";
+    if (isRange())         return "range";
+    if (isNone())          return "NoneType";
+    if (isFunction())      return "function";
+    if (isBuiltinFunction()) return "builtin_function_or_method";
+    if (isClass())         return "type";
+    if (isInstance())      return asInstance()->klass->name;
+    if (isBoundMethod())   return "method";
+    if (isSuper())         return "super";
+    if (isProperty())      return "property";
+    if (isStaticMethod())  return "staticmethod";
+    if (isClassMethod())   return "classmethod";
+    if (isSlice())         return "slice";
+    if (isDictKeysView())  return "dict_keys";
+    if (isDictValuesView()) return "dict_values";
+    if (isDictItemsView()) return "dict_items";
+
+    if (std::holds_alternative<IteratorPtr>(data)) {
+        return std::get<IteratorPtr>(data)->getTypeName();
+    }
+
+    return "object";
 }
 
 size_t qHash(const Value &value, const size_t seed) {
