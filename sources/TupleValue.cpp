@@ -3,6 +3,9 @@
 //
 #include "TupleValue.h"
 
+#include "../exception/IndexErrorException.h"
+#include "../exception/TypeErrorException.h"
+#include "../exception/ValueErrorException.h"
 #include "../runtime/ProtocolHelpers.h"
 
 TupleValue::TupleValue(const std::vector<Value>& items)
@@ -62,9 +65,7 @@ Value TupleValue::getItem(const Value& index) const {
     }
 
     if (!index.isBigInt() && !index.isBool()) {
-        throw std::runtime_error(
-            "TypeError: tuple indices must be integers or slices"
-        );
+        throw TypeErrorException("tuple indices must be integers or slices");
     }
 
     auto i = index.toBigInt();
@@ -74,7 +75,7 @@ Value TupleValue::getItem(const Value& index) const {
     }
 
     if (i < 0 || i >= items.size()) {
-        throw std::runtime_error("IndexError: tuple index out of range");
+        throw IndexErrorException("tuple index out of range");
     }
 
     const auto idx = i.convert_to<size_t>();
@@ -157,7 +158,7 @@ Value TupleValue::index(
         }
     }
 
-    throw std::runtime_error("ValueError: tuple.index(x): x not in tuple");
+    throw ValueErrorException("tuple.index(x): x not in tuple");
 }
 
 std::size_t TupleValue::len() const {
@@ -197,8 +198,8 @@ bool TupleValue::lessOrEqual(const Value& other) const {
 bool TupleValue::less(const Value& other) const {
 
     if (!other.isTuple()) {
-        throw std::runtime_error(
-            "TypeError: '<' not supported between instances of 'tuple' and + other type"
+        throw TypeErrorException(
+            "'<' not supported between instances of 'tuple' and + other type"
         );
     }
 
@@ -225,8 +226,8 @@ bool TupleValue::greaterOrEqual(const Value& other) const {
 bool TupleValue::greater(const Value& other) const {
 
     if (!other.isTuple()) {
-        throw std::runtime_error(
-            "TypeError: '>' not supported between instances of 'tuple' and other type"
+        throw TypeErrorException(
+            "'>' not supported between instances of 'tuple' and other type"
         );
     }
 
@@ -250,9 +251,7 @@ bool TupleValue::greater(const Value& other) const {
 Value TupleValue::add(const Value& other) const {
 
     if (!other.isTuple()) {
-        throw std::runtime_error(
-            "TypeError: can only concatenate tuple to tuple"
-        );
+        throw TypeErrorException("can only concatenate tuple to tuple");
     }
 
     std::vector<Value> result;
@@ -284,9 +283,7 @@ Value TupleValue::add(const Value& other) const {
 Value TupleValue::multiply(const Value& other) const {
 
     if (!other.isBigInt() && !other.isBool()) {
-        throw std::runtime_error(
-            "TypeError: can't multiply sequence by non-int"
-        );
+        throw TypeErrorException("can't multiply sequence by non-int");
     }
 
     const auto count = other.toBigInt().convert_to<long long>();

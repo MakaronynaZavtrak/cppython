@@ -16,7 +16,7 @@ if not os.path.isfile(MYPYTHON):
 
 PYTHON = sys.executable
 
-def run_cppython(cmds: str | list[str]) -> str:
+def run_cppython(cmds: str | list[str]) -> list[str]:
     """
     Выполняет команды Python с использованием подпроцесса, запускающего интерпретатор Python, и 
     возвращает окончательный обработанный вывод, полученный из подпроцесса.
@@ -41,17 +41,22 @@ def run_cppython(cmds: str | list[str]) -> str:
         timeout=5,
     )
 
-    payloads = []
-    for raw in p.stdout.decode("utf-8", "ignore").splitlines():
-        s = raw.lstrip()
-        if s.startswith(">>> ") or s.startswith("... "):
-            parts = s.replace(">>> ", "###").replace("... ", "###").split("###")
-            val = parts[-1].strip() if parts else ""
-            if not val:
-                continue
-            payloads.append(val)
+    raw = p.stdout.decode("utf-8", "ignore")
 
-    return payloads[-1] if payloads else ""
+    cleaned = raw.replace(">>> ", "\n").replace("... ", "\n")
+
+    banner_prefixes = ("Hello and welcome", "Made by Semenov Oleg")
+
+    payloads = []
+    for line in cleaned.split("\n"):
+        val = line.strip()
+        if not val:
+            continue
+        if val.startswith(banner_prefixes):
+            continue
+        payloads.append(val)
+
+    return payloads
 
 @pytest.mark.parametrize("expr,expected", [
     # Два целых числа
@@ -6135,6 +6140,108 @@ def run_cppython(cmds: str | list[str]) -> str:
 
     ("[] is []", "False"),
 
+    ("list(range(5))", "[0, 1, 2, 3, 4]"),
+    ("list(range(2, 8))", "[2, 3, 4, 5, 6, 7]"),
+    ("list(range(10, 0, -2))", "[10, 8, 6, 4, 2]"),
+    ("len(range(5))", "5"),
+    ("range(5)[2]", "2"),
+    ("range(10, 20, 3)[2]", "16"),
+    ("3 in range(5)", "True"),
+    ("10 in range(5)", "False"),
+    ("repr(range(5))", "'range(0, 5)'"),
+    ("repr(range(2, 5))", "'range(2, 5)'"),
+    ("repr(range(0, 10, 2))", "'range(0, 10, 2)'"),
+    ("range(5) == range(0, 5, 1)", "True"),
+    ("range(5).count(3)", "1"),
+    ("range(5).index(3)", "3"),
+
+    # list comprehensions
+    ("[x for x in [1, 2, 3]]", "[1, 2, 3]"),
+    ("[x * 2 for x in [1, 2, 3]]", "[2, 4, 6]"),
+    ("[x for x in [1, 2, 3, 4, 5] if x % 2 == 0]", "[2, 4]"),
+    ("[x + y for x in [1, 2] for y in [10, 20]]", "[11, 21, 12, 22]"),
+    ("[x for x in range(5) if x > 1 if x < 4]", "[2, 3]"),
+
+
+    # set и dict comprehensions
+    ("{x for x in [1, 2, 2, 3]}", "{1, 2, 3}"),
+    ("{x * 2 for x in [1, 2, 3]}", "{2, 4, 6}"),
+    ("{x: x * x for x in [1, 2, 3]}", "{1: 1, 2: 4, 3: 9}"),
+    ("{x: x for x in [1, 2, 3] if x > 1}", "{2: 2, 3: 3}"),
+    ("{}", "{}"),
+    ("{1, 2, 3}", "{1, 2, 3}"),
+    ("{'a': 1, 'b': 2}", "{'a': 1, 'b': 2}"),
+
+    # generator comprehensions
+    ("list((x for x in []))", "[]"),
+    ("tuple(x for x in [1, 2, 3])", "(1, 2, 3)"),
+    ("set(x % 3 for x in range(10))", "{0, 1, 2}"),
+    ("dict((x, x*x) for x in [1, 2, 3])", "{1: 1, 2: 4, 3: 9}"),
+
+    # int: базовое
+    ("int()", "0"),
+    ("int(42)", "42"),
+    ("int(True)", "1"),
+    ("int(False)", "0"),
+
+    # int: усечение К НУЛЮ (не floor!)
+    ("int(5.7)", "5"),
+    ("int(-5.7)", "-5"),
+    ("int(0.9)", "0"),
+
+    # int: строки
+    ("int('42')", "42"),
+    ("int('  42  ')", "42"),
+    ("int('-42')", "-42"),
+    ("int('+42')", "42"),
+    ("int('1_000')", "1000"),
+
+    # int: база
+    ("int('ff', 16)", "255"),
+    ("int('0xff', 16)", "255"),
+    ("int('101', 2)", "5"),
+    ("int('777', 8)", "511"),
+    ("int('0x1f', 0)", "31"),
+    ("int('0b101', 0)", "5"),
+
+    # int: большие числа
+    ("int('123456789012345678901234567890')", "123456789012345678901234567890"),
+
+    # bool: базовое
+    ("bool()", "False"),
+    ("bool(1)", "True"),
+    ("bool(0)", "False"),
+    ("bool('')", "False"),
+    ("bool('x')", "True"),
+    ("bool([])", "False"),
+    ("bool([0])", "True"),
+    ("bool({})", "False"),
+    ("bool({'a': 1})", "True"),
+    ("bool(None)", "False"),
+    ("bool(0.0)", "False"),
+    ("bool(-1)", "True"),
+    ("bool({})", "False"),
+    ("bool(())", "False"),
+    ("bool((1,))", "True"),
+    ("bool(set())", "False"),
+    ("bool({1, 2})", "True"),
+    ("bool(range(0))", "False"),
+    ("bool(range(3))", "True"),
+    ("bool(frozenset())", "False"),
+    ("bool(bytearray())", "False"),
+    ("bool(bytearray(b'x'))", "True"),
+    ("bool(len)", "True"),
+
+    # float
+    ("float()", "0.0"),
+    ("float(5)", "5.0"),
+    ("float(True)", "1.0"),
+    ("float('3.14')", "3.14"),
+    ("float('  2.5  ')", "2.5"),
+
+    # int(float(x)) round-trip
+    ("int(float('7.9'))", "7"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -6150,75 +6257,73 @@ def test_single_line_expressions(expr, expected):
     :param expected: Строка, представляющая ожидаемый результат вычисления выражения.
     :return: None
     """
-    my = run_cppython(expr)
-    py = run_cpython(expr)
-    assert my == expected, f"cppython: {expr!r} -> {my!r}, expected: {expected!r}"
-    assert py == expected, f"CPython: {expr!r} -> {py!r}, expected: {expected!r}"
-    assert my == py,     f"Mismatch: cppython={my!r} vs CPython={py!r}"
+    my_all = run_cppython(expr)
+    py_all = run_cpython(expr)
+    if isinstance(expected, str):
+        my = my_all[-1] if my_all else ""
+        py = py_all[-1] if py_all else ""
 
-def run_cpython(cmds: str | list[str]) -> str:
-    """
-    Выполняет код или выражение Python, вычисляет конечное выражение и захватывает его вывод. Метод
-    динамически создает скрипт Python на основе предоставленных входных данных для оценки одиночного
-    выражения или выполнения блока кода с последующей оценкой конечного выражения. Возвращает
-    строковое представление результата вычисления.
+        assert my == expected, f"cppython: {expr!r} -> {my!r}, expected: {expected!r}"
+        assert py == expected, f"CPython: {expr!r} -> {py!r}, expected: {expected!r}"
+        assert my == py, f"Mismatch: cppython={my!r} vs CPython={py!r}"
 
-    :param cmds: Строка, содержащая код Python или выражение, либо список строк, где каждая строка
-        представляет строку кода Python или выражение.
-    :return: Строковое представление вычисленного результата из предоставленного выражения или кода.
-    :rtype: str
-    """
+    else:
+        assert my_all == expected, f"cppython: {expr!r} -> {my_all!r}, expected: {expected!r}"
+        assert py_all == expected, f"CPython: {expr!r} -> {py_all!r}, expected: {expected!r}"
+        assert my_all == py_all, f"Mismatch: cppython={my_all!r} vs CPython={py_all!r}"
+
+import subprocess
+import textwrap
+
+def run_cpython(cmds: str | list[str]) -> list[str]:
     if isinstance(cmds, str):
         lines = cmds.splitlines()
     else:
         lines = list(cmds)
 
-    if len(lines) == 1:
-        expr = lines[0]
+    code_str = textwrap.dedent(f"""
+        import sys
+        import code
+        import io
 
-        code = f"""
-import sys
+        sys.stdout.reconfigure(encoding="utf-8")
 
-sys.stdout.reconfigure(encoding="utf-8")
+        buf = io.StringIO()
 
-_result = eval({expr!r})
+        def _displayhook(value):
+            if value is not None:
+                buf.write(repr(value) + "\\n")
 
-if _result is not None:
-    sys.stdout.write(repr(_result))
-"""
-    else:
-        code_to_exec = "\n".join(lines[:-1])
-        last_expr = lines[-1].strip()
+        sys.displayhook = _displayhook
 
-        code = f"""
-import sys
+        sys.stdout = buf
 
-sys.stdout.reconfigure(encoding="utf-8")
+        console = code.InteractiveConsole()
 
-_ns = {{"__builtins__": __builtins__}}
+        lines = {lines!r}
 
-exec({code_to_exec!r}, _ns)
+        for line in lines:
+            console.push(line)
 
-_result = eval({last_expr!r}, _ns)
+        sys.stdout = sys.__stdout__
+        sys.stdout.write(buf.getvalue())
+    """)
 
-if _result is not None:
-    sys.stdout.write(repr(_result))
-"""
-
-    p = subprocess.run([PYTHON, "-c", code],
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       timeout=5)
+    p = subprocess.run(
+        [PYTHON, "-c", code_str],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=5,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+    )
 
     err = p.stderr.decode("utf-8", "ignore")
-
     if err:
         print("STDERR:")
         print(err)
 
-    out = p.stdout.decode("utf-8", "ignore").splitlines()
-
-    return out[0].strip() if out else ""
+    out = p.stdout.decode("utf-8", "ignore")
+    return [line for line in out.splitlines() if line]
 
 @pytest.mark.parametrize("commands,expected", [
     # if-elif-else
@@ -10778,6 +10883,1892 @@ if _result is not None:
       "b=[1]",
       "a is not b"], "True"),
 
+    # try/except/finally
+    (["try:",
+      "    raise ValueError(\"boom\")",
+      "except ValueError:",
+      "    42",
+      ""], "42"),
+
+    (["try:",
+      "    raise RuntimeError(\"x\")",
+      "except:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["x = 0",
+      "try:",
+      "    x = 1",
+      "finally:",
+      "    x = 2",
+      "",
+      "x"], "2"),
+
+    (["try:",
+      "    raise ValueError",
+      "except ValueError:",
+      "    'ok'",
+      "",], "'ok'"),
+
+    # except (A, B)
+    (["try:",
+      "    raise ValueError(\"boom\")",
+      "except (TypeError, ValueError):",
+      "    42",
+      ""], "42"),
+
+    (["try:",
+      "    raise TypeError(\"boom\")",
+      "except (TypeError, ValueError):",
+      "    42",
+      ""], "42"),
+
+    (["try:",
+      "    raise KeyError(\"x\")",
+      "except (TypeError, ValueError):",
+      "    'wrong'",
+      "except KeyError:",
+      "    'right'",
+      ""], "'right'"),
+
+    (["try:",
+      "    raise IndexError(\"x\")",
+      "except (LookupError,):",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    raise IndexError(\"x\")",
+      "except (TypeError, LookupError):",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    raise KeyError(\"x\")",
+      "except (TypeError, ValueError):",
+      "    'first'",
+      "except (LookupError, RuntimeError):",
+      "    'second'",
+      ""], "'second'"),
+
+    (["x = 0",
+      "try:",
+      "    raise ValueError(\"x\")",
+      "except (TypeError, ValueError):",
+      "    x = 1",
+      "finally:",
+      "    x = 2",
+      "",
+      "x"], "2"),
+
+    (["try:",
+      "    raise ArithmeticError(\"x\")",
+      "except (OverflowError, ArithmeticError):",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # exception.__str__
+    (["try:",
+      "    raise ValueError(\"boom\")",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "'boom'"),
+
+    (["try:",
+      "    raise ValueError(\"a\", \"b\")",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "\"('a', 'b')\""),
+
+    (["try:",
+      "    raise ValueError()",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "''"),
+
+    (["try:",
+      "    raise RuntimeError(\"oops\")",
+      "except RuntimeError as e:",
+      "    str(e)",
+      ""], "'oops'"),
+
+    (["class MyError(Exception):",
+      "    pass",
+      "",
+      "try:",
+      "    raise MyError(\"custom\")",
+      "except MyError as e:",
+      "    str(e)",
+      ""], "'custom'"),
+
+    (["class MyError(Exception):",
+      "    def __init__(self, code):",
+      "        self.code = code",
+      "",
+      "try:",
+      "    raise MyError(42)",
+      "except MyError as e:",
+      "    str(e)",
+      ""], "'42'"),
+
+    (["try:",
+      "    raise KeyError(\"missing\")",
+      "except KeyError as e:",
+      "    str(e)",
+      ""], "\"'missing'\""),
+
+    # edge cases try/except/else/finally
+
+    # else — выполняется только при отсутствии исключения
+    (["x = 0",
+      "try:",
+      "    x = 1",
+      "except ValueError:",
+      "    x = 2",
+      "else:",
+      "    x = 3",
+      "",
+      "x"], "3"),
+
+    # else — НЕ выполняется, если было исключение (даже пойманное)
+    (["x = 0",
+      "try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError:",
+      "    x = 1",
+      "else:",
+      "    x = 3",
+      "",
+      "x"], "1"),
+
+    # else + finally вместе
+    (["x = 0",
+      "try:",
+      "    x = 1",
+      "except ValueError:",
+      "    x = 2",
+      "else:",
+      "    x = 3",
+      "finally:",
+      "    x = x + 10",
+      "",
+      "x"], "13"),
+
+    # else возвращает значение как последнее выражение
+    (["try:",
+      "    'no error'",
+      "except ValueError:",
+      "    'caught'",
+      "else:",
+      "    'else branch'",
+      ""], ["'no error'", "'else branch'"]),
+
+    # вложенный try внутри except
+    (["try:",
+      "    raise ValueError(\"outer\")",
+      "except ValueError as e:",
+      "    try:",
+      "        raise TypeError(\"inner\")",
+      "    except TypeError as e2:",
+      "        str(e2)",
+      ""], "'inner'"),
+
+    # вложенный try внутри except — внешний except не должен видеть внутреннее исключение
+    (["try:",
+      "    raise ValueError(\"outer\")",
+      "except ValueError as e:",
+      "    try:",
+      "        raise TypeError(\"inner\")",
+      "    except TypeError:",
+      "        'inner caught'",
+      ""], "'inner caught'"),
+
+    # вложенный try внутри try (без except снаружи, обычная вложенность)
+    (["try:",
+      "    try:",
+      "        raise KeyError(\"deep\")",
+      "    except ValueError:",
+      "        'wrong handler'",
+      "except KeyError as e:",
+      "    str(e)",
+      ""], "\"'deep'\""),
+
+    # re-raise внутри вложенного try корректно всплывает во внешний except
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"x\")",
+      "    except ValueError:",
+      "        raise",
+      "except ValueError as e:",
+      "    'caught outer'",
+      ""], "'caught outer'"),
+
+    # порядок matching — первый except шире, но не подходит, должен дойти до второго
+    (["try:",
+      "    raise TypeError(\"x\")",
+      "except ValueError:",
+      "    'wrong'",
+      "except Exception:",
+      "    'right'",
+      ""], "'right'"),
+
+    # порядок matching — более узкий класс стоит первым и должен перехватить раньше широкого
+    (["try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError:",
+      "    'narrow'",
+      "except Exception:",
+      "    'wide'",
+      ""], "'narrow'"),
+
+    # finally выполняется даже когда exception пробрасывается наружу необработанным, но try/except тут ловит его снаружи
+    (["x = 0",
+      "try:",
+      "    try:",
+      "        raise RuntimeError(\"boom\")",
+      "    finally:",
+      "        x = 99",
+      "except RuntimeError:",
+      "    pass",
+      "",
+      "x"], "99"),
+
+    (["x = 0",
+      "try:",
+      "    try:",
+      "        raise ValueError(\"x\")",
+      "    except ValueError:",
+      "        raise TypeError(\"from except\")",
+      "    finally:",
+      "        x = 99",
+      "except TypeError:",
+      "    pass",
+      "",
+      "x"], "99"),
+
+    (["x = 0",
+      "try:",
+      "    try:",
+      "        raise ValueError(\"x\")",
+      "    except ValueError:",
+      "        raise",
+      "    finally:",
+      "        x = 1",
+      "except ValueError:",
+      "    pass",
+      "",
+      "x"], "1"),
+
+    (["x = 0",
+      "try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError:",
+      "    x = x + 1",
+      "finally:",
+      "    x = x + 1",
+      "",
+      "x"], "2"),
+
+    (["try:",
+      "    42",
+      "finally:",
+      "    'ignored value'",
+      ""], ["42", "'ignored value'"]),
+
+    # базовый implicit chaining
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"first\")",
+      "    except ValueError:",
+      "        raise TypeError(\"second\")",
+      "except TypeError as e:",
+      "    e.__context__.args",
+      ""], "('first',)"),
+
+    # доступ к message/str предыдущего исключения через __context__
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"first\")",
+      "    except ValueError:",
+      "        raise TypeError(\"second\")",
+      "except TypeError as e:",
+      "    str(e.__context__)",
+      ""], "'first'"),
+
+    # без цепочки — __context__ должен быть None
+    (["try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError as e:",
+      "    e.__context__",
+      ""], ""),
+
+    # re-raise не создаёт самоссылку — __context__ остаётся None
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"x\")",
+      "    except ValueError:",
+      "        raise",
+      "except ValueError as e:",
+      "    e.__context__",
+      ""], ""),
+
+    # цепочка из трёх уровней — __context__ у второго указывает на первое
+    (["try:",
+      "    try:",
+      "        try:",
+      "            raise ValueError(\"a\")",
+      "        except ValueError:",
+      "            raise TypeError(\"b\")",
+      "    except TypeError:",
+      "        raise KeyError(\"c\")",
+      "except KeyError as e:",
+      "    e.__context__.args",
+      ""], "('b',)"),
+
+    # __cause__, raise from
+    (["try:",
+      "    raise TypeError(\"boom\") from ValueError(\"cause\")",
+      "except TypeError as e:",
+      "    str(e.__cause__)",
+      ""], "'cause'"),
+
+    (["try:",
+      "    raise TypeError(\"boom\") from ValueError(\"cause\")",
+      "except TypeError as e:",
+      "    e.__suppress_context__",
+      ""], "True"),
+
+    (["try:",
+      "    raise ValueError(\"x\")",
+      "except ValueError as e:",
+      "    e.__cause__",
+      ""], ""),
+
+    (["try:",
+      "    try:",
+      "        raise ValueError(\"orig\")",
+      "    except ValueError as inner:",
+      "        raise TypeError(\"wrapped\") from inner",
+      "except TypeError as e:",
+      "    str(e.__cause__)",
+      ""], "'orig'"),
+
+    # области видимости local, global, nonlocal
+    # базовый global — модификация уже существующей переменной
+    (["x = 1",
+      "def bump():",
+      "    global x",
+      "    x = x + 1",
+      "",
+      "bump()",
+      "x"], "2"),
+
+    # global — создание НОВОЙ переменной прямо из функции
+    (["def create():",
+      "    global y",
+      "    y = 42",
+      "",
+      "create()",
+      "y"], "42"),
+
+    # несколько имён в одном global
+    (["a = 1",
+      "b = 2",
+      "def bump_both():",
+      "    global a, b",
+      "    a = a + 10",
+      "    b = b + 20",
+      "",
+      "bump_both()",
+      "a",
+      "b"], ["11", "22"]),
+
+    # nonlocal — модификация переменной из ближайшего объемлющего scope
+    (["def outer():",
+      "    x = 'outer'",
+      "    def inner():",
+      "        nonlocal x",
+      "        x = 'changed'",
+      "    inner()",
+      "    return x",
+      "",
+      "outer()"], "'changed'"),
+
+    # global должен видеть модульный x, игнорируя промежуточный outer scope
+    (["x = 'module'",
+      "def outer():",
+      "    x = 'outer'",
+      "    def inner():",
+      "        global x",
+      "        return x",
+      "    return inner()",
+      "",
+      "outer()"], "'module'"),
+
+    # без global/nonlocal — присваивание создаёт ЛОКАЛЬНУЮ переменную, не трогая внешнюю
+    (["x = 'module'",
+      "def outer():",
+      "    x = 'local'",
+      "    return x",
+      "",
+      "outer()",
+      "x"], ["'local'", "'module'"]),
+
+    # nonlocal через ДВА уровня вложенности функций
+    (["def level1():",
+      "    x = 'level1'",
+      "    def level2():",
+      "        def level3():",
+      "            nonlocal x",
+      "            x = 'level3'",
+      "        level3()",
+      "    level2()",
+      "    return x",
+      "",
+      "level1()"], "'level3'"),
+
+    # nonlocal ищет ближайший scope, где переменная реально объявлена (пропускает level2, где x нет)
+    (["def level1():",
+      "    x = 'level1'",
+      "    def level2():",
+      "        y = 'level2 only'",
+      "        def level3():",
+      "            nonlocal x",
+      "            x = x + '-modified'",
+      "        level3()",
+      "        return y",
+      "    result = level2()",
+      "    return (x, result)",
+      "",
+      "level1()"], "('level1-modified', 'level2 only')"),
+
+    # global внутри цикла — накопление в модульной переменной
+    (["counter = 0",
+      "def increment():",
+      "    global counter",
+      "    counter = counter + 1",
+      "",
+      "increment()",
+      "increment()",
+      "increment()",
+      "increment()",
+      "increment()",
+      "counter"], "5"),
+
+    # два независимых вызова функции с global — состояние сохраняется между вызовами
+    (["total = 0",
+      "def add(n):",
+      "    global total",
+      "    total = total + n",
+      "",
+      "add(3)",
+      "add(4)",
+      "total"], "7"),
+
+    # nonlocal и global в разных функциях одновременно, не мешают друг другу
+    (["g = 'global val'",
+      "def outer():",
+      "    n = 'outer val'",
+      "    def inner():",
+      "        global g",
+      "        nonlocal n",
+      "        g = 'global changed'",
+      "        n = 'outer changed'",
+      "    inner()",
+      "    return n",
+      "",
+      "result = outer()",
+      "result",
+      "g"], ["'outer changed'", "'global changed'"]),
+
+    # closure БЕЗ nonlocal может ЧИТАТЬ внешнюю переменную свободно
+    (["def outer():",
+      "    x = 'captured'",
+      "    def inner():",
+      "        return x",
+      "    return inner()",
+      "",
+      "outer()"], "'captured'"),
+
+    # распаковка кортежа при присваивании
+    (["a = 5",
+      "b = 6",
+      "a, b = b, a",
+      "a",
+      "b"], ["6", "5"]),
+
+    (["a, b, c = 1, 2, 3",
+      "a",
+      "b",
+      "c"], ["1", "2", "3"]),
+
+    (["a, b = [10, 20]",
+      "a",
+      "b"], ["10", "20"]),
+
+    (["a, *rest, b = [1, 2, 3, 4, 5]",
+      "a",
+      "rest",
+      "b"], ["1", "[2, 3, 4]", "5"]),
+
+    (["try:",
+      "    a, b = (1, 2, 3)",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "'too many values to unpack (expected 2, got 3)'"),
+
+    (["try:",
+      "    a, b, c = (1, 2)",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "'not enough values to unpack (expected 3, got 2)'"),
+
+    # генераторы
+    (["def counter():",
+      "    yield 1",
+      "    yield 2",
+      "    yield 3",
+      "",
+      "g = counter()",
+      "next(g)"], "1"),
+
+    (["def counter():",
+      "    yield 1",
+      "    yield 2",
+      "    yield 3",
+      "",
+      "g = counter()",
+      "next(g)",
+      "next(g)",
+      "next(g)"], ["1", "2", "3"]),
+
+    # исчерпание — StopIteration наружу
+    (["def counter():",
+      "    yield 1",
+      "",
+      "g = counter()",
+      "next(g)",
+      "try:",
+      "    next(g)",
+      "except StopIteration:",
+      "    'exhausted'",
+      ""], ["1", "'exhausted'"]),
+
+    # генератор с аргументами
+    (["def repeat_twice(x):",
+      "    yield x",
+      "    yield x",
+      "",
+      "g = repeat_twice('hi')",
+      "next(g)",
+      "next(g)"], ["'hi'", "'hi'"]),
+
+    # for по генератору — проверяет __iter__/__next__ протокол целиком
+    (["def gen():",
+      "    yield 10",
+      "    yield 20",
+      "    yield 30",
+      "",
+      "total = 0",
+      "for x in gen():",
+      "    total = total + x",
+      "",
+      "total"], "60"),
+
+    # генератор без yield вообще — обычная функция, не должен стать генератором
+    (["def normal():",
+      "    return 42",
+      "",
+      "normal()"], "42"),
+
+    # голый yield без значения — None
+    (["def g():",
+      "    yield",
+      "",
+      "gen = g()",
+      "next(gen)"], ""),
+
+    # несколько независимых генераторов не мешают друг другу
+    (["def counter():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "g1 = counter()",
+      "g2 = counter()",
+      "next(g1)",
+      "next(g2)",
+      "next(g1)",
+      "next(g2)"], ["1", "1", "2", "2"]),
+
+    # генератор с обычным return в конце — завершает работу, StopIteration
+    (["def g():",
+      "    yield 1",
+      "    return",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["1", "'done'"]),
+
+    # resume if/elif/else
+    (["def g(flag):",
+      "    if flag:",
+      "        yield 'yes-1'",
+      "        yield 'yes-2'",
+      "    else:",
+      "        yield 'no'",
+      "",
+      "gen = g(True)",
+      "next(gen)",
+      "next(gen)"], ["'yes-1'", "'yes-2'"]),
+
+    (["def g(flag):",
+      "    if flag:",
+      "        yield 'yes'",
+      "    else:",
+      "        yield 'no-1'",
+      "        yield 'no-2'",
+      "",
+      "gen = g(False)",
+      "next(gen)",
+      "next(gen)"], ["'no-1'", "'no-2'"]),
+
+    (["def g(n):",
+      "    if n == 1:",
+      "        yield 'one'",
+      "    elif n == 2:",
+      "        yield 'two-a'",
+      "        yield 'two-b'",
+      "    else:",
+      "        yield 'other'",
+      "",
+      "gen = g(2)",
+      "next(gen)",
+      "next(gen)"], ["'two-a'", "'two-b'"]),
+
+    (["def g():",
+      "    yield 'before'",
+      "    if True:",
+      "        yield 'inside'",
+      "    yield 'after'",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)",
+      "next(gen)"], ["'before'", "'inside'", "'after'"]),
+
+    # resume while
+    (["def counter(n):",
+      "    i = 0",
+      "    while i < n:",
+      "        yield i",
+      "        i = i + 1",
+      "",
+      "gen = counter(3)",
+      "next(gen)",
+      "next(gen)",
+      "next(gen)"], ["0", "1", "2"]),
+
+    (["def counter(n):",
+      "    i = 0",
+      "    while i < n:",
+      "        yield i",
+      "        i = i + 1",
+      "",
+      "gen = counter(2)",
+      "next(gen)",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["0", "1", "'done'"]),
+
+    (["def g():",
+      "    i = 0",
+      "    while i < 3:",
+      "        if i == 1:",
+      "            yield 'special'",
+      "        else:",
+      "            yield i",
+      "        i = i + 1",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)",
+      "next(gen)"], ["0", "'special'", "2"]),
+
+    (["def g():",
+      "    i = 0",
+      "    while i < 5:",
+      "        yield i",
+      "        i = i + 1",
+      "    else:",
+      "        yield 'loop finished'",
+      "",
+      "gen = g()",
+      "next(gen)", "next(gen)", "next(gen)", "next(gen)", "next(gen)", "next(gen)"],
+     ["0", "1", "2", "3", "4", "'loop finished'"]),
+
+    (["def g():",
+      "    i = 0",
+      "    while i < 10:",
+      "        if i == 2:",
+      "            break",
+      "        yield i",
+      "        i = i + 1",
+      "    else:",
+      "        yield 'unreachable'",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'stopped'",
+      ""], ["0", "1", "'stopped'"]),
+
+    # resume for
+    (["def gen():",
+      "    for x in [10, 20, 30]:",
+      "        yield x",
+      "",
+      "g = gen()",
+      "next(g)",
+      "next(g)",
+      "next(g)"], ["10", "20", "30"]),
+
+    (["def gen():",
+      "    for x in [1, 2, 3]:",
+      "        yield x",
+      "",
+      "g = gen()",
+      "next(g)",
+      "next(g)",
+      "next(g)",
+      "try:",
+      "    next(g)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["1", "2", "3", "'done'"]),
+
+    (["def gen():",
+      "    for x in [1, 2, 3]:",
+      "        if x == 2:",
+      "            yield 'two'",
+      "        else:",
+      "            yield x",
+      "",
+      "g = gen()",
+      "next(g)",
+      "next(g)",
+      "next(g)"], ["1", "'two'", "3"]),
+
+    (["def gen():",
+      "    yield 'start'",
+      "    for x in [100, 200]:",
+      "        yield x",
+      "    yield 'end'",
+      "",
+      "g = gen()",
+      "next(g)", "next(g)", "next(g)", "next(g)"], ["'start'", "100", "200", "'end'"]),
+
+    (["def gen():",
+      "    for x in [1, 2, 3, 4, 5]:",
+      "        if x == 3:",
+      "            break",
+      "        yield x",
+      "",
+      "g = gen()",
+      "next(g)",
+      "next(g)",
+      "try:",
+      "    next(g)",
+      "except StopIteration:",
+      "    'stopped'",
+      ""], ["1", "2", "'stopped'"]),
+
+    (["def gen():",
+      "    for x in [1, 2, 3]:",
+      "        if x == 2:",
+      "            continue",
+      "        yield x",
+      "",
+      "g = gen()",
+      "next(g)",
+      "next(g)",
+      "try:",
+      "    next(g)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["1", "3", "'done'"]),
+
+    (["def outer():",
+      "    for x in [1, 2]:",
+      "        for y in [10, 20]:",
+      "            yield (x, y)",
+      "",
+      "g = outer()",
+      "next(g)", "next(g)", "next(g)", "next(g)"],
+     ["(1, 10)", "(1, 20)", "(2, 10)", "(2, 20)"]),
+
+    # resume try/except/finally/else
+    (["def g():",
+      "    try:",
+      "        yield 'a'",
+      "        yield 'b'",
+      "    except ValueError:",
+      "        yield 'caught'",
+      "",
+      "gen = g()",
+      "next(gen)", "next(gen)"], ["'a'", "'b'"]),
+
+    (["def g():",
+      "    try:",
+      "        yield 'before'",
+      "        raise ValueError('boom')",
+      "    except ValueError as e:",
+      "        yield str(e)",
+      "        yield 'after-except'",
+      "",
+      "gen = g()",
+      "next(gen)", "next(gen)", "next(gen)"], ["'before'", "'boom'", "'after-except'"]),
+
+    (["def g():",
+      "    try:",
+      "        yield 'try-1'",
+      "    finally:",
+      "        pass",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["'try-1'", "'done'"]),
+
+    (["def g():",
+      "    try:",
+      "        yield 1",
+      "    except ValueError:",
+      "        yield 'wrong'",
+      "    else:",
+      "        yield 'else-branch'",
+      "",
+      "gen = g()",
+      "next(gen)", "next(gen)"], ["1", "'else-branch'"]),
+
+    (["def g():",
+      "    try:",
+      "        try:",
+      "            yield 'inner-a'",
+      "            raise KeyError('x')",
+      "        except KeyError:",
+      "            yield 'inner-caught'",
+      "    except ValueError:",
+      "        yield 'outer-wrong'",
+      "",
+      "gen = g()",
+      "next(gen)", "next(gen)"], ["'inner-a'", "'inner-caught'"]),
+
+    (["def g():",
+      "    try:",
+      "        yield 'a'",
+      "    finally:",
+      "        yield 'cleanup'",
+      "",
+      "gen = g()",
+      "next(gen)", "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["'a'", "'cleanup'", "'done'"]),
+
+    (["def g():",
+      "    try:",
+      "        yield 'before'",
+      "        raise ValueError('x')",
+      "    except ValueError:",
+      "        yield 'caught'",
+      "    finally:",
+      "        yield 'cleanup'",
+      "",
+      "gen = g()",
+      "next(gen)", "next(gen)", "next(gen)"], ["'before'", "'caught'", "'cleanup'"]),
+
+    (["def outer():",
+      "    try:",
+      "        yield 'x'",
+      "    finally:",
+      "        pass",
+      "",
+      "gen = outer()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["'x'", "'done'"]),
+
+    # yield from
+    (["def inner():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "def outer():",
+      "    yield from inner()",
+      "    yield 3",
+      "",
+      "g = outer()",
+      "next(g)", "next(g)", "next(g)"], ["1", "2", "3"]),
+
+    (["def inner():",
+      "    yield 'a'",
+      "",
+      "def outer():",
+      "    yield 'before'",
+      "    yield from inner()",
+      "    yield 'after'",
+      "",
+      "g = outer()",
+      "next(g)", "next(g)", "next(g)"], ["'before'", "'a'", "'after'"]),
+
+    (["def inner():",
+      "    yield from [10, 20, 30]",
+      "",
+      "g = inner()",
+      "next(g)", "next(g)", "next(g)"], ["10", "20", "30"]),
+
+    (["def inner():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "def outer():",
+      "    yield from inner()",
+      "",
+      "g = outer()",
+      "next(g)", "next(g)",
+      "try:",
+      "    next(g)",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["1", "2", "'done'"]),
+
+    (["def a():",
+      "    yield 1",
+      "",
+      "def b():",
+      "    yield from a()",
+      "",
+      "def c():",
+      "    yield from b()",
+      "",
+      "g = c()",
+      "next(g)"], "1"),
+
+    # generator.send
+    (["def echo():",
+      "    while True:",
+      "        received = yield",
+      "        yield received",
+      "",
+      "g = echo()",
+      "next(g)",
+      "g.send('hello')",
+      "next(g)",
+      "g.send('world')"], ["'hello'", "'world'"]),
+
+    (["def double_input():",
+      "    x = yield 'ready'",
+      "    yield x * 2",
+      "",
+      "g = double_input()",
+      "next(g)",
+      "g.send(21)"], ["'ready'", "42"]),
+
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "try:",
+      "    gen.send('oops')",
+      "except TypeError as e:",
+      "    str(e)",
+      ""], "\"can't send non-None value to a just-started generator\""),
+
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    gen.send('anything')",
+      "except StopIteration:",
+      "    'done'",
+      ""], ["1", "'done'"]),
+
+    (["def g():",
+      "    x = yield 1",
+      "    yield x",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)"], "1"),
+
+
+    # generator.throw
+    (["def g():",
+      "    try:",
+      "        yield 1",
+      "    except ValueError:",
+      "        yield 'caught'",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.throw(ValueError('boom'))"], ["1", "'caught'"]),
+
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    gen.throw(ValueError('x'))",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], ["1", "'x'"]),
+
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "try:",
+      "    gen.throw(ValueError('before start'))",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "'before start'"),
+
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    gen.throw(ValueError('x'))",
+      "except ValueError:",
+      "    pass",
+      "",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'closed'",
+      ""], ["1", "'closed'"]),
+
+    # генератор без try/finally — GeneratorExit просто пролетает насквозь, close() тихо завершает
+    (["def g():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.close()",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'closed'",
+      ""], ["1", "'closed'"]),
+
+    # генератор ловит GeneratorExit в finally для очистки, потом естественно завершается — штатно
+    (["def g():",
+      "    try:",
+      "        yield 1",
+      "    finally:",
+      "        pass",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.close()"], "1"),
+
+    # close() на ещё не начатом генераторе — просто помечает finished, ничего не исполняя
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "gen.close()",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    'never started'",
+      ""], "'never started'"),
+
+    # генератор игнорирует GeneratorExit и продолжает yield'ить — RuntimeError
+    (["def g():",
+      "    try:",
+      "        yield 1",
+      "    except GeneratorExit:",
+      "        yield 'still alive'",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    gen.close()",
+      "except RuntimeError as e:",
+      "    str(e)",
+      ""], ["1", "'generator ignored GeneratorExit'"]),
+
+    # close() на уже исчерпанном генераторе — безопасный no-op
+    (["def g():",
+      "    yield 1",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration:",
+      "    pass",
+      "",
+      "gen.close()",
+      "'no crash'"], ["1", "'no crash'"]),
+
+    (["def sub():",
+      "    x = yield 1",
+      "    yield x * 10",
+      "",
+      "def outer():",
+      "    yield from sub()",
+      "",
+      "g = outer()",
+      "next(g)",
+      "g.send(5)"], ["1", "50"]),
+
+    (["def sub():",
+      "    try:",
+      "        yield 1",
+      "    except ValueError:",
+      "        yield 'sub-caught'",
+      "",
+      "def outer():",
+      "    yield from sub()",
+      "",
+      "g = outer()",
+      "next(g)",
+      "g.throw(ValueError('x'))"], ["1", "'sub-caught'"]),
+
+    (["def sub():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "def outer():",
+      "    yield from sub()",
+      "    yield 'outer-after'",
+      "",
+      "g = outer()",
+      "next(g)", "next(g)", "next(g)"], ["1", "2", "'outer-after'"]),
+
+    # target = yield from expr
+    (["def sub():",
+      "    yield 1",
+      "    yield 2",
+      "    return 'done-value'",
+      "",
+      "def outer():",
+      "    result = yield from sub()",
+      "    yield result",
+      "",
+      "g = outer()",
+      "next(g)",
+      "next(g)",
+      "next(g)"], ["1", "2", "'done-value'"]),
+
+    # PEP 479
+    (["def g():",
+      "    yield 1",
+      "    raise StopIteration('manual')",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except RuntimeError as e:",
+      "    str(e)",
+      ""], ["1", "'generator raised StopIteration'"]),
+
+    (["def g():",
+      "    yield 1",
+      "    return 'normal'",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except StopIteration as e:",
+      "    str(e.value)",
+      ""], ["1", "'normal'"]),
+
+    # вложенная функция сама по себе — полноценный независимый генератор
+    (["def outer():",
+      "    def inner():",
+      "        yield 'from-inner'",
+      "    return inner()",
+      "",
+      "gen = outer()",
+      "next(gen)"], "'from-inner'"),
+
+    # внешняя функция с yield СНАРУЖИ вложенного def — генератор,
+    # при этом вложенная функция остаётся обычной, не смешиваются
+    (["def outer():",
+      "    def helper(x):",
+      "        return x * 2",
+      "    yield helper(5)",
+      "    yield helper(10)",
+      "",
+      "gen = outer()",
+      "next(gen)", "next(gen)"], ["10", "20"]),
+
+    # генератор возвращает другой генератор (вложенный def с yield),
+    # внешняя НЕ становится генератором, хотя body содержит yield где-то глубоко внутри def
+    (["def make_gen():",
+      "    def counter():",
+      "        yield 1",
+      "        yield 2",
+      "    return counter()",
+      "",
+      "g = make_gen()",
+      "next(g)", "next(g)"], ["1", "2"]),
+
+    # рекурсивный вызов генератора самого себя через vложенную обёртку
+    (["def outer():",
+      "    def gen(n):",
+      "        if n > 0:",
+      "            yield n",
+      "            yield from gen(n - 1)",
+      "    yield from gen(3)",
+      "",
+      "g = outer()",
+      "next(g)", "next(g)", "next(g)"], ["3", "2", "1"]),
+
+    # target1, target2 = yield expr
+    (["def g():",
+      "    a, b = yield",
+      "    yield a + b",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.send((3, 4))"], "7"),
+
+    (["def g():",
+      "    x, y = yield 'ready'",
+      "    yield x * y",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "gen.send((6, 7))"], ["'ready'", "42"]),
+
+    # пока не поддерживается
+    # (["def pair_gen():",
+    #   "    yield (1, 'a')",
+    #   "    yield (2, 'b')",
+    #   "",
+    #   "def outer():",
+    #   "    for _ in range(0):",
+    #   "        pass",
+    #   "    x, y = yield from pair_gen()",
+    #   "",
+    #   "def simple():",
+    #   "    n, s = yield from pair_gen()",
+    #   "    yield (n, s)",
+    #   "",
+    #   "g = simple()",
+    #   "next(g)"], "(2, 'b')"),
+
+    # защита от рекурсивного вызова
+    (["def g():",
+      "    yield 1",
+      "    next(gen)",
+      "    yield 2",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "try:",
+      "    next(gen)",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], ["1", "'generator already executing'"]),
+
+    (["def g():",
+      "    yield 1",
+      "    yield 2",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)"], "2"),
+
+    # range
+    (["def g():",
+      "    for x in range(3):",
+      "        yield x",
+      "",
+      "gen = g()",
+      "next(gen)",
+      "next(gen)",
+      "next(gen)"], ["0", "1", "2"]),
+
+    # list comprehensions
+    (["n = 3",
+      "[x for x in range(n)]"], "[0, 1, 2]"),
+
+    (["x = 'outer'",
+      "result = [x for x in [1, 2, 3]]",
+      "x"], "'outer'"),
+
+    # dict comprehension
+    (["x = 'outer'",
+      "result = {x: 1 for x in [1, 2]}",
+      "x"], "'outer'"),
+
+    # generator comprehensions
+    (["g = (x for x in [1, 2, 3])",
+      "next(g)",
+      "next(g)",
+      "next(g)"], ["1", "2", "3"]),
+
+    (["g = (x * 2 for x in [1, 2, 3])",
+      "list(g)"], "[2, 4, 6]"),
+
+    (["g = (x for x in range(10) if x % 2 == 0)",
+      "list(g)"], "[0, 2, 4, 6, 8]"),
+
+    (["g = (x + y for x in [1, 2] for y in [10, 20])",
+      "list(g)"], "[11, 21, 12, 22]"),
+
+    # первый iterable вычисляется немедленно
+    (["n = 3",
+      "g = (x for x in range(n))",
+      "n = 100",
+      "list(g)"], "[0, 1, 2]"),
+
+    # ленивость — тело не исполняется до первого next()
+    (["def make():",
+      "    print('creating')",
+      "    return [1, 2, 3]",
+      "",
+      "g = (x for x in make())"], "creating"),
+
+    # генераторное выражение поддерживает send/close как полноценный генератор
+    (["g = (x for x in [1, 2, 3])",
+      "next(g)",
+      "g.close()",
+      "try:",
+      "    next(g)",
+      "except StopIteration:",
+      "    'closed'",
+      ""], ["1", "'closed'"]),
+
+    # параметры по умолчанию внутри функций
+    (["def f(x, y=10):",
+      "    return x + y",
+      "",
+      "f(5)"], "15"),
+
+    (["def f(x, y=10):",
+      "    return x + y",
+      "",
+      "f(5, 20)"], "25"),
+
+    (["def f(x, y=10):",
+      "    return x + y",
+      "",
+      "f(5, y=7)"], "12"),
+
+    (["def f(a=1, b=2, c=3):",
+      "    return (a, b, c)",
+      "",
+      "f()"], "(1, 2, 3)"),
+
+    (["def f(a=1, b=2, c=3):",
+      "    return (a, b, c)",
+      "",
+      "f(9)"], "(9, 2, 3)"),
+
+    (["def f(a=1, b=2, c=3):",
+      "    return (a, b, c)",
+      "",
+      "f(c=99)"], "(1, 2, 99)"),
+
+    # дефолт вычисляется ОДИН раз — мутабельная ловушка Python
+    (["def bad(x=[]):",
+      "    x.append(1)",
+      "    return x",
+      "",
+      "bad()",
+      "bad()"], ["[1]", "[1, 1]"]),
+
+    # дефолт видит окружение на момент def, а не вызова
+    (["n = 5",
+      "def f(x=n):",
+      "    return x",
+      "",
+      "n = 100",
+      "f()"], "5"),
+
+    # генератор с дефолтом
+    (["def g(n=3):",
+      "    for i in range(n):",
+      "        yield i",
+      "",
+      "list(g())"], "[0, 1, 2]"),
+    
+    # распаковка позиционных параметров
+    (["def g(*args):",
+      "    return args",
+      "",
+      "g(1, 2, 3)"], "(1, 2, 3)"),
+
+    (["def g(*args):",
+      "    return args",
+      "",
+      "g()"], "()"),
+
+    (["def g(x, *args):",
+      "    return (x, args)",
+      "",
+      "g(1, 2, 3)"], "(1, (2, 3))"),
+
+    (["def g(x, *args):",
+      "    return (x, args)",
+      "",
+      "g(1)"], "(1, ())"),
+
+    (["def g(x, y=10, *args):",
+      "    return (x, y, args)",
+      "",
+      "g(1)"], "(1, 10, ())"),
+
+    (["def g(x, y=10, *args):",
+      "    return (x, y, args)",
+      "",
+      "g(1, 2, 3, 4)"], "(1, 2, (3, 4))"),
+
+    (["def g(*args):",
+      "    return len(args)",
+      "",
+      "g(1, 2, 3, 4, 5)"], "5"),
+
+    # сумма через *args
+    (["def total(*nums):",
+      "    s = 0",
+      "    for n in nums:",
+      "        s = s + n",
+      "    return s",
+      "",
+      "total(1, 2, 3, 4)"], "10"),
+
+    # генератор с *args
+    (["def g(*args):",
+      "    for a in args:",
+      "        yield a",
+      "",
+      "list(g(1, 2, 3))"], "[1, 2, 3]"),
+
+    (["def f(a, b, c):",
+      "    return a + b + c",
+      "",
+      "f(*[1, 2, 3])"], "6"),
+
+    (["def f(a, b):",
+      "    return (a, b)",
+      "",
+      "f(*(1, 2))"], "(1, 2)"),
+
+    (["def f(a, b, c):",
+      "    return a + b + c",
+      "",
+      "f(1, *[2, 3])"], "6"),
+
+    (["def f(**kw):",
+      "    return kw",
+      "",
+      "d = {'a': 1, 'b': 2}",
+      "f(**d)"], "{'a': 1, 'b': 2}"),
+
+    (["def f(x, y):",
+      "    return x - y",
+      "",
+      "f(**{'x': 10, 'y': 3})"], "7"),
+
+    (["def f(*args, **kw):",
+      "    return (args, kw)",
+      "",
+      "f(*[1, 2], **{'k': 3})"], "((1, 2), {'k': 3})"),
+
+    (["def f(a, b):",
+      "    return a * b",
+      "",
+      "def gen():",
+      "    yield 3",
+      "    yield 4",
+      "",
+      "f(*gen())"], "12"),
+
+    # распаковка именованных параметров
+    (["def h(**kw):",
+      "    return kw",
+      "",
+      "h(a=1, b=2)"], "{'a': 1, 'b': 2}"),
+
+    (["def h(**kw):",
+      "    return kw",
+      "",
+      "h()"], "{}"),
+
+    (["def h(x, **kw):",
+      "    return (x, kw)",
+      "",
+      "h(1, a=2)"], "(1, {'a': 2})"),
+
+    (["def h(x, y=5,"
+      " **kw):",
+      "    return (x, y, kw)",
+      "",
+      "h(1, z=9)"], "(1, 5, {'z': 9})"),
+
+    (["def h(x, y=5, **kw):",
+      "    return (x, y, kw)",
+      "",
+      "h(1, y=2, z=9)"], "(1, 2, {'z': 9})"),
+
+    (["def h(*args, **kw):",
+      "    return (args, kw)",
+      "",
+      "h(1, 2, a=3)"], "((1, 2), {'a': 3})"),
+
+    (["def h(*args, **kw):",
+      "    return (args, kw)",
+      "",
+      "h()"], "((), {})"),
+
+    (["def h(**kw):",
+      "    return len(kw)",
+      "",
+      "h(a=1, b=2, c=3)"], "3"),
+
+    (["def f(x: int, y: int = 5) -> int:",
+      "    return x + y",
+      "",
+      "f(1)"], "6"),
+
+    # кэширующший декоратор
+    (["def cache(func):",
+      "    stored = {}",
+      "    def wrapper(*args):",
+      "        if args in stored:",
+      "            return stored[args]",
+      "        result = func(*args)",
+      "        stored[args] = result",
+      "        return result",
+      "    return wrapper",
+      "",
+      "@cache",
+      "def fib(n):",
+      "    if n < 2:",
+      "        return n",
+      "    return fib(n-1) + fib(n-2)",
+      "",
+      "fib(400)"], "176023680645013966468226945392411250770384383304492191886725992896575345044216019675"),
+
+    # lambda: базовые
+    (["f = lambda x: x * 2",
+      "f(5)"], "10"),
+
+    (["f = lambda: 42",
+      "f()"], "42"),
+
+    (["f = lambda x, y: x + y",
+      "f(3, 4)"], "7"),
+
+    # lambda: дефолты
+    (["f = lambda x, y=10: x + y",
+      "f(5)"], "15"),
+
+    (["f = lambda x, y=10: x + y",
+      "f(5, 20)"], "25"),
+
+    (["f = lambda x, y=10: x + y",
+      "f(5, y=7)"], "12"),
+
+    (["f = lambda a=1, b=2: (a, b)",
+      "f()"], "(1, 2)"),
+
+    (["f = lambda a=1, b=2: (a, b)",
+      "f(9)"], "(9, 2)"),
+
+    (["f = lambda a=1, b=2: (a, b)",
+      "f(b=99)"], "(1, 99)"),
+
+    # lambda: дефолт вычисляется один раз, при создании
+    (["n = 5",
+      "f = lambda x=n: x",
+      "n = 100", "f()"], "5"),
+
+    # lambda: *args
+    (["g = lambda *args: len(args)",
+      "g(1, 2, 3)"], "3"),
+
+    (["g = lambda *args: args",
+      "g()"], "()"),
+
+    (["g = lambda *args: args",
+      "g(1, 2)"], "(1, 2)"),
+
+    (["g = lambda x, *rest: (x, rest)",
+      "g(1, 2, 3)"], "(1, (2, 3))"),
+
+    # lambda: **kwargs
+    (["h = lambda **kw: kw",
+      "h(a=1, b=2)"], "{'a': 1, 'b': 2}"),
+
+    (["h = lambda **kw: kw",
+      "h()"], "{}"),
+
+    (["h = lambda x, **kw: (x, kw)",
+      "h(1, a=2)"], "(1, {'a': 2})"),
+
+    (["h = lambda *a, **kw: (a, kw)",
+      "h(1, 2, k=3)"], "((1, 2), {'k': 3})"),
+
+    # lambda: комбинации
+    (["f = lambda x, y=2, *a, **kw: (x, y, a, kw)",
+      "f(1)"], "(1, 2, (), {})"),
+
+    (["f = lambda x, y=2, *a, **kw: (x, y, a, kw)",
+      "f(1, 5, 6, 7, z=8)"], "(1, 5, (6, 7), {'z': 8})"),
+
+    # lambda: распаковка при вызове
+    (["f = lambda a, b: a + b",
+      "f(*[3, 4])"], "7"),
+
+    (["f = lambda a, b: a - b",
+      "f(**{'a': 10, 'b': 3})"], "7"),
+
+    # lambda: замыкания
+    (["def make(n):",
+      "    return lambda x: x + n",
+      "",
+      "add5 = make(5)",
+      "add5(10)"], "15"),
+
+    (["fs = []",
+      "def build():",
+      "    for i in [1, 2, 3]:",
+      "        fs.append(lambda x, k=i: x * k)",
+      "",
+      "build()",
+      "fs[0](10)",
+      "fs[2](10)"], ["10", "30"]),
+
+    # lambda как аргумент
+    (["def apply(fn, v):",
+      "    return fn(v)",
+      "",
+      "apply(lambda x: x * 3, 7)"], "21"),
+
+    # int: ошибки
+    (["try:",
+      "    int('abc')",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "\"invalid literal for int() with base 10: 'abc'\""),
+
+    (["try:",
+      "    int('')", "except ValueError as e:",
+      "    str(e)",
+      ""], "\"invalid literal for int() with base 10: ''\""),
+
+    (["try:",
+      "    int([1])",
+      "except TypeError as e:",
+      "    str(e)", ""],
+     "\"int() argument must be a string, a bytes-like object or a real number, not 'list'\""),
+
+    (["try:",
+      "    int(42, 16)",
+      "except TypeError as e:",
+      "    str(e)",
+      ""], "\"int() can't convert non-string with explicit base\""),
+
+    # bool через __bool__ пользовательского класса
+    (["class A:",
+      "    def __bool__(self):",
+      "        return False",
+      "",
+      "bool(A())"], "False"),
+
+    # bool через __len__ (если __bool__ нет)
+    (["class B:",
+      "    def __len__(self):",
+      "        return 0",
+      "",
+      "bool(B())"], "False"),
+
+    (["class D:",
+      "    pass",
+      "",
+      "bool(D())"], "True"),
+
+    # __bool__ приоритетнее __len__
+    (["class E:",
+      "    def __bool__(self):",
+      "        return True",
+      "    def __len__(self):",
+      "        return 0",
+      "",
+      "bool(E())"], "True"),
+
+    # __bool__ должен возвращать bool
+    (["class F:",
+      "    def __bool__(self):",
+      "        return 1",
+      "",
+      "try:",
+      "    bool(F())",
+      "except TypeError as e:",
+      "    str(e)",
+      ""], "'__bool__ should return bool, returned int'"),
+
+    # те же правила работают в if/while, не только в bool()
+    (["if {}:",
+      "    'yes'",
+      "else:",
+      "    'no'", ""], "'no'"),
+
+    (["class G:",
+      "    def __bool__(self):",
+      "        return False",
+      "",
+      "if G():",
+      "    'yes'",
+      "else:",
+      "    'no'", ""], "'no'"),
+
+    (["try:",
+      "    int([1])",
+      "except TypeError as e:",
+      "    str(e)", ""],
+     "\"int() argument must be a string, a bytes-like object or a real number, not 'list'\""),
+
+    # float: ошибки
+    (["try:",
+      "    float('abc')",
+      "except ValueError as e:",
+      "    str(e)",
+      ""], "\"could not convert string to float: 'abc'\""),
+
+    # *args + keyword-only с дефолтом
+    (["def f(*args, key=1):",
+      "    return (args, key)",
+      "", "f(1, 2)"], "((1, 2), 1)"),
+
+    (["def f(*args, key=1):",
+      "    return (args, key)",
+      "",
+      "f(1, 2, key=5)"], "((1, 2), 5)"),
+
+    (["def f(*args, key=1):",
+      "    return (args, key)",
+      "",
+      "f()"], "((), 1)"),
+
+    # голая * — разделитель, всё после неё только по имени
+    (["def f(a, *, b):",
+      "    return (a, b)",
+      "",
+      "f(1, b=2)"], "(1, 2)"),
+
+    (["def f(a, *, b=10):",
+      "    return (a, b)",
+      "",
+      "f(1)"], "(1, 10)"),
+
+    (["def f(*, a=1, b=2):",
+      "    return (a, b)",
+      "",
+      "f(b=9)"], "(1, 9)"),
+
+    # несколько keyword-only
+    (["def f(*args, x=1, y=2):",
+      "    return (args, x, y)",
+      "",
+      "f(0, y=9)"], "((0,), 1, 9)"),
+
+    # keyword-only + **kwargs
+    (["def f(a, *, b=1, **kw):",
+      "    return (a, b, kw)",
+      "",
+      "f(1, b=2, c=3)"], "(1, 2, {'c': 3})"),
+
+    # полное комбо
+    (["def f(a, b=2, *args, c, d=4, **kw):",
+      "    return (a, b, args, c, d, kw)",
+      "",
+      "f(1, 2, 3, c=9, e=5)"], "(1, 2, (3,), 9, 4, {'e': 5})"),
+
+    # lambda с keyword-only
+    (["f = lambda *, a=1: a",
+      "f()"], "1"),
+
+    (["f = lambda *args, k=0: (args, k)",
+      "f(1, k=7)"], "((1,), 7)"),
+
+    # positional-only параметры
+    (["def f(a, b, /):",
+      "    return a + b",
+      "",
+      "f(1, 2)"], "3"),
+
+    (["def f(a, /, b):",
+      "    return (a, b)",
+      "",
+      "f(1, 2)"], "(1, 2)"),
+
+    (["def f(a, /, b):",
+      "    return (a, b)",
+      "",
+      "f(1, b=2)"], "(1, 2)"),
+
+    (["def f(a, /, b=5):",
+      "    return (a, b)",
+      "",
+      "f(1)"], "(1, 5)"),
+
+    (["def f(a, /, *args):",
+      "    return (a, args)",
+      "",
+      "f(1, 2, 3)"], "(1, (2, 3))"),
+
+    (["def f(a, /, b, *, c):",
+      "    return (a, b, c)",
+      "",
+      "f(1, 2, c=3)"], "(1, 2, 3)"),
+
+    (["def f(a=1, /, b=2):",
+      "    return (a, b)",
+      "",
+      "f()"], "(1, 2)"),
+
+    (["f = lambda a, /, b: a + b",
+      "f(1, 2)"], "3"),
+
+    # имя positional-only уходит в **kwargs — это законно
+    (["def f(a, /, **kw):",
+      "    return (a, kw)",
+      "",
+      "f(1, a=2)"], "(1, {'a': 2})"),
 
 ])
 
@@ -10785,24 +12776,27 @@ def test_multiline_expressions(commands, expected):
     """
     Тестирует вычисление многострочных выражений кода,
     интерпретируемых интерпретаторами cppython и CPython.
-    Тесты проверяют корректность присваивания переменных,
-    конструкций управления потоком, таких как if-elif-else, циклы,
-    и других выражений. Для каждого предоставленного входного случая
-    гарантируется, что cppython и CPython производят одинаковые
-    результаты, соответствующие ожидаемому выводу.
-
-    :param commands: Список строк, представляющих строки многострочного
-        кода Python. Эти команды выполняются последовательно.
-    :type commands: List[str]
-    :param expected: Ожидаемый вывод, полученный в результате выполнения кода,
-        представленного в `commands`.
-    :type expected: str
+    ...
+    :param expected: Ожидаемый вывод. Строка — сравнивается только последнее
+        напечатанное значение (обратная совместимость). Список строк —
+        сравнивается вся последовательность напечатанных значений.
+    :type expected: str | list[str]
     :return: None
     :raises AssertionError: Если выводы cppython или CPython
         не соответствуют ожидаемому результату `expected` или не соответствуют друг другу.
     """
-    my = run_cppython(commands)
-    py = run_cpython(commands)
-    assert my == expected, f"cppython: {commands!r} -> {my!r}, expected: {expected!r}"
-    assert py == expected, f"CPython: {commands!r} -> {py!r}, expected: {expected!r}"
-    assert my == py,     f"Mismatch: cppython={my!r} vs CPython={py!r}"
+    my_all = run_cppython(commands)
+    py_all = run_cpython(commands)
+
+    if isinstance(expected, str):
+        my = my_all[-1] if my_all else ""
+        py = py_all[-1] if py_all else ""
+
+        assert my == expected, f"cppython: {commands!r} -> {my!r}, expected: {expected!r}"
+        assert py == expected, f"CPython: {commands!r} -> {py!r}, expected: {expected!r}"
+        assert my == py,     f"Mismatch: cppython={my!r} vs CPython={py!r}"
+
+    else:
+        assert my_all == expected, f"cppython: {commands!r} -> {my_all!r}, expected: {expected!r}"
+        assert py_all == expected, f"CPython: {commands!r} -> {py_all!r}, expected: {expected!r}"
+        assert my_all == py_all,   f"Mismatch: cppython={my_all!r} vs CPython={py_all!r}"

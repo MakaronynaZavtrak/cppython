@@ -6,6 +6,8 @@
 #include "FrozenSetValue.h"
 #include "IteratorValue.h"
 #include "Value.h"
+#include "../exception/KeyErrorException.h"
+#include "../exception/ValueErrorException.h"
 
 QString SetValue::toString() const {
 
@@ -48,7 +50,7 @@ void SetValue::add(const Value& value) {
 void SetValue::remove(const Value& value) {
 
     if (!elements.contains(value)) {
-        throw std::runtime_error("KeyError: element not found in set");
+        throw KeyErrorException("element not found in set");
     }
 
     elements.remove(value);
@@ -242,7 +244,7 @@ void SetValue::clear() {
 Value SetValue::pop() {
 
     if (order.empty()) {
-        throw std::runtime_error("pop from an empty set");
+        throw ValueErrorException("pop from an empty set");
     }
 
     Value value = order.front();

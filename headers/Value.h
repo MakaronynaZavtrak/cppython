@@ -7,6 +7,7 @@
 #include "BuiltinFunction.h"
 #include "ReprMixin.h"
 
+class RangeValue;
 class FrozenSetValue;
 class ObjectValue;
 class ByteArrayValue;
@@ -86,6 +87,8 @@ public:
 
     using FrozenSetPtr = std::shared_ptr<FrozenSetValue>;
 
+    using RangePtr = std::shared_ptr<RangeValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -113,6 +116,7 @@ public:
         ByteArrayPtr,
         ObjectPtr,
         FrozenSetPtr,
+        RangePtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -166,6 +170,8 @@ public:
 
     explicit Value(const FrozenSetPtr& frozenSet): data(frozenSet) {}
 
+    explicit Value(const RangePtr& range) : data(range) {}
+
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString repr() const override;
     [[nodiscard]] QString display() const;
@@ -213,7 +219,7 @@ public:
     [[nodiscard]] ClassPtr asClass() const;
 
     [[nodiscard]] bool isInstance() const;
-    [[nodiscard]] InstancePtr asInstance() const;
+    [[nodiscard]] InstancePtr asInstance(const QString& = "") const;
 
     [[nodiscard]] bool isBoundMethod() const;
     [[nodiscard]] BoundMethodPtr asBoundMethod() const;
@@ -251,15 +257,18 @@ public:
     [[nodiscard]] bool isByteArray() const;
     [[nodiscard]] ByteArrayPtr asByteArray(const QString& = "") const;
 
-    [[nodiscard]] Value operator+(const Value&) const;
-
-    [[nodiscard]] Value operator-(const Value&) const;
-
     [[nodiscard]] bool isObject() const;
     [[nodiscard]] ObjectPtr asObject() const;
 
     [[nodiscard]] bool isFrozenSet() const;
     [[nodiscard]] FrozenSetPtr asFrozenSet(const QString& = "") const;
+
+    [[nodiscard]] bool isRange() const;
+    [[nodiscard]] RangePtr asRange(const QString& = "") const;
+
+    [[nodiscard]] Value operator+(const Value&) const;
+
+    [[nodiscard]] Value operator-(const Value&) const;
 
     [[nodiscard]] Value operator*(const Value&) const;
 
@@ -328,6 +337,8 @@ public:
     overloaded(Ts...) -> overloaded<Ts...>;
 
     static QString formatFloat(const BigFloat& num);
+
+    [[nodiscard]] QString getTypeName() const;
 
 };
 

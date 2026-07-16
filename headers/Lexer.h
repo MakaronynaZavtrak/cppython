@@ -78,7 +78,14 @@ enum class Keyword {
     AND,
     OR,
     DEL,
-    IS
+    IS,
+    TRY,
+    EXCEPT,
+    FINALLY,
+    AS,
+    RAISE,
+    FROM,
+    YIELD
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -101,7 +108,14 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"and", Keyword::AND},
     {"or", Keyword::OR},
     {"del", Keyword::DEL},
-    {"is", Keyword::IS}
+    {"is", Keyword::IS},
+    {"try", Keyword::TRY},
+    {"except", Keyword::EXCEPT},
+    {"finally", Keyword::FINALLY},
+    {"as", Keyword::AS},
+    {"raise", Keyword::RAISE},
+    {"from", Keyword::FROM},
+    {"yield", Keyword::YIELD}
 };
 
 /**
@@ -114,8 +128,9 @@ static const std::unordered_map<QString, Keyword> keywords = {
 struct Token {
     TokenType type;
     QString value;
-    int line; //Строка, где начинается токен
-    // int column; //Столбец, где начинается токен
+    int line;
+    int startColumn = 1;
+    int endColumn = 1;
 
     Token(const TokenType type,
         QString value,
@@ -142,8 +157,10 @@ public:
 private:
     int pos = 0; //текущая позиция в коде
     int line = 1; //текущая строка
-    int column = 1; //текущий столбец
+    int lineStartPos = 0; // позиция начала текущей строки в code
     QVector<int> indentStack;
+
+    [[nodiscard]] int currentColumn() const;
 
     /**
      * @brief Извлекает следующий токен из входного кода

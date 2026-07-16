@@ -2,7 +2,7 @@
 // Created by semyo on 24.05.2026.
 //
 #include "StringIterator.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 #include "Value.h"
 
 bool StringIterator::hasNext() const {

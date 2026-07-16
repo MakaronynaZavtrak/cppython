@@ -1344,9 +1344,7 @@ namespace {
 
                 if (args.size() > 2) {
 
-                    throw std::runtime_error(
-                        "TypeError: encode expected at most 2 arguments"
-                    );
+                    throw TypeErrorException("encode expected at most 2 arguments");
                 }
 
                 std::optional<QString> encoding;

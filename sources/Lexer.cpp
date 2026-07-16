@@ -1,5 +1,8 @@
 #include "Lexer.h"
 
+#include "../exception/SyntaxErrorException.h"
+#include "../exception/ValueErrorException.h"
+
 /**
  * Разбивает заданный исходный код на QVector токенов. Этот метод
  * обрабатывает входной код и создаёт коллекцию токенов,
@@ -14,20 +17,30 @@
 QVector<Token> Lexer::tokenize(const QString& code) {
 
     QVector<Token> tokens;
-    pos = 0; //текущая позиция в коде
+    pos = 0;
     line = 1;
-    column = 1;
+    lineStartPos = 0;
     indentStack.clear();
     indentStack.push_back(0);
+
+    int bracketDepth = 0;
 
     while (pos < code.length()) {
 
         if (QChar ch = code[pos]; ch == '\n') {
 
+            // implicit line joining
+            if (bracketDepth > 0) {
+                pos++;
+                line++;
+                lineStartPos = pos;
+                continue;   // не генерируем NEWLINE/INDENT/DEDENT
+            }
+
             tokens.push_back(Token(TOKEN_NEWLINE, "", line));
             pos++;
             line++;
-            column = 1;
+            lineStartPos = pos;
 
             int spaceCount = 0, tmpPos = pos;
 
@@ -36,22 +49,18 @@ QVector<Token> Lexer::tokenize(const QString& code) {
 
                 if (code[tmpPos] == ' ')
                     spaceCount++;
-
                 else if (code[tmpPos] == '\t')
-                    spaceCount +=4;
+                    spaceCount += 4;
 
                 tmpPos++;
             }
 
             if (spaceCount > indentStack.last()) {
-
                 indentStack.append(spaceCount);
                 tokens.push_back(Token(TOKEN_INDENT, "", line));
-
             } else while (spaceCount < indentStack.last()) {
-
-                    indentStack.pop_back();
-                    tokens.push_back(Token(TOKEN_DEDENT, "", line));
+                indentStack.pop_back();
+                tokens.push_back(Token(TOKEN_DEDENT, "", line));
             }
 
             pos = tmpPos;
@@ -64,16 +73,34 @@ QVector<Token> Lexer::tokenize(const QString& code) {
             break;
         }
 
+        // отслеживаем глубину скобок
+        if (token.type == TOKEN_OP) {
+            if (token.value == "(" || token.value == "[" || token.value == "{") {
+                ++bracketDepth;
+            }
+            else if (token.value == ")" || token.value == "]" || token.value == "}") {
+                if (bracketDepth > 0) --bracketDepth;
+            }
+        }
+
         tokens.append(token);
     }
+
     while (indentStack.size() > 1) {
         indentStack.pop_back();
         tokens.push_back(Token(TOKEN_DEDENT, "", line));
     }
 
-    tokens.push_back(Token(TOKEN_EOF, "", line));
+    Token eofTok(TOKEN_EOF, "", line);
+    eofTok.startColumn = currentColumn();
+    eofTok.endColumn = currentColumn();
+    tokens.push_back(eofTok);
 
     return tokens;
+}
+
+int Lexer::currentColumn() const {
+    return pos - lineStartPos + 1;
 }
 
 /**
@@ -100,30 +127,43 @@ Token Lexer::nextToken(const QString& code) {
     }
 
     if (pos >= code.length()) {
-        return {TOKEN_EOF, "", line};
+        Token tok{TOKEN_EOF, "", line};
+        tok.startColumn = currentColumn();
+        tok.endColumn = currentColumn();
+        return tok;
     }
+
+    const int startCol = currentColumn();
 
     const QChar ch = code[pos];
 
-    if (ch.isDigit()) {
-        return readNumber(code);
-    }
+    Token token = [&]() -> Token {
 
-    if ((ch == 'b' || ch == 'B') &&
-    pos + 1 < code.length() &&
-    (code[pos + 1] == '"' || code[pos + 1] == '\'')) {
-        return readBytes(code);
-    }
+        if (ch.isDigit()) {
+            return readNumber(code);
+        }
 
-    if (ch == '\"' || ch == '\'') {
-        return readString(code);
-    }
+        if ((ch == 'b' || ch == 'B') &&
+            pos + 1 < code.length() &&
+            (code[pos + 1] == '"' || code[pos + 1] == '\'')) {
+            return readBytes(code);
+            }
 
-    if (ch.isLetter() || ch == '_') {
-        return readIdentifierOrBool(code);
-    }
+        if (ch == '\"' || ch == '\'') {
+            return readString(code);
+        }
 
-    return readOperator(code);
+        if (ch.isLetter() || ch == '_') {
+            return readIdentifierOrBool(code);
+        }
+
+        return readOperator(code);
+    }();
+
+    token.startColumn = startCol;
+    token.endColumn = currentColumn();
+
+    return token;
 }
 
 /**
@@ -168,7 +208,7 @@ Token Lexer::readNumber(const QString& code)
     QString num = code.mid(start, pos - start);
 
     if (num.endsWith('e') || num.endsWith('E')) {
-        throw std::runtime_error("Invalid number format");
+        throw SyntaxErrorException("Invalid number format");
     }
 
     return {TOKEN_NUMBER, num, line};
@@ -201,7 +241,7 @@ Token Lexer::readString(const QString& code) {
         if (ch == '\\') {
 
             if (pos >= code.length()) {
-                throw std::runtime_error("Invalid escape sequence");
+                throw SyntaxErrorException("Invalid escape sequence");
             }
 
             QChar next = code[pos++];
@@ -242,7 +282,7 @@ Token Lexer::readString(const QString& code) {
                 case 'x': {
 
                     if (pos + 1 >= code.length()) {
-                        throw std::runtime_error("Invalid hex escape");
+                        throw SyntaxErrorException("Invalid hex escape");
                     }
 
                     QString hex;
@@ -255,7 +295,7 @@ Token Lexer::readString(const QString& code) {
                     const int value = hex.toInt(&ok, 16);
 
                     if (!ok) {
-                        throw std::runtime_error("Invalid hex escape");
+                        throw SyntaxErrorException("Invalid hex escape");
                     }
 
                     result += QChar(value);
@@ -274,7 +314,7 @@ Token Lexer::readString(const QString& code) {
         result += ch;
     }
 
-    throw std::runtime_error("Unterminated string literal");
+    throw SyntaxErrorException("Unterminated string literal");
 }
 
 Token Lexer::readBytes(const QString& code) {
@@ -388,7 +428,6 @@ Token Lexer::readOperator(const QString& code) {
 void Lexer::skipWhitespace(const QString& code) {
     while (pos < code.length() && code[pos].isSpace() && code[pos] != '\n') {
         pos++;
-        column++;
     }
 }
 
@@ -402,11 +441,13 @@ void Lexer::skipWhitespace(const QString& code) {
  */
 void Lexer::skipComment(const QString& code) {
     if (pos < code.length() && code[pos] == '#') {
+
         while (pos < code.length() && code[pos] != '\n') {
             pos++;
         }
-        column = 1;
+
         line++;
         pos++;
+        lineStartPos = pos;
     }
 }

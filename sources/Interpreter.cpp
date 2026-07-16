@@ -6,10 +6,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "Runtime.h"
-#include "../runtime/builtins/bytearray/ByteArrayMethods.h"
-#include "../runtime/builtins/bytes/BytesMethods.h"
-#include "../runtime/builtins/str/StrMethods.h"
+#include "../exception/PythonException.h"
+#include "../runtime/Runtime.h"
+#include "../runtime/exceptions/RegisterExceptionClasses.h"
 
 
 /**
@@ -46,6 +45,15 @@ Value Interpreter::executeNode(
     const std::shared_ptr<ASTNode>& node,
     const std::shared_ptr<Environment>& env) {
 
+    if (!Runtime::callStack.empty()) {
+
+        auto& frame = Runtime::callStack.back();
+
+        frame.currentLine = node->line;
+        frame.sourceId = node->sourceId;
+        frame.columnCaptured = false;
+    }
+
     const Value result = node->eval(env);
 
     if (node->shouldPrint() && !result.isNone()) {
@@ -53,6 +61,95 @@ Value Interpreter::executeNode(
     }
 
     return result;
+}
+
+void Interpreter::printSyntaxError(const SyntaxErrorException& e) {
+
+    if (e.hasPosition) {
+        std::cout << "  File \"" << Runtime::getSourceLabel(e.sourceId).toStdString()
+                   << "\", line " << e.line << "\n";
+
+        QString srcLine = Runtime::getSourceLine(e.sourceId, e.line);
+        std::cout << "    " << srcLine.toStdString() << "\n";
+
+        QString caretLine(srcLine.length() + 1, ' ');
+        const int caretIdx = std::max(0, e.startColumn - 1);
+        if (caretIdx < caretLine.length()) {
+            caretLine[caretIdx] = '^';
+        }
+        std::cout << "    " << caretLine.toStdString() << "\n";
+    }
+
+    std::cout << e.what() << "\n";
+}
+
+bool Interpreter::hasUnclosedBrackets(const std::vector<std::string>& lines) {
+
+    int depth = 0;
+    char stringChar = 0;   // 0 = не в строке, иначе ' или "
+
+    for (const auto& line : lines) {
+
+        for (size_t i = 0; i < line.size(); ++i) {
+
+            const char c = line[i];
+
+            if (stringChar != 0) {
+                // внутри строки — ждём закрывающую кавычку, уважая экранирование
+                if (c == '\\') {
+                    ++i; // пропускаем следующий символ
+                    continue;
+                }
+                if (c == stringChar) {
+                    stringChar = 0;
+                }
+                continue;
+            }
+
+            if (c == '"' || c == '\'') {
+                stringChar = c;
+                continue;
+            }
+
+            if (c == '#') {
+                break; // комментарий — остаток строки игнорируем
+            }
+
+            if (c == '(' || c == '[' || c == '{') {
+                ++depth;
+            }
+            else if (c == ')' || c == ']' || c == '}') {
+                if (depth > 0) --depth;
+            }
+        }
+
+        // строковый литерал не закрылся к концу строки —
+        // (для простых '...'/"..." это ошибка, но тройные кавычки
+        //  потребовали бы отдельной логики; для MVP считаем, что
+        //  одиночные строки закрываются в пределах строки)
+        stringChar = 0;
+    }
+
+    return depth > 0;
+}
+
+bool Interpreter::hasDefiniteSyntaxError(const std::string& code, Lexer& lexer) {
+
+    QString normalized = QString::fromStdString(code);
+    normalized.replace('\t', "    ");
+
+    try {
+        const QVector<Token> tokens = lexer.tokenize(normalized);
+        Parser parser(tokens);
+        (void)parser.parse();
+        return false;
+    }
+    catch (const SyntaxErrorException& e) {
+        return !e.incompleteInput;
+    }
+    catch (...) {
+        return false;   // не синтаксис — разберёмся при реальном выполнении
+    }
 }
 
 /**
@@ -70,17 +167,78 @@ void Interpreter::executeCode(
     const std::string& code, Lexer& lexer,
     const std::shared_ptr<Environment> &env) {
 
-    try {
+    QString normalizedCode = QString::fromStdString(code);
+    normalizedCode.replace('\t', "    ");
 
-        const QVector<Token> tokens = lexer.tokenize(QString::fromStdString(code));
+    const int srcId = Runtime::registerSource(normalizedCode);
+
+    CallStackGuard moduleGuard("<module>", srcId);
+
+    try {
+        const QVector<Token> tokens = lexer.tokenize(normalizedCode);
         Parser parser(tokens);
         const std::shared_ptr<ASTNode> ast = parser.parse();
 
         executeNode(ast, env);
 
-    } catch (const std::runtime_error& e) {
-        std::cout << e.what() << "\n";
+    } catch (const SyntaxErrorException& e) {
+        printSyntaxError(e);
     }
+    catch (const PythonException& e) {
+        printTraceback(e);
+    }
+}
+
+void Interpreter::printTraceback(const PythonException& e) {
+
+    if (!e.hasTraceback || e.traceback.empty()) {
+        std::cout << e.what() << "\n";
+        return;
+    }
+
+    std::cout << "Traceback (most recent call last):\n";
+
+    for (const auto& frame : e.traceback) {
+
+        std::cout << "  File \"" << Runtime::getSourceLabel(frame.sourceId).toStdString()
+                   << "\", line " << frame.currentLine
+                   << ", in " << frame.functionName.toStdString() << "\n";
+
+        QString srcLine = Runtime::getSourceLine(frame.sourceId, frame.currentLine);
+
+        std::cout << "    " << srcLine.toStdString() << "\n";
+
+        if (frame.columnCaptured) {
+
+            QString caretLine(srcLine.length(), ' ');
+
+            const int startIdx = std::max(0, frame.currentStartColumn - 1);
+            const int endIdx = std::min(static_cast<int>(srcLine.length()), frame.currentEndColumn - 1);
+
+            if (frame.hasAnchor) {
+
+                const int anchorStart = std::max(0, frame.anchorStartColumn - 1);
+                const int anchorEnd = std::min(static_cast<int>(srcLine.length()), frame.anchorEndColumn - 1);
+
+                for (int i = startIdx; i < endIdx; ++i) {
+
+                    if (i >= anchorStart && i < anchorEnd) {
+                        caretLine[i] = '^';
+                    } else {
+                        caretLine[i] = '~';
+                    }
+                }
+            } else {
+                for (int i = startIdx; i < endIdx; ++i) {
+                    caretLine[i] = '^';
+                }
+            }
+
+            std::cout << "    " << caretLine.toStdString() << "\n";
+        }
+    }
+
+    std::cout << e.what() << "\n";
 }
 
 
@@ -99,98 +257,79 @@ void Interpreter::run(int argc, char* argv[]) {
 
     const auto globalEnv = std::make_shared<Environment>();
     BuiltinFunction::registerBuiltins(globalEnv);
-
-    Runtime::objectClass = std::make_shared<ClassValue>("object");
-
-    Runtime::objectClass->name = "object";
-
-    globalEnv->set("object", Value(Runtime::objectClass));
-
-    Runtime::objectClass->attributes["__getattribute__"] =
-    globalEnv->get("__object_getattribute__");
-
-    Runtime::objectClass->attributes["__setattr__"] =
-    globalEnv->get("__object_setattr__");
-
-
-
-    Runtime::strClass = std::make_shared<ClassValue>("str");
-    Runtime::strClass->name = "str";
-    Runtime::strClass->bases.push_back(Runtime::objectClass);
-
-    auto builtin = std::get<Value::BuiltinFunctionPtr>(makeMakeTransStrClassBuiltin().data);
-
-    Runtime::strClass->attributes["maketrans"] = makeMakeTransStrClassBuiltin();
-
-    globalEnv->set("str", Value(Runtime::strClass));
-
-    Runtime::strClass->attributes["__call__"] = globalEnv->get("__str_call__");
-
-    globalEnv->set("__str_type__", Value(Runtime::strClass));
-
-
-
-    Runtime::bytesClass = std::make_shared<ClassValue>("bytes");
-    Runtime::bytesClass->name = "bytes";
-    Runtime::bytesClass->bases.push_back(Runtime::objectClass);
-
-    Runtime::bytesClass->attributes["fromhex"] = makeFromHexClassBuiltin();
-    Runtime::bytesClass->attributes["maketrans"] = makeMakeTransBytesClassBuiltin();
-    Runtime::bytesClass->attributes["__bytes__"] = make__bytes__ClassBuiltin();
-
-    globalEnv->set("bytes", Value(Runtime::bytesClass));
-    Runtime::bytesClass->attributes["__call__"] = globalEnv->get("__bytes_call__");
-    globalEnv->set("__bytes_type__", Value(Runtime::bytesClass));
-
-
-    Runtime::bytearrayClass = std::make_shared<ClassValue>("bytearray");
-    Runtime::bytearrayClass->name = "bytearray";
-    Runtime::bytearrayClass->bases.push_back(Runtime::objectClass);
-
-    globalEnv->set("bytearray", Value(Runtime::bytearrayClass));
-    Runtime::bytearrayClass->attributes["__call__"] = globalEnv->get("__bytearray_call__");
-    globalEnv->set("__bytearray_type__", Value(Runtime::bytearrayClass));
-    Runtime::bytearrayClass->attributes["__bytes__"] = make_byteArray_ClassBuiltin();
-    Runtime::bytearrayClass->attributes["fromhex"] = makeByteArrayFromHexBuiltin();
-    Runtime::bytearrayClass->attributes["maketrans"] = makeByteArrayMakeTransBuiltin();
+    Runtime::initialize(globalEnv);
+    registerExceptionClasses(globalEnv);
 
     Lexer lexer;
     std::vector<std::string> buffer;
     bool isInBlock = false;
 
     while (true) {
-        std::cout << (isInBlock ? CONTINUATION_PROMPT : MAIN_PROMPT);
+        std::cout << ((isInBlock || !buffer.empty()) ? CONTINUATION_PROMPT : MAIN_PROMPT);
 
         std::string line;
         if (!std::getline(std::cin, line)) break;
 
-        if (!isInBlock && isExitCommand(line)) break;
+        if (!isInBlock && buffer.empty() && isExitCommand(line)) break;
 
         if (isInBlock) {
+
             if (line.empty()) {
-                isInBlock = false;
+                // пустая строка завершает блок — НО только если скобки сбалансированы
+                if (!hasUnclosedBrackets(buffer)) {
+                    isInBlock = false;
+                } else {
+                    buffer.push_back(line);
+                    continue;
+                }
             } else {
+
                 buffer.push_back(line);
+
+                if (!hasUnclosedBrackets(buffer) &&
+                    hasDefiniteSyntaxError(assembleCode(buffer), lexer)) {
+
+                    executeCode(assembleCode(buffer), lexer, globalEnv);
+                    buffer.clear();
+                    isInBlock = false;
+                    }
+
                 continue;
             }
+
         } else {
+
             if (line.empty()) {
+
+                if (buffer.empty()) continue;
+
+                executeCode(assembleCode(buffer), lexer, globalEnv);
+                buffer.clear();
                 continue;
             }
+
             buffer.push_back(line);
-            if (line.back() == ':') {
+
+            // незакрытые скобки — продолжаем ввод, не выполняем
+            if (hasUnclosedBrackets(buffer)) {
+                continue;
+            }
+
+            if (hasDefiniteSyntaxError(assembleCode(buffer), lexer)) {
+                executeCode(assembleCode(buffer), lexer, globalEnv);
+                buffer.clear();
+                continue;
+            }
+
+            if (!line.empty() && line.back() == ':') {
                 isInBlock = true;
                 continue;
             }
 
-            // если предыдущая строка была декоратором
-            if (!buffer.empty()) {
-                const std::string& prev = buffer.back();
-
-                if (!prev.empty() && prev[0] == '@') {
-                    isInBlock = true;
-                    continue;
-                }
+            const std::string& prev = buffer.back();
+            if (!prev.empty() && prev[0] == '@') {
+                isInBlock = true;
+                continue;
             }
         }
 

@@ -3,7 +3,7 @@
 //
 #include "ListIterator.h"
 #include "ListValue.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 
 Value ListIterator::next() {
 

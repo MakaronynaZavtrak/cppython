@@ -1,5 +1,8 @@
 #include "Environment.h"
 
+#include "../exception/NameErrorException.h"
+#include "../exception/SyntaxErrorException.h"
+
 /**
  * Устанавливает переменную в окружении с указанным именем и значением.
  * Если переменная уже существует, её значение будет обновлено.
@@ -26,7 +29,7 @@ void Environment::set(const QString& name, const Value& value) {
             }
             env = env->parent;
         }
-        throw std::runtime_error("No binding for nonlocal " + name.toStdString());
+        throw SyntaxErrorException("No binding for nonlocal " + name);
     }
 
     variables[name] = value;
@@ -41,6 +44,35 @@ void Environment::set(const QString& name, const Value& value) {
  * @throws std::runtime_error Если переменная с указанным именем не найдена.
  */
 Value& Environment::get(const QString& name) {
+
+    if (globalVars.contains(name)) {
+
+        auto env = this;
+        while (env->parent) {
+            env = env->parent.get();
+        }
+
+        if (env->variables.count(name)) {
+            return env->variables[name];
+        }
+
+        throw NameErrorException("Undefined variable: " + name);
+    }
+
+    if (nonlocalVars.contains(name)) {
+
+        auto env = parent;
+
+        while (env) {
+            if (env->variables.count(name)) {
+                return env->variables[name];
+            }
+            env = env->parent;
+        }
+
+        throw SyntaxErrorException("No binding for nonlocal " + name);
+    }
+
     if (variables.count(name)) {
         return variables[name];
     }
@@ -48,5 +80,5 @@ Value& Environment::get(const QString& name) {
     if (parent)
         return parent->get(name);
 
-    throw std::runtime_error("Undefined variable: " + name.toStdString());
+    throw NameErrorException("Undefined variable: " + name);
 }

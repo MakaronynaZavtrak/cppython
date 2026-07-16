@@ -8,6 +8,10 @@
 #include "ListValue.h"
 #include "StrValue.h"
 #include "TupleValue.h"
+#include "../exception/IndexErrorException.h"
+#include "../exception/LookupErorException.h"
+#include "../exception/OverflowErrorException.h"
+#include "../exception/UnicodeDecodeErrorException.h"
 #include "../runtime/ProtocolHelpers.h"
 
 Value ByteArrayValue::getItem(const Value& indexValue) const {
@@ -35,9 +39,7 @@ Value ByteArrayValue::getItem(const Value& indexValue) const {
     int index = indexValue.asBigInt("__getitem__").convert_to<int>();
 
     if (data.isEmpty()) {
-        throw std::runtime_error(
-            "IndexError: index out of range"
-        );
+        throw IndexErrorException("index out of range");
     }
 
     if (index < 0) {
@@ -45,9 +47,7 @@ Value ByteArrayValue::getItem(const Value& indexValue) const {
     }
 
     if (index < 0 || index >= data.size()) {
-        throw std::runtime_error(
-            "IndexError: index out of range"
-        );
+        throw IndexErrorException("index out of range");
     }
 
     return Value(
@@ -63,9 +63,7 @@ void ByteArrayValue::setItem(
 
     if (!indexValue.isBigInt()) {
 
-        throw std::runtime_error(
-            "TypeError: bytearray indices must be integers"
-        );
+        throw TypeErrorException("bytearray indices must be integers");
     }
 
     auto index =
@@ -80,18 +78,14 @@ void ByteArrayValue::setItem(
 
     if (index < 0 || index >= size) {
 
-        throw std::runtime_error(
-            "IndexError: bytearray index out of range"
-        );
+        throw IndexErrorException("bytearray index out of range");
     }
 
     const auto byte = value.toBigInt();
 
     if (byte < 0 || byte > 255) {
 
-        throw std::runtime_error(
-            "ValueError: byte must be in range(0, 256)"
-        );
+        throw ValueErrorException("byte must be in range(0, 256)");
     }
 
     data[index] = static_cast<char>(byte.convert_to<int>());
@@ -137,9 +131,7 @@ void ByteArrayValue::delItem(const Value& indexValue) {
 
     if (index < 0 || index >= data.size()) {
 
-        throw std::runtime_error(
-            "IndexError: index out of range"
-        );
+        throw IndexErrorException("index out of range");
     }
 
     data.remove(index, 1);
@@ -253,18 +245,14 @@ Value ByteArrayValue::add(const Value& other) const {
         );
     }
 
-    throw std::runtime_error(
-        "TypeError: can't concat bytearray with non-bytes-like object"
-    );
+    throw TypeErrorException("can't concat bytearray with non-bytes-like object");
 }
 
 Value ByteArrayValue::multiply(const Value& other) const {
 
     if (!other.isBigInt() && !other.isBool()) {
 
-        throw std::runtime_error(
-            "TypeError: can't multiply bytearray by non-int"
-        );
+        throw TypeErrorException("can't multiply bytearray by non-int");
     }
 
     const auto count =
@@ -308,18 +296,13 @@ Value ByteArrayValue::iadd(const Value& other) {
         return Value(shared_from_this());
     }
 
-    throw std::runtime_error(
-        "TypeError: can't concat "
-         "argument to bytearray"
-    );
+    throw TypeErrorException("can't concat argument to bytearray");
 }
 
 Value ByteArrayValue::imul(const Value& other) {
 
     if (other.isBigFloat() || !other.isNumeric()) {
-        throw std::runtime_error(
-            "TypeError: can't multiply bytearray by non-int"
-        );
+        throw TypeErrorException("can't multiply bytearray by non-int");
     }
 
     const auto count = other.toBigInt();
@@ -373,9 +356,7 @@ bool ByteArrayValue::contains(const Value& value) const {
         );
     }
 
-    throw std::runtime_error(
-        "TypeError: a bytes-like object or integer is required"
-    );
+    throw TypeErrorException("a bytes-like object or integer is required");
 }
 
 bool ByteArrayValue::equal(const Value& other) const {
@@ -412,9 +393,8 @@ bool ByteArrayValue::less(const Value& other) const {
             other.asBytes("bytes")->bytes();
     }
 
-    throw std::runtime_error(
-        "TypeError: '<' not supported between instances of "
-        "'bytearray' and other type"
+    throw TypeErrorException(
+        "'<' not supported between instances of 'bytearray' and other type"
     );
 }
 
@@ -430,9 +410,8 @@ bool ByteArrayValue::lessOrEqual(const Value& other) const {
         return data <= other.asBytes("bytes")->bytes();
     }
 
-    throw std::runtime_error(
-        "TypeError: '<=' not supported between instances of "
-        "'bytearray' and other type"
+    throw TypeErrorException(
+        "'<=' not supported between instances of 'bytearray' and other type"
     );
 }
 
@@ -450,9 +429,8 @@ bool ByteArrayValue::greater(const Value& other) const {
             other.asBytes("bytes")->bytes();
     }
 
-    throw std::runtime_error(
-        "TypeError: '>' not supported between instances of "
-        "'bytearray' and other type"
+    throw TypeErrorException(
+        "'>' not supported between instances of 'bytearray' and other type"
     );
 }
 
@@ -468,9 +446,8 @@ bool ByteArrayValue::greaterOrEqual(const Value& other) const {
         return data >= other.asBytes("bytes")->bytes();
     }
 
-    throw std::runtime_error(
-        "TypeError: '>=' not supported between instances of "
-        "'bytearray' and other type"
+    throw TypeErrorException(
+        "'>=' not supported between instances of 'bytearray' and other type"
     );
 }
 
@@ -495,7 +472,7 @@ Value ByteArrayValue::find(
 
         if (v < 0 || v > 255) {
 
-            throw std::runtime_error(
+            throw OverflowErrorException(
                 "byte must be in range(0, 256)"
             );
         }
@@ -508,9 +485,7 @@ Value ByteArrayValue::find(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: expected bytes-like object"
-        );
+        throw TypeErrorException("expected bytes-like object");
     }
 
     long long begin = 0;
@@ -573,9 +548,7 @@ Value ByteArrayValue::rfind(
 
         if (v < 0 || v > 255) {
 
-            throw std::runtime_error(
-                "byte must be in range(0, 256)"
-            );
+            throw OverflowErrorException("byte must be in range(0, 256)");
         }
 
         needle.append(
@@ -586,9 +559,7 @@ Value ByteArrayValue::rfind(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: expected bytes-like object"
-        );
+        throw TypeErrorException("expected bytes-like object");
     }
 
     long long begin = 0;
@@ -613,16 +584,16 @@ Value ByteArrayValue::rfind(
     begin = std::clamp(
         begin,
         0LL,
-        static_cast<long long>(data.size())
+        data.size()
     );
 
     finish = std::clamp(
         finish,
         0LL,
-        static_cast<long long>(data.size())
+        data.size()
     );
 
-    QByteArray slice =
+    const QByteArray slice =
         data.mid(
             static_cast<int>(begin),
             static_cast<int>(finish - begin)
@@ -648,9 +619,7 @@ Value ByteArrayValue::index(
 
     if (result.toBigInt() == -1) {
 
-        throw std::runtime_error(
-            "ValueError: subsection not found"
-        );
+        throw ValueErrorException("subsection not found");
     }
 
     return result;
@@ -665,9 +634,7 @@ Value ByteArrayValue::rindex(
 
     if (result.toBigInt() == -1) {
 
-        throw std::runtime_error(
-            "ValueError: subsection not found"
-        );
+        throw ValueErrorException("subsection not found");
     }
 
     return result;
@@ -693,9 +660,7 @@ Value ByteArrayValue::count(
         auto v = sub.toBigInt();
 
         if (v < 0 || v > 255) {
-            throw std::runtime_error(
-                "byte must be in range(0, 256)"
-            );
+            throw OverflowErrorException("byte must be in range(0, 256)");
         }
 
         needle.append(
@@ -706,9 +671,7 @@ Value ByteArrayValue::count(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: expected bytes-like object"
-        );
+        throw TypeErrorException("expected bytes-like object");
     }
 
     long long begin = 0;
@@ -794,9 +757,7 @@ Value ByteArrayValue::startsWith(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: startswith first arg must be bytes-like object"
-        );
+        throw TypeErrorException("startswith first arg must be bytes-like object");
     }
 
     long long begin = 0;
@@ -858,9 +819,7 @@ Value ByteArrayValue::endsWith(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: endswith first arg must be bytes-like object"
-        );
+        throw TypeErrorException("endswith first arg must be bytes-like object");
     }
 
     long long begin = 0;
@@ -885,16 +844,16 @@ Value ByteArrayValue::endsWith(
     begin = std::clamp(
         begin,
         0LL,
-        static_cast<long long>(data.size())
+        data.size()
     );
 
     finish = std::clamp(
         finish,
         0LL,
-        static_cast<long long>(data.size())
+        data.size()
     );
 
-    QByteArray slice =
+    const QByteArray slice =
         data.mid(
             static_cast<int>(begin),
             static_cast<int>(finish - begin)
@@ -926,9 +885,7 @@ const std::optional<Value>& chars) const {
 
         } else {
 
-            throw std::runtime_error(
-                "TypeError: lstrip arg must be bytes or bytearray"
-            );
+            throw TypeErrorException("lstrip arg must be bytes or bytearray");
         }
 
     } else {
@@ -973,9 +930,7 @@ const std::optional<Value>& chars) const {
 
         } else {
 
-            throw std::runtime_error(
-                "TypeError: rstrip arg must be bytes or bytearray"
-            );
+            throw TypeErrorException("rstrip arg must be bytes or bytearray");
         }
 
     } else {
@@ -1028,9 +983,7 @@ Value ByteArrayValue::removeprefix(const Value& prefix) const {
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: removeprefix() argument must be bytes-like"
-        );
+        throw TypeErrorException("removeprefix() argument must be bytes-like");
     }
 
     if (data.startsWith(prefixBytes)) {
@@ -1061,15 +1014,10 @@ Value ByteArrayValue::removesuffix(const Value& suffix) const {
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: removesuffix() argument must be bytes-like"
-        );
+        throw TypeErrorException("removesuffix() argument must be bytes-like");
     }
 
-    if (
-        !suffixBytes.isEmpty()
-        && data.endsWith(suffixBytes)
-    ) {
+    if (!suffixBytes.isEmpty() && data.endsWith(suffixBytes)) {
 
         return Value(
             std::make_shared<ByteArrayValue>(
@@ -1103,9 +1051,7 @@ Value ByteArrayValue::replace(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: replace() argument 1 must be bytes-like"
-        );
+        throw TypeErrorException("replace() argument 1 must be bytes-like");
     }
 
     if (newValue.isBytes()) {
@@ -1118,9 +1064,7 @@ Value ByteArrayValue::replace(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: replace() argument 2 must be bytes-like"
-        );
+        throw TypeErrorException("replace() argument 2 must be bytes-like");
     }
 
     const long long maxCount = count.convert_to<long long>();
@@ -1219,16 +1163,12 @@ Value ByteArrayValue::split(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: split() separator must be bytes-like"
-        );
+        throw TypeErrorException("split() separator must be bytes-like");
     }
 
     if (separator.isEmpty()) {
 
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     std::vector<Value> result;
@@ -1292,16 +1232,12 @@ Value ByteArrayValue::rsplit(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: rsplit() separator must be bytes-like"
-        );
+        throw TypeErrorException("rsplit() separator must be bytes-like");
     }
 
     if (separator.isEmpty()) {
 
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     const long long limit =
@@ -1376,16 +1312,12 @@ Value ByteArrayValue::partition(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: partition() separator must be bytes-like"
-        );
+        throw TypeErrorException("partition() separator must be bytes-like");
     }
 
     if (separator.isEmpty()) {
 
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
     const int pos = data.indexOf(separator);
@@ -1458,20 +1390,15 @@ Value ByteArrayValue::rpartition(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: rpartition() separator must be bytes-like"
-        );
+        throw TypeErrorException("rpartition() separator must be bytes-like");
     }
 
     if (separator.isEmpty()) {
 
-        throw std::runtime_error(
-            "ValueError: empty separator"
-        );
+        throw ValueErrorException("empty separator");
     }
 
-    const int pos =
-        data.lastIndexOf(separator);
+    const int pos = data.lastIndexOf(separator);
 
     if (pos < 0) {
 
@@ -1503,7 +1430,7 @@ Value ByteArrayValue::rpartition(
 
     return Value(
         std::make_shared<TupleValue>(
-            std::vector<Value>{
+            std::vector{
 
                 Value(
                     std::make_shared<ByteArrayValue>(
@@ -1560,16 +1487,12 @@ Value ByteArrayValue::center(
 
         } else {
 
-            throw std::runtime_error(
-                "TypeError: center() fill byte must be bytes-like"
-            );
+            throw TypeErrorException("center() fill byte must be bytes-like");
         }
 
         if (fillData.size() != 1) {
 
-            throw std::runtime_error(
-                "TypeError: center() fill byte must be length 1"
-            );
+            throw TypeErrorException("center() fill byte must be length 1");
         }
 
         fill = fillData[0];
@@ -1631,16 +1554,12 @@ Value ByteArrayValue::ljust(
 
         } else {
 
-            throw std::runtime_error(
-                "TypeError: ljust() fill byte must be bytes-like"
-            );
+            throw TypeErrorException("ljust() fill byte must be bytes-like");
         }
 
         if (fillData.size() != 1) {
 
-            throw std::runtime_error(
-                "TypeError: ljust() fill byte must be length 1"
-            );
+            throw TypeErrorException("ljust() fill byte must be length 1");
         }
 
         fill = fillData[0];
@@ -1694,16 +1613,12 @@ Value ByteArrayValue::rjust(
 
         } else {
 
-            throw std::runtime_error(
-                "TypeError: rjust() fill byte must be bytes-like"
-            );
+            throw TypeErrorException("rjust() fill byte must be bytes-like");
         }
 
         if (fillData.size() != 1) {
 
-            throw std::runtime_error(
-                "TypeError: rjust() fill byte must be length 1"
-            );
+            throw TypeErrorException("rjust() fill byte must be length 1");
         }
 
         fill = fillData[0];
@@ -2107,9 +2022,7 @@ Value ByteArrayValue::expandTabs(
 
     if (tabSize < 0) {
 
-        throw std::runtime_error(
-            "ValueError: tabsize must be >= 0"
-        );
+        throw ValueErrorException("tabsize must be >= 0");
     }
 
     QByteArray result;
@@ -2243,10 +2156,7 @@ Value ByteArrayValue::join(
                 return;
             }
 
-            throw std::runtime_error(
-                "TypeError: sequence item "
-                "must be bytes-like"
-            );
+            throw TypeErrorException("sequence item must be bytes-like");
     };
 
     if (iterable.isIterable() || supportsIter(iterable)) {
@@ -2256,9 +2166,7 @@ Value ByteArrayValue::join(
         Value iterObj = call(iterMethod, {}, {}, nullptr);
 
         if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
-            throw std::runtime_error(
-                "__iter__ returned non-iterator"
-            );
+            throw TypeErrorException("__iter__ returned non-iterator");
         }
 
         auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
@@ -2269,9 +2177,7 @@ Value ByteArrayValue::join(
 
     } else {
 
-        throw std::runtime_error(
-            "TypeError: object is not iterable"
-        );
+        throw TypeErrorException("object is not iterable");
     }
 
     QByteArray result;
@@ -2298,9 +2204,7 @@ Value ByteArrayValue::append(const Value& value) {
 
     if (byte < 0 || byte > 255) {
 
-        throw std::runtime_error(
-            "ValueError: byte must be in range(0, 256)"
-        );
+        throw ValueErrorException("byte must be in range(0, 256)");
     }
 
     data.append(
@@ -2316,9 +2220,7 @@ Value ByteArrayValue::extend(const Value& iterable) {
 
     if (!iterable.isIterable() && !supportsIter(iterable)) {
 
-        throw std::runtime_error(
-            "TypeError: object is not iterable"
-        );
+        throw TypeErrorException("object is not iterable");
     }
 
     Value iterMethod = getAttrValue(iterable, "__iter__");
@@ -2327,9 +2229,7 @@ Value ByteArrayValue::extend(const Value& iterable) {
 
     if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
 
-        throw std::runtime_error(
-            "__iter__ returned non-iterator"
-        );
+        throw TypeErrorException("__iter__ returned non-iterator");
     }
 
     auto iterator =std::get<Value::IteratorPtr>(iterObj.data);
@@ -2342,9 +2242,7 @@ Value ByteArrayValue::extend(const Value& iterable) {
 
         if (byte < 0 || byte > 255) {
 
-            throw std::runtime_error(
-                "ValueError: byte must be in range(0, 256)"
-            );
+            throw ValueErrorException("byte must be in range(0, 256)");
         }
 
         data.append(
@@ -2362,10 +2260,7 @@ Value ByteArrayValue::insert(const Value::BigInt& indexValue, const Value& value
     const auto byte = value.toBigInt();
 
     if (byte < 0 || byte > 255) {
-
-        throw std::runtime_error(
-            "ValueError: byte must be in range(0, 256)"
-        );
+        throw ValueErrorException("byte must be in range(0, 256)");
     }
 
     long long index = indexValue.convert_to<long long>();
@@ -2398,9 +2293,7 @@ Value ByteArrayValue::pop(const std::optional<Value::BigInt>& indexValue) {
 
     if (data.isEmpty()) {
 
-        throw std::runtime_error(
-            "IndexError: pop from empty bytearray"
-        );
+        throw IndexErrorException("pop from empty bytearray");
     }
 
     long long index;
@@ -2422,9 +2315,7 @@ Value ByteArrayValue::pop(const std::optional<Value::BigInt>& indexValue) {
 
     if (index < 0 || index >= size) {
 
-        throw std::runtime_error(
-            "IndexError: pop index out of range"
-        );
+        throw IndexErrorException("pop index out of range");
     }
 
     const unsigned char result =
@@ -2443,9 +2334,7 @@ Value ByteArrayValue::remove(const Value& value) {
 
     if (byte < 0 || byte > 255) {
 
-        throw std::runtime_error(
-            "ValueError: byte must be in range(0, 256)"
-        );
+        throw ValueErrorException("byte must be in range(0, 256)");
     }
 
     const char target =
@@ -2457,9 +2346,7 @@ Value ByteArrayValue::remove(const Value& value) {
 
     if (index < 0) {
 
-        throw std::runtime_error(
-            "ValueError: value not found in bytearray"
-        );
+        throw ValueErrorException("value not found in bytearray");
     }
 
     data.remove(index, 1);
@@ -2525,18 +2412,14 @@ Value ByteArrayValue::hex(
 
     if (groupSize == 0) {
 
-        throw std::runtime_error(
-            "ValueError: bytes_per_sep must not be zero"
-        );
+        throw ValueErrorException("bytes_per_sep must not be zero");
     }
 
     QString result;
 
-    const bool fromRight =
-        groupSize > 0;
+    const bool fromRight = groupSize > 0;
 
-    const long long absGroup =
-        std::llabs(groupSize);
+    const long long absGroup = std::llabs(groupSize);
 
     for (int i = 0; i < data.size(); ++i) {
 
@@ -2591,10 +2474,7 @@ Value ByteArrayValue::fromHex(const std::vector<Value> &args) {
 
     if (cleaned.size() % 2 != 0) {
 
-        throw std::runtime_error(
-            "ValueError: non-hexadecimal "
-            "number found in fromhex() arg"
-        );
+        throw ValueErrorException("non-hexadecimal number found in fromhex() arg");
     }
 
     QByteArray result;
@@ -2609,15 +2489,10 @@ Value ByteArrayValue::fromHex(const std::vector<Value> &args) {
 
         if (!ok) {
 
-            throw std::runtime_error(
-                "ValueError: non-hexadecimal "
-                "number found in fromhex() arg"
-            );
+            throw ValueErrorException("non-hexadecimal number found in fromhex() arg");
         }
 
-        result.append(
-            static_cast<char>(value)
-        );
+        result.append(static_cast<char>(value));
     }
 
     return Value(
@@ -2635,19 +2510,19 @@ Value ByteArrayValue::decode(
 
     if (normalized != "utf8" && normalized != "utf-8") {
 
-        throw std::runtime_error(
+        throw LookupErrorException(
             QString(
-                "LookupError: unknown encoding: %1"
-            ).arg(encoding).toStdString()
+                "unknown encoding: %1"
+            ).arg(encoding)
         );
     }
 
     if (errors != "strict") {
 
-        throw std::runtime_error(
+        throw LookupErrorException(
             QString(
-                "LookupError: unknown error handler name '%1'"
-            ).arg(errors).toStdString()
+                "unknown error handler name '%1'"
+            ).arg(errors)
         );
     }
 
@@ -2655,9 +2530,7 @@ Value ByteArrayValue::decode(
 
     if (decoded.toUtf8() != data) {
 
-        throw std::runtime_error(
-            "UnicodeDecodeError"
-        );
+        throw UnicodeDecodeErrorException("");
     }
 
     return Value(decoded);
@@ -2679,10 +2552,7 @@ Value ByteArrayValue::makeTrans(const std::vector<Value> &args) {
                 ->bytes();
 
     } else {
-        throw std::runtime_error(
-            "TypeError: first argument "
-            "must be bytes-like"
-        );
+        throw TypeErrorException("first argument must be bytes-like");
     }
 
     if (args[1].isBytes()) {
@@ -2697,17 +2567,11 @@ Value ByteArrayValue::makeTrans(const std::vector<Value> &args) {
                 ->bytes();
 
     } else {
-        throw std::runtime_error(
-            "TypeError: second argument "
-            "must be bytes-like"
-        );
+        throw TypeErrorException("second argument must be bytes-like");
     }
 
     if (from.size() != to.size()) {
-        throw std::runtime_error(
-            "ValueError: arguments "
-            "must have same length"
-        );
+        throw ValueErrorException("ValueError: arguments must have same length");
     }
 
     QByteArray table(256, '\0');
@@ -2747,10 +2611,7 @@ Value ByteArrayValue::translate(
 
         } else {
 
-            throw std::runtime_error(
-                "TypeError: delete argument "
-                "must be bytes-like"
-            );
+            throw TypeErrorException("delete argument must be bytes-like");
         }
     }
 
@@ -2775,18 +2636,12 @@ Value ByteArrayValue::translate(
 
         } else {
 
-            throw std::runtime_error(
-                "TypeError: translation table "
-                "must be bytes-like"
-            );
+            throw TypeErrorException("translation table must be bytes-like");
         }
 
         if (useTranslation && translationTable.size() != 256) {
 
-            throw std::runtime_error(
-                "ValueError: translation table "
-                "must be 256 bytes long"
-            );
+            throw ValueErrorException("translation table must be 256 bytes long");
         }
     }
 
@@ -2824,17 +2679,13 @@ Value ByteArrayValue::translate(
 Value ByteArrayValue::resize(const Value& newSizeValue) {
 
     if (!newSizeValue.isBigInt()) {
-        throw std::runtime_error(
-            "TypeError: new size must be an integer"
-        );
+        throw TypeErrorException("new size must be an integer");
     }
 
     const auto newSize = newSizeValue.toBigInt();
 
     if (newSize < 0) {
-        throw std::runtime_error(
-            "ValueError: negative resize value"
-        );
+        throw ValueErrorException("negative resize value");
     }
 
     const qsizetype oldSize = data.size();

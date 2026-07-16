@@ -3,7 +3,7 @@
 //
 #include "ReversedDictIterator.h"
 
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 
 ReversedDictIterator::ReversedDictIterator(std::shared_ptr<const DictValue> dict)
     : dict(std::move(dict)),

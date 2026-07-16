@@ -248,7 +248,7 @@ namespace {
     }
 
     Value make_setitem_Method(const Value&) {
-        throw std::runtime_error("TypeError: 'tuple' object does not support item assignment");
+        throw TypeErrorException("'tuple' object does not support item assignment");
     }
 
     Value makeCountMethod(const Value& obj) {

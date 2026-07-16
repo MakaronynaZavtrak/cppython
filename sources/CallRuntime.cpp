@@ -13,21 +13,205 @@
 
 #include <unordered_set>
 
+#include "ClassUtils.h"
+#include "DictValue.h"
+#include "GeneratorValue.h"
+#include "Interpreter.h"
+#include "IteratorValue.h"
+#include "RangeValue.h"
+#include "TupleValue.h"
+#include "../exception/AttributeErrorException.h"
+#include "../exception/LookupErorException.h"
+#include "../exception/ReturnException.h"
+#include "../exception/TypeErrorException.h"
+#include "../exception/ValueErrorException.h"
+#include "../runtime/ArgValidation.h"
+
 //
 // Created by semyo on 03.05.2026.
 //
+
+void bindParams(const std::shared_ptr<Environment>& local,
+                const Value::FunctionPtr& func,
+                const std::vector<Value>& args,
+                const Kwargs& kwargs) {
+
+    std::unordered_set<QString> assigned;
+
+    // индекс varargs-параметра, если он есть
+    int varArgsIdx = -1;
+    int kwArgsIdx = -1;
+
+    // позиционно можно передать только то, что идёт ДО *args / голой * / **kwargs
+    size_t positionalLimit = func->params.size();
+
+    for (size_t i = 0; i < func->params.size(); ++i) {
+        const auto& p = func->params[i];
+        if (p.isVarArgs || p.isKwArgs || p.isKeywordOnly) {
+            positionalLimit = i;
+            break;
+        }
+    }
+
+    for (size_t i = 0; i < func->params.size(); ++i) {
+        if (func->params[i].isVarArgs) varArgsIdx = static_cast<int>(i);
+        if (func->params[i].isKwArgs)  kwArgsIdx = static_cast<int>(i);
+    }
+
+    if (varArgsIdx >= 0) {
+        positionalLimit = static_cast<size_t>(varArgsIdx);
+    } else if (kwArgsIdx >= 0) {
+        positionalLimit = static_cast<size_t>(kwArgsIdx);
+    }
+
+    // обычные позиционные
+    for (size_t i = 0; i < args.size() && i < positionalLimit; ++i) {
+        const QString& paramName = func->params[i].name;
+        local->set(paramName, args[i]);
+        assigned.insert(paramName);
+    }
+
+    // лишние позиционные -> *args
+    if (args.size() > positionalLimit) {
+
+        if (varArgsIdx < 0) {
+            throw TypeErrorException(
+                func->name + "() takes " + QString::number(positionalLimit) +
+                " positional arguments but " + QString::number(args.size()) + " were given"
+            );
+        }
+
+        std::vector extra(args.begin() + positionalLimit, args.end());
+
+        local->set(func->params[varArgsIdx].name,
+                   Value(std::make_shared<TupleValue>(extra)));
+        assigned.insert(func->params[varArgsIdx].name);
+    }
+    else if (varArgsIdx >= 0) {
+        // *args есть, но лишних аргументов нет — пустой кортеж
+        local->set(func->params[varArgsIdx].name,
+                   Value(std::make_shared<TupleValue>(std::vector<Value>{})));
+        assigned.insert(func->params[varArgsIdx].name);
+    }
+
+    // именованные
+    const auto kwDict = std::make_shared<DictValue>();
+    QStringList posOnlyViolations;
+
+    for (const auto& [name, value] : kwargs) {
+
+        bool found = false;
+        bool isPosOnlyName = false;
+
+        for (const auto& param : func->params) {
+
+            if (param.isVarArgs || param.isKwArgs) continue;
+
+            if (param.name == name) {
+
+                if (param.isPositionalOnly) {
+                    isPosOnlyName = true;
+                    break;
+                }
+
+                if (assigned.count(name)) {
+                    throw TypeErrorException(
+                        func->name + "() got multiple values for argument '" + name + "'"
+                    );
+                }
+
+                local->set(name, value);
+                assigned.insert(name);
+                found = true;
+                break;
+            }
+        }
+
+        if (isPosOnlyName) {
+
+            // при наличии **kwargs имя уходит туда — это законно в Python
+            if (kwArgsIdx >= 0) {
+                kwDict->setItem(Value(name), value);
+                continue;
+            }
+
+            posOnlyViolations.append(name);
+            continue;
+        }
+
+        if (!found) {
+
+            if (kwArgsIdx < 0) {
+                throw TypeErrorException(
+                    func->name + "() got an unexpected keyword argument '" + name + "'"
+                );
+            }
+
+            kwDict->setItem(Value(name), value);
+        }
+    }
+
+    if (!posOnlyViolations.isEmpty()) {
+        throw TypeErrorException(
+            func->name + "() got some positional-only arguments passed as keyword arguments: '"
+            + posOnlyViolations.join(", ") + "'"
+        );
+    }
+
+    if (kwArgsIdx >= 0) {
+        local->set(func->params[kwArgsIdx].name, Value(kwDict));
+        assigned.insert(func->params[kwArgsIdx].name);
+    }
+
+    // недостающие — дефолты
+    for (size_t i = 0; i < func->params.size(); ++i) {
+
+        const auto& param = func->params[i];
+
+        if (assigned.count(param.name)) continue;
+
+        if (i < func->defaults.size() && func->defaults[i].has_value()) {
+            local->set(param.name, func->defaults[i].value());
+            continue;
+        }
+
+        if (param.isKeywordOnly) {
+            throw TypeErrorException(
+                func->name + "() missing 1 required keyword-only argument: '" + param.name + "'"
+            );
+        }
+
+        throw TypeErrorException(
+            func->name + "() missing required positional argument: '" + param.name + "'"
+        );
+    }
+}
+
 Value call(const Value& callee,
            const std::vector<Value>& args,
            const Kwargs& kwargs,
            const std::shared_ptr<Environment>& env) {
 
-    if (std::holds_alternative<Value::BuiltinFunctionPtr>(callee.data)) {
-        const auto fn = std::get<Value::BuiltinFunctionPtr>(callee.data);
-        return fn->func(args, kwargs, env);
+    if (callee.isBuiltinFunction()) {
+
+        return callee.asBuiltinFunction()->func(args, kwargs, env);
     }
 
     if (const auto f = std::get_if<Value::FunctionPtr>(&callee.data)) {
-        return callFunction(*f, args, kwargs, env);
+
+        if ((*f)->isGenerator) {
+
+            const auto local = std::make_shared<Environment>((*f)->closure);
+            bindParams(local, *f, args, kwargs);
+
+            auto gen = std::make_shared<GeneratorValue>();
+            gen->func = *f;
+            gen->env = local;
+
+            return Value(gen);
+        }
+
+        return callFunction(*f, args, kwargs, nullptr);
     }
 
     if (const auto c = std::get_if<Value::ClassPtr>(&callee.data)) {
@@ -46,7 +230,7 @@ Value call(const Value& callee,
         return call(Value((*cm)->func), args, kwargs, env);
     }
 
-    throw std::runtime_error("Object is not callable");
+    throw TypeErrorException("Object is not callable");
 }
 
 Value callFunction(const Value::FunctionPtr& func,
@@ -59,71 +243,20 @@ Value callFunction(const Value::FunctionPtr& func,
     if (envOverride) {
         for (auto it = envOverride->variables.cbegin();
             it != envOverride->variables.cend(); ++it) {
-
             local->set(it.key(), it.value());
         }
     }
 
-    std::unordered_set<QString> assigned;
+    bindParams(local, func, args, kwargs);
 
-    // позиционные аргументы
-    for (size_t i = 0; i < args.size(); ++i) {
-
-        if (i >= func->params.size()) {
-            throw std::runtime_error("Too many positional arguments");
-        }
-
-        const QString& paramName = func->params[i].name;
-
-        local->set(paramName, args[i]);
-        assigned.insert(paramName);
-    }
-
-    // именованные аргументы
-    for (const auto& [name, value] : kwargs) {
-
-        bool found = false;
-
-        for (const auto& param : func->params) {
-
-            if (param.name == name) {
-
-                if (assigned.count(name)) {
-                    throw std::runtime_error(
-                    "Multiple values for argument: "+ name.toStdString()
-                    );
-                }
-
-                local->set(name, value);
-
-                assigned.insert(name);
-
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            throw std::runtime_error("Unknown keyword argument: " + name.toStdString());
-        }
-    }
-
-    // отсутствие аргументов
-    for (const auto& param : func->params) {
-
-        if (!assigned.count(param.name)) {
-            throw std::runtime_error("Missing argument: " + param.name.toStdString());
-        }
-    }
+    const int srcId = func->body.empty() ? 0 : func->body[0]->sourceId;
+    CallStackGuard guard(func->name, srcId);
 
     try {
-        Value result;
-
         for (const auto& stmt : func->body) {
-            result = stmt->eval(local);
+            Interpreter::executeNode(stmt, local);
         }
-
-        return result;
+        return Value();
     }
     catch (ReturnException& e) {
         return e.getValue();
@@ -151,17 +284,28 @@ Value constructClass(const Value::ClassPtr& cls,
 
     if (cls == Runtime::strClass) {
 
+        expectArgsRange(args, 0, 1, "str");
+
         if (args.empty()) {
             return Value("");
         }
 
-        if (args.size() > 1) {
-            throw std::runtime_error(
-                "str() takes at most 1 argument"
-            );
-        }
+        const Value& obj = args[0];
 
-        return Value(args[0].toString());
+        try {
+
+            Value strMethod = getAttrValue(obj, "__str__");
+            Value result = call(strMethod, {}, {}, nullptr);
+
+            if (!result.isString()) {
+                throw TypeErrorException("__str__ returned non-string");
+            }
+
+            return result;
+
+        } catch (const AttributeErrorException&) {
+            return Value(obj.toString());
+        }
     }
 
     if (cls == Runtime::bytesClass) {
@@ -183,14 +327,49 @@ Value constructClass(const Value::ClassPtr& cls,
         );
     }
 
+    if (cls == Runtime::rangeClass) {
+
+        for (const auto& a : args) {
+            if (!a.isBigInt() && !a.isBool()) {
+                throw TypeErrorException(
+                    "'" + a.repr() + "' object cannot be interpreted as an integer"
+                );
+            }
+        }
+
+        Value::BigInt start = 0, stop, step = 1;
+
+        if (args.size() == 1) {
+            stop = args[0].toBigInt();
+        } else if (args.size() == 2) {
+            start = args[0].toBigInt();
+            stop = args[1].toBigInt();
+        } else if (args.size() == 3) {
+            start = args[0].toBigInt();
+            stop = args[1].toBigInt();
+            step = args[2].toBigInt();
+        } else {
+            throw TypeErrorException("range expected at most 3 arguments, got " + QString::number(args.size()));
+        }
+
+        return Value(std::make_shared<RangeValue>(start, stop, step));
+    }
+
     const auto instance = std::make_shared<InstanceValue>(cls);
+
+    if (PythonException::isSubclass(cls, Runtime::baseExceptionClass)) {
+        instance->fields["args"] = Value(
+            std::make_shared<TupleValue>(args)
+        );
+    }
 
     try {
         const Value init = getAttrValue(Value(instance), "__init__");
         call(init, args, kwargs, env);
-    } catch (...) {
+    } catch (const AttributeErrorException&) {
+
         if (!args.empty()) {
-            throw std::runtime_error("Class takes no arguments");
+            throw TypeErrorException("Class takes no arguments");
         }
     }
 
@@ -210,6 +389,7 @@ Value callBoundMethod(const Value::BoundMethodPtr &bm,
 
     if (const auto f =
         std::get_if<Value::FunctionPtr>(&bm->callable.data)) {
+
         const auto local = std::make_shared<Environment>((*f)->closure);
 
         local->set("__class__", Value(bm->ownerClass));
@@ -223,7 +403,7 @@ Value callBoundMethod(const Value::BoundMethodPtr &bm,
         return (*b)->func(newArgs, kwargs, nullptr);
     }
 
-    throw std::runtime_error("Invalid bound method callable");
+    throw TypeErrorException("object is not callable");
 }
 
 QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwargs) {
@@ -246,22 +426,16 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
 
             } else {
 
-                throw std::runtime_error(
-                    "Unknown keyword argument: "
-                    + name.toStdString()
+                throw ValueErrorException(
+                "Unknown keyword argument: " + name
                 );
             }
         }
 
+        expectArgsRange(args, 0, 2, "bytes");
+
         if (args.empty()) {
-            return QByteArray();
-        }
-
-        if (args.size() > 2) {
-
-            throw std::runtime_error(
-                "bytes() takes at most 2 arguments"
-            );
+            return {};
         }
 
         const Value& obj = args[0];
@@ -270,9 +444,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
 
             if (encoding.has_value()) {
 
-                throw std::runtime_error(
-                    "TypeError: encoding without a string argument"
-                );
+                throw TypeErrorException("encoding without a string argument");
             }
 
             return obj.asBytes("bytes")->bytes();
@@ -281,9 +453,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
         if (obj.isByteArray()) {
 
             if (encoding.has_value()) {
-                throw std::runtime_error(
-                    "TypeError: encoding without a string argument"
-                );
+                throw TypeErrorException("encoding without a string argument");
             }
 
             return obj.asByteArray("bytes")->bytes();
@@ -297,22 +467,13 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
 
             if (!result.isBytes()) {
 
-                throw std::runtime_error(
-                    "TypeError: __bytes__ returned non-bytes"
-                );
+                throw TypeErrorException("__bytes__ returned non-bytes");
             }
 
             return result.asBytes()->bytes();
 
         }
-        catch (const std::runtime_error& e) {
-
-            const std::string msg = e.what();
-
-            if (msg.find("AttributeError") == std::string::npos) {
-                throw;
-            }
-        }
+        catch (const AttributeErrorException& e) {}
 
         if (obj.isString()) {
 
@@ -328,19 +489,13 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
                 //TODO: if (errors.has_value()) {}
             } else {
 
-                throw std::runtime_error(
-                    "TypeError: string argument without an encoding"
-                );
+                throw TypeErrorException("string argument without an encoding");
             }
 
             // TODO: пока поддерживается только utf-8
-            if (
-                actualEncoding != "utf-8" &&
-                actualEncoding != "utf8") {
+            if (actualEncoding != "utf-8" && actualEncoding != "utf8") {
 
-                throw std::runtime_error(
-                    "LookupError: unknown encoding"
-                );
+                throw LookupErrorException("unknown encoding");
             }
 
             return  obj.toString().toUtf8();
@@ -354,7 +509,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
                 throw;
             }
 
-            return QByteArray(count.convert_to<long long>(), '\0');
+            return {count.convert_to<long long>(), '\0'};
         }
 
         if (obj.isIterable() || supportsIter(obj)) {
@@ -366,9 +521,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
             Value iterObj = call(iterMethod, {}, {}, nullptr);
 
             if (!std::holds_alternative<Value::IteratorPtr>(iterObj.data)) {
-                throw std::runtime_error(
-                    "__iter__ returned non-iterator"
-                );
+                throw TypeErrorException("__iter__ returned non-iterator");
             }
 
             auto iterator = std::get<Value::IteratorPtr>(iterObj.data);
@@ -380,9 +533,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
                 auto value = item.toBigInt();
 
                 if (value < 0 || value > 255) {
-                    throw std::runtime_error(
-                        "bytes must be in range(0, 256)"
-                    );
+                    throw ValueErrorException("bytes must be in range(0, 256)");
                 }
 
                 result.append(
@@ -395,9 +546,7 @@ QByteArray constructBytesData(const std::vector<Value> &args, const Kwargs &kwar
             return result;
         }
 
-        throw std::runtime_error(
-            "TypeError: cannot convert object to bytes"
-        );
+        throw TypeErrorException("cannot convert object to bytes");
 
 
 }

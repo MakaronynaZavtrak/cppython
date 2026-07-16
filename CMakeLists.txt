@@ -45,8 +45,8 @@ add_executable(cppython main.cpp
         headers/ReprMixin.h
         headers/PropertyValue.h
         sources/PropertyValue.cpp
-        headers/Runtime.h
-        sources/Runtime.cpp
+        runtime/Runtime.h
+        runtime/Runtime.cpp
         headers/StaticMethodValue.h
         headers/ClassMethodValue.h
         sources/StaticMethodValue.cpp
@@ -61,7 +61,7 @@ add_executable(cppython main.cpp
         headers/TupleValue.h
         headers/ListIterator.h
         headers/TupleIterator.h
-        headers/StopIterationException.h
+        exception/StopIterationException.h
         headers/DictKeysView.h
         sources/DictKeysView.cpp
         headers/DictValuesView.h
@@ -126,7 +126,131 @@ add_executable(cppython main.cpp
         headers/ReversedDictIterator.h
         sources/ReversedDictIterator.cpp
         headers/ReversedSequenceIterator.h
-        sources/ReversedSequenceIterator.cpp)
+        sources/ReversedSequenceIterator.cpp
+        exception/PythonException.h
+        exception/TypeErrorException.h
+        exception/RuntimeErrorException.h
+        exception/ValueErrorException.h
+        exception/AttributeErrorException.h
+        exception/KeyErrorException.h
+        exception/IndexErrorException.h
+        exception/ReturnException.h
+        exception/BreakException.h
+        exception/ContinueException.h
+        exception/ArithmeticErrorException.h
+        sources/PythonException.cpp
+        exception/UnicodeDecodeErrorException.h
+        exception/LookupErorException.h
+        exception/NameErrorException.h
+        exception/SyntaxErrorException.h
+        exception/OverflowErrorException.h
+        runtime/classes/RegisterClasses.h
+        runtime/classes/RegisterClasses.cpp
+        runtime/exceptions/RegisterExceptionClasses.h
+        runtime/exceptions/RegisterExceptionClasses.cpp
+        ast/ASTNode.h
+        ast/varNode/VarNode.cpp
+        ast/varNode/VarNode.h
+        ast/valueNode/ValueNode.cpp
+        ast/valueNode/ValueNode.h
+        ast/unaryOpNode/UnaryOpNode.cpp
+        ast/unaryOpNode/UnaryOpNode.h
+        ast/binOpNode/BinOpNode.cpp
+        ast/binOpNode/BinOpNode.h
+        ast/logicalOpNode/LogicalOpNode.cpp
+        ast/logicalOpNode/LogicalOpNode.h
+        ast/assignNode/AssignNode.cpp
+        ast/assignNode/AssignNode.h
+        ast/ifNode/IfNode.cpp
+        ast/ifNode/IfNode.h
+        ast/breakNode/BreakNode.cpp
+        ast/breakNode/BreakNode.h
+        ast/continueNode/ContinueNode.cpp
+        ast/continueNode/ContinueNode.h
+        ast/whileNode/WhileNode.cpp
+        ast/whileNode/WhileNode.h
+        ast/compareNode/CompareNode.cpp
+        ast/compareNode/CompareNode.h
+        ast/functionDefNode/FunctionDefNode.cpp
+        ast/functionDefNode/FunctionDefNode.h
+        ast/callNode/CallNode.cpp
+        ast/callNode/CallNode.h
+        ast/returnNode/ReturnNode.cpp
+        ast/returnNode/ReturnNode.h
+        ast/passNode/PassNode.cpp
+        ast/passNode/PassNode.h
+        ast/globalNode/GlobalNode.cpp
+        ast/globalNode/GlobalNode.h
+        ast/nonlocalNode/NonlocalNode.cpp
+        ast/nonlocalNode/NonlocalNode.h
+        ast/classDefNode/ClassDefNode.cpp
+        ast/classDefNode/ClassDefNode.h
+        ast/attributeAccessNode/AttributeAccessNode.cpp
+        ast/attributeAccessNode/AttributeAccessNode.h
+        ast/attributeAssignNode/AttributeAssignNode.cpp
+        ast/attributeAssignNode/AttributeAssignNode.h
+        ast/starredNode/StarredNode.cpp
+        ast/starredNode/StarredNode.h
+        ast/listNode/ListNode.cpp
+        ast/listNode/ListNode.h
+        ast/indexNode/IndexNode.cpp
+        ast/indexNode/IndexNode.h
+        ast/indexAssignNode/IndexAssignNode.cpp
+        ast/indexAssignNode/IndexAssignNode.h
+        ast/lambdaNode/LambdaNode.cpp
+        ast/lambdaNode/LambdaNode.h
+        ast/dictElementNode/DictElementNode.h
+        ast/dictElementNode/dictPairNode/DictPairNode.cpp
+        ast/dictElementNode/dictPairNode/DictPairNode.h
+        ast/dictElementNode/dictUnpackNode/DictUnpackNode.cpp
+        ast/dictElementNode/dictUnpackNode/DictUnpackNode.h
+        ast/dictNode/DictNode.cpp
+        ast/dictNode/DictNode.h
+        ast/tupleNode/TupleNode.cpp
+        ast/tupleNode/TupleNode.h
+        ast/forNode/ForNode.cpp
+        ast/forNode/ForNode.h
+        ast/setNode/SetNode.cpp
+        ast/setNode/SetNode.h
+        ast/sliceNode/SliceNode.cpp
+        ast/sliceNode/SliceNode.h
+        ast/deleteNode/DeleteNode.cpp
+        ast/deleteNode/DeleteNode.h
+        ast/augAssignNode/AugAssignNode.cpp
+        ast/augAssignNode/AugAssignNode.h
+        ast/tryNode/TryNode.cpp
+        ast/tryNode/TryNode.h
+        ast/raiseNode/RaiseNode.cpp
+        ast/raiseNode/RaiseNode.h
+        ast/tupleAssignNode/TupleAssignNode.cpp
+        ast/tupleAssignNode/TupleAssignNode.h
+        ast/yieldNode/YieldNode.cpp
+        ast/yieldNode/YieldNode.h
+        service/yieldSignal.h
+        headers/GeneratorValue.h
+        sources/GeneratorValue.cpp
+        service/ResumeContext.h
+        service/ExecutionHelpers.h
+        ast/yieldFromNode/YieldFromNode.cpp
+        ast/yieldFromNode/YieldFromNode.h
+        service/GeneratorControl.h
+        service/GeneratorControl.cpp
+        service/GeneratorRunningGuard.h
+        headers/RangeValue.h
+        sources/RangeValue.cpp
+        headers/RangeIterator.h
+        sources/RangeIterator.cpp
+        runtime/builtins/range/RangeMethods.cpp
+        runtime/builtins/range/RangeMethods.h
+        headers/ComprehensionClause.h
+        ast/listCompNode/ListCompNode.cpp
+        ast/listCompNode/ListCompNode.h
+        ast/setCompNode/SetCompNode.cpp
+        ast/setCompNode/SetCompNode.h
+        ast/dictCompNode/DictCompNode.cpp
+        ast/dictCompNode/DictCompNode.h
+        ast/genExprNode/GenExprNode.cpp
+        ast/genExprNode/GenExprNode.h)
 
 target_include_directories(cppython PRIVATE headers)
 

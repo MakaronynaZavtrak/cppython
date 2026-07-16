@@ -1390,9 +1390,7 @@ namespace {
 
                 if (sep.size() != 1) {
 
-                    throw std::runtime_error(
-                        "ValueError: sep must be length 1"
-                    );
+                    throw ValueErrorException("sep must be length 1");
                 }
 
                 if (args.size() == 1) {

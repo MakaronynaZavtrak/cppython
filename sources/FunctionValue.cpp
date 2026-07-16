@@ -25,9 +25,10 @@ QString FunctionValue::toString() const {
        .arg(reinterpret_cast<quintptr>(this), 0, 16);
 
     if (ownerClass) {
-        QString ownerName = ownerClass->name;
 
-        if (!ownerName.isEmpty()) {
+        if (QString ownerName = ownerClass->name;
+            !ownerName.isEmpty()) {
+
             return QString("<function %1.%2 at %3>")
                 .arg(ownerName, name, addr);
         }

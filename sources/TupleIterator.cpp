@@ -3,7 +3,7 @@
 //
 #include "TupleIterator.h"
 
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 #include "TupleValue.h"
 
 Value TupleIterator::next() {

@@ -4,6 +4,8 @@
 #include "Environment.h"
 #include "Lexer.h"
 
+class SyntaxErrorException;
+class PythonException;
 class ASTNode;
 /**
  * @class Interpreter
@@ -49,6 +51,13 @@ class Interpreter {
          */
         static void executeCode(const std::string& code, Lexer& lexer, const std::shared_ptr<Environment> &env);
 
+        static void printTraceback(const PythonException& e);
+
+        static void printSyntaxError(const SyntaxErrorException& e);
+
+        static bool hasUnclosedBrackets(const std::vector<std::string>& lines);
+
+        static bool hasDefiniteSyntaxError(const std::string& code, Lexer& lexer);
 
 };
 #endif //INTERPRETER_H

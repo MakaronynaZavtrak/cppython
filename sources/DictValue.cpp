@@ -10,8 +10,10 @@
 #include "DictKeysView.h"
 #include "DictValuesView.h"
 #include "ReversedDictIterator.h"
-#include "StopIterationException.h"
+#include "../exception/StopIterationException.h"
 #include "TupleValue.h"
+#include "../exception/KeyErrorException.h"
+#include "../exception/TypeErrorException.h"
 
 DictValue:: DictValue(const QHash<Value, Value>& items,
                       const QVector<Value>& order)
@@ -49,11 +51,11 @@ QString DictValue::repr() const {
 Value DictValue::getItem(const Value& key) const {
 
       if (!key.isHashable()) {
-            throw std::runtime_error("TypeError: unhashable type");
+            throw TypeErrorException("unhashable type");
       }
 
       if (!elements.contains(key)) {
-            throw std::runtime_error("KeyError: " + key.toString().toStdString());
+            throw KeyErrorException(key.toString());
       }
 
       return elements[key];
@@ -62,7 +64,7 @@ Value DictValue::getItem(const Value& key) const {
 void DictValue::setItem(const Value &key, const Value &value) {
 
       if (!key.isHashable()) {
-            throw std::runtime_error("TypeError: unhashable type");
+            throw TypeErrorException("unhashable type");
       }
 
       if (!elements.contains(key))
@@ -83,7 +85,7 @@ bool DictValue::hasKey(const Value &key) const {
 Value DictValue::get(const Value &key, const Value &defaultValue) const {
 
       if (!key.isHashable()) {
-            throw std::runtime_error("TypeError: unhashable type");
+            throw TypeErrorException("unhashable type");
       }
 
       if (!elements.contains(key)) {
@@ -121,7 +123,7 @@ Value DictValue::pop(const Value& key, const Value* defaultValue) {
             return *defaultValue;
       }
 
-      throw std::runtime_error("KeyError: " + key.toString().toStdString());
+      throw KeyErrorException(key.toString());
 }
 
 void DictValue::update(const std::shared_ptr<DictValue>& other) {
@@ -150,7 +152,7 @@ Value DictValue::setdefault(const Value& key, const Value& defaultValue) {
 Value DictValue::popitem() {
 
       if (order.empty()) {
-            throw std::runtime_error("KeyError: 'popitem(): dictionary is empty'");
+            throw TypeErrorException("dictionary is empty'");
       }
 
       const Value key = order.back();
@@ -236,9 +238,7 @@ Value DictValue::fromKeys(
 Value DictValue::bitOr(const Value& other) const {
 
       if (!other.isDict()) {
-            throw std::runtime_error(
-                "TypeError: unsupported operand type(s) for |"
-            );
+            throw TypeErrorException("unsupported operand type(s) for |");
       }
 
       const auto result =
@@ -255,9 +255,7 @@ Value DictValue::bitOr(const Value& other) const {
 Value DictValue::ior(const Value& other) {
 
       if (!other.isDict()) {
-            throw std::runtime_error(
-                "TypeError: unsupported operand type(s) for |="
-            );
+            throw TypeErrorException("unsupported operand type(s) for |=");
       }
 
       update(other.asDict());
@@ -300,9 +298,7 @@ bool DictValue::notEqual(const Value& other) const {
 Value DictValue::ror(const Value& other) const {
 
       if (!other.isDict()) {
-            throw std::runtime_error(
-                "TypeError: unsupported operand type(s) for |"
-            );
+            throw TypeErrorException("unsupported operand type(s) for |");
       }
 
       return other.asDict()->bitOr(
@@ -317,7 +313,7 @@ Value DictValue::ror(const Value& other) const {
 bool DictValue::contains(const Value& key) const {
 
       if (!key.isHashable()) {
-            throw std::runtime_error("TypeError: unhashable type");
+            throw TypeErrorException("unhashable type");
       }
 
       return elements.contains(key);
@@ -326,13 +322,11 @@ bool DictValue::contains(const Value& key) const {
 void DictValue::delItem(const Value& key) {
 
       if (!key.isHashable()) {
-            throw std::runtime_error("TypeError: unhashable type");
+            throw TypeErrorException("unhashable type");
       }
 
       if (!elements.contains(key)) {
-            throw std::runtime_error(
-                "KeyError: " + key.toString().toStdString()
-            );
+            throw KeyErrorException(key.toString());
       }
 
       elements.remove(key);
