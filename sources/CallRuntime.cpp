@@ -42,12 +42,22 @@ void bindParams(const std::shared_ptr<Environment>& local,
     int varArgsIdx = -1;
     int kwArgsIdx = -1;
 
+    // позиционно можно передать только то, что идёт ДО *args / голой * / **kwargs
+    size_t positionalLimit = func->params.size();
+
+    for (size_t i = 0; i < func->params.size(); ++i) {
+        const auto& p = func->params[i];
+        if (p.isVarArgs || p.isKwArgs || p.isKeywordOnly) {
+            positionalLimit = i;
+            break;
+        }
+    }
+
     for (size_t i = 0; i < func->params.size(); ++i) {
         if (func->params[i].isVarArgs) varArgsIdx = static_cast<int>(i);
         if (func->params[i].isKwArgs)  kwArgsIdx = static_cast<int>(i);
     }
 
-    size_t positionalLimit = func->params.size();
     if (varArgsIdx >= 0) {
         positionalLimit = static_cast<size_t>(varArgsIdx);
     } else if (kwArgsIdx >= 0) {
@@ -86,16 +96,23 @@ void bindParams(const std::shared_ptr<Environment>& local,
 
     // именованные
     const auto kwDict = std::make_shared<DictValue>();
+    QStringList posOnlyViolations;
 
     for (const auto& [name, value] : kwargs) {
 
         bool found = false;
+        bool isPosOnlyName = false;
 
         for (const auto& param : func->params) {
 
             if (param.isVarArgs || param.isKwArgs) continue;
 
             if (param.name == name) {
+
+                if (param.isPositionalOnly) {
+                    isPosOnlyName = true;
+                    break;
+                }
 
                 if (assigned.count(name)) {
                     throw TypeErrorException(
@@ -110,6 +127,18 @@ void bindParams(const std::shared_ptr<Environment>& local,
             }
         }
 
+        if (isPosOnlyName) {
+
+            // при наличии **kwargs имя уходит туда — это законно в Python
+            if (kwArgsIdx >= 0) {
+                kwDict->setItem(Value(name), value);
+                continue;
+            }
+
+            posOnlyViolations.append(name);
+            continue;
+        }
+
         if (!found) {
 
             if (kwArgsIdx < 0) {
@@ -120,6 +149,13 @@ void bindParams(const std::shared_ptr<Environment>& local,
 
             kwDict->setItem(Value(name), value);
         }
+    }
+
+    if (!posOnlyViolations.isEmpty()) {
+        throw TypeErrorException(
+            func->name + "() got some positional-only arguments passed as keyword arguments: '"
+            + posOnlyViolations.join(", ") + "'"
+        );
     }
 
     if (kwArgsIdx >= 0) {
@@ -137,6 +173,12 @@ void bindParams(const std::shared_ptr<Environment>& local,
         if (i < func->defaults.size() && func->defaults[i].has_value()) {
             local->set(param.name, func->defaults[i].value());
             continue;
+        }
+
+        if (param.isKeywordOnly) {
+            throw TypeErrorException(
+                func->name + "() missing 1 required keyword-only argument: '" + param.name + "'"
+            );
         }
 
         throw TypeErrorException(

@@ -12669,6 +12669,107 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    str(e)",
       ""], "\"could not convert string to float: 'abc'\""),
 
+    # *args + keyword-only с дефолтом
+    (["def f(*args, key=1):",
+      "    return (args, key)",
+      "", "f(1, 2)"], "((1, 2), 1)"),
+
+    (["def f(*args, key=1):",
+      "    return (args, key)",
+      "",
+      "f(1, 2, key=5)"], "((1, 2), 5)"),
+
+    (["def f(*args, key=1):",
+      "    return (args, key)",
+      "",
+      "f()"], "((), 1)"),
+
+    # голая * — разделитель, всё после неё только по имени
+    (["def f(a, *, b):",
+      "    return (a, b)",
+      "",
+      "f(1, b=2)"], "(1, 2)"),
+
+    (["def f(a, *, b=10):",
+      "    return (a, b)",
+      "",
+      "f(1)"], "(1, 10)"),
+
+    (["def f(*, a=1, b=2):",
+      "    return (a, b)",
+      "",
+      "f(b=9)"], "(1, 9)"),
+
+    # несколько keyword-only
+    (["def f(*args, x=1, y=2):",
+      "    return (args, x, y)",
+      "",
+      "f(0, y=9)"], "((0,), 1, 9)"),
+
+    # keyword-only + **kwargs
+    (["def f(a, *, b=1, **kw):",
+      "    return (a, b, kw)",
+      "",
+      "f(1, b=2, c=3)"], "(1, 2, {'c': 3})"),
+
+    # полное комбо
+    (["def f(a, b=2, *args, c, d=4, **kw):",
+      "    return (a, b, args, c, d, kw)",
+      "",
+      "f(1, 2, 3, c=9, e=5)"], "(1, 2, (3,), 9, 4, {'e': 5})"),
+
+    # lambda с keyword-only
+    (["f = lambda *, a=1: a",
+      "f()"], "1"),
+
+    (["f = lambda *args, k=0: (args, k)",
+      "f(1, k=7)"], "((1,), 7)"),
+
+    # positional-only параметры
+    (["def f(a, b, /):",
+      "    return a + b",
+      "",
+      "f(1, 2)"], "3"),
+
+    (["def f(a, /, b):",
+      "    return (a, b)",
+      "",
+      "f(1, 2)"], "(1, 2)"),
+
+    (["def f(a, /, b):",
+      "    return (a, b)",
+      "",
+      "f(1, b=2)"], "(1, 2)"),
+
+    (["def f(a, /, b=5):",
+      "    return (a, b)",
+      "",
+      "f(1)"], "(1, 5)"),
+
+    (["def f(a, /, *args):",
+      "    return (a, args)",
+      "",
+      "f(1, 2, 3)"], "(1, (2, 3))"),
+
+    (["def f(a, /, b, *, c):",
+      "    return (a, b, c)",
+      "",
+      "f(1, 2, c=3)"], "(1, 2, 3)"),
+
+    (["def f(a=1, /, b=2):",
+      "    return (a, b)",
+      "",
+      "f()"], "(1, 2)"),
+
+    (["f = lambda a, /, b: a + b",
+      "f(1, 2)"], "3"),
+
+    # имя positional-only уходит в **kwargs — это законно
+    (["def f(a, /, **kw):",
+      "    return (a, kw)",
+      "",
+      "f(1, a=2)"], "(1, {'a': 2})"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

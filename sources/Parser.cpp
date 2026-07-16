@@ -2045,8 +2045,34 @@ std::vector<Param> Parser::parseParamList(const bool isLambda) {
     bool seenDefault = false;
     bool seenVarArgs = false;
     bool seenKwArgs = false;
+    bool seenPositionalOnly = false;
 
     while (true) {
+
+        // / — разделитель positional-only
+        if (matchAndAdvance(TOKEN_OP, "/")) {
+
+            if (seenPositionalOnly) {
+                throw makeSyntaxError("/ may appear only once", peek());
+            }
+
+            if (seenVarArgs) {
+                throw makeSyntaxError("/ must be ahead of *", peek());
+            }
+
+            if (params.empty()) {
+                throw makeSyntaxError("at least one argument must precede /", peek());
+            }
+
+            for (auto& p : params) {
+                p.isPositionalOnly = true;
+            }
+
+            seenPositionalOnly = true;
+
+            if (matchAndAdvance(TOKEN_OP, ",")) continue;
+            break;
+        }
 
         // **kwargs
         if (matchAndAdvance(TOKEN_OP, "**")) {
@@ -2080,23 +2106,22 @@ std::vector<Param> Parser::parseParamList(const bool isLambda) {
                 throw makeSyntaxError("multiple * arguments are not allowed", peek());
             }
 
-            if (peek().type != TOKEN_ID)
-                throw makeSyntaxError("Expected parameter name after '*'", peek());
+            if (peek().type == TOKEN_ID) {
+                Param param;
+                param.name = advance().value;
+                param.isVarArgs = true;
+                params.push_back(param);
+            }
+            // иначе — голая *, параметр не создаём, это просто разделитель
 
-            Param param;
-            param.name = advance().value;
-            param.isVarArgs = true;
-
-            params.push_back(param);
             seenVarArgs = true;
+            seenDefault = false;   // после * правило "дефолт → только дефолты" не действует
 
             if (matchAndAdvance(TOKEN_OP, ",")) continue;
+
             break;
         }
 
-        if (seenVarArgs) {
-            throw makeSyntaxError("parameters after *args are not supported", peek());
-        }
 
         // обычный параметр
         if (peek().type != TOKEN_ID)
@@ -2109,6 +2134,7 @@ std::vector<Param> Parser::parseParamList(const bool isLambda) {
 
         Param param;
         param.name = advance().value;
+        param.isKeywordOnly = seenVarArgs;
 
         // аннотация типа — только для def, в lambda ':' завершает список параметров
         if (!isLambda && matchAndAdvance(TOKEN_OP, ":")) {
@@ -2123,7 +2149,7 @@ std::vector<Param> Parser::parseParamList(const bool isLambda) {
             param.defaultExpr = parseOr();
             seenDefault = true;
         }
-        else if (seenDefault) {
+        else if (seenDefault && !param.isKeywordOnly) {
             throw makeSyntaxError(
                 "parameter without a default follows parameter with a default",
                 nameTok
@@ -2134,6 +2160,21 @@ std::vector<Param> Parser::parseParamList(const bool isLambda) {
 
         if (matchAndAdvance(TOKEN_OP, ",")) continue;
         break;
+    }
+
+    if (seenVarArgs) {
+
+        bool hasVarArgsParam = false;
+        bool hasKeywordOnly = false;
+
+        for (const auto& p : params) {
+            if (p.isVarArgs)     hasVarArgsParam = true;
+            if (p.isKeywordOnly) hasKeywordOnly = true;
+        }
+
+        if (!hasVarArgsParam && !hasKeywordOnly) {
+            throw makeSyntaxError("named arguments must follow bare *", peek());
+        }
     }
 
     return params;

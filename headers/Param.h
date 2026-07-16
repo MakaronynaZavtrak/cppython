@@ -13,5 +13,7 @@ struct Param {
     std::shared_ptr<ASTNode> defaultExpr = nullptr;
     bool isVarArgs = false;
     bool isKwArgs = false;
+    bool isKeywordOnly = false;
+    bool isPositionalOnly = false;
 };
 #endif //CPPYTHON_PARAM_H
