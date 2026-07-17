@@ -9,6 +9,7 @@
 #include "../exception/PythonException.h"
 #include "../runtime/Runtime.h"
 #include "../runtime/exceptions/RegisterExceptionClasses.h"
+#include <isocline.h>
 
 
 /**
@@ -241,6 +242,49 @@ void Interpreter::printTraceback(const PythonException& e) {
     std::cout << e.what() << "\n";
 }
 
+extern "C" bool cppython_is_input_complete(const char* input) {
+
+    if (input == nullptr) return true;
+
+    const std::string code(input);
+
+    if (code.empty()) return true;
+
+    std::vector<std::string> lines;
+    std::string cur;
+    for (const char ch : code) {
+        if (ch == '\n') { lines.push_back(cur); cur.clear(); }
+        else cur += ch;
+    }
+    lines.push_back(cur);
+
+    // незакрытые скобки — ждём
+    if (Interpreter::hasUnclosedBrackets(lines)) {
+        return false;
+    }
+
+    const std::string& last = lines.back();
+
+    if (!last.empty() && last.back() == ':') {
+        return false;
+    }
+
+    // декоратор — ждём def
+    if (!last.empty() && last[0] == '@') {
+        return false;
+    }
+
+    if (lines.size() > 1) {
+
+        return std::all_of(
+            last.begin(),
+            last.end(),
+            [](const char ch) { return ch == ' ' || ch == '\t'; });
+    }
+
+    return true;
+}
+
 
 /**
  * Запускает основной цикл интерпретатора Python. Этот метод непрерывно принимает
@@ -261,80 +305,41 @@ void Interpreter::run(int argc, char* argv[]) {
     registerExceptionClasses(globalEnv);
 
     Lexer lexer;
-    std::vector<std::string> buffer;
-    bool isInBlock = false;
+
+    ic_set_prompt_marker(">>> ", "... ");
+    ic_enable_multiline(true);
+    ic_set_is_complete_fun(&cppython_is_input_complete);
+    ic_set_history(nullptr, -1);
+    ic_enable_auto_tab(true);
+    ic_set_default_completer(nullptr, nullptr);
+    ic_enable_completion_preview(false);
+    ic_enable_hint(false);
+
+    std::string buffer;
 
     while (true) {
-        std::cout << ((isInBlock || !buffer.empty()) ? CONTINUATION_PROMPT : MAIN_PROMPT);
 
-        std::string line;
-        if (!std::getline(std::cin, line)) break;
+        char* raw = ic_readline("");
+        if (raw == nullptr) break;
 
-        if (!isInBlock && buffer.empty() && isExitCommand(line)) break;
+        std::string line(raw);
+        ic_free(raw);
 
-        if (isInBlock) {
-
-            if (line.empty()) {
-                // пустая строка завершает блок — НО только если скобки сбалансированы
-                if (!hasUnclosedBrackets(buffer)) {
-                    isInBlock = false;
-                } else {
-                    buffer.push_back(line);
-                    continue;
-                }
-            } else {
-
-                buffer.push_back(line);
-
-                if (!hasUnclosedBrackets(buffer) &&
-                    hasDefiniteSyntaxError(assembleCode(buffer), lexer)) {
-
-                    executeCode(assembleCode(buffer), lexer, globalEnv);
-                    buffer.clear();
-                    isInBlock = false;
-                    }
-
-                continue;
-            }
-
-        } else {
-
-            if (line.empty()) {
-
-                if (buffer.empty()) continue;
-
-                executeCode(assembleCode(buffer), lexer, globalEnv);
-                buffer.clear();
-                continue;
-            }
-
-            buffer.push_back(line);
-
-            // незакрытые скобки — продолжаем ввод, не выполняем
-            if (hasUnclosedBrackets(buffer)) {
-                continue;
-            }
-
-            if (hasDefiniteSyntaxError(assembleCode(buffer), lexer)) {
-                executeCode(assembleCode(buffer), lexer, globalEnv);
-                buffer.clear();
-                continue;
-            }
-
-            if (!line.empty() && line.back() == ':') {
-                isInBlock = true;
-                continue;
-            }
-
-            const std::string& prev = buffer.back();
-            if (!prev.empty() && prev[0] == '@') {
-                isInBlock = true;
-                continue;
-            }
+        if (buffer.empty()) {
+            if (line.empty()) continue;
+            if (isExitCommand(line)) break;
+            buffer = line;
+        }
+        else {
+            buffer += "\n";
+            buffer += line;
         }
 
-        std::string code = assembleCode(buffer);
-        executeCode(code, lexer, globalEnv);
+        if (!cppython_is_input_complete(buffer.c_str())) {
+            continue;
+        }
+
+        executeCode(buffer, lexer, globalEnv);
         buffer.clear();
     }
 }

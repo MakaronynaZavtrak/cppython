@@ -24,6 +24,8 @@ class Interpreter {
             const std::shared_ptr<ASTNode>& node,
             const std::shared_ptr<Environment>& env);
 
+    static bool hasUnclosedBrackets(const std::vector<std::string>& lines);
+
     private:
         static constexpr const char* MAIN_PROMPT = ">>> ";
         static constexpr const char* CONTINUATION_PROMPT = "... ";
@@ -54,8 +56,6 @@ class Interpreter {
         static void printTraceback(const PythonException& e);
 
         static void printSyntaxError(const SyntaxErrorException& e);
-
-        static bool hasUnclosedBrackets(const std::vector<std::string>& lines);
 
         static bool hasDefiniteSyntaxError(const std::string& code, Lexer& lexer);
 
