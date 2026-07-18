@@ -69,6 +69,8 @@ Parser::Parser(const QVector<Token>& tokens) : tokens(tokens) {}
  */
 std::shared_ptr<ASTNode> Parser::parse() {
 
+    if (peek().type == TOKEN_EOF) return nullptr;
+
     const Token startTok = peek();
 
     std::shared_ptr<ASTNode> node;

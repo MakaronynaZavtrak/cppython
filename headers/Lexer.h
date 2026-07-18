@@ -55,7 +55,8 @@ enum TokenType {
     TOKEN_NEWLINE,
     TOKEN_INDENT,
     TOKEN_DEDENT,
-    TOKEN_EOF
+    TOKEN_EOF,
+    TOKEN_COMMENT
 };
 
 enum class Keyword {
@@ -131,6 +132,8 @@ struct Token {
     int line;
     int startColumn = 1;
     int endColumn = 1;
+    int startPos = 0;
+    int endPos = 0;
 
     Token(const TokenType type,
         QString value,
@@ -154,11 +157,14 @@ class Lexer {
 public:
     QVector<Token> tokenize(const QString& code); //Главный метод
 
+    void setTolerant(bool t);
+
 private:
     int pos = 0; //текущая позиция в коде
     int line = 1; //текущая строка
     int lineStartPos = 0; // позиция начала текущей строки в code
     QVector<int> indentStack;
+    bool tolerant = false;
 
     [[nodiscard]] int currentColumn() const;
 
@@ -198,6 +204,8 @@ private:
      * @return Token Токен, содержащий оператор
      */
     Token readOperator(const QString &code);
+
+    Token readComment(const QString& code);
 
     /**
      * @brief Пропускает пробельные символы (кроме символа новой строки)

@@ -34,25 +34,37 @@ QVector<Token> Lexer::tokenize(const QString& code) {
                 pos++;
                 line++;
                 lineStartPos = pos;
-                continue;   // не генерируем NEWLINE/INDENT/DEDENT
+                continue;
             }
 
-            tokens.push_back(Token(TOKEN_NEWLINE, "", line));
-            pos++;
-            line++;
-            lineStartPos = pos;
-
-            int spaceCount = 0, tmpPos = pos;
+            // заглядываем вперёд: пустая ли следующая строка?
+            int spaceCount = 0, tmpPos = pos + 1;
 
             while (tmpPos < code.length() &&
                 (code[tmpPos] == ' ' || code[tmpPos] == '\t')) {
 
                 if (code[tmpPos] == ' ')
                     spaceCount++;
-                else if (code[tmpPos] == '\t')
+                else
                     spaceCount += 4;
 
                 tmpPos++;
+                }
+
+            const bool blankLine = (tmpPos >= code.length() || code[tmpPos] == '\n');
+
+            // NEWLINE относится к закончившейся строке; подряд идущие не дублируем
+            if (tokens.isEmpty() || tokens.last().type != TOKEN_NEWLINE) {
+                tokens.push_back(Token(TOKEN_NEWLINE, "", line));
+            }
+
+            pos = tmpPos;
+            line++;
+            lineStartPos = pos;
+
+            // пустая строка не участвует в расчёте отступов
+            if (blankLine) {
+                continue;
             }
 
             if (spaceCount > indentStack.last()) {
@@ -63,7 +75,6 @@ QVector<Token> Lexer::tokenize(const QString& code) {
                 tokens.push_back(Token(TOKEN_DEDENT, "", line));
             }
 
-            pos = tmpPos;
             continue;
         }
 
@@ -99,6 +110,10 @@ QVector<Token> Lexer::tokenize(const QString& code) {
     return tokens;
 }
 
+void Lexer::setTolerant(const bool t) {
+    tolerant = t;
+}
+
 int Lexer::currentColumn() const {
     return pos - lineStartPos + 1;
 }
@@ -117,9 +132,13 @@ int Lexer::currentColumn() const {
 Token Lexer::nextToken(const QString& code) {
 
     while (true) {
+
         const int oldPos = pos;
 
         skipWhitespace(code);
+
+        if (tolerant && pos < code.length() && code[pos] == '#') break;
+
         skipComment(code);
 
         if (pos == oldPos)
@@ -134,10 +153,13 @@ Token Lexer::nextToken(const QString& code) {
     }
 
     const int startCol = currentColumn();
+    const int startPosition = pos;
 
     const QChar ch = code[pos];
 
     Token token = [&]() -> Token {
+
+        if (tolerant && ch == '#') return readComment(code);
 
         if (ch.isDigit()) {
             return readNumber(code);
@@ -162,6 +184,8 @@ Token Lexer::nextToken(const QString& code) {
 
     token.startColumn = startCol;
     token.endColumn = currentColumn();
+    token.startPos = startPosition;
+    token.endPos = pos;
 
     return token;
 }
@@ -175,8 +199,8 @@ Token Lexer::nextToken(const QString& code) {
  * @return Token с типом TOKEN_NUMBER, содержащий числовое значение и информацию
  *         о строке, в которой находится число.
  */
-Token Lexer::readNumber(const QString& code)
-{
+Token Lexer::readNumber(const QString& code) {
+
     const int start = pos;
     bool hasDot = false;
     bool hasExp = false;
@@ -207,7 +231,7 @@ Token Lexer::readNumber(const QString& code)
 
     QString num = code.mid(start, pos - start);
 
-    if (num.endsWith('e') || num.endsWith('E')) {
+    if (!tolerant && (num.endsWith('e') || num.endsWith('E'))) {
         throw SyntaxErrorException("Invalid number format");
     }
 
@@ -241,6 +265,7 @@ Token Lexer::readString(const QString& code) {
         if (ch == '\\') {
 
             if (pos >= code.length()) {
+                if (tolerant) return {TOKEN_STRING, result, line};
                 throw SyntaxErrorException("Invalid escape sequence");
             }
 
@@ -282,6 +307,7 @@ Token Lexer::readString(const QString& code) {
                 case 'x': {
 
                     if (pos + 1 >= code.length()) {
+                        if (tolerant) return {TOKEN_STRING, result, line};
                         throw SyntaxErrorException("Invalid hex escape");
                     }
 
@@ -295,6 +321,7 @@ Token Lexer::readString(const QString& code) {
                     const int value = hex.toInt(&ok, 16);
 
                     if (!ok) {
+                        if (tolerant) { result += hex; continue; }
                         throw SyntaxErrorException("Invalid hex escape");
                     }
 
@@ -312,6 +339,10 @@ Token Lexer::readString(const QString& code) {
         }
 
         result += ch;
+    }
+
+    if (tolerant) {
+        return {TOKEN_STRING, result, line};
     }
 
     throw SyntaxErrorException("Unterminated string literal");
@@ -416,6 +447,12 @@ Token Lexer::readOperator(const QString& code) {
     }
 
     return {TOKEN_OP, QString(op), line};
+}
+
+Token Lexer::readComment(const QString& code) {
+    const int start = pos;
+    while (pos < code.length() && code[pos] != '\n') pos++;
+    return {TOKEN_COMMENT, code.mid(start, pos - start), line};
 }
 
 /**
