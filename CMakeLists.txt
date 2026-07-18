@@ -14,6 +14,9 @@ message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
 
 find_package(Boost CONFIG REQUIRED)
 
+add_library(isocline STATIC third_party/isocline/src/isocline.c)
+target_include_directories(isocline PUBLIC third_party/isocline/include)
+
 add_executable(cppython main.cpp
         headers/Interpreter.h
         headers/Lexer.h
@@ -257,4 +260,5 @@ target_include_directories(cppython PRIVATE headers)
 target_link_libraries(cppython
         Qt6::Core
         Boost::boost
+        isocline
 )

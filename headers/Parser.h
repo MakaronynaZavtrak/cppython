@@ -257,7 +257,7 @@ private:
 
     BraceKind classifyBraces();
 
-    SyntaxErrorException makeSyntaxError(const QString& msg, const Token& tok) const;
+    [[nodiscard]] SyntaxErrorException makeSyntaxError(const QString& msg, const Token& tok) const;
 
     QVector<Token> tokens;
     int current = 0;

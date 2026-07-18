@@ -17,47 +17,51 @@ class ASTNode;
  * и мгновенно видеть результаты.
  */
 class Interpreter {
-    public:
-        static void run(int argc, char *argv[]);
+public:
+    static void run(int argc, char *argv[]);
 
-        static Value executeNode(
-            const std::shared_ptr<ASTNode>& node,
-            const std::shared_ptr<Environment>& env);
+    static Value executeNode(
+        const std::shared_ptr<ASTNode>& node,
+        const std::shared_ptr<Environment>& env);
 
-    private:
-        static constexpr const char* MAIN_PROMPT = ">>> ";
-        static constexpr const char* CONTINUATION_PROMPT = "... ";
-        static constexpr std::array<const char*, 4> EXIT_COMMANDS = {"exit", "quit", "q", "Q"};
+    static bool hasUnclosedBrackets(const std::vector<std::string>& lines);
 
-        /**
-         * @brief Проверяет, является ли введенная команда командой выхода из интерпретатора
-         * @param input Введенная пользователем строка
-         * @return true, если команда является командой выхода; false в противном случае
-         */
-        static bool isExitCommand(const std::string &input);
+    static bool isSyntacticallyIncomplete(const std::string& code);
 
-        /**
-         * @brief Объединяет несколько строк кода в единый блок
-         * @param lines Вектор строк кода для объединения
-         * @return Строка, содержащая объединенный код
-         */
-        static std::string assembleCode(const std::vector<std::string> &lines);
+    static void printExceptionLine(const PythonException& e);
 
-        /**
-         * @brief Выполняет заданный блок кода
-         * @param code Строка с кодом для выполнения
-         * @param lexer Экземпляр лексического анализатора
-         * @param env Окружение для выполнения кода
-         */
-        static void executeCode(const std::string& code, Lexer& lexer, const std::shared_ptr<Environment> &env);
+    static bool hasDefiniteSyntaxError(const std::string& code, Lexer& lexer);
 
-        static void printTraceback(const PythonException& e);
+private:
+    static constexpr const char* MAIN_PROMPT = ">>> ";
+    static constexpr const char* CONTINUATION_PROMPT = "... ";
+    static constexpr std::array<const char*, 4> EXIT_COMMANDS = {"exit", "quit", "q", "Q"};
 
-        static void printSyntaxError(const SyntaxErrorException& e);
+    /**
+     * @brief Проверяет, является ли введенная команда командой выхода из интерпретатора
+     * @param input Введенная пользователем строка
+     * @return true, если команда является командой выхода; false в противном случае
+     */
+    static bool isExitCommand(const std::string &input);
 
-        static bool hasUnclosedBrackets(const std::vector<std::string>& lines);
+    /**
+     * @brief Объединяет несколько строк кода в единый блок
+     * @param lines Вектор строк кода для объединения
+     * @return Строка, содержащая объединенный код
+     */
+    static std::string assembleCode(const std::vector<std::string> &lines);
 
-        static bool hasDefiniteSyntaxError(const std::string& code, Lexer& lexer);
+    /**
+     * @brief Выполняет заданный блок кода
+     * @param code Строка с кодом для выполнения
+     * @param lexer Экземпляр лексического анализатора
+     * @param env Окружение для выполнения кода
+     */
+    static void executeCode(const std::string& code, Lexer& lexer, const std::shared_ptr<Environment> &env);
+
+    static void printTraceback(const PythonException& e);
+
+    static void printSyntaxError(const SyntaxErrorException& e);
 
 };
 #endif //INTERPRETER_H
