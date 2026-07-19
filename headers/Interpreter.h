@@ -20,9 +20,9 @@ class Interpreter {
 public:
     static void run(int argc, char *argv[]);
 
-    static Value executeNode(
-        const std::shared_ptr<ASTNode>& node,
-        const std::shared_ptr<Environment>& env);
+    static Value executeNode(const std::shared_ptr<ASTNode>& node,
+                            const std::shared_ptr<Environment>& env,
+                            bool echo = true);
 
     static bool hasUnclosedBrackets(const std::vector<std::string>& lines);
 
@@ -31,6 +31,13 @@ public:
     static void printExceptionLine(const PythonException& e);
 
     static bool hasDefiniteSyntaxError(const std::string& code, Lexer& lexer);
+
+    static void runFile(const std::string& path, Lexer& lexer,
+             const std::shared_ptr<Environment>& env);
+
+    static void executeProgram(const std::string& code, Lexer& lexer,
+                        const std::shared_ptr<Environment>& env,
+                        const std::string& label);
 
 private:
     static constexpr const char* MAIN_PROMPT = ">>> ";

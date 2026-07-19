@@ -613,7 +613,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                     std::cout << sep.toStdString();
                 }
 
-                std::cout << args[i].toString().toStdString();
+                std::cout << pythonStr(args[i]).toStdString();
             }
 
             std::cout << end.toStdString();
@@ -639,20 +639,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                          return Value("");
                      }
 
-                     try {
-
-                         Value strMethod = getAttrValue(args[0], "__str__");
-                         Value result = call(strMethod, {}, {}, nullptr);
-
-                         if (!result.isString()) {
-                             throw TypeErrorException("__str__ returned non-string");
-                         }
-
-                         return result;
-
-                     } catch (const AttributeErrorException &) {
-                         return Value(args[0].toString());
-                     }
+                     return Value(pythonStr(args[0]));
                  }
              ));
 

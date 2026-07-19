@@ -44,15 +44,24 @@ std::shared_ptr<ClassValue> Runtime::unicodeDecodeClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::valueErrorClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::generatorExitClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::rangeClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::zeroDivisionErrorClass = nullptr;
 
 int Runtime::currentSourceId = 0;
 QHash<int, QStringList> Runtime::sourceRegistry;
 
 std::vector<TracebackFrame> Runtime::callStack;
 
-int Runtime::registerSource(const QString& code) {
+QHash<int, QString> Runtime::sourceLabels;
+int Runtime::inputCounter = 0;
+
+int Runtime::registerSource(const QString& code, const QString& label) {
     ++currentSourceId;
     sourceRegistry[currentSourceId] = code.split('\n');
+
+    sourceLabels[currentSourceId] = label.isEmpty()
+        ? QString("<python-input-%1>").arg(inputCounter++)
+        : label;
+
     return currentSourceId;
 }
 
@@ -74,5 +83,8 @@ QString Runtime::getSourceLine(const int sourceId, const int line) {
 }
 
 QString Runtime::getSourceLabel(const int sourceId) {
-    return QString("<python-input-%1>").arg(sourceId);
+    if (const auto it = sourceLabels.find(sourceId); it != sourceLabels.end()) {
+        return it.value();
+    }
+    return QString("<python-input-%1>").arg(sourceId);   // фолбэк на всякий
 }

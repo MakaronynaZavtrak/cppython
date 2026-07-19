@@ -43,6 +43,9 @@ jobs:
         run: cmake --build build
 
       - name: Run tests
-        run: |
-          sed -i 's|os.path.join(ROOT, "cmake-build-debug", "cppython.exe")|os.path.join(ROOT, "build", "cppython")|g' tests/test_integration.py
-          python -m pytest tests/test_integration.py -v
+        env:
+          CPPYTHON_BIN: ${{ github.workspace }}/build/cppython
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
+          PYTHONIOENCODING: utf-8
+        run: python -m pytest tests/ -v

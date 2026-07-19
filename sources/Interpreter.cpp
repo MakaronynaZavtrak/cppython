@@ -1,5 +1,8 @@
 #include "Environment.h"
 #include "Interpreter.h"
+
+#include <fstream>
+
 #include "Lexer.h"
 #include "Parser.h"
 #include "BuiltinFunction.h"
@@ -158,7 +161,8 @@ std::string Interpreter::assembleCode(const std::vector<std::string>& lines) {
 
 Value Interpreter::executeNode(
     const std::shared_ptr<ASTNode>& node,
-    const std::shared_ptr<Environment>& env) {
+    const std::shared_ptr<Environment>& env,
+    bool echo) {
 
     if (!Runtime::callStack.empty()) {
 
@@ -171,7 +175,7 @@ Value Interpreter::executeNode(
 
     const Value result = node->eval(env);
 
-    if (node->shouldPrint() && !result.isNone()) {
+    if (echo && node->shouldPrint() && !result.isNone()) {
         std::cout << result.display().toStdString() << "\n";
     }
 
@@ -185,7 +189,7 @@ void Interpreter::printSyntaxError(const SyntaxErrorException& e) {
         // строка File — метка и номер строки тёмно-зелёным (в синтаксисе нет ", in <...>")
         std::cout << "  File "
                   << paint(ANSI_DARK_GREEN, "\"" + Runtime::getSourceLabel(e.sourceId).toStdString() + "\"")
-                  << "\", line "
+                  << ", line "
                   << paint(ANSI_DARK_GREEN, std::to_string(e.line))
                   << "\n";
 
@@ -289,6 +293,57 @@ bool Interpreter::hasDefiniteSyntaxError(const std::string& code, Lexer& lexer) 
     }
     catch (...) {
         return false;   // не синтаксис — разберёмся при реальном выполнении
+    }
+}
+
+// Interpreter.cpp
+void Interpreter::runFile(
+    const std::string& path, Lexer& lexer,
+    const std::shared_ptr<Environment>& env) {
+
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        std::cerr << "cppython: can't open file '" << path
+                  << "': [Errno 2] No such file or directory\n";
+        return;
+    }
+
+    std::ostringstream ss;
+    ss << file.rdbuf();
+
+    executeProgram(ss.str(), lexer, env, path);
+}
+
+void Interpreter::executeProgram(
+    const std::string& code, Lexer& lexer,
+    const std::shared_ptr<Environment>& env,
+    const std::string& label) {
+
+    QString normalizedCode = QString::fromStdString(code);
+    normalizedCode.replace("\r\n", "\n");
+    normalizedCode.replace('\r',  "\n");
+    normalizedCode.replace('\t', "    ");
+
+    const int srcId = Runtime::registerSource(normalizedCode,
+                                              QString::fromStdString(label));
+
+    CallStackGuard moduleGuard("<module>", srcId);
+
+    try {
+        const QVector<Token> tokens = lexer.tokenize(normalizedCode);
+        Parser parser(tokens);
+
+        const std::vector<std::shared_ptr<ASTNode>> program = parser.parseProgram();
+
+        for (const auto& stmt : program) {
+            if (stmt) executeNode(stmt, env, /*echo=*/false);
+        }
+    }
+    catch (const SyntaxErrorException& e) {
+        printSyntaxError(e);
+    }
+    catch (const PythonException& e) {
+        printTraceback(e);
     }
 }
 
@@ -581,8 +636,6 @@ extern "C" void cppython_highlighter(ic_highlight_env_t* henv, const char* input
  * @param argv Массив строк аргументов командной строки.
  */
 void Interpreter::run(int argc, char* argv[]) {
-    std::cout << "Hello and welcome to my minimal Python interpreter!\n"
-                 "Made by Semenov Oleg, with care from MathMech. Let's code!\n";
 
     const auto globalEnv = std::make_shared<Environment>();
     BuiltinFunction::registerBuiltins(globalEnv);
@@ -591,12 +644,20 @@ void Interpreter::run(int argc, char* argv[]) {
 
     Lexer lexer;
 
+    if (argc > 1) {
+        runFile(argv[1], lexer, globalEnv);
+        return;
+    }
+
+
+
+    std::cout << "Hello and welcome to my minimal Python interpreter!\n"
+                 "Made by Semenov Oleg, with care from MathMech. Let's code!\n";
+
     ic_set_prompt_marker(">>> ", "... ");
     ic_enable_multiline(true);
     ic_set_is_complete_fun(&cppython_is_input_complete);
     ic_set_history(nullptr, -1);
-    // ic_enable_auto_tab(true);
-    // ic_set_default_completer(nullptr, nullptr);
     ic_enable_completion_preview(false);
     ic_enable_hint(false);
 

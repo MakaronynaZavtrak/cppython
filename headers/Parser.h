@@ -39,6 +39,8 @@ public:
 
     std::shared_ptr<ASTNode> parse(); //Главный метод
 
+    std::vector<std::shared_ptr<ASTNode>> parseProgram();
+
 private:
     //Здесь методы разделены для анализа выражения согласно приоритету
     /**

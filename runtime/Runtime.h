@@ -73,12 +73,17 @@ public:
 
     static std::shared_ptr<ClassValue> rangeClass;
 
+    static std::shared_ptr<ClassValue> zeroDivisionErrorClass;
+
     static int currentSourceId;
     static QHash<int, QStringList> sourceRegistry;
 
     static std::vector<TracebackFrame> callStack;
 
-    static int registerSource(const QString& code);
+    static QHash<int, QString> sourceLabels;
+    static int inputCounter;
+
+    static int registerSource(const QString& code, const QString& label = QString());
     static QString getSourceLine(int sourceId, int line);
     static QString getSourceLabel(int sourceId);
 };

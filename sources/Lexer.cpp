@@ -27,6 +27,24 @@ QVector<Token> Lexer::tokenize(const QString& code) {
 
     while (pos < code.length()) {
 
+        if (!tolerant) {
+            int p = pos;
+            while (p < code.length() && code[p] != '\n' && code[p].isSpace()) p++;
+
+            if (p < code.length() && code[p] == '#') {
+                // пробелы + комментарий до конца строки
+                pos = p;
+                while (pos < code.length() && code[pos] != '\n') pos++;
+            }
+            else if (p >= code.length() || code[p] == '\n') {
+                // строка из одних пробелов — отдаём '\n'/EOF основному циклу
+                pos = p;
+            }
+            // иначе впереди код — pos не трогаем, отступ прочитает nextToken
+        }
+
+        if (pos >= code.length()) break;
+
         if (QChar ch = code[pos]; ch == '\n') {
 
             // implicit line joining
@@ -36,6 +54,8 @@ QVector<Token> Lexer::tokenize(const QString& code) {
                 lineStartPos = pos;
                 continue;
             }
+
+            const int lineStart = pos + 1;
 
             // заглядываем вперёд: пустая ли следующая строка?
             int spaceCount = 0, tmpPos = pos + 1;
@@ -49,18 +69,17 @@ QVector<Token> Lexer::tokenize(const QString& code) {
                     spaceCount += 4;
 
                 tmpPos++;
-                }
+            }
 
             const bool blankLine = (tmpPos >= code.length() || code[tmpPos] == '\n');
 
-            // NEWLINE относится к закончившейся строке; подряд идущие не дублируем
             if (tokens.isEmpty() || tokens.last().type != TOKEN_NEWLINE) {
                 tokens.push_back(Token(TOKEN_NEWLINE, "", line));
             }
 
             pos = tmpPos;
             line++;
-            lineStartPos = pos;
+            lineStartPos = lineStart;
 
             // пустая строка не участвует в расчёте отступов
             if (blankLine) {
@@ -477,14 +496,28 @@ void Lexer::skipWhitespace(const QString& code) {
  *             для игнорирования комментариев.
  */
 void Lexer::skipComment(const QString& code) {
-    if (pos < code.length() && code[pos] == '#') {
 
-        while (pos < code.length() && code[pos] != '\n') {
-            pos++;
+    if (pos >= code.length() || code[pos] != '#') return;
+
+    while (pos < code.length() && code[pos] != '\n') {
+        pos++;
+    }
+
+    while (pos < code.length() && code[pos] == '\n') {
+
+        pos++;
+        line++;
+        lineStartPos = pos;
+
+        int look = pos;
+        while (look < code.length() && (code[look] == ' ' || code[look] == '\t')) {
+            look++;
         }
 
-        line++;
-        pos++;
-        lineStartPos = pos;
+        if (look >= code.length() || code[look] != '\n') {
+            break;
+        }
+
+        pos = look;
     }
 }

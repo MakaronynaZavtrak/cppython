@@ -37,10 +37,29 @@
 #include "../exception/ArithmeticErrorException.h"
 #include "../exception/AttributeErrorException.h"
 #include "../exception/TypeErrorException.h"
+#include "../exception/ZeroDivisionErrorException.h"
 
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
 
 Value::Value(const char *str) : data(std::make_shared<StrValue>(str)) {}
+
+template<typename Op>
+static Value applyBitwise(const Value& l, const Value& r,
+                          const char* opName, Op operation) {
+
+    const bool bothIntLike =
+        (l.isBigInt() || l.isBool()) &&
+        (r.isBigInt() || r.isBool());
+
+    if (!bothIntLike) {
+        throw TypeErrorException(
+            QString("unsupported operand type(s) for ") + opName + ": " +
+            l.toString() + " " + r.toString()
+        );
+    }
+
+    return Value(operation(l.toBigInt(), r.toBigInt()));
+}
 
 /**
  * Преобразует экземпляр `Value` в его строковое представление в зависимости от его типа.
@@ -660,7 +679,7 @@ Value Value::operator/(const Value &other) const {
         const BigFloat r = other.toBigFloat();
 
         if (r == 0) {
-            throw ArithmeticErrorException("Division by zero");
+            throw ZeroDivisionErrorException("division by zero");
         }
 
         return Value(toBigFloat() / r);
@@ -678,7 +697,7 @@ Value Value::operator%(const Value &other) const {
         const auto rf = other.toBigFloat();
 
         if (rf == 0) {
-            throw ArithmeticErrorException("Division by zero");
+            throw ZeroDivisionErrorException("division by zero");
         }
 
         if (!isBigFloat() && !other.isBigFloat()) {
@@ -749,7 +768,7 @@ Value Value::intDivide(const Value& other) const {
         const BigFloat rf = other.toBigFloat();
 
         if (rf == 0) {
-            throw ArithmeticErrorException("Division by zero");
+            throw ZeroDivisionErrorException("division by zero");
         }
 
         const BigFloat result = floor(lf / rf);
@@ -966,6 +985,10 @@ bool Value::contains(const Value &value) const {
 
 Value Value::operator|(const Value& other) const {
 
+    if (isNumeric() && other.isNumeric()) {
+        return applyBitwise(*this, other, "|", std::bit_or<>());
+    }
+
     if (isObject()) {
         try {
             return asObject()->bitOr(other);
@@ -987,6 +1010,10 @@ Value Value::operator|(const Value& other) const {
 }
 
 Value Value::operator&(const Value& other) const {
+
+    if (isNumeric() && other.isNumeric()) {
+        return applyBitwise(*this, other, "&", std::bit_and<>());
+    }
 
     if (isObject()) {
         try {
@@ -1010,6 +1037,10 @@ Value Value::operator&(const Value& other) const {
 
 Value Value::operator^(const Value& other) const {
 
+    if (isNumeric() && other.isNumeric()) {
+        return applyBitwise(*this, other, "^", std::bit_xor<>());
+    }
+
     if (isObject()) {
         try {
             return asObject()->bitXor(other);
@@ -1026,7 +1057,7 @@ Value Value::operator^(const Value& other) const {
     }
 
     throw TypeErrorException(
-        "unsupported operand type(s) for &: " + toString() + " " + other.toString()
+        "unsupported operand type(s) for ^: " + toString() + " " + other.toString()
     );
 }
 
