@@ -1,0 +1,14 @@
+шаг 1: старт
+шаг 2: перед вызовом compute
+шаг 3: внутри compute, сейчас будет деление на 0
+Traceback (most recent call last):
+  File "07_errors_runtime.py", line 37, in <module>
+    answer = compute(42)
+             ~~~~~~~^^^^
+  File "07_errors_runtime.py", line 30, in compute
+        return divide(x, 0)     # передаём 0 делителем
+               ~~~~~~^^^^^^                           
+  File "07_errors_runtime.py", line 24, in divide
+        result = a / b          # <-- здесь произойдёт деление на ноль
+                 ~~^~~                                                
+ZeroDivisionError: division by zero

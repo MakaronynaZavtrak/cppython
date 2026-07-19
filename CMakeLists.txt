@@ -253,7 +253,8 @@ add_executable(cppython main.cpp
         ast/dictCompNode/DictCompNode.cpp
         ast/dictCompNode/DictCompNode.h
         ast/genExprNode/GenExprNode.cpp
-        ast/genExprNode/GenExprNode.h)
+        ast/genExprNode/GenExprNode.h
+        exception/ZeroDivisionErrorException.h)
 
 target_include_directories(cppython PRIVATE headers)
 

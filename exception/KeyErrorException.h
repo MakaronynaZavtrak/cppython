@@ -10,6 +10,6 @@
 class KeyErrorException : public PythonException {
 public:
     explicit KeyErrorException(const QString& msg)
-        : PythonException(Runtime::indexErrorClass, msg) {}
+        : PythonException(Runtime::keyErrorClass, msg) {}
 };
 #endif //CPPYTHON_KEYERROREXCEPTION_H

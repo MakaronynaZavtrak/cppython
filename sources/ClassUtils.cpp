@@ -181,6 +181,24 @@ Value makeIterMethod(const Value& obj) {
     );
 }
 
+QString pythonStr(const Value& obj) {
+
+    if (obj.isInstance()) {
+        try {
+            const Value m = getAttrValue(obj, "__str__");
+            const Value r = call(m, {}, {}, nullptr);
+
+            if (!r.isString()) {
+                throw TypeErrorException("__str__ returned non-string");
+            }
+            return r.toString();
+
+        } catch (const AttributeErrorException&) {}
+    }
+
+    return obj.toString();
+}
+
 Value getAttrValue(const Value& obj, const QString& attr) {
 
     // super bypasses __getattribute__

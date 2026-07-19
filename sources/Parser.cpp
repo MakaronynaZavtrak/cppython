@@ -114,6 +114,33 @@ std::shared_ptr<ASTNode> Parser::parse() {
     return node;
 }
 
+std::vector<std::shared_ptr<ASTNode>> Parser::parseProgram() {
+
+    std::vector<std::shared_ptr<ASTNode>> statements;
+
+    while (peek().type != TOKEN_EOF) {
+
+        // пустые логические строки между стейтментами
+        if (peek().type == TOKEN_NEWLINE) {
+            advance();
+            continue;
+        }
+
+        // файл не может начинаться с отступа
+        if (peek().type == TOKEN_INDENT) {
+            throw makeSyntaxError("unexpected indent", peek());
+        }
+
+        statements.push_back(parse());
+
+        if (peek().type == TOKEN_NEWLINE) {
+            advance();
+        }
+    }
+
+    return statements;
+}
+
 std::shared_ptr<ASTNode> Parser::parseExpressionStatement() {
 
     std::vector<std::shared_ptr<ASTNode>> targets;
