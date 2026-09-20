@@ -1023,6 +1023,36 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     ));
 
+    env->set("all",
+    makeBuiltin(
+        "all",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 1, "all");
+            expectNoKwargs(kwargs, "all");
+
+            const auto it = args[0].getIterator();
+
+            // короткое замыкание: первый ложный элемент — сразу False
+            while (true) {
+                Value item;
+                try {
+                    item = it->next();
+                } catch (const StopIterationException &) {
+                    break;
+                }
+                if (!item.toBool()) {
+                    return Value(false);
+                }
+            }
+            // пустой итерируемый или все элементы истинны
+            return Value(true);
+        }
+    ));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {

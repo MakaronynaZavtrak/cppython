@@ -6278,6 +6278,26 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     # sum() — конкатенация списков через start=[]
     ("sum([[1], [2], [3]], [])",       "[1, 2, 3]"),
 
+    # all() — базовое поведение и короткое замыкание
+    ("all([])",                        "True"),
+    ("all([1, 2, 3])",                 "True"),
+    ("all([1, 0, 2])",                 "False"),
+    ("all([0])",                       "False"),
+
+    # all() — истинность через bool(), не только числа
+    ("all('')",                        "True"),
+    ("all('abc')",                     "True"),
+    ("all(['', 'x'])",                 "False"),
+    ("all([[], [1]])",                 "False"),
+    ("all([1, 2.0, True])",            "True"),
+
+    # all() — по любому итерируемому
+    ("all({1: 'a', 0: 'b'})",          "False"),
+    ("all(range(3))",                  "False"),
+    ("all(range(1, 4))",               "True"),
+    ("all({0})",                       "False"),
+    ("all((x > 0 for x in [1, 2, 3]))", "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12865,6 +12885,34 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # sum() — вызов вообще без аргументов
     (["try:",
       "    sum()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # all() — вызов без аргументов
+    (["try:",
+      "    all()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # all() — слишком много аргументов
+    (["try:",
+      "    all([1], [2])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # all() — неитерируемый аргумент
+    (["try:",
+      "    all(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # all() — не принимает именованных аргументов
+    (["try:",
+      "    all([1], key=len)",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),
