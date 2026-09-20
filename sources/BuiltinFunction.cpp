@@ -1053,6 +1053,34 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     ));
 
+    env->set("any",
+    makeBuiltin(
+        "any",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 1, "any");
+            expectNoKwargs(kwargs, "any");
+
+            const auto it = args[0].getIterator();
+
+            while (true) {
+                Value item;
+                try {
+                    item = it->next();
+                } catch (const StopIterationException &) {
+                    break;
+                }
+                if (item.toBool()) {
+                    return Value(true);
+                }
+            }
+            return Value(false);
+        }
+    ));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {
