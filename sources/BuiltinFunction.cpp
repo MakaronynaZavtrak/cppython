@@ -977,6 +977,52 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
              }
          ));
 
+    env->set("sum",
+    makeBuiltin(
+        "sum",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgsRange(args, 1, 2, "sum");
+
+            Value start = Value(Value::BigInt(0));   // по умолчанию — целый ноль
+            bool startFromPositional = false;
+
+            if (args.size() == 2) {
+                start = args[1];
+                startFromPositional = true;
+            }
+
+            for (const auto &[name, value] : kwargs) {          // start=... как kwarg
+                if (name == "start") {
+                    if (startFromPositional)
+                        throw TypeErrorException("sum() got multiple values for argument 'start'");
+                    start = value;
+                } else {
+                    throw TypeErrorException("'" + name + "' is an invalid keyword argument for sum()");
+                }
+            }
+
+            if (start.isString())    throw TypeErrorException("sum() can't sum strings [use ''.join(seq) instead]");
+            if (start.isBytes())     throw TypeErrorException("sum() can't sum bytes [use b''.join(seq) instead]");
+            if (start.isByteArray()) throw TypeErrorException("sum() can't sum bytearray [use b''.join(seq) instead]");
+
+            const auto it = args[0].getIterator();
+            Value acc = start;
+
+            while (true) {
+                try {
+                    acc = acc + it->next();          // семантика Value::operator+ — та же, что у интерпретатора
+                } catch (const StopIterationException &) {
+                    break;
+                }
+            }
+            return acc;
+        }
+    ));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {

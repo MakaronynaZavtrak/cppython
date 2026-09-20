@@ -6242,6 +6242,42 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     # int(float(x)) round-trip
     ("int(float('7.9'))", "7"),
 
+    # sum() — базовое суммирование
+    ("sum([1, 2, 3])",                 "6"),
+    ("sum([])",                        "0"),
+    ("sum([-1, -2, -3])",              "-6"),
+    ("sum([10, 20, 30, 40])",          "100"),
+
+    # sum() — параметр start (позиционный и именованный)
+    ("sum([1, 2, 3], 10)",             "16"),
+    ("sum([1, 2, 3], start=10)",       "16"),
+    ("sum([], 42)",                    "42"),
+    ("sum([], start=42)",              "42"),
+
+    # sum() — вещественные (только точные в двоичном виде, без проблем repr)
+    ("sum([1.5, 2.5])",                "4.0"),
+    ("sum([0.5, 0.25])",               "0.75"),
+    ("sum([0.5, 0.5, 0.5])",           "1.5"),
+    ("sum([1, 2.0])",                  "3.0"),
+
+    # sum() — bool суммируется как int
+    ("sum([True, True, False])",       "2"),
+    ("sum([True, True, True], 1)",     "4"),
+
+    # sum() — произвольная точность (boost cpp_int против bigint CPython)
+    ("sum([10**18, 10**18])",          "2000000000000000000"),
+
+    # sum() — по любому итерируемому, а не только list
+    ("sum(range(5))",                  "10"),
+    ("sum(range(1, 5))",               "10"),
+    ("sum((1, 2, 3, 4))",              "10"),
+    ("sum({10, 20, 30})",              "60"),
+    ("sum({1: 'a', 2: 'b', 3: 'c'})",  "6"),
+    ("sum((n * n for n in range(4)))", "14"),
+
+    # sum() — конкатенация списков через start=[]
+    ("sum([[1], [2], [3]], [])",       "[1, 2, 3]"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12769,6 +12805,69 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    return (a, kw)",
       "",
       "f(1, a=2)"], "(1, {'a': 2})"),
+
+    # sum() — нельзя суммировать строки при start по умолчанию (int + str)
+    (["try:",
+      "    sum(['a', 'b'])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — строковый start запрещён явной проверкой
+    (["try:",
+      "    sum([], '')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — bytes-start запрещён
+    (["try:",
+      "    sum([], b'')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — bytearray-start запрещён
+    (["try:",
+      "    sum([], bytearray())",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — неитерируемый первый аргумент
+    (["try:",
+      "    sum(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — неизвестный именованный аргумент
+    (["try:",
+      "    sum([1], foo=2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — start передан и позиционно, и по имени
+    (["try:",
+      "    sum([1, 2], 3, start=4)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — слишком много аргументов
+    (["try:",
+      "    sum([1], 2, 3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — вызов вообще без аргументов
+    (["try:",
+      "    sum()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
 
 ])
 
