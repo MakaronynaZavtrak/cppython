@@ -1081,6 +1081,96 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     ));
 
+        env->set("min",
+        makeBuiltin(
+            "min",
+
+            [](const std::vector<Value> &args,
+               const Kwargs &kwargs,
+               const std::shared_ptr<Environment> &env) -> Value {
+
+                if (args.empty()) {
+                    throw TypeErrorException(
+                        "min expected at least 1 argument, got 0"
+                    );
+                }
+
+                std::optional<Value> key;
+                std::optional<Value> defaultValue;
+
+                for (const auto &[name, value]: kwargs) {
+
+                    if (name == "key") {
+                        // key=None означает «без ключа»
+                        if (!value.isNone()) {
+                            key = value;
+                        }
+                    } else if (name == "default") {
+                        defaultValue = value;
+                    } else {
+                        throw TypeErrorException(
+                            "'" + name + "' is an invalid keyword argument for min()"
+                        );
+                    }
+                }
+
+                // две формы: min(iterable) и min(a, b, ...)
+                const bool multiArg = args.size() > 1;
+
+                if (multiArg && defaultValue.has_value()) {
+                    throw TypeErrorException(
+                        "Cannot specify a default for min() with multiple positional arguments"
+                    );
+                }
+
+                Value best;
+                Value bestKey;
+                bool hasBest = false;
+
+                auto consider = [&](const Value &elem) {
+
+                    const Value elemKey =
+                        key.has_value()
+                            ? call(key.value(), {elem}, {}, env)
+                            : elem;
+
+                    // строгое < — при равных ключах остаётся ПЕРВЫЙ минимум
+                    if (!hasBest || elemKey < bestKey) {
+                        best = elem;
+                        bestKey = elemKey;
+                        hasBest = true;
+                    }
+                };
+
+                if (multiArg) {
+                    for (const auto &elem: args) {
+                        consider(elem);
+                    }
+                } else {
+                    const auto it = args[0].getIterator();
+
+                    while (true) {
+                        Value item;
+                        try {
+                            item = it->next();
+                        } catch (const StopIterationException &) {
+                            break;
+                        }
+                        consider(item);
+                    }
+                }
+
+                if (!hasBest) {
+                    if (defaultValue.has_value()) {
+                        return defaultValue.value();
+                    }
+                    throw ValueErrorException("min() arg is an empty sequence");
+                }
+
+                return best;
+            }
+        ));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {

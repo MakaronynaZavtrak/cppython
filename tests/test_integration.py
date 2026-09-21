@@ -6318,6 +6318,33 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("any(range(0, 1))",               "False"),
     ("any((x > 5 for x in [1, 2, 3]))", "False"),
 
+    # min() — обе формы: из итерируемого и из нескольких аргументов
+    ("min([3, 1, 2])",                 "1"),
+    ("min(3, 1, 2)",                   "1"),
+    ("min([1])",                       "1"),
+    ("min([1, 2], [3, 4])",            "[1, 2]"),
+
+    # min() — по строкам, кортежам, dict-ключам
+    ("min('bca')",                     "'a'"),
+    ("min([(1, 'z'), (1, 'a')])",      "(1, 'a')"),
+    ("min({3: 'a', 1: 'b', 2: 'c'})",  "1"),
+    ("min([1.5, 2, 0.5])",             "0.5"),
+
+    # min() — параметр key (в обеих формах, key=None = без ключа)
+    ("min([3, 1, 2], key=lambda x: -x)", "3"),
+    ("min(3, 1, 2, key=lambda x: -x)", "3"),
+    ("min(['bb', 'a', 'ccc'], key=len)", "'a'"),
+    ("min([-5, -1, -3], key=lambda x: x * x)", "-1"),
+    ("min([10], key=None)",            "10"),
+
+    # min() — параметр default (только одноаргументная форма)
+    ("min([], default=42)",            "42"),
+    ("min([], default=None) is None",  "True"),
+    ("min([5, 3, 8], default=99)",     "3"),
+
+    # min() — при равных ключах остаётся первый (стабильность)
+    ("min([(1, 'x'), (1, 'y')], key=lambda t: t[0])", "(1, 'x')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12961,6 +12988,62 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # any() — не принимает именованных аргументов
     (["try:",
       "    any([1], key=len)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — вызов без аргументов
+    (["try:",
+      "    min()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — пустая последовательность без default
+    (["try:",
+      "    min([])",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — пустая последовательность с key, но без default
+    (["try:",
+      "    min([], key=len)",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — единственный аргумент неитерируем
+    (["try:",
+      "    min(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — default запрещён с несколькими позиционными аргументами
+    (["try:",
+      "    min(1, 2, default=0)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — неизвестный именованный аргумент
+    (["try:",
+      "    min([1], foo=3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — key не является вызываемым
+    (["try:",
+      "    min([1, 2], key=5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — несравнимые типы
+    (["try:",
+      "    min([1, 'a'])",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),
