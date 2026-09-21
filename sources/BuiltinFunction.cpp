@@ -1261,6 +1261,57 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             }
         ));
 
+    env->set("sorted",
+    makeBuiltin(
+        "sorted",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &env) -> Value {
+
+            expectArgs(args, 1, "sorted");
+
+            std::optional<Value> key;
+            bool reverse = false;
+
+            for (const auto &[name, value]: kwargs) {
+
+                if (name == "key") {
+                    // key=None означает «без ключа»
+                    if (!value.isNone()) {
+                        key = value;
+                    }
+                } else if (name == "reverse") {
+                    reverse = value.toBool();
+                } else {
+                    throw TypeErrorException(
+                        "'" + name + "' is an invalid keyword argument for sorted()"
+                    );
+                }
+            }
+
+            // материализуем произвольное итерируемое в НОВЫЙ список
+            const auto it = args[0].getIterator();
+
+            std::vector<Value> items;
+
+            while (true) {
+                try {
+                    items.push_back(it->next());
+                } catch (const StopIterationException &) {
+                    break;
+                }
+            }
+
+            const auto result = std::make_shared<ListValue>(items);
+
+            // переиспользуем стабильную сортировку списка (key/reverse)
+            result->sort(key, reverse, env);
+
+            return Value(result);
+        }
+    ));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {

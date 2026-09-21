@@ -312,7 +312,7 @@ void ListValue::sort(
     // обычный sort
     if (!key.has_value()) {
 
-        std::sort(
+        std::stable_sort(
             elements.begin(),
             elements.end(),
 
@@ -328,14 +328,12 @@ void ListValue::sort(
     std::vector<std::pair<Value, Value>> decorated;
 
     for (const auto& elem : elements) {
-
-        Value k = call(key.value(),{ elem }, {}, env);
-
+        Value k = call(key.value(), { elem }, {}, env);
         decorated.emplace_back(k, elem);
     }
 
     // sort by key
-    std::sort(
+    std::stable_sort(
         decorated.begin(),
         decorated.end(),
 

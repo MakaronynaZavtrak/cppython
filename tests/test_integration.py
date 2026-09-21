@@ -6372,6 +6372,28 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     # max() — при равных ключах остаётся первый (стабильность)
     ("max([(1, 'x'), (1, 'y')], key=lambda t: t[0])", "(1, 'x')"),
 
+    # sorted() — базовая сортировка, возвращается новый список
+    ("sorted([3, 1, 2])",              "[1, 2, 3]"),
+    ("sorted((3, 1, 2))",              "[1, 2, 3]"),
+    ("sorted('bca')",                  "['a', 'b', 'c']"),
+    ("sorted([])",                     "[]"),
+
+    # sorted() — по любому итерируемому (dict-ключи, set, range)
+    ("sorted({3: 'a', 1: 'b', 2: 'c'})", "[1, 2, 3]"),
+    ("sorted({30, 10, 20})",           "[10, 20, 30]"),
+    ("sorted(range(5), reverse=True)", "[4, 3, 2, 1, 0]"),
+
+    # sorted() — параметры reverse и key (key=None = без ключа)
+    ("sorted([3, 1, 2], reverse=True)", "[3, 2, 1]"),
+    ("sorted([3, 1, 2], key=None)",    "[1, 2, 3]"),
+    ("sorted(['bb', 'a', 'ccc'], key=len)", "['a', 'bb', 'ccc']"),
+    ("sorted([3, 1, 2], key=lambda x: -x)", "[3, 2, 1]"),
+    ("sorted([3, 1, 2], key=lambda x: x, reverse=True)", "[3, 2, 1]"),
+
+    # sorted() — стабильность: при равных ключах исходный порядок сохраняется
+    ("sorted([(1, 'a'), (1, 'b'), (0, 'c')], key=lambda t: t[0])", "[(0, 'c'), (1, 'a'), (1, 'b')]"),
+    ("sorted([(1, 'a'), (1, 'b'), (0, 'c')], key=lambda t: t[0], reverse=True)", "[(1, 'a'), (1, 'b'), (0, 'c')]"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13127,6 +13149,53 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # max() — несравнимые типы
     (["try:",
       "    max([1, 'a'])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — исходная последовательность не изменяется
+    (["a = [3, 1, 2]",
+      "b = sorted(a)",
+      "a"], "[3, 1, 2]"),
+
+    # sorted() — вызов без аргументов
+    (["try:",
+      "    sorted()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — неитерируемый аргумент
+    (["try:",
+      "    sorted(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — несравнимые типы
+    (["try:",
+      "    sorted([1, 'a'])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — key не является вызываемым
+    (["try:",
+      "    sorted([1], key=5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — неизвестный именованный аргумент
+    (["try:",
+      "    sorted([1], foo=2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — key и reverse только именованные (лишний позиционный аргумент)
+    (["try:",
+      "    sorted([1], [2])",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),
