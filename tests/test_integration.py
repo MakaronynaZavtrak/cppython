@@ -6345,6 +6345,33 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     # min() — при равных ключах остаётся первый (стабильность)
     ("min([(1, 'x'), (1, 'y')], key=lambda t: t[0])", "(1, 'x')"),
 
+    # max() — обе формы: из итерируемого и из нескольких аргументов
+    ("max([3, 1, 2])",                 "3"),
+    ("max(3, 1, 2)",                   "3"),
+    ("max([1])",                       "1"),
+    ("max([1, 2], [3, 4])",            "[3, 4]"),
+
+    # max() — по строкам, кортежам, dict-ключам
+    ("max('bca')",                     "'c'"),
+    ("max([(1, 'a'), (1, 'z')])",      "(1, 'z')"),
+    ("max({3: 'a', 1: 'b', 2: 'c'})",  "3"),
+    ("max([1.5, 2, 0.5])",             "2"),
+
+    # max() — параметр key (в обеих формах, key=None = без ключа)
+    ("max([3, 1, 2], key=lambda x: -x)", "1"),
+    ("max(3, 1, 2, key=lambda x: -x)", "1"),
+    ("max(['bb', 'a', 'ccc'], key=len)", "'ccc'"),
+    ("max([-5, -1, -3], key=lambda x: x * x)", "-5"),
+    ("max([10], key=None)",            "10"),
+
+    # max() — параметр default (только одноаргументная форма)
+    ("max([], default=42)",            "42"),
+    ("max([], default=None) is None",  "True"),
+    ("max([5, 3, 8], default=99)",     "8"),
+
+    # max() — при равных ключах остаётся первый (стабильность)
+    ("max([(1, 'x'), (1, 'y')], key=lambda t: t[0])", "(1, 'x')"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13044,6 +13071,62 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # min() — несравнимые типы
     (["try:",
       "    min([1, 'a'])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — вызов без аргументов
+    (["try:",
+      "    max()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — пустая последовательность без default
+    (["try:",
+      "    max([])",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — пустая последовательность с key, но без default
+    (["try:",
+      "    max([], key=len)",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — единственный аргумент неитерируем
+    (["try:",
+      "    max(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — default запрещён с несколькими позиционными аргументами
+    (["try:",
+      "    max(1, 2, default=0)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — неизвестный именованный аргумент
+    (["try:",
+      "    max([1], foo=3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — key не является вызываемым
+    (["try:",
+      "    max([1, 2], key=5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — несравнимые типы
+    (["try:",
+      "    max([1, 'a'])",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),
