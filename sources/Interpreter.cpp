@@ -564,7 +564,8 @@ namespace {
             "str", "int", "float", "bool", "bytes", "bytearray", "range",
             "iter", "next", "hash", "repr", "reversed", "format", "super",
             "hasattr", "getattr", "setattr", "property", "staticmethod",
-            "classmethod", "object", "type", "exit",
+            "classmethod", "object", "type", "exit", "sum", "all", "any",
+            "min", "max", "sorted", "map",
             // исключения
             "BaseException", "Exception", "ArithmeticError", "OverflowError",
             "LookupError", "IndexError", "KeyError", "RuntimeError", "NameError",

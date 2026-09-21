@@ -6394,6 +6394,22 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("sorted([(1, 'a'), (1, 'b'), (0, 'c')], key=lambda t: t[0])", "[(0, 'c'), (1, 'a'), (1, 'b')]"),
     ("sorted([(1, 'a'), (1, 'b'), (0, 'c')], key=lambda t: t[0], reverse=True)", "[(1, 'a'), (1, 'b'), (0, 'c')]"),
 
+    # map() — базовое отображение (материализуем через list)
+    ("list(map(lambda x: x * x, [1, 2, 3]))", "[1, 4, 9]"),
+    ("list(map(str, [1, 2, 3]))",             "['1', '2', '3']"),
+    ("list(map(len, ['a', 'bb', 'ccc']))",    "[1, 2, 3]"),
+    ("list(map(lambda x: x, []))",            "[]"),
+
+    # map() — несколько итерируемых, останов по кратчайшему
+    ("list(map(lambda a, b: a + b, [1, 2, 3], [10, 20, 30]))", "[11, 22, 33]"),
+    ("list(map(lambda a, b: a + b, [1, 2, 3], [10, 20]))",     "[11, 22]"),
+    ("list(map(lambda a, b, c: a + b + c, [1, 2], [10, 20], [100, 200]))", "[111, 222]"),
+    ("list(map(lambda a, b: a + b, (1, 2, 3), range(10, 40, 10)))", "[11, 22, 33]"),
+
+    # map() — по строке и вложенный map (map-итератор сам итерируем)
+    ("list(map(lambda x: x * 2, 'abc'))",     "['aa', 'bb', 'cc']"),
+    ("list(map(lambda x: x + 1, map(lambda x: x * 2, [1, 2, 3])))", "[3, 5, 7]"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13196,6 +13212,54 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # sorted() — key и reverse только именованные (лишний позиционный аргумент)
     (["try:",
       "    sorted([1], [2])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — ленивость: элементы вычисляются по мере запроса
+    (["m = map(lambda x: x + 1, [1, 2, 3])",
+      "next(m)",
+      "next(m)",
+      "list(m)"], ["2", "3", "[4]"]),
+
+    # map() — работает в цикле for
+    (["total = 0",
+      "for v in map(lambda x: x * 10, [1, 2, 3]):",
+      "    total = total + v",
+      "",
+      "total"], "60"),
+
+    # map() — без аргументов
+    (["try:",
+      "    map()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — только функция, без итерируемых
+    (["try:",
+      "    map(lambda x: x)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — функция не является вызываемой (ошибка при потреблении)
+    (["try:",
+      "    list(map(5, [1]))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — неитерируемый источник
+    (["try:",
+      "    map(lambda x: x, 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — не принимает именованных аргументов
+    (["try:",
+      "    map(lambda x: x, [1], key=1)",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),

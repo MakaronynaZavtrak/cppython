@@ -9,6 +9,7 @@
 #include "FrozenSetValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
+#include "MapIterator.h"
 #include "PropertyValue.h"
 #include "ReversedSequenceIterator.h"
 #include "SetValue.h"
@@ -1309,6 +1310,38 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             result->sort(key, reverse, env);
 
             return Value(result);
+        }
+    ));
+
+    env->set("map",
+    makeBuiltin(
+        "map",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &env) -> Value {
+
+            expectNoKwargs(kwargs, "map");
+
+            if (args.size() < 2) {
+                throw TypeErrorException(
+                    "map() must have at least two arguments."
+                );
+            }
+
+            const Value &func = args[0];
+
+            // получаем итераторы всех входных последовательностей
+            std::vector<Value::IteratorPtr> sources;
+            sources.reserve(args.size() - 1);
+
+            for (std::size_t i = 1; i < args.size(); ++i) {
+                sources.push_back(args[i].getIterator());
+            }
+
+            return Value(std::make_shared<MapIterator>(
+                func, std::move(sources), env
+            ));
         }
     ));
 
