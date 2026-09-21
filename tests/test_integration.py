@@ -6410,6 +6410,24 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("list(map(lambda x: x * 2, 'abc'))",     "['aa', 'bb', 'cc']"),
     ("list(map(lambda x: x + 1, map(lambda x: x * 2, [1, 2, 3])))", "[3, 5, 7]"),
 
+    # filter() — отбор по предикату (материализуем через list)
+    ("list(filter(lambda x: x % 2 == 0, range(6)))", "[0, 2, 4]"),
+    ("list(filter(lambda x: x > 2, [1, 2, 3, 4]))",  "[3, 4]"),
+    ("list(filter(lambda s: len(s) > 1, ['a', 'bb', 'c', 'ddd']))", "['bb', 'ddd']"),
+    ("list(filter(lambda x: x, [0, 0, 0]))",         "[]"),
+    ("list(filter(lambda x: True, []))",             "[]"),
+    ("list(filter(lambda x: x < 0, [1, 2, 3]))",     "[]"),
+
+    # filter(None, ...) — отбор по истинности самого элемента
+    ("list(filter(None, [0, 1, '', 'x', None, 2, [], [0]]))", "[1, 'x', 2, [0]]"),
+    ("list(filter(None, [0, '', 'keep', [], 5]))",   "['keep', 5]"),
+
+    # filter() — вложенный filter (filter-итератор сам итерируем)
+    ("list(filter(lambda x: x > 2, filter(lambda x: x % 2 == 1, range(10))))", "[3, 5, 7, 9]"),
+
+    # filter() — hasNext-путь: bytes() над filter с отсеянным хвостом
+    ("bytes(filter(lambda x: x < 256, [65, 66, 300]))", "b'AB'"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13260,6 +13278,61 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # map() — не принимает именованных аргументов
     (["try:",
       "    map(lambda x: x, [1], key=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — ленивость: элементы вычисляются по мере запроса
+    (["f = filter(lambda x: x % 2 == 0, range(10))",
+      "next(f)",
+      "next(f)",
+      "list(f)"], ["0", "2", "[4, 6, 8]"]),
+
+    # filter() — цикл for, отсеянный хвост корректно завершает итерацию
+    (["result = []",
+      "for v in filter(lambda x: x != 2, [1, 2, 3, 2]):",
+      "    result.append(v)",
+      "",
+      "result"], "[1, 3]"),
+
+    # filter() — без аргументов
+    (["try:",
+      "    filter()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — только предикат, без итерируемого
+    (["try:",
+      "    filter(lambda x: x)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — слишком много аргументов
+    (["try:",
+      "    list(filter(lambda x: x, [1], [2]))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — предикат не является вызываемым (ошибка при потреблении)
+    (["try:",
+      "    list(filter(5, [1]))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — неитерируемый источник
+    (["try:",
+      "    filter(lambda x: x, 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — не принимает именованных аргументов
+    (["try:",
+      "    filter(lambda x: x, [1], key=1)",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),

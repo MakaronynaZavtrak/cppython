@@ -6,6 +6,7 @@
 #include "ClassUtils.h"
 #include "DictValue.h"
 #include "Environment.h"
+#include "FilterIterator.h"
 #include "FrozenSetValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
@@ -1341,6 +1342,28 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
             return Value(std::make_shared<MapIterator>(
                 func, std::move(sources), env
+            ));
+        }
+    ));
+
+    env->set("filter",
+    makeBuiltin(
+        "filter",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &env) -> Value {
+
+            expectNoKwargs(kwargs, "filter");
+            expectArgs(args, 2, "filter");
+
+            const Value &predicate = args[0];
+
+            // получаем итератор входной последовательности
+            const auto source = args[1].getIterator();
+
+            return Value(std::make_shared<FilterIterator>(
+                predicate, source, env
             ));
         }
     ));

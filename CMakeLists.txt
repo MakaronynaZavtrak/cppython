@@ -256,7 +256,9 @@ add_executable(cppython main.cpp
         ast/genExprNode/GenExprNode.h
         exception/ZeroDivisionErrorException.h
         headers/MapIterator.h
-        sources/MapIterator.cpp)
+        sources/MapIterator.cpp
+        headers/FilterIterator.h
+        sources/FilterIterator.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 
