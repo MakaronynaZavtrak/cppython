@@ -19,6 +19,7 @@
 #include "SuperValue.h"
 #include "TupleValue.h"
 #include "Value.h"
+#include "ZipIterator.h"
 #include "../exception/AttributeErrorException.h"
 #include "../exception/StopIterationException.h"
 #include "../exception/TypeErrorException.h"
@@ -1364,6 +1365,40 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
             return Value(std::make_shared<FilterIterator>(
                 predicate, source, env
+            ));
+        }
+    ));
+
+    env->set("zip",
+    makeBuiltin(
+        "zip",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            bool strict = false;
+
+            for (const auto &[name, value]: kwargs) {
+                if (name == "strict") {
+                    strict = value.toBool();
+                } else {
+                    throw TypeErrorException(
+                        "'" + name + "' is an invalid keyword argument for zip()"
+                    );
+                }
+            }
+
+            // получаем итераторы всех входных последовательностей
+            std::vector<Value::IteratorPtr> sources;
+            sources.reserve(args.size());
+
+            for (const auto &arg: args) {
+                sources.push_back(arg.getIterator());
+            }
+
+            return Value(std::make_shared<ZipIterator>(
+                std::move(sources), strict
             ));
         }
     ));

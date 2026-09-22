@@ -6428,6 +6428,25 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     # filter() — hasNext-путь: bytes() над filter с отсеянным хвостом
     ("bytes(filter(lambda x: x < 256, [65, 66, 300]))", "b'AB'"),
 
+    # zip() — базовое объединение в кортежи
+    ("list(zip([1, 2, 3], [4, 5, 6]))", "[(1, 4), (2, 5), (3, 6)]"),
+    ("list(zip([1, 2, 3], [4, 5]))",    "[(1, 4), (2, 5)]"),
+    ("list(zip([1, 2], [3, 4], [5, 6]))", "[(1, 3, 5), (2, 4, 6)]"),
+    ("list(zip([1, 2, 3]))",            "[(1,), (2,), (3,)]"),
+    ("list(zip())",                     "[]"),
+    ("list(zip([], [1, 2]))",           "[]"),
+
+    # zip() — по любым итерируемым (строка, range)
+    ("list(zip('abc', [1, 2, 3]))",     "[('a', 1), ('b', 2), ('c', 3)]"),
+    ("list(zip(range(3), 'xy'))",       "[(0, 'x'), (1, 'y')]"),
+
+    # zip() — параметр strict
+    ("list(zip([1, 2], [3, 4], strict=True))",  "[(1, 3), (2, 4)]"),
+    ("list(zip([1, 2, 3], [4, 5], strict=False))", "[(1, 4), (2, 5)]"),
+
+    # zip() — потребление словарём (zip-итератор сам итерируем)
+    ("dict(zip(['a', 'b', 'c'], [1, 2, 3]))", "{'a': 1, 'b': 2, 'c': 3}"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13333,6 +13352,53 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # filter() — не принимает именованных аргументов
     (["try:",
       "    filter(lambda x: x, [1], key=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip() — ленивость: элементы вычисляются по мере запроса
+    (["z = zip([1, 2, 3], [4, 5, 6])",
+      "next(z)",
+      "list(z)"], ["(1, 4)", "[(2, 5), (3, 6)]"]),
+
+    # zip() — работает в цикле for
+    (["pairs = []",
+      "for pair in zip([1, 2, 3], [10, 20, 30]):",
+      "    pairs.append(pair[0] + pair[1])",
+      "",
+      "pairs"], "[11, 22, 33]"),
+
+    # zip(strict=True) — правый источник короче
+    (["try:",
+      "    list(zip([1, 2], [3], strict=True))",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip(strict=True) — правый источник длиннее
+    (["try:",
+      "    list(zip([1], [2, 3], strict=True))",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip() — неитерируемый единственный аргумент
+    (["try:",
+      "    list(zip(5))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip() — неитерируемый источник среди нескольких
+    (["try:",
+      "    list(zip([1], 5))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip() — неизвестный именованный аргумент
+    (["try:",
+      "    zip([1], foo=1)",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),

@@ -258,7 +258,9 @@ add_executable(cppython main.cpp
         headers/MapIterator.h
         sources/MapIterator.cpp
         headers/FilterIterator.h
-        sources/FilterIterator.cpp)
+        sources/FilterIterator.cpp
+        headers/ZipIterator.h
+        sources/ZipIterator.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 
