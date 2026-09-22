@@ -260,7 +260,9 @@ add_executable(cppython main.cpp
         headers/FilterIterator.h
         sources/FilterIterator.cpp
         headers/ZipIterator.h
-        sources/ZipIterator.cpp)
+        sources/ZipIterator.cpp
+        headers/EnumerateIterator.h
+        sources/EnumerateIterator.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

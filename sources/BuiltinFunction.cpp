@@ -5,6 +5,7 @@
 #include "ClassMethodValue.h"
 #include "ClassUtils.h"
 #include "DictValue.h"
+#include "EnumerateIterator.h"
 #include "Environment.h"
 #include "FilterIterator.h"
 #include "FrozenSetValue.h"
@@ -1399,6 +1400,64 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
             return Value(std::make_shared<ZipIterator>(
                 std::move(sources), strict
+            ));
+        }
+    ));
+
+    env->set("enumerate",
+    makeBuiltin(
+        "enumerate",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgsRange(args, 1, 2, "enumerate");
+
+            // start по умолчанию — целочисленный ноль
+            Value startVal = Value(Value::BigInt(0));
+            bool startPositional = false;
+
+            if (args.size() == 2) {
+                startVal = args[1];
+                startPositional = true;
+            }
+
+            // start можно передать и как именованный аргумент
+            for (const auto &[name, value]: kwargs) {
+
+                if (name == "start") {
+
+                    if (startPositional) {
+                        throw TypeErrorException(
+                            "enumerate() got multiple values for argument 'start'"
+                        );
+                    }
+
+                    startVal = value;
+                } else {
+                    throw TypeErrorException(
+                        "'" + name + "' is an invalid keyword argument for enumerate()"
+                    );
+                }
+            }
+
+            // start обязан быть целым (bool — подтип int в Python)
+            if (!startVal.isBigInt() && !startVal.isBool()) {
+                throw TypeErrorException(
+                    "'" + startVal.getTypeName() +
+                    "' object cannot be interpreted as an integer"
+                );
+            }
+
+            const auto source = args[0].getIterator();
+
+            const Value::BigInt start = startVal.isBool()
+                ? Value::BigInt(startVal.toBool() ? 1 : 0)
+                : startVal.toBigInt();
+
+            return Value(std::make_shared<EnumerateIterator>(
+                source, start
             ));
         }
     ));

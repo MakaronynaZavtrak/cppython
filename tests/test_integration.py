@@ -6447,6 +6447,20 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     # zip() — потребление словарём (zip-итератор сам итерируем)
     ("dict(zip(['a', 'b', 'c'], [1, 2, 3]))", "{'a': 1, 'b': 2, 'c': 3}"),
 
+    # enumerate() — нумерация элементов, кортежи (index, value)
+    ("list(enumerate(['a', 'b', 'c']))", "[(0, 'a'), (1, 'b'), (2, 'c')]"),
+    ("list(enumerate('xy'))",            "[(0, 'x'), (1, 'y')]"),
+    ("list(enumerate([]))",             "[]"),
+
+    # enumerate() — параметр start (позиционный, именованный, отрицательный, большой)
+    ("list(enumerate(['a', 'b', 'c'], 10))",       "[(10, 'a'), (11, 'b'), (12, 'c')]"),
+    ("list(enumerate(['a', 'b', 'c'], start=10))", "[(10, 'a'), (11, 'b'), (12, 'c')]"),
+    ("list(enumerate(range(3), -2))",              "[(-2, 0), (-1, 1), (0, 2)]"),
+    ("list(enumerate(['a', 'b'], 10**18))",        "[(1000000000000000000, 'a'), (1000000000000000001, 'b')]"),
+
+    # enumerate() — потребление словарём (enumerate-итератор сам итерируем)
+    ("dict(enumerate(['x', 'y']))",     "{0: 'x', 1: 'y'}"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13399,6 +13413,67 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # zip() — неизвестный именованный аргумент
     (["try:",
       "    zip([1], foo=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — ленивость: элементы вычисляются по мере запроса
+    (["e = enumerate(['a', 'b', 'c'])",
+      "next(e)",
+      "list(e)"], ["(0, 'a')", "[(1, 'b'), (2, 'c')]"]),
+
+    # enumerate() — работает в цикле for (со start)
+    (["out = []",
+      "for pair in enumerate(['a', 'b', 'c'], 1):",
+      "    out.append(pair[0])",
+      "",
+      "out"], "[1, 2, 3]"),
+
+    # enumerate() — без аргументов
+    (["try:",
+      "    enumerate()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — неитерируемый первый аргумент
+    (["try:",
+      "    list(enumerate(5))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — слишком много аргументов
+    (["try:",
+      "    list(enumerate([1], 2, 3))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — start не является целым (float)
+    (["try:",
+      "    list(enumerate([1], start=1.5))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — start не является целым (строка)
+    (["try:",
+      "    list(enumerate([1], 'x'))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — неизвестный именованный аргумент
+    (["try:",
+      "    list(enumerate([1], foo=1))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — start передан и позиционно, и по имени
+    (["try:",
+      "    list(enumerate([1], 2, start=3))",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),
