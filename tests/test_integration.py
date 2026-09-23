@@ -6492,6 +6492,39 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("min([-5, -1, -3], key=abs)",      "-1"),
     ("max([1, -8, 4], key=abs)",        "-8"),
 
+    # round() — тип возврата: без ndigits -> int, с ndigits -> тип аргумента
+    ("round(5)",              "5"),
+    ("round(5.7)",            "6"),
+    ("round(5.2)",            "5"),
+    ("round(-5.7)",           "-6"),
+    ("round(5, 2)",           "5"),
+    ("round(3.14159, 2)",     "3.14"),
+    ("round(3.14159, None)",  "3"),
+    ("round(True)",           "1"),
+    ("round(2.5, 0)",         "2.0"),
+    ("round(1.5, ndigits=0)", "2.0"),
+
+    # round() — банковское округление (half-to-even) на точных .5
+    ("round(0.5)",            "0"),
+    ("round(1.5)",            "2"),
+    ("round(2.5)",            "2"),
+    ("round(3.5)",            "4"),
+    ("round(4.5)",            "4"),
+    ("round(-0.5)",           "0"),
+    ("round(-1.5)",           "-2"),
+    ("round(-2.5)",           "-2"),
+
+    # round() — ndigits на точных в двоичном дробях + не-половинные
+    ("round(1.25, 1)",        "1.2"),
+    ("round(0.125, 2)",       "0.12"),
+    ("round(2.567, 2)",       "2.57"),
+    ("round(-2.567, 2)",      "-2.57"),
+
+    # round() — отрицательные ndigits (округление к 10^n, half-to-even)
+    ("round(12345, -2)",      "12300"),
+    ("round(12345, -3)",      "12000"),
+    ("round(12500, -3)",      "12000"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13581,6 +13614,48 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # abs() — не принимает именованных аргументов
     (["try:",
       "    abs(x=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — без аргументов
+    (["try:",
+      "    round()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — слишком много аргументов
+    (["try:",
+      "    round(1, 2, 3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — неподдерживаемый тип числа
+    (["try:",
+      "    round('x')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — ndigits не является целым (строка)
+    (["try:",
+      "    round(1.5, 'x')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — ndigits не является целым (float)
+    (["try:",
+      "    round(1.5, 1.5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — неподдерживаемый тип (список)
+    (["try:",
+      "    round([1])",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),

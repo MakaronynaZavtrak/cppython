@@ -91,6 +91,72 @@ const Value* findKwarg(const Kwargs& kwargs, const QString& name) {
     return &it->second;
 }
 
+// Банковское округление вещественного до целого: половина — к чётному.
+static Value::BigInt roundHalfEvenToInt(const Value::BigFloat &y) {
+
+    const Value::BigInt trunc = y.convert_to<Value::BigInt>();  // усечение к нулю
+    const Value::BigFloat truncF = trunc.convert_to<Value::BigFloat>();
+
+    // floor и дробная часть от него в [0, 1)
+    Value::BigInt floor;
+    Value::BigFloat frac;
+
+    if (y >= truncF) {
+        floor = trunc;
+        frac = y - truncF;
+    } else {
+        // отрицательное с ненулевой дробной частью: floor = trunc - 1
+        floor = trunc - 1;
+        frac = y - floor.convert_to<Value::BigFloat>();
+    }
+
+    const Value::BigFloat half("0.5");
+
+    if (frac < half) {
+        return floor;
+    }
+    if (frac > half) {
+        return floor + 1;
+    }
+
+    // ровно половина — округляем к чётному
+    return (floor % 2 == 0) ? floor : floor + 1;
+}
+
+// Банковское округление целого до кратного scale (scale > 0): половина — к чётному.
+static Value::BigInt roundIntHalfEven(const Value::BigInt &x, const Value::BigInt &scale) {
+
+    const Value::BigInt q = x / scale;           // усечение к нулю
+    const Value::BigInt r = x - q * scale;       // остаток со знаком x
+    const Value::BigInt twice = 2 * (r < 0 ? -r : r);
+
+    const Value::BigInt step = (x >= 0) ? 1 : -1;
+
+    Value::BigInt result = q;
+
+    if (twice > scale) {
+        result = q + step;
+    } else if (twice == scale && q % 2 != 0) {
+        result = q + step;   // ровно половина — к чётному
+    }
+
+    return result * scale;
+}
+
+// Степень десятки (10^n) как вещественное; n может быть отрицательным.
+static Value::BigFloat pow10(long long n) {
+
+    Value::BigFloat r = 1;
+
+    if (n >= 0) {
+        for (long long i = 0; i < n; ++i) r *= 10;
+    } else {
+        for (long long i = 0; i < -n; ++i) r /= 10;
+    }
+
+    return r;
+}
+
 
 void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) {
 
@@ -1506,6 +1572,97 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             );
         }
     ));
+
+        env->set("round",
+        makeBuiltin(
+            "round",
+
+            [](const std::vector<Value> &args,
+               const Kwargs &kwargs,
+               const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgsRange(args, 1, 2, "round");
+
+                const Value &x = args[0];
+
+                // ndigits: отсутствует / None (→ результат int) либо целое
+                Value ndigitsVal;
+                bool ndigitsProvided = false;
+
+                if (args.size() == 2) {
+                    ndigitsVal = args[1];
+                    ndigitsProvided = true;
+                }
+
+                for (const auto &[name, value]: kwargs) {
+                    if (name == "ndigits") {
+                        if (ndigitsProvided) {
+                            throw TypeErrorException(
+                                "round() got multiple values for argument 'ndigits'"
+                            );
+                        }
+                        ndigitsVal = value;
+                        ndigitsProvided = true;
+                    } else {
+                        throw TypeErrorException(
+                            "'" + name + "' is an invalid keyword argument for round()"
+                        );
+                    }
+                }
+
+                bool hasNdigits = false;
+                Value::BigInt ndigits = 0;
+
+                if (ndigitsProvided && !ndigitsVal.isNone()) {
+                    if (!ndigitsVal.isBigInt() && !ndigitsVal.isBool()) {
+                        throw TypeErrorException(
+                            "'" + ndigitsVal.getTypeName() +
+                            "' object cannot be interpreted as an integer"
+                        );
+                    }
+                    ndigits = ndigitsVal.toBigInt();
+                    hasNdigits = true;
+                }
+
+                // округлять умеем только числа
+                if (!x.isBigInt() && !x.isBool() && !x.isBigFloat()) {
+                    throw TypeErrorException(
+                        "type " + x.getTypeName() + " doesn't define __round__ method"
+                    );
+                }
+
+                // без ndigits — результат int
+                if (!hasNdigits) {
+                    if (x.isBigInt() || x.isBool()) {
+                        return Value(x.toBigInt());
+                    }
+                    return Value(roundHalfEvenToInt(x.toBigFloat()));
+                }
+
+                // с ndigits: int остаётся int
+                if (x.isBigInt() || x.isBool()) {
+                    const Value::BigInt xi = x.toBigInt();
+
+                    if (ndigits >= 0) {
+                        return Value(xi);
+                    }
+
+                    // отрицательные ndigits — округление к 10^(-ndigits)
+                    Value::BigInt scale = 1;
+                    for (Value::BigInt i = 0; i < -ndigits; ++i) {
+                        scale *= 10;
+                    }
+                    return Value(roundIntHalfEven(xi, scale));
+                }
+
+                // float с ndigits — результат float
+                const Value::BigFloat xf = x.toBigFloat();
+                const Value::BigFloat scale = pow10(ndigits.convert_to<long long>());
+                const Value::BigInt rounded = roundHalfEvenToInt(xf * scale);
+
+                return Value(rounded.convert_to<Value::BigFloat>() / scale);
+            }
+        ));
 
 }
 
