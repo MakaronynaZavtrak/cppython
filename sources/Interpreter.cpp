@@ -566,6 +566,7 @@ namespace {
             "hasattr", "getattr", "setattr", "property", "staticmethod",
             "classmethod", "object", "type", "exit", "sum", "all", "any",
             "min", "max", "sorted", "map", "filter", "zip", "enumerate",
+            "callable",
             // исключения
             "BaseException", "Exception", "ArithmeticError", "OverflowError",
             "LookupError", "IndexError", "KeyError", "RuntimeError", "NameError",

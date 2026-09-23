@@ -6461,6 +6461,20 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     # enumerate() — потребление словарём (enumerate-итератор сам итерируем)
     ("dict(enumerate(['x', 'y']))",     "{0: 'x', 1: 'y'}"),
 
+    # callable() — вызываемые объекты
+    ("callable(len)",          "True"),
+    ("callable(lambda x: x)",  "True"),
+    ("callable(print)",        "True"),
+    ("callable(int)",          "True"),
+
+    # callable() — невызываемые объекты
+    ("callable(42)",           "False"),
+    ("callable('abc')",        "False"),
+    ("callable([1, 2, 3])",    "False"),
+    ("callable(None)",         "False"),
+    ("callable({})",           "False"),
+    ("callable((1, 2))",       "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13474,6 +13488,40 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # enumerate() — start передан и позиционно, и по имени
     (["try:",
       "    list(enumerate([1], 2, start=3))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # callable() — функция, класс, экземпляр без __call__, связанный метод
+    (["def f():",
+      "    return 1",
+      "",
+      "class C:",
+      "    def m(self):",
+      "        return 2",
+      "",
+      "callable(f)",
+      "callable(C)",
+      "callable(C())",
+      "callable(C().m)"], ["True", "True", "False", "True"]),
+
+    # callable() — без аргументов
+    (["try:",
+      "    callable()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # callable() — слишком много аргументов
+    (["try:",
+      "    callable(1, 2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # callable() — не принимает именованных аргументов
+    (["try:",
+      "    callable(x=1)",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),

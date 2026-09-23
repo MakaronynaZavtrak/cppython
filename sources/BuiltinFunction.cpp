@@ -1462,6 +1462,21 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     ));
 
+    env->set("callable",
+    makeBuiltin(
+        "callable",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 1, "callable");
+            expectNoKwargs(kwargs, "callable");
+
+            return Value(args[0].isCallable());
+        }
+    ));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {
