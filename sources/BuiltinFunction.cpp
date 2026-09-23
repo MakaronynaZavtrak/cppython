@@ -1477,6 +1477,36 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     ));
 
+    env->set("abs",
+    makeBuiltin(
+        "abs",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 1, "abs");
+            expectNoKwargs(kwargs, "abs");
+
+            const Value &x = args[0];
+
+            // bool — подтип int, поэтому abs(True) == 1 (int)
+            if (x.isBigInt() || x.isBool()) {
+                const Value::BigInt v = x.toBigInt();
+                return Value(v < 0 ? Value::BigInt(-v) : v);
+            }
+
+            if (x.isBigFloat()) {
+                const Value::BigFloat v = x.toBigFloat();
+                return Value(v < 0 ? Value::BigFloat(-v) : v);
+            }
+
+            throw TypeErrorException(
+                "bad operand type for abs(): '" + x.getTypeName() + "'"
+            );
+        }
+    ));
+
 }
 
 Value BuiltinFunction::get(const Value::InstancePtr& instance, const Value::ClassPtr& owner) {

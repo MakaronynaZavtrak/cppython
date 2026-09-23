@@ -6475,6 +6475,23 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("callable({})",           "False"),
     ("callable((1, 2))",       "False"),
 
+    # abs() — целые, вещественные, bool, большие числа
+    ("abs(-5)",              "5"),
+    ("abs(5)",               "5"),
+    ("abs(0)",               "0"),
+    ("abs(-3.14)",           "3.14"),
+    ("abs(3.14)",            "3.14"),
+    ("abs(-0.0)",            "0.0"),
+    ("abs(True)",            "1"),
+    ("abs(False)",           "0"),
+    ("abs(-10**30)",         "1000000000000000000000000000000"),
+    ("abs(-7) + abs(3)",     "10"),
+
+    # abs() как key= для сортировки и экстремумов
+    ("sorted([-5, 2, -1, 3], key=abs)", "[-1, 2, 3, -5]"),
+    ("min([-5, -1, -3], key=abs)",      "-1"),
+    ("max([1, -8, 4], key=abs)",        "-8"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13522,6 +13539,48 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # callable() — не принимает именованных аргументов
     (["try:",
       "    callable(x=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — без аргументов
+    (["try:",
+      "    abs()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — слишком много аргументов
+    (["try:",
+      "    abs(1, 2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — неподдерживаемый тип (строка)
+    (["try:",
+      "    abs('x')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — неподдерживаемый тип (список)
+    (["try:",
+      "    abs([1])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — неподдерживаемый тип (None)
+    (["try:",
+      "    abs(None)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — не принимает именованных аргументов
+    (["try:",
+      "    abs(x=1)",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),
