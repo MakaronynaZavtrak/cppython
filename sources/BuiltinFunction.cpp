@@ -157,6 +157,62 @@ static Value::BigFloat pow10(long long n) {
     return r;
 }
 
+// Python-остаток (floor-mod): знак результата совпадает со знаком m.
+static Value::BigInt floorMod(const Value::BigInt &a, const Value::BigInt &m) {
+    Value::BigInt r = a % m;
+    if (r != 0 && ((r < 0) != (m < 0))) {
+        r += m;
+    }
+    return r;
+}
+
+// Быстрое модульное возведение в степень (exp >= 0), результат в терминах floor-mod.
+static Value::BigInt powMod(Value::BigInt base, Value::BigInt exp, const Value::BigInt &mod) {
+    Value::BigInt result = floorMod(1, mod);   // для mod == 1 это 0
+    base = floorMod(base, mod);
+
+    while (exp > 0) {
+        if (exp % 2 != 0) {
+            result = floorMod(result * base, mod);
+        }
+        base = floorMod(base * base, mod);
+        exp /= 2;
+    }
+    return result;
+}
+
+// Расширенный алгоритм Евклида: возвращает НОД(a, b) и x, y такие, что a*x + b*y = НОД.
+static Value::BigInt extGcd(const Value::BigInt &a, const Value::BigInt &b,
+                            Value::BigInt &x, Value::BigInt &y) {
+    if (b == 0) {
+        x = 1;
+        y = 0;
+        return a;
+    }
+
+    Value::BigInt x1, y1;
+    const Value::BigInt g = extGcd(b, a % b, x1, y1);
+
+    x = y1;
+    y = x1 - (a / b) * y1;
+    return g;
+}
+
+// Модульная инверсия a по модулю mod; ошибка, если a необратимо.
+static Value::BigInt modInverse(const Value::BigInt &a, const Value::BigInt &mod) {
+    const Value::BigInt m = (mod < 0) ? -mod : mod;
+
+    Value::BigInt x, y;
+    const Value::BigInt g = extGcd(floorMod(a, m), m, x, y);
+
+    if (g != 1) {
+        throw ValueErrorException(
+            "base is not invertible for the given modulus"
+        );
+    }
+
+    return floorMod(x, mod);
+}
 
 void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) {
 
@@ -440,6 +496,80 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                         )
                     )
                 );
+            }
+        ));
+
+        env->set("pow",
+        makeBuiltin(
+            "pow",
+
+            [](const std::vector<Value> &args,
+               const Kwargs &kwargs,
+               const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgsRange(args, 2, 3, "pow");
+
+                // mod из третьего позиционного аргумента или именованного mod=
+                Value modVal;
+                bool modProvided = false;
+
+                if (args.size() == 3) {
+                    modVal = args[2];
+                    modProvided = true;
+                }
+
+                for (const auto &[name, value]: kwargs) {
+                    if (name == "mod") {
+                        if (modProvided) {
+                            throw TypeErrorException(
+                                "pow() got multiple values for argument 'mod'"
+                            );
+                        }
+                        modVal = value;
+                        modProvided = true;
+                    } else {
+                        throw TypeErrorException(
+                            "'" + name + "' is an invalid keyword argument for pow()"
+                        );
+                    }
+                }
+
+                const Value &base = args[0];
+                const Value &exp = args[1];
+
+                // трёхаргументная форма: (base ** exp) % mod с быстрым модульным возведением
+                if (modProvided && !modVal.isNone()) {
+
+                    const bool allInts =
+                        (base.isBigInt() || base.isBool()) &&
+                        (exp.isBigInt()  || exp.isBool())  &&
+                        (modVal.isBigInt() || modVal.isBool());
+
+                    if (!allInts) {
+                        throw TypeErrorException(
+                            "pow() 3rd argument not allowed unless all arguments are integers"
+                        );
+                    }
+
+                    const Value::BigInt m = modVal.toBigInt();
+
+                    if (m == 0) {
+                        throw ValueErrorException("pow() 3rd argument cannot be 0");
+                    }
+
+                    const Value::BigInt b = base.toBigInt();
+                    const Value::BigInt e = exp.toBigInt();
+
+                    if (e >= 0) {
+                        return Value(powMod(b, e, m));
+                    }
+
+                    // отрицательная степень — через модульную инверсию основания
+                    return Value(powMod(modInverse(b, m), -e, m));
+                }
+
+                // двухаргументная форма — обычное возведение в степень
+                return base.power(exp);
             }
         ));
 
