@@ -1573,96 +1573,122 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     ));
 
-        env->set("round",
-        makeBuiltin(
-            "round",
+    env->set("round",
+    makeBuiltin(
+        "round",
 
-            [](const std::vector<Value> &args,
-               const Kwargs &kwargs,
-               const std::shared_ptr<Environment> &) -> Value {
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
 
-                expectArgsRange(args, 1, 2, "round");
+            expectArgsRange(args, 1, 2, "round");
 
-                const Value &x = args[0];
+            const Value &x = args[0];
 
-                // ndigits: отсутствует / None (→ результат int) либо целое
-                Value ndigitsVal;
-                bool ndigitsProvided = false;
+            // ndigits: отсутствует / None (→ результат int) либо целое
+            Value ndigitsVal;
+            bool ndigitsProvided = false;
 
-                if (args.size() == 2) {
-                    ndigitsVal = args[1];
+            if (args.size() == 2) {
+                ndigitsVal = args[1];
+                ndigitsProvided = true;
+            }
+
+            for (const auto &[name, value]: kwargs) {
+                if (name == "ndigits") {
+                    if (ndigitsProvided) {
+                        throw TypeErrorException(
+                            "round() got multiple values for argument 'ndigits'"
+                        );
+                    }
+                    ndigitsVal = value;
                     ndigitsProvided = true;
-                }
-
-                for (const auto &[name, value]: kwargs) {
-                    if (name == "ndigits") {
-                        if (ndigitsProvided) {
-                            throw TypeErrorException(
-                                "round() got multiple values for argument 'ndigits'"
-                            );
-                        }
-                        ndigitsVal = value;
-                        ndigitsProvided = true;
-                    } else {
-                        throw TypeErrorException(
-                            "'" + name + "' is an invalid keyword argument for round()"
-                        );
-                    }
-                }
-
-                bool hasNdigits = false;
-                Value::BigInt ndigits = 0;
-
-                if (ndigitsProvided && !ndigitsVal.isNone()) {
-                    if (!ndigitsVal.isBigInt() && !ndigitsVal.isBool()) {
-                        throw TypeErrorException(
-                            "'" + ndigitsVal.getTypeName() +
-                            "' object cannot be interpreted as an integer"
-                        );
-                    }
-                    ndigits = ndigitsVal.toBigInt();
-                    hasNdigits = true;
-                }
-
-                // округлять умеем только числа
-                if (!x.isBigInt() && !x.isBool() && !x.isBigFloat()) {
+                } else {
                     throw TypeErrorException(
-                        "type " + x.getTypeName() + " doesn't define __round__ method"
+                        "'" + name + "' is an invalid keyword argument for round()"
                     );
                 }
-
-                // без ndigits — результат int
-                if (!hasNdigits) {
-                    if (x.isBigInt() || x.isBool()) {
-                        return Value(x.toBigInt());
-                    }
-                    return Value(roundHalfEvenToInt(x.toBigFloat()));
-                }
-
-                // с ndigits: int остаётся int
-                if (x.isBigInt() || x.isBool()) {
-                    const Value::BigInt xi = x.toBigInt();
-
-                    if (ndigits >= 0) {
-                        return Value(xi);
-                    }
-
-                    // отрицательные ndigits — округление к 10^(-ndigits)
-                    Value::BigInt scale = 1;
-                    for (Value::BigInt i = 0; i < -ndigits; ++i) {
-                        scale *= 10;
-                    }
-                    return Value(roundIntHalfEven(xi, scale));
-                }
-
-                // float с ndigits — результат float
-                const Value::BigFloat xf = x.toBigFloat();
-                const Value::BigFloat scale = pow10(ndigits.convert_to<long long>());
-                const Value::BigInt rounded = roundHalfEvenToInt(xf * scale);
-
-                return Value(rounded.convert_to<Value::BigFloat>() / scale);
             }
-        ));
+
+            bool hasNdigits = false;
+            Value::BigInt ndigits = 0;
+
+            if (ndigitsProvided && !ndigitsVal.isNone()) {
+                if (!ndigitsVal.isBigInt() && !ndigitsVal.isBool()) {
+                    throw TypeErrorException(
+                        "'" + ndigitsVal.getTypeName() +
+                        "' object cannot be interpreted as an integer"
+                    );
+                }
+                ndigits = ndigitsVal.toBigInt();
+                hasNdigits = true;
+            }
+
+            // округлять умеем только числа
+            if (!x.isBigInt() && !x.isBool() && !x.isBigFloat()) {
+                throw TypeErrorException(
+                    "type " + x.getTypeName() + " doesn't define __round__ method"
+                );
+            }
+
+            // без ndigits — результат int
+            if (!hasNdigits) {
+                if (x.isBigInt() || x.isBool()) {
+                    return Value(x.toBigInt());
+                }
+                return Value(roundHalfEvenToInt(x.toBigFloat()));
+            }
+
+            // с ndigits: int остаётся int
+            if (x.isBigInt() || x.isBool()) {
+                const Value::BigInt xi = x.toBigInt();
+
+                if (ndigits >= 0) {
+                    return Value(xi);
+                }
+
+                // отрицательные ndigits — округление к 10^(-ndigits)
+                Value::BigInt scale = 1;
+                for (Value::BigInt i = 0; i < -ndigits; ++i) {
+                    scale *= 10;
+                }
+                return Value(roundIntHalfEven(xi, scale));
+            }
+
+            // float с ndigits — результат float
+            const Value::BigFloat xf = x.toBigFloat();
+            const Value::BigFloat scale = pow10(ndigits.convert_to<long long>());
+            const Value::BigInt rounded = roundHalfEvenToInt(xf * scale);
+
+            return Value(rounded.convert_to<Value::BigFloat>() / scale);
+        }
+    ));
+
+    env->set("divmod",
+    makeBuiltin(
+        "divmod",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 2, "divmod");
+            expectNoKwargs(kwargs, "divmod");
+
+            const Value &a = args[0];
+            const Value &b = args[1];
+
+            // floor-деление; сам бросает ZeroDivisionError / TypeError
+            const Value div = a.intDivide(b);
+
+            // остаток, согласованный с floor-делением: a == div * b + mod
+            const Value mod = a - div * b;
+
+            return Value(std::make_shared<TupleValue>(
+                std::vector<Value>{ div, mod }
+            ));
+        }
+    ));
 
 }
 

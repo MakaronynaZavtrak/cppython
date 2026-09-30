@@ -6525,6 +6525,23 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("round(12345, -3)",      "12000"),
     ("round(12500, -3)",      "12000"),
 
+    # divmod() — floor-деление, остаток со знаком делителя
+    ("divmod(17, 5)",       "(3, 2)"),
+    ("divmod(-17, 5)",      "(-4, 3)"),
+    ("divmod(17, -5)",      "(-4, -3)"),
+    ("divmod(-17, -5)",     "(3, -2)"),
+    ("divmod(10, 2)",       "(5, 0)"),
+    ("divmod(0, 5)",        "(0, 0)"),
+
+    # divmod() — вещественные
+    ("divmod(7.5, 2)",      "(3.0, 1.5)"),
+    ("divmod(-7.5, 2)",     "(-4.0, 0.5)"),
+    ("divmod(7, 2.5)",      "(2.0, 2.0)"),
+
+    # divmod() — bool как int и большие числа
+    ("divmod(True, 2)",     "(0, 1)"),
+    ("divmod(10**30, 7)",   "(142857142857142857142857142857, 1)"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -13656,6 +13673,62 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
     # round() — неподдерживаемый тип (список)
     (["try:",
       "    round([1])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — без аргументов
+    (["try:",
+      "    divmod()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — один аргумент
+    (["try:",
+      "    divmod(1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — слишком много аргументов
+    (["try:",
+      "    divmod(1, 2, 3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — деление на ноль (целые)
+    (["try:",
+      "    divmod(5, 0)",
+      "except ZeroDivisionError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — деление на ноль (вещественные)
+    (["try:",
+      "    divmod(5.0, 0)",
+      "except ZeroDivisionError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — неподдерживаемый тип первого аргумента
+    (["try:",
+      "    divmod('x', 1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — неподдерживаемый тип второго аргумента
+    (["try:",
+      "    divmod(1, 'x')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — не принимает именованных аргументов
+    (["try:",
+      "    divmod(1, x=2)",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),
