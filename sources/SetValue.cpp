@@ -182,14 +182,11 @@ bool SetValue::isSubset(const Value& other) const {
         otherSet.insert(it->next());
     }
 
-    for (const auto& value : elements) {
-
-        if (!otherSet.contains(value)) {
-            return false;
-        }
-    }
-
-    return true;
+    return std::all_of(
+        elements.begin(),
+        elements.end(),
+        [&](const Value& value) { return otherSet.contains(value); }
+    );
 }
 
 bool SetValue::isSuperset(const Value& other) const {
@@ -215,14 +212,11 @@ bool SetValue::isDisjoint(const Value& other) const {
         otherSet.insert(it->next());
     }
 
-    for (const auto& item : elements) {
-
-        if (otherSet.contains(item)) {
-            return false;
-        }
-    }
-
-    return true;
+    return std::all_of(
+        elements.begin(),
+        elements.end(),
+        [&](const Value& value) { return !other.contains(value); }
+    );
 }
 
 Value SetValue::copy() const {
@@ -428,14 +422,11 @@ bool SetValue::equal(const Value& other) const {
             return false;
         }
 
-        for (const auto& value : elements) {
-
-            if (!otherSet->elements.contains(value)) {
-                return false;
-            }
-        }
-
-        return true;
+        return std::all_of(
+            elements.begin(),
+            elements.end(),
+            [&](const Value& value) { return otherSet->elements.contains(value); }
+        );
     }
 
     if (other.isFrozenSet()) {
@@ -448,14 +439,11 @@ bool SetValue::equal(const Value& other) const {
             return false;
         }
 
-        for (const auto& value : elements) {
-
-            if (!otherElements.contains(value)) {
-                return false;
-            }
-        }
-
-        return true;
+        return std::all_of(
+            elements.begin(),
+            elements.end(),
+            [&](const Value& value) { return otherElements.contains(value); }
+        );
     }
 
     return false;

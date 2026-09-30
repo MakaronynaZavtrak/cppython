@@ -6242,6 +6242,330 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     # int(float(x)) round-trip
     ("int(float('7.9'))", "7"),
 
+    # sum() — базовое суммирование
+    ("sum([1, 2, 3])",                 "6"),
+    ("sum([])",                        "0"),
+    ("sum([-1, -2, -3])",              "-6"),
+    ("sum([10, 20, 30, 40])",          "100"),
+
+    # sum() — параметр start (позиционный и именованный)
+    ("sum([1, 2, 3], 10)",             "16"),
+    ("sum([1, 2, 3], start=10)",       "16"),
+    ("sum([], 42)",                    "42"),
+    ("sum([], start=42)",              "42"),
+
+    # sum() — вещественные (только точные в двоичном виде, без проблем repr)
+    ("sum([1.5, 2.5])",                "4.0"),
+    ("sum([0.5, 0.25])",               "0.75"),
+    ("sum([0.5, 0.5, 0.5])",           "1.5"),
+    ("sum([1, 2.0])",                  "3.0"),
+
+    # sum() — bool суммируется как int
+    ("sum([True, True, False])",       "2"),
+    ("sum([True, True, True], 1)",     "4"),
+
+    # sum() — произвольная точность (boost cpp_int против bigint CPython)
+    ("sum([10**18, 10**18])",          "2000000000000000000"),
+
+    # sum() — по любому итерируемому, а не только list
+    ("sum(range(5))",                  "10"),
+    ("sum(range(1, 5))",               "10"),
+    ("sum((1, 2, 3, 4))",              "10"),
+    ("sum({10, 20, 30})",              "60"),
+    ("sum({1: 'a', 2: 'b', 3: 'c'})",  "6"),
+    ("sum((n * n for n in range(4)))", "14"),
+
+    # sum() — конкатенация списков через start=[]
+    ("sum([[1], [2], [3]], [])",       "[1, 2, 3]"),
+
+    # all() — базовое поведение и короткое замыкание
+    ("all([])",                        "True"),
+    ("all([1, 2, 3])",                 "True"),
+    ("all([1, 0, 2])",                 "False"),
+    ("all([0])",                       "False"),
+
+    # all() — истинность через bool(), не только числа
+    ("all('')",                        "True"),
+    ("all('abc')",                     "True"),
+    ("all(['', 'x'])",                 "False"),
+    ("all([[], [1]])",                 "False"),
+    ("all([1, 2.0, True])",            "True"),
+
+    # all() — по любому итерируемому
+    ("all({1: 'a', 0: 'b'})",          "False"),
+    ("all(range(3))",                  "False"),
+    ("all(range(1, 4))",               "True"),
+    ("all({0})",                       "False"),
+    ("all((x > 0 for x in [1, 2, 3]))", "True"),
+
+    # any() — базовое поведение и короткое замыкание
+    ("any([])",                        "False"),
+    ("any([0, 0, 0])",                 "False"),
+    ("any([0, 1, 0])",                 "True"),
+    ("any([1])",                       "True"),
+
+    # any() — истинность через bool(), не только числа
+    ("any('')",                        "False"),
+    ("any(['', ''])",                  "False"),
+    ("any(['', 'x'])",                 "True"),
+    ("any([[], [1]])",                 "True"),
+    ("any([None, 0, ''])",             "False"),
+    ("any([0.0, 0, False])",           "False"),
+
+    # any() — по любому итерируемому
+    ("any({0})",                       "False"),
+    ("any(range(3))",                  "True"),
+    ("any(range(0, 1))",               "False"),
+    ("any((x > 5 for x in [1, 2, 3]))", "False"),
+
+    # min() — обе формы: из итерируемого и из нескольких аргументов
+    ("min([3, 1, 2])",                 "1"),
+    ("min(3, 1, 2)",                   "1"),
+    ("min([1])",                       "1"),
+    ("min([1, 2], [3, 4])",            "[1, 2]"),
+
+    # min() — по строкам, кортежам, dict-ключам
+    ("min('bca')",                     "'a'"),
+    ("min([(1, 'z'), (1, 'a')])",      "(1, 'a')"),
+    ("min({3: 'a', 1: 'b', 2: 'c'})",  "1"),
+    ("min([1.5, 2, 0.5])",             "0.5"),
+
+    # min() — параметр key (в обеих формах, key=None = без ключа)
+    ("min([3, 1, 2], key=lambda x: -x)", "3"),
+    ("min(3, 1, 2, key=lambda x: -x)", "3"),
+    ("min(['bb', 'a', 'ccc'], key=len)", "'a'"),
+    ("min([-5, -1, -3], key=lambda x: x * x)", "-1"),
+    ("min([10], key=None)",            "10"),
+
+    # min() — параметр default (только одноаргументная форма)
+    ("min([], default=42)",            "42"),
+    ("min([], default=None) is None",  "True"),
+    ("min([5, 3, 8], default=99)",     "3"),
+
+    # min() — при равных ключах остаётся первый (стабильность)
+    ("min([(1, 'x'), (1, 'y')], key=lambda t: t[0])", "(1, 'x')"),
+
+    # max() — обе формы: из итерируемого и из нескольких аргументов
+    ("max([3, 1, 2])",                 "3"),
+    ("max(3, 1, 2)",                   "3"),
+    ("max([1])",                       "1"),
+    ("max([1, 2], [3, 4])",            "[3, 4]"),
+
+    # max() — по строкам, кортежам, dict-ключам
+    ("max('bca')",                     "'c'"),
+    ("max([(1, 'a'), (1, 'z')])",      "(1, 'z')"),
+    ("max({3: 'a', 1: 'b', 2: 'c'})",  "3"),
+    ("max([1.5, 2, 0.5])",             "2"),
+
+    # max() — параметр key (в обеих формах, key=None = без ключа)
+    ("max([3, 1, 2], key=lambda x: -x)", "1"),
+    ("max(3, 1, 2, key=lambda x: -x)", "1"),
+    ("max(['bb', 'a', 'ccc'], key=len)", "'ccc'"),
+    ("max([-5, -1, -3], key=lambda x: x * x)", "-5"),
+    ("max([10], key=None)",            "10"),
+
+    # max() — параметр default (только одноаргументная форма)
+    ("max([], default=42)",            "42"),
+    ("max([], default=None) is None",  "True"),
+    ("max([5, 3, 8], default=99)",     "8"),
+
+    # max() — при равных ключах остаётся первый (стабильность)
+    ("max([(1, 'x'), (1, 'y')], key=lambda t: t[0])", "(1, 'x')"),
+
+    # sorted() — базовая сортировка, возвращается новый список
+    ("sorted([3, 1, 2])",              "[1, 2, 3]"),
+    ("sorted((3, 1, 2))",              "[1, 2, 3]"),
+    ("sorted('bca')",                  "['a', 'b', 'c']"),
+    ("sorted([])",                     "[]"),
+
+    # sorted() — по любому итерируемому (dict-ключи, set, range)
+    ("sorted({3: 'a', 1: 'b', 2: 'c'})", "[1, 2, 3]"),
+    ("sorted({30, 10, 20})",           "[10, 20, 30]"),
+    ("sorted(range(5), reverse=True)", "[4, 3, 2, 1, 0]"),
+
+    # sorted() — параметры reverse и key (key=None = без ключа)
+    ("sorted([3, 1, 2], reverse=True)", "[3, 2, 1]"),
+    ("sorted([3, 1, 2], key=None)",    "[1, 2, 3]"),
+    ("sorted(['bb', 'a', 'ccc'], key=len)", "['a', 'bb', 'ccc']"),
+    ("sorted([3, 1, 2], key=lambda x: -x)", "[3, 2, 1]"),
+    ("sorted([3, 1, 2], key=lambda x: x, reverse=True)", "[3, 2, 1]"),
+
+    # sorted() — стабильность: при равных ключах исходный порядок сохраняется
+    ("sorted([(1, 'a'), (1, 'b'), (0, 'c')], key=lambda t: t[0])", "[(0, 'c'), (1, 'a'), (1, 'b')]"),
+    ("sorted([(1, 'a'), (1, 'b'), (0, 'c')], key=lambda t: t[0], reverse=True)", "[(1, 'a'), (1, 'b'), (0, 'c')]"),
+
+    # map() — базовое отображение (материализуем через list)
+    ("list(map(lambda x: x * x, [1, 2, 3]))", "[1, 4, 9]"),
+    ("list(map(str, [1, 2, 3]))",             "['1', '2', '3']"),
+    ("list(map(len, ['a', 'bb', 'ccc']))",    "[1, 2, 3]"),
+    ("list(map(lambda x: x, []))",            "[]"),
+
+    # map() — несколько итерируемых, останов по кратчайшему
+    ("list(map(lambda a, b: a + b, [1, 2, 3], [10, 20, 30]))", "[11, 22, 33]"),
+    ("list(map(lambda a, b: a + b, [1, 2, 3], [10, 20]))",     "[11, 22]"),
+    ("list(map(lambda a, b, c: a + b + c, [1, 2], [10, 20], [100, 200]))", "[111, 222]"),
+    ("list(map(lambda a, b: a + b, (1, 2, 3), range(10, 40, 10)))", "[11, 22, 33]"),
+
+    # map() — по строке и вложенный map (map-итератор сам итерируем)
+    ("list(map(lambda x: x * 2, 'abc'))",     "['aa', 'bb', 'cc']"),
+    ("list(map(lambda x: x + 1, map(lambda x: x * 2, [1, 2, 3])))", "[3, 5, 7]"),
+
+    # filter() — отбор по предикату (материализуем через list)
+    ("list(filter(lambda x: x % 2 == 0, range(6)))", "[0, 2, 4]"),
+    ("list(filter(lambda x: x > 2, [1, 2, 3, 4]))",  "[3, 4]"),
+    ("list(filter(lambda s: len(s) > 1, ['a', 'bb', 'c', 'ddd']))", "['bb', 'ddd']"),
+    ("list(filter(lambda x: x, [0, 0, 0]))",         "[]"),
+    ("list(filter(lambda x: True, []))",             "[]"),
+    ("list(filter(lambda x: x < 0, [1, 2, 3]))",     "[]"),
+
+    # filter(None, ...) — отбор по истинности самого элемента
+    ("list(filter(None, [0, 1, '', 'x', None, 2, [], [0]]))", "[1, 'x', 2, [0]]"),
+    ("list(filter(None, [0, '', 'keep', [], 5]))",   "['keep', 5]"),
+
+    # filter() — вложенный filter (filter-итератор сам итерируем)
+    ("list(filter(lambda x: x > 2, filter(lambda x: x % 2 == 1, range(10))))", "[3, 5, 7, 9]"),
+
+    # filter() — hasNext-путь: bytes() над filter с отсеянным хвостом
+    ("bytes(filter(lambda x: x < 256, [65, 66, 300]))", "b'AB'"),
+
+    # zip() — базовое объединение в кортежи
+    ("list(zip([1, 2, 3], [4, 5, 6]))", "[(1, 4), (2, 5), (3, 6)]"),
+    ("list(zip([1, 2, 3], [4, 5]))",    "[(1, 4), (2, 5)]"),
+    ("list(zip([1, 2], [3, 4], [5, 6]))", "[(1, 3, 5), (2, 4, 6)]"),
+    ("list(zip([1, 2, 3]))",            "[(1,), (2,), (3,)]"),
+    ("list(zip())",                     "[]"),
+    ("list(zip([], [1, 2]))",           "[]"),
+
+    # zip() — по любым итерируемым (строка, range)
+    ("list(zip('abc', [1, 2, 3]))",     "[('a', 1), ('b', 2), ('c', 3)]"),
+    ("list(zip(range(3), 'xy'))",       "[(0, 'x'), (1, 'y')]"),
+
+    # zip() — параметр strict
+    ("list(zip([1, 2], [3, 4], strict=True))",  "[(1, 3), (2, 4)]"),
+    ("list(zip([1, 2, 3], [4, 5], strict=False))", "[(1, 4), (2, 5)]"),
+
+    # zip() — потребление словарём (zip-итератор сам итерируем)
+    ("dict(zip(['a', 'b', 'c'], [1, 2, 3]))", "{'a': 1, 'b': 2, 'c': 3}"),
+
+    # enumerate() — нумерация элементов, кортежи (index, value)
+    ("list(enumerate(['a', 'b', 'c']))", "[(0, 'a'), (1, 'b'), (2, 'c')]"),
+    ("list(enumerate('xy'))",            "[(0, 'x'), (1, 'y')]"),
+    ("list(enumerate([]))",             "[]"),
+
+    # enumerate() — параметр start (позиционный, именованный, отрицательный, большой)
+    ("list(enumerate(['a', 'b', 'c'], 10))",       "[(10, 'a'), (11, 'b'), (12, 'c')]"),
+    ("list(enumerate(['a', 'b', 'c'], start=10))", "[(10, 'a'), (11, 'b'), (12, 'c')]"),
+    ("list(enumerate(range(3), -2))",              "[(-2, 0), (-1, 1), (0, 2)]"),
+    ("list(enumerate(['a', 'b'], 10**18))",        "[(1000000000000000000, 'a'), (1000000000000000001, 'b')]"),
+
+    # enumerate() — потребление словарём (enumerate-итератор сам итерируем)
+    ("dict(enumerate(['x', 'y']))",     "{0: 'x', 1: 'y'}"),
+
+    # callable() — вызываемые объекты
+    ("callable(len)",          "True"),
+    ("callable(lambda x: x)",  "True"),
+    ("callable(print)",        "True"),
+    ("callable(int)",          "True"),
+
+    # callable() — невызываемые объекты
+    ("callable(42)",           "False"),
+    ("callable('abc')",        "False"),
+    ("callable([1, 2, 3])",    "False"),
+    ("callable(None)",         "False"),
+    ("callable({})",           "False"),
+    ("callable((1, 2))",       "False"),
+
+    # abs() — целые, вещественные, bool, большие числа
+    ("abs(-5)",              "5"),
+    ("abs(5)",               "5"),
+    ("abs(0)",               "0"),
+    ("abs(-3.14)",           "3.14"),
+    ("abs(3.14)",            "3.14"),
+    ("abs(-0.0)",            "0.0"),
+    ("abs(True)",            "1"),
+    ("abs(False)",           "0"),
+    ("abs(-10**30)",         "1000000000000000000000000000000"),
+    ("abs(-7) + abs(3)",     "10"),
+
+    # abs() как key= для сортировки и экстремумов
+    ("sorted([-5, 2, -1, 3], key=abs)", "[-1, 2, 3, -5]"),
+    ("min([-5, -1, -3], key=abs)",      "-1"),
+    ("max([1, -8, 4], key=abs)",        "-8"),
+
+    # round() — тип возврата: без ndigits -> int, с ndigits -> тип аргумента
+    ("round(5)",              "5"),
+    ("round(5.7)",            "6"),
+    ("round(5.2)",            "5"),
+    ("round(-5.7)",           "-6"),
+    ("round(5, 2)",           "5"),
+    ("round(3.14159, 2)",     "3.14"),
+    ("round(3.14159, None)",  "3"),
+    ("round(True)",           "1"),
+    ("round(2.5, 0)",         "2.0"),
+    ("round(1.5, ndigits=0)", "2.0"),
+
+    # round() — банковское округление (half-to-even) на точных .5
+    ("round(0.5)",            "0"),
+    ("round(1.5)",            "2"),
+    ("round(2.5)",            "2"),
+    ("round(3.5)",            "4"),
+    ("round(4.5)",            "4"),
+    ("round(-0.5)",           "0"),
+    ("round(-1.5)",           "-2"),
+    ("round(-2.5)",           "-2"),
+
+    # round() — ndigits на точных в двоичном дробях + не-половинные
+    ("round(1.25, 1)",        "1.2"),
+    ("round(0.125, 2)",       "0.12"),
+    ("round(2.567, 2)",       "2.57"),
+    ("round(-2.567, 2)",      "-2.57"),
+
+    # round() — отрицательные ndigits (округление к 10^n, half-to-even)
+    ("round(12345, -2)",      "12300"),
+    ("round(12345, -3)",      "12000"),
+    ("round(12500, -3)",      "12000"),
+
+    # divmod() — floor-деление, остаток со знаком делителя
+    ("divmod(17, 5)",       "(3, 2)"),
+    ("divmod(-17, 5)",      "(-4, 3)"),
+    ("divmod(17, -5)",      "(-4, -3)"),
+    ("divmod(-17, -5)",     "(3, -2)"),
+    ("divmod(10, 2)",       "(5, 0)"),
+    ("divmod(0, 5)",        "(0, 0)"),
+
+    # divmod() — вещественные
+    ("divmod(7.5, 2)",      "(3.0, 1.5)"),
+    ("divmod(-7.5, 2)",     "(-4.0, 0.5)"),
+    ("divmod(7, 2.5)",      "(2.0, 2.0)"),
+
+    # divmod() — bool как int и большие числа
+    ("divmod(True, 2)",     "(0, 1)"),
+    ("divmod(10**30, 7)",   "(142857142857142857142857142857, 1)"),
+
+    # pow() — двухаргументная форма (== base ** exp)
+    ("pow(2, 10)",            "1024"),
+    ("pow(2, 0)",             "1"),
+    ("pow(2, -1)",            "0.5"),
+    ("pow(2.0, 3)",           "8.0"),
+    ("pow(-2, 3)",            "-8"),
+    ("pow(4, 0.5)",           "2.0"),
+    ("pow(0, 0)",             "1"),
+    ("pow(10, 20)",           "100000000000000000000"),
+
+    # pow() — трёхаргументная форма (модульное возведение, floor-остаток)
+    ("pow(2, 10, 1000)",      "24"),
+    ("pow(2, 3, 5)",          "3"),
+    ("pow(-2, 3, 5)",         "2"),
+    ("pow(3, 4, 7)",          "4"),
+    ("pow(2, 1000000, 999999937)", "215472158"),
+    ("pow(2, 3, 1)",          "0"),
+    ("pow(2, 3, None)",       "8"),
+    ("pow(5, 3, mod=100)",    "25"),
+
+    # pow() — модульная инверсия при отрицательной степени
+    ("pow(2, -1, 5)",         "3"),
+    ("pow(3, -1, 7)",         "5"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -12769,6 +13093,732 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    return (a, kw)",
       "",
       "f(1, a=2)"], "(1, {'a': 2})"),
+
+    # sum() — нельзя суммировать строки при start по умолчанию (int + str)
+    (["try:",
+      "    sum(['a', 'b'])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — строковый start запрещён явной проверкой
+    (["try:",
+      "    sum([], '')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — bytes-start запрещён
+    (["try:",
+      "    sum([], b'')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — bytearray-start запрещён
+    (["try:",
+      "    sum([], bytearray())",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — неитерируемый первый аргумент
+    (["try:",
+      "    sum(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — неизвестный именованный аргумент
+    (["try:",
+      "    sum([1], foo=2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — start передан и позиционно, и по имени
+    (["try:",
+      "    sum([1, 2], 3, start=4)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — слишком много аргументов
+    (["try:",
+      "    sum([1], 2, 3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sum() — вызов вообще без аргументов
+    (["try:",
+      "    sum()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # all() — вызов без аргументов
+    (["try:",
+      "    all()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # all() — слишком много аргументов
+    (["try:",
+      "    all([1], [2])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # all() — неитерируемый аргумент
+    (["try:",
+      "    all(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # all() — не принимает именованных аргументов
+    (["try:",
+      "    all([1], key=len)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # any() — вызов без аргументов
+    (["try:",
+      "    any()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # any() — слишком много аргументов
+    (["try:",
+      "    any([1], [2])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # any() — неитерируемый аргумент
+    (["try:",
+      "    any(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # any() — не принимает именованных аргументов
+    (["try:",
+      "    any([1], key=len)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — вызов без аргументов
+    (["try:",
+      "    min()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — пустая последовательность без default
+    (["try:",
+      "    min([])",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — пустая последовательность с key, но без default
+    (["try:",
+      "    min([], key=len)",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — единственный аргумент неитерируем
+    (["try:",
+      "    min(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — default запрещён с несколькими позиционными аргументами
+    (["try:",
+      "    min(1, 2, default=0)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — неизвестный именованный аргумент
+    (["try:",
+      "    min([1], foo=3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — key не является вызываемым
+    (["try:",
+      "    min([1, 2], key=5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # min() — несравнимые типы
+    (["try:",
+      "    min([1, 'a'])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — вызов без аргументов
+    (["try:",
+      "    max()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — пустая последовательность без default
+    (["try:",
+      "    max([])",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — пустая последовательность с key, но без default
+    (["try:",
+      "    max([], key=len)",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — единственный аргумент неитерируем
+    (["try:",
+      "    max(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — default запрещён с несколькими позиционными аргументами
+    (["try:",
+      "    max(1, 2, default=0)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — неизвестный именованный аргумент
+    (["try:",
+      "    max([1], foo=3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — key не является вызываемым
+    (["try:",
+      "    max([1, 2], key=5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # max() — несравнимые типы
+    (["try:",
+      "    max([1, 'a'])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — исходная последовательность не изменяется
+    (["a = [3, 1, 2]",
+      "b = sorted(a)",
+      "a"], "[3, 1, 2]"),
+
+    # sorted() — вызов без аргументов
+    (["try:",
+      "    sorted()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — неитерируемый аргумент
+    (["try:",
+      "    sorted(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — несравнимые типы
+    (["try:",
+      "    sorted([1, 'a'])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — key не является вызываемым
+    (["try:",
+      "    sorted([1], key=5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — неизвестный именованный аргумент
+    (["try:",
+      "    sorted([1], foo=2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # sorted() — key и reverse только именованные (лишний позиционный аргумент)
+    (["try:",
+      "    sorted([1], [2])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — ленивость: элементы вычисляются по мере запроса
+    (["m = map(lambda x: x + 1, [1, 2, 3])",
+      "next(m)",
+      "next(m)",
+      "list(m)"], ["2", "3", "[4]"]),
+
+    # map() — работает в цикле for
+    (["total = 0",
+      "for v in map(lambda x: x * 10, [1, 2, 3]):",
+      "    total = total + v",
+      "",
+      "total"], "60"),
+
+    # map() — без аргументов
+    (["try:",
+      "    map()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — только функция, без итерируемых
+    (["try:",
+      "    map(lambda x: x)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — функция не является вызываемой (ошибка при потреблении)
+    (["try:",
+      "    list(map(5, [1]))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — неитерируемый источник
+    (["try:",
+      "    map(lambda x: x, 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # map() — не принимает именованных аргументов
+    (["try:",
+      "    map(lambda x: x, [1], key=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — ленивость: элементы вычисляются по мере запроса
+    (["f = filter(lambda x: x % 2 == 0, range(10))",
+      "next(f)",
+      "next(f)",
+      "list(f)"], ["0", "2", "[4, 6, 8]"]),
+
+    # filter() — цикл for, отсеянный хвост корректно завершает итерацию
+    (["result = []",
+      "for v in filter(lambda x: x != 2, [1, 2, 3, 2]):",
+      "    result.append(v)",
+      "",
+      "result"], "[1, 3]"),
+
+    # filter() — без аргументов
+    (["try:",
+      "    filter()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — только предикат, без итерируемого
+    (["try:",
+      "    filter(lambda x: x)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — слишком много аргументов
+    (["try:",
+      "    list(filter(lambda x: x, [1], [2]))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — предикат не является вызываемым (ошибка при потреблении)
+    (["try:",
+      "    list(filter(5, [1]))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — неитерируемый источник
+    (["try:",
+      "    filter(lambda x: x, 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # filter() — не принимает именованных аргументов
+    (["try:",
+      "    filter(lambda x: x, [1], key=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip() — ленивость: элементы вычисляются по мере запроса
+    (["z = zip([1, 2, 3], [4, 5, 6])",
+      "next(z)",
+      "list(z)"], ["(1, 4)", "[(2, 5), (3, 6)]"]),
+
+    # zip() — работает в цикле for
+    (["pairs = []",
+      "for pair in zip([1, 2, 3], [10, 20, 30]):",
+      "    pairs.append(pair[0] + pair[1])",
+      "",
+      "pairs"], "[11, 22, 33]"),
+
+    # zip(strict=True) — правый источник короче
+    (["try:",
+      "    list(zip([1, 2], [3], strict=True))",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip(strict=True) — правый источник длиннее
+    (["try:",
+      "    list(zip([1], [2, 3], strict=True))",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip() — неитерируемый единственный аргумент
+    (["try:",
+      "    list(zip(5))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip() — неитерируемый источник среди нескольких
+    (["try:",
+      "    list(zip([1], 5))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # zip() — неизвестный именованный аргумент
+    (["try:",
+      "    zip([1], foo=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — ленивость: элементы вычисляются по мере запроса
+    (["e = enumerate(['a', 'b', 'c'])",
+      "next(e)",
+      "list(e)"], ["(0, 'a')", "[(1, 'b'), (2, 'c')]"]),
+
+    # enumerate() — работает в цикле for (со start)
+    (["out = []",
+      "for pair in enumerate(['a', 'b', 'c'], 1):",
+      "    out.append(pair[0])",
+      "",
+      "out"], "[1, 2, 3]"),
+
+    # enumerate() — без аргументов
+    (["try:",
+      "    enumerate()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — неитерируемый первый аргумент
+    (["try:",
+      "    list(enumerate(5))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — слишком много аргументов
+    (["try:",
+      "    list(enumerate([1], 2, 3))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — start не является целым (float)
+    (["try:",
+      "    list(enumerate([1], start=1.5))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — start не является целым (строка)
+    (["try:",
+      "    list(enumerate([1], 'x'))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — неизвестный именованный аргумент
+    (["try:",
+      "    list(enumerate([1], foo=1))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # enumerate() — start передан и позиционно, и по имени
+    (["try:",
+      "    list(enumerate([1], 2, start=3))",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # callable() — функция, класс, экземпляр без __call__, связанный метод
+    (["def f():",
+      "    return 1",
+      "",
+      "class C:",
+      "    def m(self):",
+      "        return 2",
+      "",
+      "callable(f)",
+      "callable(C)",
+      "callable(C())",
+      "callable(C().m)"], ["True", "True", "False", "True"]),
+
+    # callable() — без аргументов
+    (["try:",
+      "    callable()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # callable() — слишком много аргументов
+    (["try:",
+      "    callable(1, 2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # callable() — не принимает именованных аргументов
+    (["try:",
+      "    callable(x=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — без аргументов
+    (["try:",
+      "    abs()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — слишком много аргументов
+    (["try:",
+      "    abs(1, 2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — неподдерживаемый тип (строка)
+    (["try:",
+      "    abs('x')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — неподдерживаемый тип (список)
+    (["try:",
+      "    abs([1])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — неподдерживаемый тип (None)
+    (["try:",
+      "    abs(None)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # abs() — не принимает именованных аргументов
+    (["try:",
+      "    abs(x=1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — без аргументов
+    (["try:",
+      "    round()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — слишком много аргументов
+    (["try:",
+      "    round(1, 2, 3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — неподдерживаемый тип числа
+    (["try:",
+      "    round('x')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — ndigits не является целым (строка)
+    (["try:",
+      "    round(1.5, 'x')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — ndigits не является целым (float)
+    (["try:",
+      "    round(1.5, 1.5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # round() — неподдерживаемый тип (список)
+    (["try:",
+      "    round([1])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — без аргументов
+    (["try:",
+      "    divmod()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — один аргумент
+    (["try:",
+      "    divmod(1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — слишком много аргументов
+    (["try:",
+      "    divmod(1, 2, 3)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — деление на ноль (целые)
+    (["try:",
+      "    divmod(5, 0)",
+      "except ZeroDivisionError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — деление на ноль (вещественные)
+    (["try:",
+      "    divmod(5.0, 0)",
+      "except ZeroDivisionError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — неподдерживаемый тип первого аргумента
+    (["try:",
+      "    divmod('x', 1)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — неподдерживаемый тип второго аргумента
+    (["try:",
+      "    divmod(1, 'x')",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # divmod() — не принимает именованных аргументов
+    (["try:",
+      "    divmod(1, x=2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — без аргументов
+    (["try:",
+      "    pow()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — один аргумент
+    (["try:",
+      "    pow(2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — слишком много аргументов
+    (["try:",
+      "    pow(2, 3, 5, 7)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — модуль равен нулю
+    (["try:",
+      "    pow(2, 3, 0)",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — трёхаргументная форма требует целых (float base)
+    (["try:",
+      "    pow(2.0, 3, 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — трёхаргументная форма требует целых (float exp)
+    (["try:",
+      "    pow(2, 3.0, 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — трёхаргументная форма требует целых (float mod)
+    (["try:",
+      "    pow(2, 3, 5.0)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — основание необратимо по данному модулю
+    (["try:",
+      "    pow(2, -1, 4)",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # pow() — неподдерживаемый тип основания
+    (["try:",
+      "    pow('x', 2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
 
 ])
 

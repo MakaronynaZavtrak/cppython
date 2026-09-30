@@ -254,7 +254,15 @@ add_executable(cppython main.cpp
         ast/dictCompNode/DictCompNode.h
         ast/genExprNode/GenExprNode.cpp
         ast/genExprNode/GenExprNode.h
-        exception/ZeroDivisionErrorException.h)
+        exception/ZeroDivisionErrorException.h
+        headers/MapIterator.h
+        sources/MapIterator.cpp
+        headers/FilterIterator.h
+        sources/FilterIterator.cpp
+        headers/ZipIterator.h
+        sources/ZipIterator.cpp
+        headers/EnumerateIterator.h
+        sources/EnumerateIterator.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

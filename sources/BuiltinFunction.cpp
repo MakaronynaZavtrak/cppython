@@ -5,10 +5,13 @@
 #include "ClassMethodValue.h"
 #include "ClassUtils.h"
 #include "DictValue.h"
+#include "EnumerateIterator.h"
 #include "Environment.h"
+#include "FilterIterator.h"
 #include "FrozenSetValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
+#include "MapIterator.h"
 #include "PropertyValue.h"
 #include "ReversedSequenceIterator.h"
 #include "SetValue.h"
@@ -17,6 +20,7 @@
 #include "SuperValue.h"
 #include "TupleValue.h"
 #include "Value.h"
+#include "ZipIterator.h"
 #include "../exception/AttributeErrorException.h"
 #include "../exception/StopIterationException.h"
 #include "../exception/TypeErrorException.h"
@@ -87,6 +91,128 @@ const Value* findKwarg(const Kwargs& kwargs, const QString& name) {
     return &it->second;
 }
 
+// Банковское округление вещественного до целого: половина — к чётному.
+static Value::BigInt roundHalfEvenToInt(const Value::BigFloat &y) {
+
+    const Value::BigInt trunc = y.convert_to<Value::BigInt>();  // усечение к нулю
+    const Value::BigFloat truncF = trunc.convert_to<Value::BigFloat>();
+
+    // floor и дробная часть от него в [0, 1)
+    Value::BigInt floor;
+    Value::BigFloat frac;
+
+    if (y >= truncF) {
+        floor = trunc;
+        frac = y - truncF;
+    } else {
+        // отрицательное с ненулевой дробной частью: floor = trunc - 1
+        floor = trunc - 1;
+        frac = y - floor.convert_to<Value::BigFloat>();
+    }
+
+    const Value::BigFloat half("0.5");
+
+    if (frac < half) {
+        return floor;
+    }
+    if (frac > half) {
+        return floor + 1;
+    }
+
+    // ровно половина — округляем к чётному
+    return (floor % 2 == 0) ? floor : floor + 1;
+}
+
+// Банковское округление целого до кратного scale (scale > 0): половина — к чётному.
+static Value::BigInt roundIntHalfEven(const Value::BigInt &x, const Value::BigInt &scale) {
+
+    const Value::BigInt q = x / scale;           // усечение к нулю
+    const Value::BigInt r = x - q * scale;       // остаток со знаком x
+    const Value::BigInt twice = 2 * (r < 0 ? -r : r);
+
+    const Value::BigInt step = (x >= 0) ? 1 : -1;
+
+    Value::BigInt result = q;
+
+    if (twice > scale) {
+        result = q + step;
+    } else if (twice == scale && q % 2 != 0) {
+        result = q + step;   // ровно половина — к чётному
+    }
+
+    return result * scale;
+}
+
+// Степень десятки (10^n) как вещественное; n может быть отрицательным.
+static Value::BigFloat pow10(long long n) {
+
+    Value::BigFloat r = 1;
+
+    if (n >= 0) {
+        for (long long i = 0; i < n; ++i) r *= 10;
+    } else {
+        for (long long i = 0; i < -n; ++i) r /= 10;
+    }
+
+    return r;
+}
+
+// Python-остаток (floor-mod): знак результата совпадает со знаком m.
+static Value::BigInt floorMod(const Value::BigInt &a, const Value::BigInt &m) {
+    Value::BigInt r = a % m;
+    if (r != 0 && ((r < 0) != (m < 0))) {
+        r += m;
+    }
+    return r;
+}
+
+// Быстрое модульное возведение в степень (exp >= 0), результат в терминах floor-mod.
+static Value::BigInt powMod(Value::BigInt base, Value::BigInt exp, const Value::BigInt &mod) {
+    Value::BigInt result = floorMod(1, mod);   // для mod == 1 это 0
+    base = floorMod(base, mod);
+
+    while (exp > 0) {
+        if (exp % 2 != 0) {
+            result = floorMod(result * base, mod);
+        }
+        base = floorMod(base * base, mod);
+        exp /= 2;
+    }
+    return result;
+}
+
+// Расширенный алгоритм Евклида: возвращает НОД(a, b) и x, y такие, что a*x + b*y = НОД.
+static Value::BigInt extGcd(const Value::BigInt &a, const Value::BigInt &b,
+                            Value::BigInt &x, Value::BigInt &y) {
+    if (b == 0) {
+        x = 1;
+        y = 0;
+        return a;
+    }
+
+    Value::BigInt x1, y1;
+    const Value::BigInt g = extGcd(b, a % b, x1, y1);
+
+    x = y1;
+    y = x1 - (a / b) * y1;
+    return g;
+}
+
+// Модульная инверсия a по модулю mod; ошибка, если a необратимо.
+static Value::BigInt modInverse(const Value::BigInt &a, const Value::BigInt &mod) {
+    const Value::BigInt m = (mod < 0) ? -mod : mod;
+
+    Value::BigInt x, y;
+    const Value::BigInt g = extGcd(floorMod(a, m), m, x, y);
+
+    if (g != 1) {
+        throw ValueErrorException(
+            "base is not invertible for the given modulus"
+        );
+    }
+
+    return floorMod(x, mod);
+}
 
 void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) {
 
@@ -370,6 +496,80 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                         )
                     )
                 );
+            }
+        ));
+
+        env->set("pow",
+        makeBuiltin(
+            "pow",
+
+            [](const std::vector<Value> &args,
+               const Kwargs &kwargs,
+               const std::shared_ptr<Environment> &) -> Value {
+
+                expectArgsRange(args, 2, 3, "pow");
+
+                // mod из третьего позиционного аргумента или именованного mod=
+                Value modVal;
+                bool modProvided = false;
+
+                if (args.size() == 3) {
+                    modVal = args[2];
+                    modProvided = true;
+                }
+
+                for (const auto &[name, value]: kwargs) {
+                    if (name == "mod") {
+                        if (modProvided) {
+                            throw TypeErrorException(
+                                "pow() got multiple values for argument 'mod'"
+                            );
+                        }
+                        modVal = value;
+                        modProvided = true;
+                    } else {
+                        throw TypeErrorException(
+                            "'" + name + "' is an invalid keyword argument for pow()"
+                        );
+                    }
+                }
+
+                const Value &base = args[0];
+                const Value &exp = args[1];
+
+                // трёхаргументная форма: (base ** exp) % mod с быстрым модульным возведением
+                if (modProvided && !modVal.isNone()) {
+
+                    const bool allInts =
+                        (base.isBigInt() || base.isBool()) &&
+                        (exp.isBigInt()  || exp.isBool())  &&
+                        (modVal.isBigInt() || modVal.isBool());
+
+                    if (!allInts) {
+                        throw TypeErrorException(
+                            "pow() 3rd argument not allowed unless all arguments are integers"
+                        );
+                    }
+
+                    const Value::BigInt m = modVal.toBigInt();
+
+                    if (m == 0) {
+                        throw ValueErrorException("pow() 3rd argument cannot be 0");
+                    }
+
+                    const Value::BigInt b = base.toBigInt();
+                    const Value::BigInt e = exp.toBigInt();
+
+                    if (e >= 0) {
+                        return Value(powMod(b, e, m));
+                    }
+
+                    // отрицательная степень — через модульную инверсию основания
+                    return Value(powMod(modInverse(b, m), -e, m));
+                }
+
+                // двухаргументная форма — обычное возведение в степень
+                return base.power(exp);
             }
         ));
 
@@ -976,6 +1176,649 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  );
              }
          ));
+
+    env->set("sum",
+    makeBuiltin(
+        "sum",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgsRange(args, 1, 2, "sum");
+
+            Value start = Value(Value::BigInt(0));   // по умолчанию — целый ноль
+            bool startFromPositional = false;
+
+            if (args.size() == 2) {
+                start = args[1];
+                startFromPositional = true;
+            }
+
+            for (const auto &[name, value] : kwargs) {          // start=... как kwarg
+                if (name == "start") {
+                    if (startFromPositional)
+                        throw TypeErrorException("sum() got multiple values for argument 'start'");
+                    start = value;
+                } else {
+                    throw TypeErrorException("'" + name + "' is an invalid keyword argument for sum()");
+                }
+            }
+
+            if (start.isString())    throw TypeErrorException("sum() can't sum strings [use ''.join(seq) instead]");
+            if (start.isBytes())     throw TypeErrorException("sum() can't sum bytes [use b''.join(seq) instead]");
+            if (start.isByteArray()) throw TypeErrorException("sum() can't sum bytearray [use b''.join(seq) instead]");
+
+            const auto it = args[0].getIterator();
+            Value acc = start;
+
+            while (true) {
+                try {
+                    acc = acc + it->next();          // семантика Value::operator+ — та же, что у интерпретатора
+                } catch (const StopIterationException &) {
+                    break;
+                }
+            }
+            return acc;
+        }
+    ));
+
+    env->set("all",
+    makeBuiltin(
+        "all",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 1, "all");
+            expectNoKwargs(kwargs, "all");
+
+            const auto it = args[0].getIterator();
+
+            // короткое замыкание: первый ложный элемент — сразу False
+            while (true) {
+                Value item;
+                try {
+                    item = it->next();
+                } catch (const StopIterationException &) {
+                    break;
+                }
+                if (!item.toBool()) {
+                    return Value(false);
+                }
+            }
+            // пустой итерируемый или все элементы истинны
+            return Value(true);
+        }
+    ));
+
+    env->set("any",
+    makeBuiltin(
+        "any",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 1, "any");
+            expectNoKwargs(kwargs, "any");
+
+            const auto it = args[0].getIterator();
+
+            while (true) {
+                Value item;
+                try {
+                    item = it->next();
+                } catch (const StopIterationException &) {
+                    break;
+                }
+                if (item.toBool()) {
+                    return Value(true);
+                }
+            }
+            return Value(false);
+        }
+    ));
+
+        env->set("min",
+        makeBuiltin(
+            "min",
+
+            [](const std::vector<Value> &args,
+               const Kwargs &kwargs,
+               const std::shared_ptr<Environment> &env) -> Value {
+
+                if (args.empty()) {
+                    throw TypeErrorException(
+                        "min expected at least 1 argument, got 0"
+                    );
+                }
+
+                std::optional<Value> key;
+                std::optional<Value> defaultValue;
+
+                for (const auto &[name, value]: kwargs) {
+
+                    if (name == "key") {
+                        // key=None означает «без ключа»
+                        if (!value.isNone()) {
+                            key = value;
+                        }
+                    } else if (name == "default") {
+                        defaultValue = value;
+                    } else {
+                        throw TypeErrorException(
+                            "'" + name + "' is an invalid keyword argument for min()"
+                        );
+                    }
+                }
+
+                // две формы: min(iterable) и min(a, b, ...)
+                const bool multiArg = args.size() > 1;
+
+                if (multiArg && defaultValue.has_value()) {
+                    throw TypeErrorException(
+                        "Cannot specify a default for min() with multiple positional arguments"
+                    );
+                }
+
+                Value best;
+                Value bestKey;
+                bool hasBest = false;
+
+                auto consider = [&](const Value &elem) {
+
+                    const Value elemKey =
+                        key.has_value()
+                            ? call(key.value(), {elem}, {}, env)
+                            : elem;
+
+                    // строгое < — при равных ключах остаётся ПЕРВЫЙ минимум
+                    if (!hasBest || elemKey < bestKey) {
+                        best = elem;
+                        bestKey = elemKey;
+                        hasBest = true;
+                    }
+                };
+
+                if (multiArg) {
+                    for (const auto &elem: args) {
+                        consider(elem);
+                    }
+                } else {
+                    const auto it = args[0].getIterator();
+
+                    while (true) {
+                        Value item;
+                        try {
+                            item = it->next();
+                        } catch (const StopIterationException &) {
+                            break;
+                        }
+                        consider(item);
+                    }
+                }
+
+                if (!hasBest) {
+                    if (defaultValue.has_value()) {
+                        return defaultValue.value();
+                    }
+                    throw ValueErrorException("min() arg is an empty sequence");
+                }
+
+                return best;
+            }
+        ));
+
+        env->set("max",
+        makeBuiltin(
+            "max",
+
+            [](const std::vector<Value> &args,
+               const Kwargs &kwargs,
+               const std::shared_ptr<Environment> &env) -> Value {
+
+                if (args.empty()) {
+                    throw TypeErrorException(
+                        "max expected at least 1 argument, got 0"
+                    );
+                }
+
+                std::optional<Value> key;
+                std::optional<Value> defaultValue;
+
+                for (const auto &[name, value]: kwargs) {
+
+                    if (name == "key") {
+                        // key=None означает «без ключа»
+                        if (!value.isNone()) {
+                            key = value;
+                        }
+                    } else if (name == "default") {
+                        defaultValue = value;
+                    } else {
+                        throw TypeErrorException(
+                            "'" + name + "' is an invalid keyword argument for max()"
+                        );
+                    }
+                }
+
+                // две формы: max(iterable) и max(a, b, ...)
+                const bool multiArg = args.size() > 1;
+
+                if (multiArg && defaultValue.has_value()) {
+                    throw TypeErrorException(
+                        "Cannot specify a default for max() with multiple positional arguments"
+                    );
+                }
+
+                Value best;
+                Value bestKey;
+                bool hasBest = false;
+
+                auto consider = [&](const Value &elem) {
+
+                    const Value elemKey =
+                        key.has_value()
+                            ? call(key.value(), {elem}, {}, env)
+                            : elem;
+
+                    // строгое > — при равных ключах остаётся ПЕРВЫЙ максимум
+                    if (!hasBest || elemKey > bestKey) {
+                        best = elem;
+                        bestKey = elemKey;
+                        hasBest = true;
+                    }
+                };
+
+                if (multiArg) {
+                    for (const auto &elem: args) {
+                        consider(elem);
+                    }
+                } else {
+                    const auto it = args[0].getIterator();
+
+                    while (true) {
+                        Value item;
+                        try {
+                            item = it->next();
+                        } catch (const StopIterationException &) {
+                            break;
+                        }
+                        consider(item);
+                    }
+                }
+
+                if (!hasBest) {
+                    if (defaultValue.has_value()) {
+                        return defaultValue.value();
+                    }
+                    throw ValueErrorException("max() arg is an empty sequence");
+                }
+
+                return best;
+            }
+        ));
+
+    env->set("sorted",
+    makeBuiltin(
+        "sorted",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &env) -> Value {
+
+            expectArgs(args, 1, "sorted");
+
+            std::optional<Value> key;
+            bool reverse = false;
+
+            for (const auto &[name, value]: kwargs) {
+
+                if (name == "key") {
+                    // key=None означает «без ключа»
+                    if (!value.isNone()) {
+                        key = value;
+                    }
+                } else if (name == "reverse") {
+                    reverse = value.toBool();
+                } else {
+                    throw TypeErrorException(
+                        "'" + name + "' is an invalid keyword argument for sorted()"
+                    );
+                }
+            }
+
+            // материализуем произвольное итерируемое в НОВЫЙ список
+            const auto it = args[0].getIterator();
+
+            std::vector<Value> items;
+
+            while (true) {
+                try {
+                    items.push_back(it->next());
+                } catch (const StopIterationException &) {
+                    break;
+                }
+            }
+
+            const auto result = std::make_shared<ListValue>(items);
+
+            // переиспользуем стабильную сортировку списка (key/reverse)
+            result->sort(key, reverse, env);
+
+            return Value(result);
+        }
+    ));
+
+    env->set("map",
+    makeBuiltin(
+        "map",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &env) -> Value {
+
+            expectNoKwargs(kwargs, "map");
+
+            if (args.size() < 2) {
+                throw TypeErrorException(
+                    "map() must have at least two arguments."
+                );
+            }
+
+            const Value &func = args[0];
+
+            // получаем итераторы всех входных последовательностей
+            std::vector<Value::IteratorPtr> sources;
+            sources.reserve(args.size() - 1);
+
+            for (std::size_t i = 1; i < args.size(); ++i) {
+                sources.push_back(args[i].getIterator());
+            }
+
+            return Value(std::make_shared<MapIterator>(
+                func, std::move(sources), env
+            ));
+        }
+    ));
+
+    env->set("filter",
+    makeBuiltin(
+        "filter",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &env) -> Value {
+
+            expectNoKwargs(kwargs, "filter");
+            expectArgs(args, 2, "filter");
+
+            const Value &predicate = args[0];
+
+            // получаем итератор входной последовательности
+            const auto source = args[1].getIterator();
+
+            return Value(std::make_shared<FilterIterator>(
+                predicate, source, env
+            ));
+        }
+    ));
+
+    env->set("zip",
+    makeBuiltin(
+        "zip",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            bool strict = false;
+
+            for (const auto &[name, value]: kwargs) {
+                if (name == "strict") {
+                    strict = value.toBool();
+                } else {
+                    throw TypeErrorException(
+                        "'" + name + "' is an invalid keyword argument for zip()"
+                    );
+                }
+            }
+
+            // получаем итераторы всех входных последовательностей
+            std::vector<Value::IteratorPtr> sources;
+            sources.reserve(args.size());
+
+            for (const auto &arg: args) {
+                sources.push_back(arg.getIterator());
+            }
+
+            return Value(std::make_shared<ZipIterator>(
+                std::move(sources), strict
+            ));
+        }
+    ));
+
+    env->set("enumerate",
+    makeBuiltin(
+        "enumerate",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgsRange(args, 1, 2, "enumerate");
+
+            // start по умолчанию — целочисленный ноль
+            Value startVal = Value(Value::BigInt(0));
+            bool startPositional = false;
+
+            if (args.size() == 2) {
+                startVal = args[1];
+                startPositional = true;
+            }
+
+            // start можно передать и как именованный аргумент
+            for (const auto &[name, value]: kwargs) {
+
+                if (name == "start") {
+
+                    if (startPositional) {
+                        throw TypeErrorException(
+                            "enumerate() got multiple values for argument 'start'"
+                        );
+                    }
+
+                    startVal = value;
+                } else {
+                    throw TypeErrorException(
+                        "'" + name + "' is an invalid keyword argument for enumerate()"
+                    );
+                }
+            }
+
+            // start обязан быть целым (bool — подтип int в Python)
+            if (!startVal.isBigInt() && !startVal.isBool()) {
+                throw TypeErrorException(
+                    "'" + startVal.getTypeName() +
+                    "' object cannot be interpreted as an integer"
+                );
+            }
+
+            const auto source = args[0].getIterator();
+
+            const Value::BigInt start = startVal.isBool()
+                ? Value::BigInt(startVal.toBool() ? 1 : 0)
+                : startVal.toBigInt();
+
+            return Value(std::make_shared<EnumerateIterator>(
+                source, start
+            ));
+        }
+    ));
+
+    env->set("callable",
+    makeBuiltin(
+        "callable",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 1, "callable");
+            expectNoKwargs(kwargs, "callable");
+
+            return Value(args[0].isCallable());
+        }
+    ));
+
+    env->set("abs",
+    makeBuiltin(
+        "abs",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 1, "abs");
+            expectNoKwargs(kwargs, "abs");
+
+            const Value &x = args[0];
+
+            // bool — подтип int, поэтому abs(True) == 1 (int)
+            if (x.isBigInt() || x.isBool()) {
+                const Value::BigInt v = x.toBigInt();
+                return Value(v < 0 ? Value::BigInt(-v) : v);
+            }
+
+            if (x.isBigFloat()) {
+                const Value::BigFloat v = x.toBigFloat();
+                return Value(v < 0 ? Value::BigFloat(-v) : v);
+            }
+
+            throw TypeErrorException(
+                "bad operand type for abs(): '" + x.getTypeName() + "'"
+            );
+        }
+    ));
+
+    env->set("round",
+    makeBuiltin(
+        "round",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgsRange(args, 1, 2, "round");
+
+            const Value &x = args[0];
+
+            // ndigits: отсутствует / None (→ результат int) либо целое
+            Value ndigitsVal;
+            bool ndigitsProvided = false;
+
+            if (args.size() == 2) {
+                ndigitsVal = args[1];
+                ndigitsProvided = true;
+            }
+
+            for (const auto &[name, value]: kwargs) {
+                if (name == "ndigits") {
+                    if (ndigitsProvided) {
+                        throw TypeErrorException(
+                            "round() got multiple values for argument 'ndigits'"
+                        );
+                    }
+                    ndigitsVal = value;
+                    ndigitsProvided = true;
+                } else {
+                    throw TypeErrorException(
+                        "'" + name + "' is an invalid keyword argument for round()"
+                    );
+                }
+            }
+
+            bool hasNdigits = false;
+            Value::BigInt ndigits = 0;
+
+            if (ndigitsProvided && !ndigitsVal.isNone()) {
+                if (!ndigitsVal.isBigInt() && !ndigitsVal.isBool()) {
+                    throw TypeErrorException(
+                        "'" + ndigitsVal.getTypeName() +
+                        "' object cannot be interpreted as an integer"
+                    );
+                }
+                ndigits = ndigitsVal.toBigInt();
+                hasNdigits = true;
+            }
+
+            // округлять умеем только числа
+            if (!x.isBigInt() && !x.isBool() && !x.isBigFloat()) {
+                throw TypeErrorException(
+                    "type " + x.getTypeName() + " doesn't define __round__ method"
+                );
+            }
+
+            // без ndigits — результат int
+            if (!hasNdigits) {
+                if (x.isBigInt() || x.isBool()) {
+                    return Value(x.toBigInt());
+                }
+                return Value(roundHalfEvenToInt(x.toBigFloat()));
+            }
+
+            // с ndigits: int остаётся int
+            if (x.isBigInt() || x.isBool()) {
+                const Value::BigInt xi = x.toBigInt();
+
+                if (ndigits >= 0) {
+                    return Value(xi);
+                }
+
+                // отрицательные ndigits — округление к 10^(-ndigits)
+                Value::BigInt scale = 1;
+                for (Value::BigInt i = 0; i < -ndigits; ++i) {
+                    scale *= 10;
+                }
+                return Value(roundIntHalfEven(xi, scale));
+            }
+
+            // float с ndigits — результат float
+            const Value::BigFloat xf = x.toBigFloat();
+            const Value::BigFloat scale = pow10(ndigits.convert_to<long long>());
+            const Value::BigInt rounded = roundHalfEvenToInt(xf * scale);
+
+            return Value(rounded.convert_to<Value::BigFloat>() / scale);
+        }
+    ));
+
+    env->set("divmod",
+    makeBuiltin(
+        "divmod",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 2, "divmod");
+            expectNoKwargs(kwargs, "divmod");
+
+            const Value &a = args[0];
+            const Value &b = args[1];
+
+            // floor-деление; сам бросает ZeroDivisionError / TypeError
+            const Value div = a.intDivide(b);
+
+            // остаток, согласованный с floor-делением: a == div * b + mod
+            const Value mod = a - div * b;
+
+            return Value(std::make_shared<TupleValue>(
+                std::vector<Value>{ div, mod }
+            ));
+        }
+    ));
 
 }
 
