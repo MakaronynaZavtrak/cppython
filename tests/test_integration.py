@@ -13924,6 +13924,43 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # from functools import reduce — имя связывается напрямую
+    (["from functools import reduce",
+      "reduce(lambda a, b: a + b, [1, 2, 3, 4])"], "10"),
+
+    # from ... import ... as — псевдоним имени
+    (["from functools import reduce as r",
+      "r(lambda a, b: a + b, [1, 2, 3])"], "6"),
+
+    # from ... import a, b — список имён
+    (["from functools import reduce, __name__",
+      "reduce(lambda a, b: a * b, [1, 2, 3, 4])"], "24"),
+
+    # from functools import * — публичные имена доступны
+    (["from functools import *",
+      "reduce(lambda a, b: a + b, [1, 2, 3, 4, 5])"], "15"),
+
+    # from ... import несуществующее_имя -> ImportError
+    (["try:",
+      "    from functools import nonexistent_name",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # from несуществующий_модуль import ... -> ModuleNotFoundError
+    (["try:",
+      "    from nonexistent_module import something",
+      "except ModuleNotFoundError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # from несуществующий_модуль import ... ловится и как ImportError (подкласс)
+    (["try:",
+      "    from nonexistent_module import something",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

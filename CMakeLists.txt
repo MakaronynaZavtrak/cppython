@@ -270,7 +270,9 @@ add_executable(cppython main.cpp
         headers/ModuleRegistry.h
         runtime/modules/ModuleRegistry.cpp
         ast/importNode/ImportNode.cpp
-        ast/importNode/ImportNode.h)
+        ast/importNode/ImportNode.h
+        ast/importFromNode/ImportFromNode.cpp
+        ast/importFromNode/ImportFromNode.h)
 
 target_include_directories(cppython PRIVATE headers)
 
