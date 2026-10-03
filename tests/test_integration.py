@@ -13820,6 +13820,44 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # ImportError — ловится как ImportError
+    (["try:",
+      "    raise ImportError('x')",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ImportError — ловится как Exception
+    (["try:",
+      "    raise ImportError('x')",
+      "except Exception:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ModuleNotFoundError — ловится как ImportError (подкласс)
+    (["try:",
+      "    raise ModuleNotFoundError('x')",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ModuleNotFoundError — ловится как BaseException
+    (["try:",
+      "    raise ModuleNotFoundError('x')",
+      "except BaseException:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ImportError НЕ является ModuleNotFoundError — пробрасывается к внешнему except
+    (["try:",
+      "    try:",
+      "        raise ImportError('x')",
+      "    except ModuleNotFoundError:",
+      "        'wrong'",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

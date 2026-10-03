@@ -75,6 +75,10 @@ public:
 
     static std::shared_ptr<ClassValue> zeroDivisionErrorClass;
 
+    static std::shared_ptr<ClassValue> importErrorClass;
+
+    static std::shared_ptr<ClassValue> moduleNotFoundErrorClass;
+
     static int currentSourceId;
     static QHash<int, QStringList> sourceRegistry;
 
