@@ -262,7 +262,15 @@ add_executable(cppython main.cpp
         headers/ZipIterator.h
         sources/ZipIterator.cpp
         headers/EnumerateIterator.h
-        sources/EnumerateIterator.cpp)
+        sources/EnumerateIterator.cpp
+        headers/ModuleValue.h
+        sources/ModuleValue.cpp
+        exception/ImportErrorException.h
+        exception/ModuleNotFoundErrorException.h
+        headers/ModuleRegistry.h
+        runtime/modules/ModuleRegistry.cpp
+        ast/importNode/ImportNode.cpp
+        ast/importNode/ImportNode.h)
 
 target_include_directories(cppython PRIVATE headers)
 

@@ -20,6 +20,7 @@
 #include "../ast/genExprNode/GenExprNode.h"
 #include "../ast/globalNode/GlobalNode.h"
 #include "../ast/ifNode/IfNode.h"
+#include "../ast/importNode/ImportNode.h"
 #include "../ast/indexAssignNode/IndexAssignNode.h"
 #include "../ast/indexNode/IndexNode.h"
 #include "../ast/lambdaNode/LambdaNode.h"
@@ -94,6 +95,7 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::GLOBAL:   node = parseGlobalStatement(); break;
             case Keyword::NONLOCAL: node = parseNonlocalStatement(); break;
             case Keyword::YIELD:    node = parseYieldStatement(); break;
+            case Keyword::IMPORT: node = parseImportStatement(); break;
             default:                break;
         }
     }
@@ -2224,4 +2226,32 @@ bool Parser::isAtEndOfInput() const {
     }
 
     return true;
+}
+
+std::shared_ptr<ASTNode> Parser::parseImportStatement() {
+    advance(); // import
+    auto node = std::make_shared<ImportNode>();
+
+    while (true) {
+
+        if (peek().type != TOKEN_ID) {
+            throw makeSyntaxError("Expected module name after 'import'", peek());
+        }
+
+        const QString name = advance().value;
+        QString alias;
+
+        if (matchAndAdvance(TOKEN_KEYWORD, "as")) {
+            if (peek().type != TOKEN_ID) {
+                throw makeSyntaxError("Expected name after 'as'", peek());
+            }
+            alias = advance().value;
+        }
+
+        node->imports.push_back({ name, alias });
+
+        if (!matchAndAdvance(TOKEN_OP, ",")) break;
+    }
+
+    return node;
 }

@@ -13858,6 +13858,72 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # import functools + functools.reduce — свёртка слева
+    (["import functools",
+      "functools.reduce(lambda a, b: a + b, [1, 2, 3, 4])"], "10"),
+
+    # functools.reduce — произведение
+    (["import functools",
+      "functools.reduce(lambda a, b: a * b, [1, 2, 3, 4])"], "24"),
+
+    # functools.reduce — с начальным значением
+    (["import functools",
+      "functools.reduce(lambda a, b: a + b, [1, 2, 3], 100)"], "106"),
+
+    # functools.reduce — единственный элемент
+    (["import functools",
+      "functools.reduce(lambda a, b: a + b, [5])"], "5"),
+
+    # functools.reduce — пустая последовательность с начальным значением
+    (["import functools",
+      "functools.reduce(lambda a, b: a + b, [], 42)"], "42"),
+
+    # import ... as — псевдоним модуля
+    (["import functools as ft",
+      "ft.reduce(lambda a, b: a + b, [10, 20, 30])"], "60"),
+
+    # атрибут модуля __name__
+    (["import functools",
+      "functools.__name__"], "'functools'"),
+
+    # import несуществующего модуля -> ModuleNotFoundError
+    (["try:",
+      "    import nonexistent_module",
+      "except ModuleNotFoundError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ModuleNotFoundError ловится как ImportError (подкласс)
+    (["try:",
+      "    import nonexistent_module",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # обращение к несуществующему атрибуту модуля -> AttributeError
+    (["import functools",
+      "try:",
+      "    functools.nonexistent_attr",
+      "except AttributeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # functools.reduce — пустая последовательность без начального значения -> TypeError
+    (["import functools",
+      "try:",
+      "    functools.reduce(lambda a, b: a + b, [])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # functools.reduce — неитерируемый второй аргумент -> TypeError
+    (["import functools",
+      "try:",
+      "    functools.reduce(lambda a, b: a + b, 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):
