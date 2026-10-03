@@ -272,7 +272,9 @@ add_executable(cppython main.cpp
         ast/importNode/ImportNode.cpp
         ast/importNode/ImportNode.h
         ast/importFromNode/ImportFromNode.cpp
-        ast/importFromNode/ImportFromNode.h)
+        ast/importFromNode/ImportFromNode.h
+        headers/PartialValue.h
+        sources/PartialValue.cpp)
 
 target_include_directories(cppython PRIVATE headers)
 

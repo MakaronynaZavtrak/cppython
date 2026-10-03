@@ -6,6 +6,7 @@
 #include "CallRuntime.h"
 #include "ClassValue.h"
 #include "DescriptorUtils.h"
+#include "DictValue.h"
 #include "../runtime/builtins/dict/DictMethods.h"
 #include "InstanceValue.h"
 #include "../runtime/builtins/iterator/IteratorMethods.h"
@@ -22,6 +23,8 @@
 #include "../runtime/builtins/range/RangeMethods.h"
 #include "../runtime/builtins/tuple/TupleMethods.h"
 #include "ModuleValue.h"
+#include "PartialValue.h"
+#include "TupleValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
 
@@ -99,6 +102,31 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
         throw AttributeErrorException(
             "module '" + mod->name + "' has no attribute '" + attr + "'"
+        );
+    }
+
+    if (obj.isPartial()) {
+
+        const auto p = obj.asPartial();
+
+        if (attr == "func") {
+            return p->func;
+        }
+
+        if (attr == "args") {
+            return Value(std::make_shared<TupleValue>(p->args));
+        }
+
+        if (attr == "keywords") {
+            const auto dict = std::make_shared<DictValue>();
+            for (const auto &[key, value] : p->keywords) {
+                dict->setItem(Value(key), value);
+            }
+            return Value(dict);
+        }
+
+        throw AttributeErrorException(
+            "'functools.partial' object has no attribute '" + attr + "'"
         );
     }
 

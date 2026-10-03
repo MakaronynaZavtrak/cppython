@@ -13961,6 +13961,62 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # partial — связывание одного/двух/всех позиционных аргументов
+    (["from functools import partial",
+      "add = lambda a, b, c: a + b + c",
+      "partial(add, 1)(2, 3)"], "6"),
+
+    (["from functools import partial",
+      "add = lambda a, b, c: a + b + c",
+      "partial(add, 1, 2)(3)"], "6"),
+
+    (["from functools import partial",
+      "add = lambda a, b, c: a + b + c",
+      "partial(add, 1, 2, 3)()"], "6"),
+
+    # partial — порядок аргументов сохраняется
+    (["from functools import partial",
+      "partial(lambda a, b: a - b, 10)(3)"], "7"),
+
+    # partial — связывание kwarg и его переопределение при вызове
+    (["from functools import partial",
+      "g = partial(lambda a, b, c=0: a + b + c, 1, c=100)",
+      "g(2)"], "103"),
+
+    (["from functools import partial",
+      "g = partial(lambda a, b, c=0: a + b + c, 1, c=100)",
+      "g(2, c=5)"], "8"),
+
+    # partial — ничего не связано, всё передаётся при вызове
+    (["from functools import partial",
+      "partial(len)([1, 2, 3])"], "3"),
+
+    # partial — атрибуты .args и .keywords
+    (["from functools import partial",
+      "partial(lambda a, b: a + b, 2, 10).args"], "(2, 10)"),
+
+    (["from functools import partial",
+      "partial(lambda a, b: a + b, 2, 10).keywords"], "{}"),
+
+    (["from functools import partial",
+      "partial(lambda a, b: (a, b), b=99).keywords"], "{'b': 99}"),
+
+    # partial — без аргументов -> TypeError
+    (["from functools import partial",
+      "try:",
+      "    partial()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # partial — первый аргумент не вызываемый -> TypeError
+    (["from functools import partial",
+      "try:",
+      "    partial(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

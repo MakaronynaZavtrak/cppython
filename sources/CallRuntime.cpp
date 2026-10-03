@@ -18,6 +18,7 @@
 #include "GeneratorValue.h"
 #include "Interpreter.h"
 #include "IteratorValue.h"
+#include "PartialValue.h"
 #include "RangeValue.h"
 #include "TupleValue.h"
 #include "../exception/AttributeErrorException.h"
@@ -228,6 +229,28 @@ Value call(const Value& callee,
 
     if (const auto cm = std::get_if<Value::ClassMethodPtr>(&callee.data)) {
         return call(Value((*cm)->func), args, kwargs, env);
+    }
+
+    if (const auto p = std::get_if<Value::PartialPtr>(&callee.data)) {
+
+        // связанные аргументы идут в начало, затем аргументы вызова
+        std::vector<Value> mergedArgs = (*p)->args;
+        mergedArgs.insert(mergedArgs.end(), args.begin(), args.end());
+
+        // связанные kwargs, поверх — kwargs вызова (они переопределяют)
+        Kwargs mergedKwargs = (*p)->keywords;
+
+        for (const auto &[key, value] : kwargs) {
+            bool replaced = false;
+            for (auto &[mKey, mValue] : mergedKwargs) {
+                if (mKey == key) { mValue = value; replaced = true; break; }
+            }
+            if (!replaced) {
+                mergedKwargs.emplace_back(key, value);
+            }
+        }
+
+        return call((*p)->func, mergedArgs, mergedKwargs, env);
     }
 
     throw TypeErrorException("Object is not callable");

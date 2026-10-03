@@ -39,6 +39,7 @@
 #include "../exception/TypeErrorException.h"
 #include "../exception/ZeroDivisionErrorException.h"
 #include "ModuleValue.h"
+#include "PartialValue.h"
 
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
 
@@ -193,6 +194,10 @@ QString Value::toString() const {
             },
 
             [](const ModulePtr &p) {
+                return p->toString();
+            },
+
+            [](const PartialPtr &p) {
                 return p->toString();
             },
 
@@ -657,6 +662,14 @@ Value::ModulePtr Value::asModule() const {
         throw TypeErrorException("Value is not a module");
     }
     return std::get<ModulePtr>(data);
+}
+
+bool Value::isPartial() const {
+    return std::holds_alternative<PartialPtr>(data);
+}
+
+Value::PartialPtr Value::asPartial() const {
+    return std::get<PartialPtr>(data);
 }
 
 Value Value::operator*(const Value &other) const {
@@ -1185,6 +1198,7 @@ QString Value::getTypeName() const {
     if (isDictValuesView())  return "dict_values";
     if (isDictItemsView())   return "dict_items";
     if (isModule())          return "module";
+    if (isPartial())         return "partial";
 
     if (std::holds_alternative<IteratorPtr>(data)) {
         return std::get<IteratorPtr>(data)->getTypeName();
@@ -1211,7 +1225,8 @@ bool Value::isCallable() const {
         std::holds_alternative<ClassPtr>(data) ||
         std::holds_alternative<BoundMethodPtr>(data) ||
         std::holds_alternative<StaticMethodPtr>(data) ||
-        std::holds_alternative<ClassMethodPtr>(data);
+        std::holds_alternative<ClassMethodPtr>(data) ||
+        std::holds_alternative<PartialPtr>(data);
 }
 
 bool Value::isBigInt() const {
