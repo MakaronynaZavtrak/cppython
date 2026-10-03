@@ -86,7 +86,8 @@ enum class Keyword {
     AS,
     RAISE,
     FROM,
-    YIELD
+    YIELD,
+    IMPORT
 };
 
 static const std::unordered_map<QString, Keyword> keywords = {
@@ -116,7 +117,8 @@ static const std::unordered_map<QString, Keyword> keywords = {
     {"as", Keyword::AS},
     {"raise", Keyword::RAISE},
     {"from", Keyword::FROM},
-    {"yield", Keyword::YIELD}
+    {"yield", Keyword::YIELD},
+    {"import", Keyword::IMPORT}
 };
 
 /**

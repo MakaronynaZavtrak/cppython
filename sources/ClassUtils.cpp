@@ -1,4 +1,4 @@
-    //
+//
 // Created by semyo on 03.05.2026.
 //
 #include "ClassUtils.h"
@@ -21,6 +21,7 @@
 #include "../runtime/builtins/frozenset/FrozenSetMethods.h"
 #include "../runtime/builtins/range/RangeMethods.h"
 #include "../runtime/builtins/tuple/TupleMethods.h"
+#include "ModuleValue.h"
 
 bool hasAttr(const Value::ClassPtr& cls, const QString& attr) {
 
@@ -86,6 +87,19 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
         }
 
         return val;
+    }
+
+    if (obj.isModule()) {
+
+        const auto mod = obj.asModule();
+
+        if (mod->members.contains(attr)) {
+            return mod->members[attr];
+        }
+
+        throw AttributeErrorException(
+            "module '" + mod->name + "' has no attribute '" + attr + "'"
+        );
     }
 
     if (obj.isList()) {

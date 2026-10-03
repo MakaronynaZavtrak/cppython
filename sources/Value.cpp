@@ -38,6 +38,7 @@
 #include "../exception/AttributeErrorException.h"
 #include "../exception/TypeErrorException.h"
 #include "../exception/ZeroDivisionErrorException.h"
+#include "ModuleValue.h"
 
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
 
@@ -188,6 +189,10 @@ QString Value::toString() const {
             },
 
             [](const RangePtr &p) {
+                return p->toString();
+            },
+
+            [](const ModulePtr &p) {
                 return p->toString();
             },
 
@@ -641,6 +646,17 @@ Value::RangePtr Value::asRange(const QString& where) const {
         throw TypeErrorException(where + " argument must be a range");
     }
     return std::get<RangePtr>(data);
+}
+
+bool Value::isModule() const {
+    return std::holds_alternative<ModulePtr>(data);
+}
+
+Value::ModulePtr Value::asModule() const {
+    if (!isModule()) {
+        throw TypeErrorException("Value is not a module");
+    }
+    return std::get<ModulePtr>(data);
 }
 
 Value Value::operator*(const Value &other) const {
@@ -1142,32 +1158,33 @@ QString Value::formatFloat(const BigFloat& num) {
 
 QString Value::getTypeName() const {
 
-    if (isBool())          return "bool";
-    if (isBigInt())        return "int";
-    if (isBigFloat())      return "float";
-    if (isString())        return "str";
-    if (isBytes())         return "bytes";
-    if (isByteArray())     return "bytearray";
-    if (isList())          return "list";
-    if (isDict())          return "dict";
-    if (isTuple())         return "tuple";
-    if (isSet())           return "set";
-    if (isFrozenSet())     return "frozenset";
-    if (isRange())         return "range";
-    if (isNone())          return "NoneType";
-    if (isFunction())      return "function";
+    if (isBool())            return "bool";
+    if (isBigInt())          return "int";
+    if (isBigFloat())        return "float";
+    if (isString())          return "str";
+    if (isBytes())           return "bytes";
+    if (isByteArray())       return "bytearray";
+    if (isList())            return "list";
+    if (isDict())            return "dict";
+    if (isTuple())           return "tuple";
+    if (isSet())             return "set";
+    if (isFrozenSet())       return "frozenset";
+    if (isRange())           return "range";
+    if (isNone())            return "NoneType";
+    if (isFunction())        return "function";
     if (isBuiltinFunction()) return "builtin_function_or_method";
-    if (isClass())         return "type";
-    if (isInstance())      return asInstance()->klass->name;
-    if (isBoundMethod())   return "method";
-    if (isSuper())         return "super";
-    if (isProperty())      return "property";
-    if (isStaticMethod())  return "staticmethod";
-    if (isClassMethod())   return "classmethod";
-    if (isSlice())         return "slice";
-    if (isDictKeysView())  return "dict_keys";
-    if (isDictValuesView()) return "dict_values";
-    if (isDictItemsView()) return "dict_items";
+    if (isClass())           return "type";
+    if (isInstance())        return asInstance()->klass->name;
+    if (isBoundMethod())     return "method";
+    if (isSuper())           return "super";
+    if (isProperty())        return "property";
+    if (isStaticMethod())    return "staticmethod";
+    if (isClassMethod())     return "classmethod";
+    if (isSlice())           return "slice";
+    if (isDictKeysView())    return "dict_keys";
+    if (isDictValuesView())  return "dict_values";
+    if (isDictItemsView())   return "dict_items";
+    if (isModule())          return "module";
 
     if (std::holds_alternative<IteratorPtr>(data)) {
         return std::get<IteratorPtr>(data)->getTypeName();

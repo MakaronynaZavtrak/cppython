@@ -20,6 +20,8 @@
 #include "../ast/genExprNode/GenExprNode.h"
 #include "../ast/globalNode/GlobalNode.h"
 #include "../ast/ifNode/IfNode.h"
+#include "../ast/importFromNode/ImportFromNode.h"
+#include "../ast/importNode/ImportNode.h"
 #include "../ast/indexAssignNode/IndexAssignNode.h"
 #include "../ast/indexNode/IndexNode.h"
 #include "../ast/lambdaNode/LambdaNode.h"
@@ -94,6 +96,8 @@ std::shared_ptr<ASTNode> Parser::parse() {
             case Keyword::GLOBAL:   node = parseGlobalStatement(); break;
             case Keyword::NONLOCAL: node = parseNonlocalStatement(); break;
             case Keyword::YIELD:    node = parseYieldStatement(); break;
+            case Keyword::IMPORT:   node = parseImportStatement(); break;
+            case Keyword::FROM:     node = parseFromImportStatement(); break;
             default:                break;
         }
     }
@@ -2224,4 +2228,84 @@ bool Parser::isAtEndOfInput() const {
     }
 
     return true;
+}
+
+std::shared_ptr<ASTNode> Parser::parseImportStatement() {
+    advance(); // import
+    auto node = std::make_shared<ImportNode>();
+
+    while (true) {
+
+        if (peek().type != TOKEN_ID) {
+            throw makeSyntaxError("Expected module name after 'import'", peek());
+        }
+
+        const QString name = advance().value;
+        QString alias;
+
+        if (matchAndAdvance(TOKEN_KEYWORD, "as")) {
+            if (peek().type != TOKEN_ID) {
+                throw makeSyntaxError("Expected name after 'as'", peek());
+            }
+            alias = advance().value;
+        }
+
+        node->imports.push_back({ name, alias });
+
+        if (!matchAndAdvance(TOKEN_OP, ",")) break;
+    }
+
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::parseFromImportStatement() {
+
+    advance(); // from
+
+    if (peek().type != TOKEN_ID) {
+        throw makeSyntaxError("Expected module name after 'from'", peek());
+    }
+
+    const QString moduleName = advance().value;
+
+    if (!matchAndAdvance(TOKEN_KEYWORD, "import")) {
+        throw makeSyntaxError("Expected 'import' in from-import statement", peek());
+    }
+
+    auto node = std::make_shared<ImportFromNode>();
+    node->moduleName = moduleName;
+
+    // from X import *
+    if (matchAndAdvance(TOKEN_OP, "*")) {
+        node->importAll = true;
+        return node;
+    }
+
+    // from X import a [as b] [, c [as d]]*
+    while (true) {
+
+        if (peek().type != TOKEN_ID) {
+            throw makeSyntaxError("Expected name after 'import'", peek());
+        }
+
+        const QString name = advance().value;
+
+        QString alias;
+
+        if (matchAndAdvance(TOKEN_KEYWORD, "as")) {
+
+            if (peek().type != TOKEN_ID) {
+                throw makeSyntaxError("Expected name after 'as'", peek());
+            }
+
+            alias = advance().value;
+        }
+
+        node->names.push_back({ name, alias });
+
+        if (!matchAndAdvance(TOKEN_OP, ","))
+            break;
+    }
+
+    return node;
 }

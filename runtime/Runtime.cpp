@@ -45,6 +45,8 @@ std::shared_ptr<ClassValue> Runtime::valueErrorClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::generatorExitClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::rangeClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::zeroDivisionErrorClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::importErrorClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::moduleNotFoundErrorClass = nullptr;
 
 int Runtime::currentSourceId = 0;
 QHash<int, QStringList> Runtime::sourceRegistry;

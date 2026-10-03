@@ -572,7 +572,7 @@ namespace {
             "LookupError", "IndexError", "KeyError", "RuntimeError", "NameError",
             "AttributeError", "SyntaxError", "TypeError", "ValueError",
             "UnicodeDecodeError", "StopIteration", "GeneratorExit",
-            "ZeroDivisionError"
+            "ZeroDivisionError", "ImportError", "ModuleNotFoundError"
         };
         return names;
     }

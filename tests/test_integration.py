@@ -13820,6 +13820,147 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # ImportError — ловится как ImportError
+    (["try:",
+      "    raise ImportError('x')",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ImportError — ловится как Exception
+    (["try:",
+      "    raise ImportError('x')",
+      "except Exception:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ModuleNotFoundError — ловится как ImportError (подкласс)
+    (["try:",
+      "    raise ModuleNotFoundError('x')",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ModuleNotFoundError — ловится как BaseException
+    (["try:",
+      "    raise ModuleNotFoundError('x')",
+      "except BaseException:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ImportError НЕ является ModuleNotFoundError — пробрасывается к внешнему except
+    (["try:",
+      "    try:",
+      "        raise ImportError('x')",
+      "    except ModuleNotFoundError:",
+      "        'wrong'",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # import functools + functools.reduce — свёртка слева
+    (["import functools",
+      "functools.reduce(lambda a, b: a + b, [1, 2, 3, 4])"], "10"),
+
+    # functools.reduce — произведение
+    (["import functools",
+      "functools.reduce(lambda a, b: a * b, [1, 2, 3, 4])"], "24"),
+
+    # functools.reduce — с начальным значением
+    (["import functools",
+      "functools.reduce(lambda a, b: a + b, [1, 2, 3], 100)"], "106"),
+
+    # functools.reduce — единственный элемент
+    (["import functools",
+      "functools.reduce(lambda a, b: a + b, [5])"], "5"),
+
+    # functools.reduce — пустая последовательность с начальным значением
+    (["import functools",
+      "functools.reduce(lambda a, b: a + b, [], 42)"], "42"),
+
+    # import ... as — псевдоним модуля
+    (["import functools as ft",
+      "ft.reduce(lambda a, b: a + b, [10, 20, 30])"], "60"),
+
+    # атрибут модуля __name__
+    (["import functools",
+      "functools.__name__"], "'functools'"),
+
+    # import несуществующего модуля -> ModuleNotFoundError
+    (["try:",
+      "    import nonexistent_module",
+      "except ModuleNotFoundError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ModuleNotFoundError ловится как ImportError (подкласс)
+    (["try:",
+      "    import nonexistent_module",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # обращение к несуществующему атрибуту модуля -> AttributeError
+    (["import functools",
+      "try:",
+      "    functools.nonexistent_attr",
+      "except AttributeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # functools.reduce — пустая последовательность без начального значения -> TypeError
+    (["import functools",
+      "try:",
+      "    functools.reduce(lambda a, b: a + b, [])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # functools.reduce — неитерируемый второй аргумент -> TypeError
+    (["import functools",
+      "try:",
+      "    functools.reduce(lambda a, b: a + b, 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # from functools import reduce — имя связывается напрямую
+    (["from functools import reduce",
+      "reduce(lambda a, b: a + b, [1, 2, 3, 4])"], "10"),
+
+    # from ... import ... as — псевдоним имени
+    (["from functools import reduce as r",
+      "r(lambda a, b: a + b, [1, 2, 3])"], "6"),
+
+    # from ... import a, b — список имён
+    (["from functools import reduce, __name__",
+      "reduce(lambda a, b: a * b, [1, 2, 3, 4])"], "24"),
+
+    # from functools import * — публичные имена доступны
+    (["from functools import *",
+      "reduce(lambda a, b: a + b, [1, 2, 3, 4, 5])"], "15"),
+
+    # from ... import несуществующее_имя -> ImportError
+    (["try:",
+      "    from functools import nonexistent_name",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # from несуществующий_модуль import ... -> ModuleNotFoundError
+    (["try:",
+      "    from nonexistent_module import something",
+      "except ModuleNotFoundError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # from несуществующий_модуль import ... ловится и как ImportError (подкласс)
+    (["try:",
+      "    from nonexistent_module import something",
+      "except ImportError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

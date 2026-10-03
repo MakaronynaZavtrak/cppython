@@ -173,6 +173,20 @@ void registerExceptionClasses(const std::shared_ptr<Environment>& env) {
         Runtime::arithmeticErrorClass,
         env
     );
+
+    Runtime::importErrorClass =
+    createExceptionClass(
+        "ImportError",
+        Runtime::exceptionClass,
+        env
+    );
+
+    Runtime::moduleNotFoundErrorClass =
+        createExceptionClass(
+            "ModuleNotFoundError",
+            Runtime::importErrorClass,
+            env
+    );
 }
 
 Value baseExceptionInit(

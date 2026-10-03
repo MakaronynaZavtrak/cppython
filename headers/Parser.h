@@ -267,5 +267,9 @@ private:
     std::vector<Param> parseParamList(bool isLambda);
 
     [[nodiscard]] bool isAtEndOfInput() const;
+
+    std::shared_ptr<ASTNode> parseImportStatement();
+
+    std::shared_ptr<ASTNode> parseFromImportStatement();
 };
 #endif //PARSER_H
