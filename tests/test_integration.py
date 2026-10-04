@@ -14182,6 +14182,54 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "r = cmp_to_key(lambda a, b: b - a)",
       "r(3) < r(5)"], "False"),
 
+    # cache — функция вызывается по разу на набор аргументов
+    (["from functools import cache",
+      "calls = []",
+      "@cache",
+      "def f(x):",
+      "    calls.append(x)",
+      "    return x * x",
+      "",
+      "f(3)",
+      "f(3)",
+      "f(4)",
+      "f(3)",
+      "calls"], ["9", "9", "16", "9", "[3, 4]"]),
+
+    # cache — разные наборы позиционных аргументов дают разные ключи
+    (["from functools import cache",
+      "@cache",
+      "def g(a, b):",
+      "    return a + b",
+      "",
+      "g(1, 2)",
+      "g(2, 1)"], ["3", "3"]),
+
+    # cache — мемоизированный Фибоначчи: каждое подзадание считается ровно раз
+    (["from functools import cache",
+      "hits = []",
+      "@cache",
+      "def fib(n):",
+      "    hits.append(n)",
+      "    if n < 2:",
+      "        return n",
+      "    return fib(n - 1) + fib(n - 2)",
+      "",
+      "fib(10)",
+      "len(hits)"], ["55", "11"]),
+
+    # cache — нехешируемый аргумент -> TypeError
+    (["from functools import cache",
+      "@cache",
+      "def h(x):",
+      "    return x",
+      "",
+      "try:",
+      "    h([1, 2])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

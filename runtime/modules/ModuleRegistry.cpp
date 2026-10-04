@@ -5,9 +5,11 @@
 #include "ModuleRegistry.h"
 #include "BuiltinFunction.h"
 #include "CallRuntime.h"
+#include "DictValue.h"
 #include "IteratorValue.h"
 #include "ModuleValue.h"
 #include "PartialValue.h"
+#include "TupleValue.h"
 #include "../ArgValidation.h"
 #include "../../exception/StopIterationException.h"
 #include "../../exception/TypeErrorException.h"
@@ -168,6 +170,58 @@ static Value functoolsCmpToKey(const std::vector<Value> &args,
     return Value(K);
 }
 
+// functools.cache(func) — мемоизация без вытеснения (== lru_cache(maxsize=None))
+static Value functoolsCache(const std::vector<Value> &args,
+                            const Kwargs &kwargs,
+                            const std::shared_ptr<Environment> &) {
+
+    expectArgs(args, 1, "cache");
+    expectNoKwargs(kwargs, "cache");
+
+    const Value func = args[0];
+
+    if (!func.isCallable()) {
+        throw TypeErrorException("the first argument must be callable");
+    }
+
+    // общий на все вызовы обёртки словарь-кэш
+    auto cacheDict = std::make_shared<DictValue>();
+
+    return Value(std::make_shared<BuiltinFunction>(
+        "cache_wrapper",
+        [func, cacheDict](const std::vector<Value> &callArgs,
+                          const Kwargs &callKwargs,
+                          const std::shared_ptr<Environment> &e) -> Value {
+
+            // ключ — кортеж позиционных аргументов (+ отсортированные kwargs)
+            std::vector<Value> keyItems = callArgs;
+
+            if (!callKwargs.empty()) {
+                std::vector<std::pair<QString, Value>> kw(
+                    callKwargs.begin(), callKwargs.end());
+
+                std::sort(kw.begin(), kw.end(),
+                    [](const auto &x, const auto &y) { return x.first < y.first; });
+
+                keyItems.push_back(Value(QString("__kwargs__")));
+                for (const auto &[k, v] : kw) {
+                    keyItems.push_back(Value(k));
+                    keyItems.push_back(v);
+                }
+            }
+
+            const auto key = Value(std::make_shared<TupleValue>(keyItems));
+
+            if (cacheDict->contains(key)) {
+                return cacheDict->getItem(key);
+            }
+
+            const Value result = call(func, callArgs, callKwargs, e);
+            cacheDict->setItem(key, result);
+            return result;
+        }));
+}
+
 static Value::ModulePtr makeFunctoolsModule() {
 
     auto mod = std::make_shared<ModuleValue>("functools");
@@ -185,6 +239,9 @@ static Value::ModulePtr makeFunctoolsModule() {
 
     mod->members["cmp_to_key"] =
         Value(std::make_shared<BuiltinFunction>("cmp_to_key", functoolsCmpToKey));
+
+    mod->members["cache"] =
+        Value(std::make_shared<BuiltinFunction>("cache", functoolsCache));
 
     return mod;
 }
