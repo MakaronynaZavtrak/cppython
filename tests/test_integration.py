@@ -14157,6 +14157,31 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # cmp_to_key — сортировка по возрастанию/убыванию/длине
+    (["from functools import cmp_to_key",
+      "sorted([3, 1, 2], key=cmp_to_key(lambda a, b: a - b))"], "[1, 2, 3]"),
+
+    (["from functools import cmp_to_key",
+      "sorted([3, 1, 2], key=cmp_to_key(lambda a, b: b - a))"], "[3, 2, 1]"),
+
+    (["from functools import cmp_to_key",
+      "sorted(['bb', 'a', 'ccc'], key=cmp_to_key(lambda a, b: len(a) - len(b)))"], "['a', 'bb', 'ccc']"),
+
+    # cmp_to_key — объекты-ключи сравниваются по результату cmp
+    (["from functools import cmp_to_key",
+      "k = cmp_to_key(lambda a, b: a - b)",
+      "k(3) < k(5)",
+      "k(5) < k(3)",
+      "k(3) == k(3)",
+      "k(5) > k(3)",
+      "k(3) <= k(3)",
+      "k(5) != k(3)"], ["True", "False", "True", "True", "True", "True"]),
+
+    # cmp_to_key — обратный компаратор
+    (["from functools import cmp_to_key",
+      "r = cmp_to_key(lambda a, b: b - a)",
+      "r(3) < r(5)"], "False"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

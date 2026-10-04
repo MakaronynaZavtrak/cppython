@@ -118,6 +118,56 @@ static Value functoolsTotalOrdering(const std::vector<Value> &args,
     return args[0];   // декоратор возвращает тот же класс
 }
 
+// functools.cmp_to_key(cmp) — превращает cmp-функцию в key-функцию
+static Value functoolsCmpToKey(const std::vector<Value> &args,
+                               const Kwargs &kwargs,
+                               const std::shared_ptr<Environment> &) {
+
+    expectArgs(args, 1, "cmp_to_key");
+    expectNoKwargs(kwargs, "cmp_to_key");
+
+    const Value cmp = args[0];
+
+    // класс-обёртка, специализированный под данную cmp-функцию
+    auto K = std::make_shared<ClassValue>("functools.KeyWrapper");
+
+    if (Runtime::objectClass) {
+        K->bases.push_back(Runtime::objectClass);
+    }
+
+    // __init__(self, obj): сохраняем сравниваемое значение
+    K->attributes["__init__"] = Value(std::make_shared<BuiltinFunction>(
+        "__init__",
+        [](const std::vector<Value> &a,
+           const Kwargs &,
+           const std::shared_ptr<Environment> &) -> Value {
+            a[0].asInstance()->fields["obj"] = a[1];
+            return {};
+        }));
+
+    // фабрика метода сравнения: pred(cmp(self.obj, other.obj))
+    auto cmpMethod = [cmp](std::function<bool(const Value &)> pred) {
+        return Value(std::make_shared<BuiltinFunction>(
+            "cmp_op",
+            [cmp, pred](const std::vector<Value> &a,
+                        const Kwargs &,
+                        const std::shared_ptr<Environment> &) -> Value {
+                const Value selfObj  = a[0].asInstance()->fields["obj"];
+                const Value otherObj = a[1].asInstance()->fields["obj"];
+                const Value r = call(cmp, { selfObj, otherObj }, {}, nullptr);
+                return Value(pred(r));
+            }));
+    };
+
+    K->attributes["__lt__"] = cmpMethod([](const Value &r) { return r <  Value(Value::BigInt(0)); });
+    K->attributes["__gt__"] = cmpMethod([](const Value &r) { return r >  Value(Value::BigInt(0)); });
+    K->attributes["__le__"] = cmpMethod([](const Value &r) { return r <= Value(Value::BigInt(0)); });
+    K->attributes["__ge__"] = cmpMethod([](const Value &r) { return r >= Value(Value::BigInt(0)); });
+    K->attributes["__eq__"] = cmpMethod([](const Value &r) { return r == Value(Value::BigInt(0)); });
+
+    return Value(K);
+}
+
 static Value::ModulePtr makeFunctoolsModule() {
 
     auto mod = std::make_shared<ModuleValue>("functools");
@@ -132,6 +182,9 @@ static Value::ModulePtr makeFunctoolsModule() {
 
     mod->members["total_ordering"] =
         Value(std::make_shared<BuiltinFunction>("total_ordering", functoolsTotalOrdering));
+
+    mod->members["cmp_to_key"] =
+        Value(std::make_shared<BuiltinFunction>("cmp_to_key", functoolsCmpToKey));
 
     return mod;
 }
