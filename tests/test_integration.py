@@ -14230,6 +14230,48 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # lru_cache(maxsize=2) — LRU-вытеснение в точном порядке
+    (["from functools import lru_cache",
+      "order = []",
+      "@lru_cache(maxsize=2)",
+      "def f(x):",
+      "    order.append(x)",
+      "    return x * 10",
+      "",
+      "f(1)",
+      "f(2)",
+      "f(1)",
+      "f(3)",
+      "f(2)",
+      "f(1)",
+      "order"], ["10", "20", "10", "30", "20", "10", "[1, 2, 3, 2, 1]"]),
+
+    # @lru_cache без скобок — мемоизация с maxsize по умолчанию
+    (["from functools import lru_cache",
+      "c1 = []",
+      "@lru_cache",
+      "def g(x):",
+      "    c1.append(x)",
+      "    return x + 1",
+      "",
+      "g(5)",
+      "g(5)",
+      "g(6)",
+      "c1"], ["6", "6", "7", "[5, 6]"]),
+
+    # lru_cache(maxsize=None) — безлимитная мемоизация (Фибоначчи)
+    (["from functools import lru_cache",
+      "c2 = []",
+      "@lru_cache(maxsize=None)",
+      "def h(n):",
+      "    c2.append(n)",
+      "    if n < 2:",
+      "        return n",
+      "    return h(n - 1) + h(n - 2)",
+      "",
+      "h(10)",
+      "len(c2)"], ["55", "11"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

@@ -170,55 +170,133 @@ static Value functoolsCmpToKey(const std::vector<Value> &args,
     return Value(K);
 }
 
-// functools.cache(func) — мемоизация без вытеснения (== lru_cache(maxsize=None))
-static Value functoolsCache(const std::vector<Value> &args,
-                            const Kwargs &kwargs,
-                            const std::shared_ptr<Environment> &) {
+// Ключ кэша: кортеж позиционных аргументов + отсортированные kwargs.
+static Value buildCacheKey(const std::vector<Value> &args, const Kwargs &kwargs) {
+    std::vector<Value> keyItems = args;
 
-    expectArgs(args, 1, "cache");
-    expectNoKwargs(kwargs, "cache");
+    if (!kwargs.empty()) {
+        std::vector<std::pair<QString, Value>> kw(kwargs.begin(), kwargs.end());
+        std::sort(kw.begin(), kw.end(),
+            [](const auto &x, const auto &y) { return x.first < y.first; });
 
-    const Value func = args[0];
-
-    if (!func.isCallable()) {
-        throw TypeErrorException("the first argument must be callable");
+        keyItems.push_back(Value(QString("__kwargs__")));
+        for (const auto &[k, v] : kw) {
+            keyItems.push_back(Value(k));
+            keyItems.push_back(v);
+        }
     }
 
-    // общий на все вызовы обёртки словарь-кэш
+    return Value(std::make_shared<TupleValue>(keyItems));
+}
+
+// Обёртка-мемоизатор с LRU-вытеснением. maxsize < 0 — без лимита, 0 — кэш отключён.
+static Value makeLruWrapper(const Value &func, long long maxsize) {
     auto cacheDict = std::make_shared<DictValue>();
+    auto order = std::make_shared<std::vector<Value>>();
 
     return Value(std::make_shared<BuiltinFunction>(
-        "cache_wrapper",
-        [func, cacheDict](const std::vector<Value> &callArgs,
-                          const Kwargs &callKwargs,
-                          const std::shared_ptr<Environment> &e) -> Value {
-
-            // ключ — кортеж позиционных аргументов (+ отсортированные kwargs)
-            std::vector<Value> keyItems = callArgs;
-
-            if (!callKwargs.empty()) {
-                std::vector<std::pair<QString, Value>> kw(
-                    callKwargs.begin(), callKwargs.end());
-
-                std::sort(kw.begin(), kw.end(),
-                    [](const auto &x, const auto &y) { return x.first < y.first; });
-
-                keyItems.push_back(Value(QString("__kwargs__")));
-                for (const auto &[k, v] : kw) {
-                    keyItems.push_back(Value(k));
-                    keyItems.push_back(v);
-                }
-            }
-
-            const auto key = Value(std::make_shared<TupleValue>(keyItems));
+        "lru_cache_wrapper",
+        [func, maxsize, cacheDict, order](const std::vector<Value> &callArgs,
+                                          const Kwargs &callKwargs,
+                                          const std::shared_ptr<Environment> &e) -> Value {
+            const Value key = buildCacheKey(callArgs, callKwargs);
 
             if (cacheDict->contains(key)) {
+                // попадание — делаем ключ самым свежим (MRU)
+                for (auto it = order->begin(); it != order->end(); ++it) {
+                    if (*it == key) {
+                        order->erase(it);
+                        break;
+                    }
+                }
+                order->push_back(key);
                 return cacheDict->getItem(key);
             }
 
             const Value result = call(func, callArgs, callKwargs, e);
+
+            if (maxsize == 0) {
+                return result;   // кэширование отключено
+            }
+
+            if (maxsize > 0) {
+                // вытесняем наименее недавно использованные
+                while (static_cast<long long>(order->size()) >= maxsize
+                       && !order->empty()) {
+                    const Value lru = order->front();
+                    order->erase(order->begin());
+                    cacheDict->delItem(lru);
+                }
+            }
+
             cacheDict->setItem(key, result);
+            order->push_back(key);
             return result;
+        }));
+}
+
+// functools.cache(func) — мемоизация без вытеснения (== lru_cache(maxsize=None))
+static Value functoolsCache(const std::vector<Value> &args, const Kwargs &kwargs,
+                            const std::shared_ptr<Environment> &) {
+    expectArgs(args, 1, "cache");
+    expectNoKwargs(kwargs, "cache");
+    if (!args[0].isCallable()) {
+        throw TypeErrorException("the first argument must be callable");
+    }
+    return makeLruWrapper(args[0], -1);   // без лимита
+}
+
+// functools.lru_cache(maxsize=128) — мемоизация с LRU-вытеснением; поддержаны обе формы
+static Value functoolsLruCache(const std::vector<Value> &args,
+                               const Kwargs &kwargs,
+                               const std::shared_ptr<Environment> &) {
+
+    // форма @lru_cache без скобок: единственный вызываемый аргумент
+    if (args.size() == 1 && args[0].isCallable() && kwargs.empty()) {
+        return makeLruWrapper(args[0], 128);
+    }
+
+    long long maxsize = 128;
+
+    auto parseMaxsize = [](const Value &m) -> long long {
+        if (m.isNone()) {
+            return -1;               // без лимита
+        }
+        if (m.isBigInt() || m.isBool()) {
+            const long long v = m.toBigInt().convert_to<long long>();
+            return v < 0 ? 0 : v;    // отрицательный трактуется как 0
+        }
+        throw TypeErrorException(
+            "Expected first argument to be an integer, a callable, or None");
+    };
+
+    if (args.size() == 1) {
+        maxsize = parseMaxsize(args[0]);
+    } else if (args.size() > 1) {
+        throw TypeErrorException("lru_cache expected at most 2 arguments");
+    }
+
+    for (const auto &[k, v] : kwargs) {
+        if (k == "maxsize") {
+            maxsize = parseMaxsize(v);
+        } else if (k == "typed") {
+            // принимаем, но не учитываем
+        } else {
+            throw TypeErrorException(
+                "'" + k + "' is an invalid keyword argument for lru_cache()");
+        }
+    }
+
+    // форма @lru_cache(maxsize=...): возвращаем декоратор
+    const long long captured = maxsize;
+
+    return Value(std::make_shared<BuiltinFunction>(
+        "lru_cache_decorator",
+        [captured](const std::vector<Value> &dargs,
+                   const Kwargs &,
+                   const std::shared_ptr<Environment> &) -> Value {
+            expectArgs(dargs, 1, "lru_cache");
+            return makeLruWrapper(dargs[0], captured);
         }));
 }
 
@@ -242,6 +320,9 @@ static Value::ModulePtr makeFunctoolsModule() {
 
     mod->members["cache"] =
         Value(std::make_shared<BuiltinFunction>("cache", functoolsCache));
+
+    mod->members["lru_cache"] =
+        Value(std::make_shared<BuiltinFunction>("lru_cache", functoolsLruCache));
 
     return mod;
 }
