@@ -14272,6 +14272,42 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "h(10)",
       "len(c2)"], ["55", "11"]),
 
+    # cached_property — вычисляется один раз, дальше из кэша; кэш свой у каждого экземпляра
+    (["from functools import cached_property",
+      "calls = []",
+      "class C:",
+      "    def __init__(self, r):",
+      "        self.r = r",
+      "    @cached_property",
+      "    def area(self):",
+      "        calls.append(1)",
+      "        return 3 * self.r * self.r",
+      "",
+      "c = C(2)",
+      "c.area",
+      "c.area",
+      "len(calls)",
+      "C(3).area",
+      "len(calls)"], ["12", "12", "1", "27", "2"]),
+
+    # cached_property — несколько свойств на одном классе не конфликтуют
+    (["from functools import cached_property",
+      "class D:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    @cached_property",
+      "    def a(self):",
+      "        return self.v + 1",
+      "    @cached_property",
+      "    def b(self):",
+      "        return self.v * 2",
+      "",
+      "d = D(10)",
+      "d.a",
+      "d.b",
+      "d.a",
+      "d.b"], ["11", "20", "11", "20"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

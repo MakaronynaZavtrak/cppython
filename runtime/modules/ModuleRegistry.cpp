@@ -300,6 +300,55 @@ static Value functoolsLruCache(const std::vector<Value> &args,
         }));
 }
 
+// functools.cached_property(func) — дескриптор, кэширующий вычисленное значение в экземпляре
+static Value functoolsCachedProperty(const std::vector<Value> &args,
+                                     const Kwargs &kwargs,
+                                     const std::shared_ptr<Environment> &) {
+
+    expectArgs(args, 1, "cached_property");
+    expectNoKwargs(kwargs, "cached_property");
+
+    const Value func = args[0];
+
+    // уникальный приватный ключ кэша для данного cached_property
+    static long long counter = 0;
+    const QString cacheKey = "__cached_property_" + QString::number(counter++);
+
+    // класс-дескриптор с методом __get__
+    auto K = std::make_shared<ClassValue>("functools.cached_property");
+
+    if (Runtime::objectClass) {
+        K->bases.push_back(Runtime::objectClass);
+    }
+
+    K->attributes["__get__"] = Value(std::make_shared<BuiltinFunction>(
+        "__get__",
+        [func, cacheKey](const std::vector<Value> &a,
+                         const Kwargs &,
+                         const std::shared_ptr<Environment> &) -> Value {
+
+            // a[0] = сам дескриптор (self), a[1] = экземпляр, a[2] = класс
+            const Value instance = a[1];
+
+            if (instance.isNone()) {
+                return a[0];   // доступ через класс — вернуть дескриптор
+            }
+
+            const auto inst = instance.asInstance();
+
+            if (inst->fields.contains(cacheKey)) {
+                return inst->fields[cacheKey];
+            }
+
+            const Value result = call(func, { instance }, {}, nullptr);
+            inst->fields[cacheKey] = result;
+            return result;
+        }));
+
+    // вернуть экземпляр класса-дескриптора
+    return call(Value(K), {}, {}, nullptr);
+}
+
 static Value::ModulePtr makeFunctoolsModule() {
 
     auto mod = std::make_shared<ModuleValue>("functools");
@@ -323,6 +372,9 @@ static Value::ModulePtr makeFunctoolsModule() {
 
     mod->members["lru_cache"] =
         Value(std::make_shared<BuiltinFunction>("lru_cache", functoolsLruCache));
+
+    mod->members["cached_property"] =
+        Value(std::make_shared<BuiltinFunction>("cached_property", functoolsCachedProperty));
 
     return mod;
 }
