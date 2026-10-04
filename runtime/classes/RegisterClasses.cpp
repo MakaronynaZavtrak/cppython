@@ -79,3 +79,23 @@ void registerRangeClass(const std::shared_ptr<Environment>& env) {
 
     env->set("range", Value(Runtime::rangeClass));
 }
+
+void registerBuiltinTypeClasses(const std::shared_ptr<Environment>& env) {
+
+    auto make = [&](std::shared_ptr<ClassValue>& slot,
+                    const QString& name,
+                    const QString& callName) {
+        slot = std::make_shared<ClassValue>(name);
+        slot->bases.push_back(Runtime::objectClass);
+        slot->attributes["__new__"] = env->get(callName);
+        env->set(name, Value(slot));
+    };
+
+    make(Runtime::intClass,   "int",   "__int_call__");
+    make(Runtime::floatClass, "float", "__float_call__");
+    make(Runtime::boolClass,  "bool",  "__bool_call__");
+    make(Runtime::listClass,  "list",  "__list_call__");
+    make(Runtime::tupleClass, "tuple", "__tuple_call__");
+    make(Runtime::dictClass,  "dict",  "__dict_call__");
+    make(Runtime::setClass,   "set",   "__set_call__");
+}

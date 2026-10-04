@@ -37,6 +37,20 @@ public:
 
     static std::shared_ptr<ClassValue> bytearrayClass;
 
+    static std::shared_ptr<ClassValue> intClass;
+
+    static std::shared_ptr<ClassValue> floatClass;
+
+    static std::shared_ptr<ClassValue> boolClass;
+
+    static std::shared_ptr<ClassValue> listClass;
+
+    static std::shared_ptr<ClassValue> tupleClass;
+
+    static std::shared_ptr<ClassValue> dictClass;
+
+    static std::shared_ptr<ClassValue> setClass;
+
     static std::vector<Value::InstancePtr> exceptionStack;
 
     static std::shared_ptr<ClassValue> baseExceptionClass;

@@ -574,7 +574,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             }
         ));
 
-    env->set("list",
+    env->set("__list_call__",
              makeBuiltin(
                  "list",
 
@@ -607,7 +607,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
-    env->set("tuple",
+    env->set("__tuple_call__",
              makeBuiltin(
                  "tuple",
 
@@ -640,7 +640,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
-    env->set("set",
+    env->set("__set_call__",
              makeBuiltin(
                  "set",
 
@@ -673,7 +673,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
-    env->set("dict",
+    env->set("__dict_call__",
              makeBuiltin(
                  "dict",
 
@@ -1042,7 +1042,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
     )
 );
 
-    env->set("int",
+    env->set("__int_call__",
          makeBuiltin(
              "int",
 
@@ -1112,7 +1112,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
              }
          ));
 
-    env->set("bool",
+    env->set("__bool_call__",
          makeBuiltin(
              "bool",
 
@@ -1130,7 +1130,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
              }
          ));
 
-    env->set("float",
+    env->set("__float_call__",
          makeBuiltin(
              "float",
 
