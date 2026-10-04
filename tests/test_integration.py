@@ -14017,6 +14017,73 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # сравнение экземпляров через __eq__ / __lt__ + рефлексия для >
+    (["class F:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __eq__(self, o):",
+      "        return self.v == o.v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "",
+      "F(1) == F(1)",
+      "F(1) == F(2)",
+      "F(1) != F(2)",
+      "F(1) < F(2)",
+      "F(2) < F(1)",
+      "F(2) > F(1)"], ["True", "False", "True", "True", "False", "True"]),
+
+    # все шесть операторов при полностью определённых дандерах
+    (["class G:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __eq__(self, o):",
+      "        return self.v == o.v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "    def __le__(self, o):",
+      "        return self.v <= o.v",
+      "    def __gt__(self, o):",
+      "        return self.v > o.v",
+      "    def __ge__(self, o):",
+      "        return self.v >= o.v",
+      "",
+      "G(1) <= G(1)",
+      "G(2) >= G(1)",
+      "G(1) >= G(2)"], ["True", "True", "False"]),
+
+    # без __eq__ — сравнение по идентичности
+    (["class B:",
+      "    pass",
+      "",
+      "x = B()",
+      "x == x",
+      "x == B()",
+      "x != B()"], ["True", "False", "True"]),
+
+    # рефлексия: > работает через __lt__ правого операнда
+    (["class L:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "",
+      "L(5) > L(3)",
+      "L(3) > L(5)"], ["True", "False"]),
+
+    # порядковый оператор без соответствующего дандера -> TypeError
+    (["class Only:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "",
+      "try:",
+      "    Only(1) <= Only(2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

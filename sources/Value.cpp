@@ -383,6 +383,25 @@ template<typename Op>
     : Value(operation(l.toBigInt(), r.toBigInt()));
 }
 
+// Диспетчер сравнения экземпляра к дандеру: прямой вызов, затем рефлексия на правом операнде.
+static std::optional<Value> tryRichCompare(const Value& a, const Value& b,
+                                           const QString& dunder,
+                                           const QString& reflected) {
+    if (a.isInstance()) {
+        try {
+            return call(getAttrValue(a, dunder), { b }, {}, nullptr);
+        } catch (const AttributeErrorException&) {}
+    }
+
+    if (b.isInstance()) {
+        try {
+            return call(getAttrValue(b, reflected), { a }, {}, nullptr);
+        } catch (const AttributeErrorException&) {}
+    }
+
+    return std::nullopt;
+}
+
 bool Value::operator==(const Value& other) const {
 
     if (isNumeric() && other.isNumeric()) {
@@ -401,6 +420,13 @@ bool Value::operator==(const Value& other) const {
             return asObject()->equal(other);
         }
         catch (...) {}
+    }
+
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__eq__", "__eq__")) {
+            return r->toBool();
+        }
+        return is(other);
     }
 
     return false;
@@ -429,6 +455,14 @@ bool Value::operator<(const Value& other) const {
         catch (...) {}
     }
 
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__lt__", "__gt__")) {
+            return r->toBool();
+        }
+        throw TypeErrorException("'<' not supported between instances of '"
+            + getTypeName() + "' and '" + other.getTypeName() + "'");
+    }
+
     throw TypeErrorException(
         "unsupported comparison: " +
         toString() + " " + other.toString());
@@ -450,6 +484,13 @@ bool Value::operator!=(const Value &other) const {
         catch (...) {}
     }
 
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__ne__", "__ne__")) {
+            return r->toBool();
+        }
+        return !(*this == other);
+    }
+
     throw TypeErrorException("unsupported operand type(s) for !=: "
         + toString() + " " + other.toString());
 }
@@ -468,6 +509,14 @@ bool Value::operator<=(const Value &other) const {
             return asObject()->lessOrEqual(other);
         }
         catch (...) {}
+    }
+
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__le__", "__ge__")) {
+            return r->toBool();
+        }
+        throw TypeErrorException("'<=' not supported between instances of '"
+            + getTypeName() + "' and '" + other.getTypeName() + "'");
     }
 
     throw TypeErrorException(
@@ -491,6 +540,14 @@ bool Value::operator>(const Value &other) const {
         catch (...) {}
     }
 
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__gt__", "__lt__")) {
+            return r->toBool();
+        }
+        throw TypeErrorException("'>' not supported between instances of '"
+            + getTypeName() + "' and '" + other.getTypeName() + "'");
+    }
+
     throw TypeErrorException(
         "unsupported operand type(s) for >: " + toString() + " " + other.toString()
     );
@@ -508,6 +565,14 @@ bool Value::operator>=(const Value &other) const {
             return asObject()->greaterOrEqual(other);
         }
         catch (...) {}
+    }
+
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__ge__", "__le__")) {
+            return r->toBool();
+        }
+        throw TypeErrorException("'>=' not supported between instances of '"
+            + getTypeName() + "' and '" + other.getTypeName() + "'");
     }
 
     throw TypeErrorException(
