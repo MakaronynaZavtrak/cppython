@@ -39,6 +39,7 @@
 #include "../exception/TypeErrorException.h"
 #include "../exception/ZeroDivisionErrorException.h"
 #include "ModuleValue.h"
+#include "PartialValue.h"
 
 Value::Value(const QString& str) : data(std::make_shared<StrValue>(str)) {}
 
@@ -193,6 +194,10 @@ QString Value::toString() const {
             },
 
             [](const ModulePtr &p) {
+                return p->toString();
+            },
+
+            [](const PartialPtr &p) {
                 return p->toString();
             },
 
@@ -378,6 +383,25 @@ template<typename Op>
     : Value(operation(l.toBigInt(), r.toBigInt()));
 }
 
+// Диспетчер сравнения экземпляра к дандеру: прямой вызов, затем рефлексия на правом операнде.
+static std::optional<Value> tryRichCompare(const Value& a, const Value& b,
+                                           const QString& dunder,
+                                           const QString& reflected) {
+    if (a.isInstance()) {
+        try {
+            return call(getAttrValue(a, dunder), { b }, {}, nullptr);
+        } catch (const AttributeErrorException&) {}
+    }
+
+    if (b.isInstance()) {
+        try {
+            return call(getAttrValue(b, reflected), { a }, {}, nullptr);
+        } catch (const AttributeErrorException&) {}
+    }
+
+    return std::nullopt;
+}
+
 bool Value::operator==(const Value& other) const {
 
     if (isNumeric() && other.isNumeric()) {
@@ -396,6 +420,13 @@ bool Value::operator==(const Value& other) const {
             return asObject()->equal(other);
         }
         catch (...) {}
+    }
+
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__eq__", "__eq__")) {
+            return r->toBool();
+        }
+        return is(other);
     }
 
     return false;
@@ -424,6 +455,14 @@ bool Value::operator<(const Value& other) const {
         catch (...) {}
     }
 
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__lt__", "__gt__")) {
+            return r->toBool();
+        }
+        throw TypeErrorException("'<' not supported between instances of '"
+            + getTypeName() + "' and '" + other.getTypeName() + "'");
+    }
+
     throw TypeErrorException(
         "unsupported comparison: " +
         toString() + " " + other.toString());
@@ -445,6 +484,13 @@ bool Value::operator!=(const Value &other) const {
         catch (...) {}
     }
 
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__ne__", "__ne__")) {
+            return r->toBool();
+        }
+        return !(*this == other);
+    }
+
     throw TypeErrorException("unsupported operand type(s) for !=: "
         + toString() + " " + other.toString());
 }
@@ -463,6 +509,14 @@ bool Value::operator<=(const Value &other) const {
             return asObject()->lessOrEqual(other);
         }
         catch (...) {}
+    }
+
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__le__", "__ge__")) {
+            return r->toBool();
+        }
+        throw TypeErrorException("'<=' not supported between instances of '"
+            + getTypeName() + "' and '" + other.getTypeName() + "'");
     }
 
     throw TypeErrorException(
@@ -486,6 +540,14 @@ bool Value::operator>(const Value &other) const {
         catch (...) {}
     }
 
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__gt__", "__lt__")) {
+            return r->toBool();
+        }
+        throw TypeErrorException("'>' not supported between instances of '"
+            + getTypeName() + "' and '" + other.getTypeName() + "'");
+    }
+
     throw TypeErrorException(
         "unsupported operand type(s) for >: " + toString() + " " + other.toString()
     );
@@ -503,6 +565,14 @@ bool Value::operator>=(const Value &other) const {
             return asObject()->greaterOrEqual(other);
         }
         catch (...) {}
+    }
+
+    if (isInstance() || other.isInstance()) {
+        if (const auto r = tryRichCompare(*this, other, "__ge__", "__le__")) {
+            return r->toBool();
+        }
+        throw TypeErrorException("'>=' not supported between instances of '"
+            + getTypeName() + "' and '" + other.getTypeName() + "'");
     }
 
     throw TypeErrorException(
@@ -657,6 +727,14 @@ Value::ModulePtr Value::asModule() const {
         throw TypeErrorException("Value is not a module");
     }
     return std::get<ModulePtr>(data);
+}
+
+bool Value::isPartial() const {
+    return std::holds_alternative<PartialPtr>(data);
+}
+
+Value::PartialPtr Value::asPartial() const {
+    return std::get<PartialPtr>(data);
 }
 
 Value Value::operator*(const Value &other) const {
@@ -1185,6 +1263,7 @@ QString Value::getTypeName() const {
     if (isDictValuesView())  return "dict_values";
     if (isDictItemsView())   return "dict_items";
     if (isModule())          return "module";
+    if (isPartial())         return "partial";
 
     if (std::holds_alternative<IteratorPtr>(data)) {
         return std::get<IteratorPtr>(data)->getTypeName();
@@ -1211,7 +1290,8 @@ bool Value::isCallable() const {
         std::holds_alternative<ClassPtr>(data) ||
         std::holds_alternative<BoundMethodPtr>(data) ||
         std::holds_alternative<StaticMethodPtr>(data) ||
-        std::holds_alternative<ClassMethodPtr>(data);
+        std::holds_alternative<ClassMethodPtr>(data) ||
+        std::holds_alternative<PartialPtr>(data);
 }
 
 bool Value::isBigInt() const {

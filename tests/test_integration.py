@@ -13961,6 +13961,353 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # partial — связывание одного/двух/всех позиционных аргументов
+    (["from functools import partial",
+      "add = lambda a, b, c: a + b + c",
+      "partial(add, 1)(2, 3)"], "6"),
+
+    (["from functools import partial",
+      "add = lambda a, b, c: a + b + c",
+      "partial(add, 1, 2)(3)"], "6"),
+
+    (["from functools import partial",
+      "add = lambda a, b, c: a + b + c",
+      "partial(add, 1, 2, 3)()"], "6"),
+
+    # partial — порядок аргументов сохраняется
+    (["from functools import partial",
+      "partial(lambda a, b: a - b, 10)(3)"], "7"),
+
+    # partial — связывание kwarg и его переопределение при вызове
+    (["from functools import partial",
+      "g = partial(lambda a, b, c=0: a + b + c, 1, c=100)",
+      "g(2)"], "103"),
+
+    (["from functools import partial",
+      "g = partial(lambda a, b, c=0: a + b + c, 1, c=100)",
+      "g(2, c=5)"], "8"),
+
+    # partial — ничего не связано, всё передаётся при вызове
+    (["from functools import partial",
+      "partial(len)([1, 2, 3])"], "3"),
+
+    # partial — атрибуты .args и .keywords
+    (["from functools import partial",
+      "partial(lambda a, b: a + b, 2, 10).args"], "(2, 10)"),
+
+    (["from functools import partial",
+      "partial(lambda a, b: a + b, 2, 10).keywords"], "{}"),
+
+    (["from functools import partial",
+      "partial(lambda a, b: (a, b), b=99).keywords"], "{'b': 99}"),
+
+    # partial — без аргументов -> TypeError
+    (["from functools import partial",
+      "try:",
+      "    partial()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # partial — первый аргумент не вызываемый -> TypeError
+    (["from functools import partial",
+      "try:",
+      "    partial(5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # сравнение экземпляров через __eq__ / __lt__ + рефлексия для >
+    (["class F:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __eq__(self, o):",
+      "        return self.v == o.v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "",
+      "F(1) == F(1)",
+      "F(1) == F(2)",
+      "F(1) != F(2)",
+      "F(1) < F(2)",
+      "F(2) < F(1)",
+      "F(2) > F(1)"], ["True", "False", "True", "True", "False", "True"]),
+
+    # все шесть операторов при полностью определённых дандерах
+    (["class G:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __eq__(self, o):",
+      "        return self.v == o.v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "    def __le__(self, o):",
+      "        return self.v <= o.v",
+      "    def __gt__(self, o):",
+      "        return self.v > o.v",
+      "    def __ge__(self, o):",
+      "        return self.v >= o.v",
+      "",
+      "G(1) <= G(1)",
+      "G(2) >= G(1)",
+      "G(1) >= G(2)"], ["True", "True", "False"]),
+
+    # без __eq__ — сравнение по идентичности
+    (["class B:",
+      "    pass",
+      "",
+      "x = B()",
+      "x == x",
+      "x == B()",
+      "x != B()"], ["True", "False", "True"]),
+
+    # рефлексия: > работает через __lt__ правого операнда
+    (["class L:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "",
+      "L(5) > L(3)",
+      "L(3) > L(5)"], ["True", "False"]),
+
+    # порядковый оператор без соответствующего дандера -> TypeError
+    (["class Only:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "",
+      "try:",
+      "    Only(1) <= Only(2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # total_ordering из __lt__ — дописывает <=, >, >=
+    (["from functools import total_ordering",
+      "@total_ordering",
+      "class N:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __eq__(self, o):",
+      "        return self.v == o.v",
+      "    def __lt__(self, o):",
+      "        return self.v < o.v",
+      "",
+      "N(1) <= N(2)",
+      "N(2) >= N(1)",
+      "N(2) > N(1)",
+      "N(1) <= N(1)"], ["True", "True", "True", "True"]),
+
+    # total_ordering из __gt__
+    (["from functools import total_ordering",
+      "@total_ordering",
+      "class M:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __eq__(self, o):",
+      "        return self.v == o.v",
+      "    def __gt__(self, o):",
+      "        return self.v > o.v",
+      "",
+      "M(1) < M(2)",
+      "M(1) <= M(2)",
+      "M(1) >= M(2)"], ["True", "True", "False"]),
+
+    # total_ordering из __le__
+    (["from functools import total_ordering",
+      "@total_ordering",
+      "class LE:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __eq__(self, o):",
+      "        return self.v == o.v",
+      "    def __le__(self, o):",
+      "        return self.v <= o.v",
+      "",
+      "LE(1) < LE(2)",
+      "LE(2) > LE(1)",
+      "LE(1) < LE(1)"], ["True", "True", "False"]),
+
+    # total_ordering из __ge__
+    (["from functools import total_ordering",
+      "@total_ordering",
+      "class GE:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    def __eq__(self, o):",
+      "        return self.v == o.v",
+      "    def __ge__(self, o):",
+      "        return self.v >= o.v",
+      "",
+      "GE(1) < GE(2)",
+      "GE(2) < GE(1)",
+      "GE(1) <= GE(1)"], ["True", "False", "True"]),
+
+    # total_ordering без операторов сравнения -> ValueError
+    (["from functools import total_ordering",
+      "try:",
+      "    @total_ordering",
+      "    class Bad:",
+      "        def __eq__(self, o):",
+      "            return True",
+      "    'no error'",
+      "except ValueError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # cmp_to_key — сортировка по возрастанию/убыванию/длине
+    (["from functools import cmp_to_key",
+      "sorted([3, 1, 2], key=cmp_to_key(lambda a, b: a - b))"], "[1, 2, 3]"),
+
+    (["from functools import cmp_to_key",
+      "sorted([3, 1, 2], key=cmp_to_key(lambda a, b: b - a))"], "[3, 2, 1]"),
+
+    (["from functools import cmp_to_key",
+      "sorted(['bb', 'a', 'ccc'], key=cmp_to_key(lambda a, b: len(a) - len(b)))"], "['a', 'bb', 'ccc']"),
+
+    # cmp_to_key — объекты-ключи сравниваются по результату cmp
+    (["from functools import cmp_to_key",
+      "k = cmp_to_key(lambda a, b: a - b)",
+      "k(3) < k(5)",
+      "k(5) < k(3)",
+      "k(3) == k(3)",
+      "k(5) > k(3)",
+      "k(3) <= k(3)",
+      "k(5) != k(3)"], ["True", "False", "True", "True", "True", "True"]),
+
+    # cmp_to_key — обратный компаратор
+    (["from functools import cmp_to_key",
+      "r = cmp_to_key(lambda a, b: b - a)",
+      "r(3) < r(5)"], "False"),
+
+    # cache — функция вызывается по разу на набор аргументов
+    (["from functools import cache",
+      "calls = []",
+      "@cache",
+      "def f(x):",
+      "    calls.append(x)",
+      "    return x * x",
+      "",
+      "f(3)",
+      "f(3)",
+      "f(4)",
+      "f(3)",
+      "calls"], ["9", "9", "16", "9", "[3, 4]"]),
+
+    # cache — разные наборы позиционных аргументов дают разные ключи
+    (["from functools import cache",
+      "@cache",
+      "def g(a, b):",
+      "    return a + b",
+      "",
+      "g(1, 2)",
+      "g(2, 1)"], ["3", "3"]),
+
+    # cache — мемоизированный Фибоначчи: каждое подзадание считается ровно раз
+    (["from functools import cache",
+      "hits = []",
+      "@cache",
+      "def fib(n):",
+      "    hits.append(n)",
+      "    if n < 2:",
+      "        return n",
+      "    return fib(n - 1) + fib(n - 2)",
+      "",
+      "fib(10)",
+      "len(hits)"], ["55", "11"]),
+
+    # cache — нехешируемый аргумент -> TypeError
+    (["from functools import cache",
+      "@cache",
+      "def h(x):",
+      "    return x",
+      "",
+      "try:",
+      "    h([1, 2])",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # lru_cache(maxsize=2) — LRU-вытеснение в точном порядке
+    (["from functools import lru_cache",
+      "order = []",
+      "@lru_cache(maxsize=2)",
+      "def f(x):",
+      "    order.append(x)",
+      "    return x * 10",
+      "",
+      "f(1)",
+      "f(2)",
+      "f(1)",
+      "f(3)",
+      "f(2)",
+      "f(1)",
+      "order"], ["10", "20", "10", "30", "20", "10", "[1, 2, 3, 2, 1]"]),
+
+    # @lru_cache без скобок — мемоизация с maxsize по умолчанию
+    (["from functools import lru_cache",
+      "c1 = []",
+      "@lru_cache",
+      "def g(x):",
+      "    c1.append(x)",
+      "    return x + 1",
+      "",
+      "g(5)",
+      "g(5)",
+      "g(6)",
+      "c1"], ["6", "6", "7", "[5, 6]"]),
+
+    # lru_cache(maxsize=None) — безлимитная мемоизация (Фибоначчи)
+    (["from functools import lru_cache",
+      "c2 = []",
+      "@lru_cache(maxsize=None)",
+      "def h(n):",
+      "    c2.append(n)",
+      "    if n < 2:",
+      "        return n",
+      "    return h(n - 1) + h(n - 2)",
+      "",
+      "h(10)",
+      "len(c2)"], ["55", "11"]),
+
+    # cached_property — вычисляется один раз, дальше из кэша; кэш свой у каждого экземпляра
+    (["from functools import cached_property",
+      "calls = []",
+      "class C:",
+      "    def __init__(self, r):",
+      "        self.r = r",
+      "    @cached_property",
+      "    def area(self):",
+      "        calls.append(1)",
+      "        return 3 * self.r * self.r",
+      "",
+      "c = C(2)",
+      "c.area",
+      "c.area",
+      "len(calls)",
+      "C(3).area",
+      "len(calls)"], ["12", "12", "1", "27", "2"]),
+
+    # cached_property — несколько свойств на одном классе не конфликтуют
+    (["from functools import cached_property",
+      "class D:",
+      "    def __init__(self, v):",
+      "        self.v = v",
+      "    @cached_property",
+      "    def a(self):",
+      "        return self.v + 1",
+      "    @cached_property",
+      "    def b(self):",
+      "        return self.v * 2",
+      "",
+      "d = D(10)",
+      "d.a",
+      "d.b",
+      "d.a",
+      "d.b"], ["11", "20", "11", "20"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

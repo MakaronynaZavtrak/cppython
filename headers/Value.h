@@ -31,6 +31,7 @@ class PropertyValue;
 class BoundMethod;
 class FunctionValue;
 class ModuleValue;
+class PartialValue;
     /**
  * @class Value
  * @brief Представляет полиморфный контейнер данных, способный хранить различные типы данных, включая примитивные
@@ -92,6 +93,8 @@ public:
 
     using ModulePtr = std::shared_ptr<ModuleValue>;
 
+    using PartialPtr = std::shared_ptr<PartialValue>;
+
     std::variant<
         BigInt,
         BigFloat,
@@ -121,6 +124,7 @@ public:
         FrozenSetPtr,
         RangePtr,
         ModulePtr,
+        PartialPtr,
         std::monostate
         //В будущем здесь появятся еще типы (наверное)>;
     > data;
@@ -177,6 +181,8 @@ public:
     explicit Value(const RangePtr& range) : data(range) {}
 
     explicit Value(const ModulePtr& module) : data(module) {}
+
+    explicit Value(const PartialPtr& partial) : data(partial) {}
 
     [[nodiscard]] QString toString() const override;
     [[nodiscard]] QString repr() const override;
@@ -274,6 +280,9 @@ public:
 
     [[nodiscard]] bool isModule() const;
     [[nodiscard]] ModulePtr asModule() const;
+
+    [[nodiscard]] bool isPartial() const;
+    [[nodiscard]] PartialPtr asPartial() const;
 
     [[nodiscard]] Value operator+(const Value&) const;
 
