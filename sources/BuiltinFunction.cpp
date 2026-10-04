@@ -1835,13 +1835,30 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                 if (args.size() == 1) {
                     return typeOf(args[0]);
                 }
-                if (args.size() != 3) {
-                    throw TypeErrorException("type() takes 1 or 3 arguments");
+
+            // 3-арг: type(name, bases, ns)
+            // 4-арг: type.__new__(mcs, name, bases, ns) — явная инъекция из
+            //        метакласса (в т.ч. через super().__new__).
+            Value::ClassPtr mcs;
+            size_t off = 0;
+
+            if (args.size() == 4) {
+
+                if (!args[0].isClass()) {
+                    throw TypeErrorException(
+                        "type.__new__(X): X is not a type object");
                 }
 
-            const Value &nameV = args[0];
-            const Value &basesV = args[1];
-            const Value &nsV = args[2];
+                mcs = args[0].asClass();
+                off = 1;
+            }
+            else if (args.size() != 3) {
+                throw TypeErrorException("type() takes 1 or 3 arguments");
+            }
+
+            const Value &nameV = args[off];
+            const Value &basesV = args[off + 1];
+            const Value &nsV = args[off + 2];
 
             if (!nameV.isString()) {
                 throw TypeErrorException("type() argument 1 must be str");
@@ -1897,6 +1914,11 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                 }
 
                 cls->attributes.insert(key, val);
+            }
+
+            // при вызове type.__new__(mcs, ...) фиксируем метакласс результата
+            if (mcs && mcs != Runtime::typeClass) {
+                cls->metaclass = mcs;
             }
 
             return Value(cls);

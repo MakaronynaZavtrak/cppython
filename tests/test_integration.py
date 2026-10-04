@@ -6594,6 +6594,10 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("'hi'.__class__.__name__",    "'str'"),
     ("[1].__class__ is list",      "True"),
 
+    # динамический класс через 3-арг type и его метакласс
+    ("type('X', (), {}).__name__",       "'X'"),
+    ("type(type('X', (), {})) is type",  "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -14434,6 +14438,108 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),
+
+    # ===== Метаклассы =====
+
+    # кастомный метакласс: type(F) — это метакласс
+    (["class Meta(type):",
+      "    pass",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "type(F) is Meta",
+      "type(F).__name__"], ["True", "'Meta'"]),
+
+    # обычный класс -> метакласс type
+    (["class C:",
+      "    pass",
+      "",
+      "type(C) is type"], "True"),
+
+    # Meta.__new__ инъектирует атрибут через явный type.__new__
+    (["class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        ns['injected'] = 42",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "F.injected",
+      "type(F) is Meta"], ["42", "True"]),
+
+    # метаклассовый __init__ получает (cls, name, bases, ns)
+    (["log = []",
+      "class Meta(type):",
+      "    def __init__(cls, name, bases, ns):",
+      "        log.append(name)",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "log"], "['F']"),
+
+    # __new__ и __init__ метакласса работают вместе и по порядку
+    (["order = []",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        order.append('new')",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "    def __init__(cls, name, bases, ns):",
+      "        order.append('init')",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "order"], "['new', 'init']"),
+
+    # метакласс наследуется потомком
+    (["class Meta(type):",
+      "    pass",
+      "",
+      "class A(metaclass=Meta):",
+      "    pass",
+      "",
+      "class B(A):",
+      "    pass",
+      "",
+      "type(B) is Meta"], "True"),
+
+    # конфликт метаклассов -> TypeError
+    (["class M1(type):",
+      "    pass",
+      "",
+      "class M2(type):",
+      "    pass",
+      "",
+      "class A(metaclass=M1):",
+      "    pass",
+      "",
+      "class B(metaclass=M2):",
+      "    pass",
+      "",
+      "try:",
+      "    class C(A, B):",
+      "        pass",
+      "except TypeError:",
+      "    'conflict'",
+      ""], "'conflict'"),
+
+    # метод метакласса доступен на классе (cls как получатель)
+    (["class Meta(type):",
+      "    def shout(cls):",
+      "        return cls.__name__ + '!'",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "F.shout()"], "'F!'"),
+
+    # 3-арг type: динамический класс, его метакласс — type
+    (["D = type('D', (), {'val': 7})",
+      "type(D) is type",
+      "D().val"], ["True", "7"]),
 
 ])
 

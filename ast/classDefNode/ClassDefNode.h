@@ -6,6 +6,7 @@
 #define CPPYTHON_CLASSDEFNODE_H
 
 #include <qlist.h>
+#include <utility>
 
 #include "../ASTNode.h"
 
@@ -16,10 +17,14 @@ public:
     QVector<std::shared_ptr<ASTNode>> body;
     std::vector<std::shared_ptr<ASTNode>> decorators;
 
+    // keyword-аргументы заголовка класса: metaclass=... и прочие (name, expr).
+    std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords;
+
     ClassDefNode(QString name,
                  std::vector<std::shared_ptr<ASTNode>> bases,
                  QVector<std::shared_ptr<ASTNode>> body,
-                 std::vector<std::shared_ptr<ASTNode>> decorators = {});
+                 std::vector<std::shared_ptr<ASTNode>> decorators = {},
+                 std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords = {});
 
     [[nodiscard]] Value eval(EnvPtr env) const override;
 

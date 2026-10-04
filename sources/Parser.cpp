@@ -1134,6 +1134,7 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
     QString name = advance().value;
 
     std::vector<std::shared_ptr<ASTNode>> bases;
+    std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords;
 
     // проверяем, есть ли наследование
     if (matchAndAdvance(TOKEN_OP, "(")) {
@@ -1142,8 +1143,22 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
         if (!match(TOKEN_OP, ")")) {
 
             while (true) {
-                // парсим выражение базового класса
-                bases.push_back(parseExpression());
+
+                // keyword-аргумент заголовка класса: metaclass=Meta и т.п.
+                if (peek().type == TOKEN_ID &&
+                    tokens[current + 1].type == TOKEN_OP &&
+                    tokens[current + 1].value == "=") {
+
+                    const QString kw = advance().value;
+
+                    advance(); // =
+
+                    keywords.push_back({kw, parseExpression()});
+                }
+                else {
+                    // парсим выражение базового класса
+                    bases.push_back(parseExpression());
+                }
 
                 if (matchAndAdvance(TOKEN_OP, ",")) {
                     continue;
@@ -1166,7 +1181,7 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
         qBody.push_back(stmt);
     }
 
-    return std::make_shared<ClassDefNode>(name, bases, qBody, decorators);
+    return std::make_shared<ClassDefNode>(name, bases, qBody, decorators, keywords);
 }
 
 std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {

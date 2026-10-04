@@ -369,12 +369,74 @@ Value constructClass(const Value::ClassPtr& cls,
                      const Kwargs& kwargs,
                      const std::shared_ptr<Environment>& env) {
 
+    // Конструируем ли мы класс (cls — метакласс)? Тогда по пути __new__
+    // нужно проставить метакласс результата и вызвать метаклассовый __init__.
+    const bool isMetaConstruction =
+        PythonException::isSubclass(cls, Runtime::typeClass);
+
     // Обобщённое конструирование: если у класса есть __new__ — конструируем через него.
+    // Ловим AttributeError только на самом поиске __new__ (его отсутствие), а не
+    // на вызовах пользовательского кода, чтобы не глотать настоящие ошибки.
+    Value newMethod;
+    bool hasNew = false;
+
     try {
-        const Value newMethod = findAttrInHierarchy(cls, "__new__");
-        return call(newMethod, args, kwargs, env);
+        newMethod = findAttrInHierarchy(cls, "__new__");
+        hasNew = true;
     } catch (const AttributeErrorException&) {
         // у класса нет __new__ — обычное создание экземпляра ниже
+    }
+
+    if (hasNew) {
+
+        // Питоновскому __new__ передаём класс первым аргументом: __new__(cls, ...).
+        // Встроенные __new__ — фабрики без cls, их вызываем как есть.
+        Value constructed;
+
+        if (newMethod.isFunction()) {
+
+            std::vector<Value> newArgs;
+            newArgs.reserve(args.size() + 1);
+            newArgs.push_back(Value(cls));
+            newArgs.insert(newArgs.end(), args.begin(), args.end());
+
+            constructed = call(newMethod, newArgs, kwargs, env);
+        }
+        else {
+            constructed = call(newMethod, args, kwargs, env);
+        }
+
+        // Путь метакласса: закрепляем метакласс и зовём его __init__.
+        if (isMetaConstruction && constructed.isClass()) {
+
+            const auto newClass = constructed.asClass();
+
+            if (!newClass->metaclass && cls != Runtime::typeClass) {
+                newClass->metaclass = cls;
+            }
+
+            // Метаклассовый __init__(cls_result, name, bases, ns), если он задан
+            // пользователем (type/object своего __init__ здесь не имеют).
+            Value metaInit;
+            bool hasInit = false;
+
+            try {
+                metaInit = findAttrInHierarchy(cls, "__init__");
+                hasInit = true;
+            } catch (const AttributeErrorException&) {}
+
+            if (hasInit && metaInit.isFunction()) {
+
+                std::vector<Value> initArgs;
+                initArgs.reserve(args.size() + 1);
+                initArgs.push_back(constructed);
+                initArgs.insert(initArgs.end(), args.begin(), args.end());
+
+                call(metaInit, initArgs, kwargs, env);
+            }
+        }
+
+        return constructed;
     }
 
     const auto instance = std::make_shared<InstanceValue>(cls);
