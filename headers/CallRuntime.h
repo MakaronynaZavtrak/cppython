@@ -54,4 +54,6 @@ QByteArray constructBytesData(
 
 bool supportsIter(const Value& obj);
 
+void attachBuiltinNewMethods();
+
 #endif //CPPYTHON_CALLRUNTIME_H

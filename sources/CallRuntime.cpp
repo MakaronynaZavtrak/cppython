@@ -300,82 +300,81 @@ bool supportsIter(const Value& obj) {
     }
 }
 
+// __new__ встроенных типов: конструирование выполняется через штатный протокол,
+// а constructClass диспетчеризует к ним обобщённо (без хардкода cls == ...).
+
+static Value strNew(const std::vector<Value>& args, const Kwargs&,
+                    const std::shared_ptr<Environment>&) {
+    expectArgsRange(args, 0, 1, "str");
+    if (args.empty()) {
+        return Value("");
+    }
+    const Value& obj = args[0];
+    try {
+        Value strMethod = getAttrValue(obj, "__str__");
+        Value result = call(strMethod, {}, {}, nullptr);
+        if (!result.isString()) {
+            throw TypeErrorException("__str__ returned non-string");
+        }
+        return result;
+    } catch (const AttributeErrorException&) {
+        return Value(obj.toString());
+    }
+}
+
+static Value bytesNew(const std::vector<Value>& args, const Kwargs& kwargs,
+                      const std::shared_ptr<Environment>&) {
+    return Value(std::make_shared<BytesValue>(constructBytesData(args, kwargs)));
+}
+
+static Value bytearrayNew(const std::vector<Value>& args, const Kwargs& kwargs,
+                          const std::shared_ptr<Environment>&) {
+    return Value(std::make_shared<ByteArrayValue>(constructBytesData(args, kwargs)));
+}
+
+static Value rangeNew(const std::vector<Value>& args, const Kwargs&,
+                      const std::shared_ptr<Environment>&) {
+    for (const auto& a : args) {
+        if (!a.isBigInt() && !a.isBool()) {
+            throw TypeErrorException(
+                "'" + a.repr() + "' object cannot be interpreted as an integer");
+        }
+    }
+    Value::BigInt start = 0, stop, step = 1;
+    if (args.size() == 1) {
+        stop = args[0].toBigInt();
+    } else if (args.size() == 2) {
+        start = args[0].toBigInt();
+        stop = args[1].toBigInt();
+    } else if (args.size() == 3) {
+        start = args[0].toBigInt();
+        stop = args[1].toBigInt();
+        step = args[2].toBigInt();
+    } else {
+        throw TypeErrorException("range expected at most 3 arguments, got " + QString::number(args.size()));
+    }
+    return Value(std::make_shared<RangeValue>(start, stop, step));
+}
+
+// Привязывает __new__ к class-объектам встроенных типов (вызывается после их создания).
+void attachBuiltinNewMethods() {
+    Runtime::strClass->attributes["__new__"]       = Value(std::make_shared<BuiltinFunction>("__new__", strNew));
+    Runtime::bytesClass->attributes["__new__"]     = Value(std::make_shared<BuiltinFunction>("__new__", bytesNew));
+    Runtime::bytearrayClass->attributes["__new__"] = Value(std::make_shared<BuiltinFunction>("__new__", bytearrayNew));
+    Runtime::rangeClass->attributes["__new__"]     = Value(std::make_shared<BuiltinFunction>("__new__", rangeNew));
+}
+
 Value constructClass(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
                      const Kwargs& kwargs,
                      const std::shared_ptr<Environment>& env) {
 
-    if (cls == Runtime::strClass) {
-
-        expectArgsRange(args, 0, 1, "str");
-
-        if (args.empty()) {
-            return Value("");
-        }
-
-        const Value& obj = args[0];
-
-        try {
-
-            Value strMethod = getAttrValue(obj, "__str__");
-            Value result = call(strMethod, {}, {}, nullptr);
-
-            if (!result.isString()) {
-                throw TypeErrorException("__str__ returned non-string");
-            }
-
-            return result;
-
-        } catch (const AttributeErrorException&) {
-            return Value(obj.toString());
-        }
-    }
-
-    if (cls == Runtime::bytesClass) {
-
-        return Value(
-            std::make_shared<BytesValue>(
-                constructBytesData(args, kwargs)
-            )
-        );
-
-    }
-
-    if (cls == Runtime::bytearrayClass) {
-
-        return Value(
-            std::make_shared<ByteArrayValue>(
-                constructBytesData(args, kwargs)
-            )
-        );
-    }
-
-    if (cls == Runtime::rangeClass) {
-
-        for (const auto& a : args) {
-            if (!a.isBigInt() && !a.isBool()) {
-                throw TypeErrorException(
-                    "'" + a.repr() + "' object cannot be interpreted as an integer"
-                );
-            }
-        }
-
-        Value::BigInt start = 0, stop, step = 1;
-
-        if (args.size() == 1) {
-            stop = args[0].toBigInt();
-        } else if (args.size() == 2) {
-            start = args[0].toBigInt();
-            stop = args[1].toBigInt();
-        } else if (args.size() == 3) {
-            start = args[0].toBigInt();
-            stop = args[1].toBigInt();
-            step = args[2].toBigInt();
-        } else {
-            throw TypeErrorException("range expected at most 3 arguments, got " + QString::number(args.size()));
-        }
-
-        return Value(std::make_shared<RangeValue>(start, stop, step));
+    // Обобщённое конструирование: если у класса есть __new__ — конструируем через него.
+    try {
+        const Value newMethod = findAttrInHierarchy(cls, "__new__");
+        return call(newMethod, args, kwargs, env);
+    } catch (const AttributeErrorException&) {
+        // у класса нет __new__ — обычное создание экземпляра ниже
     }
 
     const auto instance = std::make_shared<InstanceValue>(cls);

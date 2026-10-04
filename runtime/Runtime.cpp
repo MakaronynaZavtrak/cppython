@@ -20,6 +20,8 @@ void Runtime::initialize(const std::shared_ptr<Environment> &env) {
 
     registerRangeClass(env);
 
+    attachBuiltinNewMethods();
+
 }
 
 std::shared_ptr<ClassValue> Runtime::objectClass = nullptr;
