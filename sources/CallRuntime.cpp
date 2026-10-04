@@ -395,12 +395,24 @@ Value constructClass(const Value::ClassPtr& cls,
 
         if (newMethod.isFunction()) {
 
+            const auto newFunc = newMethod.asFunction();
+
             std::vector<Value> newArgs;
             newArgs.reserve(args.size() + 1);
             newArgs.push_back(Value(cls));
             newArgs.insert(newArgs.end(), args.begin(), args.end());
 
-            constructed = call(newMethod, newArgs, kwargs, env);
+            // Окружение с __class__ = класс, где определён __new__: нужно, чтобы
+            // zero-arg super() внутри __new__ нашёл origin (получатель — первый
+            // параметр mcs/cls). Без этого super().__new__ не резолвится.
+            std::shared_ptr<Environment> callEnv;
+
+            if (newFunc->ownerClass) {
+                callEnv = std::make_shared<Environment>();
+                callEnv->set("__class__", Value(newFunc->ownerClass));
+            }
+
+            constructed = callFunction(newFunc, newArgs, kwargs, callEnv);
         }
         else {
             constructed = call(newMethod, args, kwargs, env);

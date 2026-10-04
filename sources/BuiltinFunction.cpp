@@ -227,12 +227,15 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      Value receiver;
 
-                     // instance method
+                     // instance method -> classmethod -> метаклассовый __new__
                      try {
                          receiver = local_env->get("self");
                      } catch (...) {
-                         // classmethod
-                         receiver = local_env->get("cls");
+                         try {
+                             receiver = local_env->get("cls");
+                         } catch (...) {
+                             receiver = local_env->get("mcs");
+                         }
                      }
 
                      auto clsVal = local_env->get("__class__");

@@ -14541,6 +14541,32 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "type(D) is type",
       "D().val"], ["True", "7"]),
 
+    # super().__new__ внутри метакласса
+    (["class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        ns['tag'] = 'x'",
+      "        return super().__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "F.tag",
+      "type(F) is Meta"], ["'x'", "True"]),
+
+    # super().__new__ + метаклассовый __init__ по порядку
+    (["order = []",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        order.append('new')",
+      "        return super().__new__(mcs, name, bases, ns)",
+      "    def __init__(cls, name, bases, ns):",
+      "        order.append('init')",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "order"], "['new', 'init']"),
+
 ])
 
 def test_multiline_expressions(commands, expected):
