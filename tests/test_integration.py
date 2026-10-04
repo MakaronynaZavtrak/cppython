@@ -6566,6 +6566,34 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("pow(2, -1, 5)",         "3"),
     ("pow(3, -1, 7)",         "5"),
 
+    # type(x).__name__ — тип значения для всех встроенных
+    ("type(5).__name__",           "'int'"),
+    ("type(3.14).__name__",        "'float'"),
+    ("type(True).__name__",        "'bool'"),
+    ("type('x').__name__",         "'str'"),
+    ("type([]).__name__",          "'list'"),
+    ("type(()).__name__",          "'tuple'"),
+    ("type({}).__name__",          "'dict'"),
+    ("type(None).__name__",        "'NoneType'"),
+    ("type(range(3)).__name__",    "'range'"),
+    ("type(len).__name__",         "'builtin_function_or_method'"),
+    ("type(lambda: 0).__name__",   "'function'"),
+    ("type(int).__name__",         "'type'"),
+    ("type(type).__name__",        "'type'"),
+
+    # встроенные значения ЕСТЬ свои типы (идентичность через is)
+    ("type(5) is int",             "True"),
+    ("type([]) is list",           "True"),
+    ("type('x') is str",           "True"),
+    ("type({}) is dict",           "True"),
+    ("type(int) is type",          "True"),
+    ("type(type) is type",         "True"),
+
+    # __class__ — тип значения
+    ("(5).__class__.__name__",     "'int'"),
+    ("'hi'.__class__.__name__",    "'str'"),
+    ("[1].__class__ is list",      "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -14367,6 +14395,42 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
 
     (["try:",
       "    type('D', (5,), {})",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # type() — экземпляр -> его класс, класс -> type
+    (["class C:",
+      "    pass",
+      "",
+      "type(C()).__name__",
+      "type(C).__name__",
+      "type(C) is type"], ["'C'", "'type'", "True"]),
+
+    # __class__ на экземпляре
+    (["class C:",
+      "    pass",
+      "",
+      "c = C()",
+      "c.__class__ is C",
+      "c.__class__.__name__"], ["True", "'C'"]),
+
+    # 3-арг type — динамический класс + его метакласс type
+    (["D = type('D', (), {'x': 10})",
+      "D.__name__",
+      "D().x",
+      "type(D).__name__"], ["'D'", "10", "'type'"]),
+
+    # type() — без аргументов -> TypeError
+    (["try:",
+      "    type()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # type() — два аргумента -> TypeError
+    (["try:",
+      "    type(1, 2)",
       "except TypeError:",
       "    'ok'",
       ""], "'ok'"),

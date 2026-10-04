@@ -51,6 +51,16 @@ public:
 
     static std::shared_ptr<ClassValue> setClass;
 
+    static std::shared_ptr<ClassValue> typeClass;
+
+    static std::shared_ptr<ClassValue> frozensetClass;
+
+    static std::shared_ptr<ClassValue> noneTypeClass;
+
+    static std::shared_ptr<ClassValue> functionClass;
+
+    static std::shared_ptr<ClassValue> builtinFunctionClass;
+
     static std::vector<Value::InstancePtr> exceptionStack;
 
     static std::shared_ptr<ClassValue> baseExceptionClass;

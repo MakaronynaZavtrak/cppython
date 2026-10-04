@@ -83,6 +83,10 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
         auto cls = obj.asClass();
 
+        if (attr == "__name__") {
+            return Value(cls->name);
+        }
+
         Value val = findAttrInHierarchy(cls, attr);
 
         if (DescriptorUtils::hasGet(val)) {
@@ -241,7 +245,36 @@ QString pythonStr(const Value& obj) {
     return obj.toString();
 }
 
+// Возвращает class-объект (тип) значения — основа для type(x) и __class__.
+Value typeOf(const Value& obj) {
+    if (obj.isInstance())  return Value(obj.asInstance()->klass);
+    if (obj.isClass())     return Value(Runtime::typeClass);
+
+    if (obj.isBool())      return Value(Runtime::boolClass);
+    if (obj.isBigInt())    return Value(Runtime::intClass);
+    if (obj.isBigFloat())  return Value(Runtime::floatClass);
+    if (obj.isString())    return Value(Runtime::strClass);
+    if (obj.isBytes())     return Value(Runtime::bytesClass);
+    if (obj.isByteArray()) return Value(Runtime::bytearrayClass);
+    if (obj.isList())      return Value(Runtime::listClass);
+    if (obj.isTuple())     return Value(Runtime::tupleClass);
+    if (obj.isDict())      return Value(Runtime::dictClass);
+    if (obj.isSet())       return Value(Runtime::setClass);
+    if (obj.isFrozenSet()) return Value(Runtime::frozensetClass);
+    if (obj.isRange())     return Value(Runtime::rangeClass);
+    if (obj.isNone())      return Value(Runtime::noneTypeClass);
+
+    if (obj.isBuiltinFunction()) return Value(Runtime::builtinFunctionClass);
+    if (obj.isCallable())        return Value(Runtime::functionClass);
+
+    return Value(Runtime::objectClass);
+}
+
 Value getAttrValue(const Value& obj, const QString& attr) {
+
+    if (attr == "__class__") {
+        return typeOf(obj);
+    }
 
     // super bypasses __getattribute__
     if (obj.isSuper()) {

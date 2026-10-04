@@ -1821,7 +1821,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     ));
 
-    env->set("type",
+    env->set("__type_call__",
     makeBuiltin(
         "type",
 
@@ -1831,10 +1831,13 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
             expectNoKwargs(kwargs, "type");
 
-            // 1-аргументная форма type(x) появится в следующем коммите
-            if (args.size() != 3) {
-                throw TypeErrorException("type() takes 1 or 3 arguments");
-            }
+            // одноаргументная форма: тип значения
+                if (args.size() == 1) {
+                    return typeOf(args[0]);
+                }
+                if (args.size() != 3) {
+                    throw TypeErrorException("type() takes 1 or 3 arguments");
+                }
 
             const Value &nameV = args[0];
             const Value &basesV = args[1];

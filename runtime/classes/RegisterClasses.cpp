@@ -98,4 +98,18 @@ void registerBuiltinTypeClasses(const std::shared_ptr<Environment>& env) {
     make(Runtime::tupleClass, "tuple", "__tuple_call__");
     make(Runtime::dictClass,  "dict",  "__dict_call__");
     make(Runtime::setClass,   "set",   "__set_call__");
+
+    // метакласс type: вызывается через __new__ (1-арг и 3-арг)
+    make(Runtime::typeClass, "type", "__type_call__");
+
+    // классы-маркеры типов (для type(x); напрямую не конструируются)
+    auto marker = [&](std::shared_ptr<ClassValue>& slot, const QString& name) {
+        slot = std::make_shared<ClassValue>(name);
+        slot->bases.push_back(Runtime::objectClass);
+    };
+
+    marker(Runtime::frozensetClass,       "frozenset");
+    marker(Runtime::noneTypeClass,        "NoneType");
+    marker(Runtime::functionClass,        "function");
+    marker(Runtime::builtinFunctionClass, "builtin_function_or_method");
 }
