@@ -14308,6 +14308,69 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "d.a",
       "d.b"], ["11", "20", "11", "20"]),
 
+    # type() 3-арг — создание класса с атрибутами
+    (["D = type('D', (), {'x': 10, 'y': 20})",
+      "D.x",
+      "D.y",
+      "D().x"], ["10", "20", "10"]),
+
+    # type() 3-арг — метод из namespace
+    (["E = type('E', (), {'greet': lambda self: 'hi', 'n': 42})",
+      "e = E()",
+      "e.greet()",
+      "e.n"], ["'hi'", "42"]),
+
+    # type() 3-арг — наследование от базового класса
+    (["class Base:",
+      "    def m(self):",
+      "        return 'base'",
+      "    def shared(self):",
+      "        return 100",
+      "",
+      "F = type('F', (Base,), {'own': lambda self: 'own'})",
+      "f = F()",
+      "f.m()",
+      "f.shared()",
+      "f.own()"], ["'base'", "100", "'own'"]),
+
+    # type() — без аргументов / два аргумента -> TypeError
+    (["try:",
+      "    type()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    type(1, 2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # type() 3-арг — имя не строка / базы не кортеж / namespace не словарь / база не класс
+    (["try:",
+      "    type(5, (), {})",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    type('D', 'notuple', {})",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    type('D', (), 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    type('D', (5,), {})",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

@@ -9,6 +9,7 @@
 #include "Environment.h"
 #include "FilterIterator.h"
 #include "FrozenSetValue.h"
+#include "FunctionValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
 #include "MapIterator.h"
@@ -1817,6 +1818,85 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             return Value(std::make_shared<TupleValue>(
                 std::vector<Value>{ div, mod }
             ));
+        }
+    ));
+
+    env->set("type",
+    makeBuiltin(
+        "type",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectNoKwargs(kwargs, "type");
+
+            // 1-аргументная форма type(x) появится в следующем коммите
+            if (args.size() != 3) {
+                throw TypeErrorException("type() takes 1 or 3 arguments");
+            }
+
+            const Value &nameV = args[0];
+            const Value &basesV = args[1];
+            const Value &nsV = args[2];
+
+            if (!nameV.isString()) {
+                throw TypeErrorException("type() argument 1 must be str");
+            }
+
+            if (!basesV.isTuple()) {
+                throw TypeErrorException("type() argument 2 must be a tuple of classes");
+            }
+
+            if (!nsV.isDict()) {
+                throw TypeErrorException("type() argument 3 must be a dict");
+            }
+
+            const QString name = nameV.asString("type()")->getValue();
+
+            std::vector<Value::ClassPtr> bases;
+
+            for (const Value &b : basesV.asTuple("type()")->items) {
+
+                if (!b.isClass()) {
+                    throw TypeErrorException("bases must be classes");
+                }
+
+                bases.push_back(b.asClass());
+            }
+
+            if (bases.empty()) {
+                bases.push_back(Runtime::objectClass);
+            }
+
+            const auto cls = std::make_shared<ClassValue>(name);
+            cls->bases = bases;
+
+            const auto ns = nsV.asDict("type()");
+
+            // переносим пространство имён в атрибуты, сохраняя порядок
+            for (const Value &keyV : ns->getOrder()) {
+
+                if (!keyV.isString()) {
+                    continue;
+                }
+
+                const QString key = keyV.asString("type()")->getValue();
+                Value val = ns->getItem(keyV);
+
+                // методам нужен владелец-класс (для привязки self)
+                if (val.isFunction()) {
+                    val.asFunction()->ownerClass = cls;
+                } else if (val.isStaticMethod()) {
+                    val.asStaticMethod()->func->ownerClass = cls;
+                } else if (val.isClassMethod()) {
+                    val.asClassMethod()->func->ownerClass = cls;
+                }
+
+                cls->attributes.insert(key, val);
+            }
+
+            return Value(cls);
         }
     ));
 
