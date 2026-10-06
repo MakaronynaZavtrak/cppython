@@ -6624,6 +6624,17 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("isinstance(True, (str, int))",     "True"),
     ("type(True) is bool",               "True"),
 
+    # классы хешируемы (ключи dict / элементы set), равенство по идентичности
+    ("int == int",                       "True"),
+    ("int == str",                       "False"),
+    ("type(5) == int",                   "True"),
+    ("hash(int) == hash(int)",           "True"),
+    ("int in {int: 1}",                  "True"),
+    ("str in {int: 1}",                  "False"),
+    ("{int: 'a'}[int]",                  "'a'"),
+    ("int in {int, str}",                "True"),
+    ("len({int, str, int})",             "2"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -14716,6 +14727,47 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "issubclass(B, A)",
       "isinstance(B(), A)",
       "isinstance(A(), B)"], ["True", "True", "False"]),
+
+    # классы как ключи dict
+    (["d = {}",
+      "d[int] = 'i'",
+      "d[str] = 's'",
+      "d[int]",
+      "d[str]",
+      "len(d)",
+      "int in d",
+      "float in d"], ["'i'", "'s'", "2", "True", "False"]),
+
+    # классы в set (дедупликация по идентичности)
+    (["s = {int, str, int, float}",
+      "len(s)",
+      "int in s",
+      "bool in s"], ["3", "True", "False"]),
+
+    # канонический синглтон со словарём {cls: inst}
+    (["class Singleton(type):",
+      "    _instances = {}",
+      "    def __call__(cls, *args, **kwargs):",
+      "        if cls not in cls._instances:",
+      "            cls._instances[cls] = super().__call__(*args, **kwargs)",
+      "        return cls._instances[cls]",
+      "",
+      "class DB(metaclass=Singleton):",
+      "    pass",
+      "",
+      "DB() is DB()"], "True"),
+
+    # разные классы — разные ключи
+    (["class A:",
+      "    pass",
+      "",
+      "class B:",
+      "    pass",
+      "",
+      "reg = {A: 1, B: 2}",
+      "reg[A]",
+      "reg[B]",
+      "len(reg)"], ["1", "2", "2"]),
 
 ])
 
