@@ -32,6 +32,12 @@
 // Created by semyo on 03.05.2026.
 //
 
+// Дефолтное создание (new + init), без учёта метаклассового __call__.
+static Value defaultConstruct(const Value::ClassPtr& cls,
+                              const std::vector<Value>& args,
+                              const Kwargs& kwargs,
+                              const std::shared_ptr<Environment>& env);
+
 void bindParams(const std::shared_ptr<Environment>& local,
                 const Value::FunctionPtr& func,
                 const std::vector<Value>& args,
@@ -356,15 +362,36 @@ static Value rangeNew(const std::vector<Value>& args, const Kwargs&,
     return Value(std::make_shared<RangeValue>(start, stop, step));
 }
 
+// type.__call__(cls, *args) — дефолтное создание экземпляра (new + init).
+// Нужен, чтобы super().__call__(...) внутри метаклассового __call__ звал
+// штатное создание (иначе рекурсия через сам метаклассовый __call__).
+static Value typeCallDefault(const std::vector<Value>& args,
+                             const Kwargs& kwargs,
+                             const std::shared_ptr<Environment>& env) {
+
+    if (args.empty() || !args[0].isClass()) {
+        throw TypeErrorException("type.__call__: first argument must be a class");
+    }
+
+    const auto cls = args[0].asClass();
+    const std::vector<Value> rest(args.begin() + 1, args.end());
+
+    return defaultConstruct(cls, rest, kwargs, env);
+}
+
 // Привязывает __new__ к class-объектам встроенных типов (вызывается после их создания).
 void attachBuiltinNewMethods() {
     Runtime::strClass->attributes["__new__"]       = Value(std::make_shared<BuiltinFunction>("__new__", strNew));
     Runtime::bytesClass->attributes["__new__"]     = Value(std::make_shared<BuiltinFunction>("__new__", bytesNew));
     Runtime::bytearrayClass->attributes["__new__"] = Value(std::make_shared<BuiltinFunction>("__new__", bytearrayNew));
     Runtime::rangeClass->attributes["__new__"]     = Value(std::make_shared<BuiltinFunction>("__new__", rangeNew));
+
+    // дефолтный type.__call__ — опора для super().__call__ в метаклассах
+    Runtime::typeClass->attributes["__call__"] =
+        Value(std::make_shared<BuiltinFunction>("__call__", typeCallDefault));
 }
 
-Value constructClass(const Value::ClassPtr& cls,
+static Value defaultConstruct(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
                      const Kwargs& kwargs,
                      const std::shared_ptr<Environment>& env) {
@@ -470,6 +497,49 @@ Value constructClass(const Value::ClassPtr& cls,
     }
 
     return Value(instance);
+}
+
+// Публичная точка конструирования: учитывает метаклассовый __call__.
+// F(...) == type(F).__call__(F, ...). Если у метакласса есть собственный
+// __call__ (питоновская функция) — идём через него; иначе — дефолтное создание.
+Value constructClass(const Value::ClassPtr& cls,
+                     const std::vector<Value>& args,
+                     const Kwargs& kwargs,
+                     const std::shared_ptr<Environment>& env) {
+
+    const auto meta = cls->metaclass ? cls->metaclass : Runtime::typeClass;
+
+    Value callMethod;
+    bool hasCall = false;
+
+    try {
+        callMethod = findAttrInHierarchy(meta, "__call__");
+        hasCall = true;
+    } catch (const AttributeErrorException&) {}
+
+    // Кастомным считаем только питоновскую функцию; встроенный type.__call__
+    // означает дефолтное создание (и защищает от рекурсии).
+    if (hasCall && callMethod.isFunction()) {
+
+        const auto callFunc = callMethod.asFunction();
+
+        std::vector<Value> callArgs;
+        callArgs.reserve(args.size() + 1);
+        callArgs.push_back(Value(cls));
+        callArgs.insert(callArgs.end(), args.begin(), args.end());
+
+        // __class__ = класс, где определён __call__ — чтобы работал zero-arg super()
+        std::shared_ptr<Environment> callEnv;
+
+        if (callFunc->ownerClass) {
+            callEnv = std::make_shared<Environment>();
+            callEnv->set("__class__", Value(callFunc->ownerClass));
+        }
+
+        return callFunction(callFunc, callArgs, kwargs, callEnv);
+    }
+
+    return defaultConstruct(cls, args, kwargs, env);
 }
 
 Value callBoundMethod(const Value::BoundMethodPtr &bm,

@@ -16,6 +16,7 @@
 #include "../runtime/builtins/str/StrMethods.h"
 #include "SuperValue.h"
 #include "../exception/AttributeErrorException.h"
+#include "../exception/PythonException.h"
 #include "../exception/TypeErrorException.h"
 #include "../runtime/builtins/bytearray/ByteArrayMethods.h"
 #include "../runtime/builtins/bytes/BytesMethods.h"
@@ -346,7 +347,29 @@ Value getAttrValue(const Value& obj, const QString& attr) {
 
 Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
     std::vector<Value::ClassPtr> mro;
-    buildMRO(getObjectClass(super->receiver), mro);
+
+    // Выбор MRO. Получатель-экземпляр → MRO его класса. Получатель-класс:
+    // если он подкласс origin — это classmethod-случай, идём по MRO самого
+    // класса; иначе это метод метакласса (получатель — экземпляр origin, т.е.
+    // его метакласс — подкласс origin), идём по MRO метакласса.
+    Value::ClassPtr mroBase;
+    const Value& recv = super->receiver;
+
+    if (recv.isClass()) {
+        const auto recvCls = recv.asClass();
+
+        if (PythonException::isSubclass(recvCls, super->originClass)) {
+            mroBase = recvCls;
+        }
+        else {
+            mroBase = recvCls->metaclass ? recvCls->metaclass : Runtime::typeClass;
+        }
+    }
+    else {
+        mroBase = getObjectClass(recv);
+    }
+
+    buildMRO(mroBase, mro);
 
     bool foundOrigin = false;
 

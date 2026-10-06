@@ -14567,6 +14567,48 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "",
       "order"], "['new', 'init']"),
 
+    # метаклассовый __call__: синглтон (один экземпляр)
+    (["class Singleton(type):",
+      "    def __init__(cls, *a):",
+      "        cls._inst = None",
+      "    def __call__(cls, *args, **kwargs):",
+      "        if cls._inst is None:",
+      "            cls._inst = super().__call__(*args, **kwargs)",
+      "        return cls._inst",
+      "",
+      "class DB(metaclass=Singleton):",
+      "    pass",
+      "",
+      "DB() is DB()"], "True"),
+
+    # синглтон сохраняет состояние между вызовами
+    (["class Singleton(type):",
+      "    def __init__(cls, *a):",
+      "        cls._inst = None",
+      "    def __call__(cls, *args, **kwargs):",
+      "        if cls._inst is None:",
+      "            cls._inst = super().__call__(*args, **kwargs)",
+      "        return cls._inst",
+      "",
+      "class Counter(metaclass=Singleton):",
+      "    def __init__(self):",
+      "        self.n = 0",
+      "",
+      "a = Counter()",
+      "a.n = 5",
+      "b = Counter()",
+      "b.n"], "5"),
+
+    # метаклассовый __call__ полностью подменяет создание
+    (["class Meta(type):",
+      "    def __call__(cls, *args, **kwargs):",
+      "        return 'intercepted'",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "F()"], "'intercepted'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):
