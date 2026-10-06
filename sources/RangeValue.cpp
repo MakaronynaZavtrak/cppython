@@ -79,7 +79,7 @@ Value RangeValue::getItem(const Value& index) const {
         throw IndexErrorException("range object index out of range");
     }
 
-    return Value(start + step * i);
+    return Value(Value::BigInt(start + step * i));
 }
 
 bool RangeValue::equal(const Value& other) const {
@@ -159,7 +159,7 @@ Value RangeValue::index(const Value& value) const {
     }
 
     Value::BigInt v = value.toBigInt();
-    return Value((v - start) / step);
+    return Value(Value::BigInt((v - start) / step));
 }
 
 bool RangeValue::toBool() const {
