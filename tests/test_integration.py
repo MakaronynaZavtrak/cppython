@@ -6635,6 +6635,12 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("int in {int, str}",                "True"),
     ("len({int, str, int})",             "2"),
 
+    # глобал __name__ существует и является строкой
+    # (значение контекстно-зависимо: скрипт -> '__main__', InteractiveConsole ->
+    #  '__console__', поэтому проверяем тип, а не значение)
+    ("isinstance(__name__, str)",        "True"),
+    ("type(__name__) is str",            "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -14860,6 +14866,27 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "Plain.__qualname__",
       "hasattr(F, '__module__')",
       "hasattr(Plain, '__module__')"], ["'F'", "'Plain'", "True", "True"]),
+
+    # __module__ завязан на __name__ (globals) — инвариант паритетен
+    (["class F:",
+      "    pass",
+      "",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class G(metaclass=Meta):",
+      "    pass",
+      "",
+      "F.__module__ == __name__",
+      "G.__module__ == __name__"], ["True", "True"]),
+
+    # __module__ следует за переопределением __name__
+    (["__name__ = 'mymod'",
+      "class H:",
+      "    pass",
+      "",
+      "H.__module__"], "'mymod'"),
 
 ])
 

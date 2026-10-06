@@ -13,6 +13,7 @@
 #include "StaticMethodValue.h"
 #include "TupleValue.h"
 #include "../../exception/AttributeErrorException.h"
+#include "../../exception/NameErrorException.h"
 #include "../../exception/PythonException.h"
 #include "../../exception/TypeErrorException.h"
 
@@ -29,6 +30,14 @@ ClassDefNode::ClassDefNode(QString name,
 
 
 Value ClassDefNode::eval(EnvPtr env) const {
+
+    // __module__ = текущий __name__ (как globals()['__name__'] в CPython)
+    Value moduleName;
+    try {
+        moduleName = env->get("__name__");
+    } catch (const NameErrorException&) {
+        moduleName = Value(QStringLiteral("__main__"));
+    }
 
     // --- базовые классы ---
     std::vector<Value::ClassPtr> bases;
@@ -148,7 +157,7 @@ Value ClassDefNode::eval(EnvPtr env) const {
 
         // __module__ / __qualname__ (как в CPython), если не заданы телом
         if (!cls->attributes.contains("__module__")) {
-            cls->attributes.insert("__module__", Value(QStringLiteral("__main__")));
+            cls->attributes.insert("__module__", moduleName);
         }
         if (!cls->attributes.contains("__qualname__")) {
             cls->attributes.insert("__qualname__", Value(name));
@@ -202,8 +211,7 @@ Value ClassDefNode::eval(EnvPtr env) const {
         // __module__ / __qualname__ кладутся в namespace до тела (идут первыми),
         // как в CPython
         if (!ns->hasKey(Value(QStringLiteral("__module__")))) {
-            ns->setItem(Value(QStringLiteral("__module__")),
-                        Value(QStringLiteral("__main__")));
+            ns->setItem(Value(QStringLiteral("__module__")), moduleName);
         }
         if (!ns->hasKey(Value(QStringLiteral("__qualname__")))) {
             ns->setItem(Value(QStringLiteral("__qualname__")), Value(name));

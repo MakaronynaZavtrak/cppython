@@ -645,6 +645,9 @@ void Interpreter::run(int argc, char* argv[]) {
     Runtime::initialize(globalEnv);
     registerExceptionClasses(globalEnv);
 
+    // имя модуля верхнего уровня (как у скрипта/REPL CPython)
+    globalEnv->set("__name__", Value(QStringLiteral("__main__")));
+
     Lexer lexer;
 
     if (argc > 1) {
