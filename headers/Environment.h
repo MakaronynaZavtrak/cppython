@@ -5,6 +5,8 @@
 #include <QHash>
 #include <utility>
 
+class DictValue;
+
 /**
  * @class Environment
  * @brief Управляет коллекцией именованных значений и обеспечивает доступ к ним.
@@ -19,6 +21,10 @@ public:
     QSet<QString> nonlocalVars;
     QHash<QString, Value> variables;
     std::shared_ptr<Environment> parent;
+
+    // Если задан, локальные присваивания дублируются сюда по порядку.
+    // Используется телом класса при создании через метакласс (namespace/__prepare__).
+    std::shared_ptr<DictValue> nsCapture;
 
     void set(const QString& name, const Value& value);
     Value& get(const QString& name);

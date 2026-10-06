@@ -9,6 +9,7 @@
 #include "Environment.h"
 #include "FilterIterator.h"
 #include "FrozenSetValue.h"
+#include "FunctionValue.h"
 #include "IteratorValue.h"
 #include "ListValue.h"
 #include "MapIterator.h"
@@ -22,6 +23,7 @@
 #include "Value.h"
 #include "ZipIterator.h"
 #include "../exception/AttributeErrorException.h"
+#include "../exception/PythonException.h"
 #include "../exception/StopIterationException.h"
 #include "../exception/TypeErrorException.h"
 #include "../exception/ValueErrorException.h"
@@ -214,6 +216,33 @@ static Value::BigInt modInverse(const Value::BigInt &a, const Value::BigInt &mod
     return floorMod(x, mod);
 }
 
+// Маршрутизирует проверку типа через type(B).__<dunder>__(B, arg).
+// type несёт дефолтные реализации, кастомный метакласс может переопределить;
+// питоновскому методу пробрасываем __class__ ради super().
+static Value callTypeCheck(const Value::ClassPtr& B, const QString& dunder,
+                           const Value& arg, const std::shared_ptr<Environment>& env) {
+
+    const auto meta = B->metaclass ? B->metaclass : Runtime::typeClass;
+    const Value method = findAttrInHierarchy(meta, dunder);
+
+    const std::vector<Value> callArgs = { Value(B), arg };
+
+    if (method.isFunction()) {
+
+        const auto f = method.asFunction();
+
+        std::shared_ptr<Environment> callEnv;
+        if (f->ownerClass) {
+            callEnv = std::make_shared<Environment>();
+            callEnv->set("__class__", Value(f->ownerClass));
+        }
+
+        return callFunction(f, callArgs, {}, callEnv);
+    }
+
+    return call(method, callArgs, {}, env);
+}
+
 void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) {
 
     env->set("super",
@@ -226,12 +255,15 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
                      Value receiver;
 
-                     // instance method
+                     // instance method -> classmethod -> метаклассовый __new__
                      try {
                          receiver = local_env->get("self");
                      } catch (...) {
-                         // classmethod
-                         receiver = local_env->get("cls");
+                         try {
+                             receiver = local_env->get("cls");
+                         } catch (...) {
+                             receiver = local_env->get("mcs");
+                         }
                      }
 
                      auto clsVal = local_env->get("__class__");
@@ -573,7 +605,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             }
         ));
 
-    env->set("list",
+    env->set("__list_call__",
              makeBuiltin(
                  "list",
 
@@ -606,7 +638,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
-    env->set("tuple",
+    env->set("__tuple_call__",
              makeBuiltin(
                  "tuple",
 
@@ -639,7 +671,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
-    env->set("set",
+    env->set("__set_call__",
              makeBuiltin(
                  "set",
 
@@ -672,7 +704,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                  }
              ));
 
-    env->set("dict",
+    env->set("__dict_call__",
              makeBuiltin(
                  "dict",
 
@@ -1041,7 +1073,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
     )
 );
 
-    env->set("int",
+    env->set("__int_call__",
          makeBuiltin(
              "int",
 
@@ -1111,7 +1143,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
              }
          ));
 
-    env->set("bool",
+    env->set("__bool_call__",
          makeBuiltin(
              "bool",
 
@@ -1129,7 +1161,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
              }
          ));
 
-    env->set("float",
+    env->set("__float_call__",
          makeBuiltin(
              "float",
 
@@ -1673,6 +1705,82 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
         }
     ));
 
+    env->set("issubclass",
+    makeBuiltin(
+        "issubclass",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &env) -> Value {
+
+            expectArgs(args, 2, "issubclass");
+            expectNoKwargs(kwargs, "issubclass");
+
+            if (!args[0].isClass()) {
+                throw TypeErrorException("issubclass() arg 1 must be a class");
+            }
+
+            const auto cls = args[0].asClass();
+            const Value &info = args[1];
+
+            auto check = [&](const Value &target) -> bool {
+                if (!target.isClass()) {
+                    throw TypeErrorException(
+                        "issubclass() arg 2 must be a class or tuple of classes");
+                }
+                return callTypeCheck(target.asClass(), "__subclasscheck__",
+                                     Value(cls), env).toBool();
+            };
+
+            if (info.isTuple()) {
+                for (const auto &target : info.asTuple()->items) {
+                    if (check(target)) {
+                        return Value(true);
+                    }
+                }
+                return Value(false);
+            }
+
+            return Value(check(info));
+        }
+    ));
+
+    env->set("isinstance",
+    makeBuiltin(
+        "isinstance",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &env) -> Value {
+
+            expectArgs(args, 2, "isinstance");
+            expectNoKwargs(kwargs, "isinstance");
+
+            const Value &obj = args[0];
+            const Value &info = args[1];
+
+            auto check = [&](const Value &target) -> bool {
+                if (!target.isClass()) {
+                    throw TypeErrorException(
+                        "isinstance() arg 2 must be a class or tuple of classes");
+                }
+                return callTypeCheck(target.asClass(), "__instancecheck__",
+                                     obj, env).toBool();
+            };
+
+            if (info.isTuple()) {
+                for (const auto &target : info.asTuple()->items) {
+                    if (check(target)) {
+                        return Value(true);
+                    }
+                }
+                return Value(false);
+            }
+
+            return Value(check(info));
+        }
+    ));
+
     env->set("abs",
     makeBuiltin(
         "abs",
@@ -1817,6 +1925,110 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             return Value(std::make_shared<TupleValue>(
                 std::vector<Value>{ div, mod }
             ));
+        }
+    ));
+
+    env->set("__type_call__",
+    makeBuiltin(
+        "type",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectNoKwargs(kwargs, "type");
+
+            // одноаргументная форма: тип значения
+                if (args.size() == 1) {
+                    return typeOf(args[0]);
+                }
+
+            // 3-арг: type(name, bases, ns)
+            // 4-арг: type.__new__(mcs, name, bases, ns) — явная инъекция из
+            //        метакласса (в т.ч. через super().__new__).
+            Value::ClassPtr mcs;
+            size_t off = 0;
+
+            if (args.size() == 4) {
+
+                if (!args[0].isClass()) {
+                    throw TypeErrorException(
+                        "type.__new__(X): X is not a type object");
+                }
+
+                mcs = args[0].asClass();
+                off = 1;
+            }
+            else if (args.size() != 3) {
+                throw TypeErrorException("type() takes 1 or 3 arguments");
+            }
+
+            const Value &nameV = args[off];
+            const Value &basesV = args[off + 1];
+            const Value &nsV = args[off + 2];
+
+            if (!nameV.isString()) {
+                throw TypeErrorException("type() argument 1 must be str");
+            }
+
+            if (!basesV.isTuple()) {
+                throw TypeErrorException("type() argument 2 must be a tuple of classes");
+            }
+
+            if (!nsV.isDict()) {
+                throw TypeErrorException("type() argument 3 must be a dict");
+            }
+
+            const QString name = nameV.asString("type()")->getValue();
+
+            std::vector<Value::ClassPtr> bases;
+
+            for (const Value &b : basesV.asTuple("type()")->items) {
+
+                if (!b.isClass()) {
+                    throw TypeErrorException("bases must be classes");
+                }
+
+                bases.push_back(b.asClass());
+            }
+
+            if (bases.empty()) {
+                bases.push_back(Runtime::objectClass);
+            }
+
+            const auto cls = std::make_shared<ClassValue>(name);
+            cls->bases = bases;
+
+            const auto ns = nsV.asDict("type()");
+
+            // переносим пространство имён в атрибуты, сохраняя порядок
+            for (const Value &keyV : ns->getOrder()) {
+
+                if (!keyV.isString()) {
+                    continue;
+                }
+
+                const QString key = keyV.asString("type()")->getValue();
+                Value val = ns->getItem(keyV);
+
+                // методам нужен владелец-класс (для привязки self)
+                if (val.isFunction()) {
+                    val.asFunction()->ownerClass = cls;
+                } else if (val.isStaticMethod()) {
+                    val.asStaticMethod()->func->ownerClass = cls;
+                } else if (val.isClassMethod()) {
+                    val.asClassMethod()->func->ownerClass = cls;
+                }
+
+                cls->attributes.insert(key, val);
+            }
+
+            // при вызове type.__new__(mcs, ...) фиксируем метакласс результата
+            if (mcs && mcs != Runtime::typeClass) {
+                cls->metaclass = mcs;
+            }
+
+            return Value(cls);
         }
     ));
 

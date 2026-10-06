@@ -20,12 +20,28 @@ void Runtime::initialize(const std::shared_ptr<Environment> &env) {
 
     registerRangeClass(env);
 
+    registerBuiltinTypeClasses(env);
+
+    attachBuiltinNewMethods();
+
 }
 
 std::shared_ptr<ClassValue> Runtime::objectClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::strClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::bytesClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::bytearrayClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::intClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::floatClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::boolClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::listClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::tupleClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::dictClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::setClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::typeClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::frozensetClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::noneTypeClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::functionClass = nullptr;
+std::shared_ptr<ClassValue> Runtime::builtinFunctionClass = nullptr;
 std::vector<Value::InstancePtr> Runtime::exceptionStack;
 std::shared_ptr<ClassValue> Runtime::baseExceptionClass = nullptr;
 std::shared_ptr<ClassValue> Runtime::exceptionClass = nullptr;

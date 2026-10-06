@@ -429,6 +429,11 @@ bool Value::operator==(const Value& other) const {
         return is(other);
     }
 
+    // классы сравниваются по идентичности
+    if (isClass() && other.isClass()) {
+        return is(other);
+    }
+
     return false;
 }
 
@@ -1588,6 +1593,11 @@ bool Value::isHashable() const {
         return true;
     }
 
+    // классы хешируемы по идентичности (как в CPython)
+    if (isClass()) {
+        return true;
+    }
+
     return false;
 }
 
@@ -1634,6 +1644,11 @@ std::size_t Value::hash() const {
 
     if (isFrozenSet()) {
         return asFrozenSet()->hash();
+    }
+
+    // класс — по идентичности (адресу объекта)
+    if (isClass()) {
+        return std::hash<const void*>{}(asClass().get());
     }
 
     throw TypeErrorException("unhashable type");

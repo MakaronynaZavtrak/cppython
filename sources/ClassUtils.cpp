@@ -16,6 +16,7 @@
 #include "../runtime/builtins/str/StrMethods.h"
 #include "SuperValue.h"
 #include "../exception/AttributeErrorException.h"
+#include "../exception/PythonException.h"
 #include "../exception/TypeErrorException.h"
 #include "../runtime/builtins/bytearray/ByteArrayMethods.h"
 #include "../runtime/builtins/bytes/BytesMethods.h"
@@ -83,13 +84,37 @@ Value genericGetAttr(const Value& obj, const QString& attr) {
 
         auto cls = obj.asClass();
 
-        Value val = findAttrInHierarchy(cls, attr);
-
-        if (DescriptorUtils::hasGet(val)) {
-            return DescriptorUtils::callGet(val, Value(), cls);
+        if (attr == "__name__") {
+            return Value(cls->name);
         }
 
-        return val;
+        try {
+            Value val = findAttrInHierarchy(cls, attr);
+
+            if (DescriptorUtils::hasGet(val)) {
+                return DescriptorUtils::callGet(val, Value(), cls);
+            }
+
+            return val;
+        } catch (const AttributeErrorException&) {
+
+            // Атрибут не найден в самом классе — ищем в метаклассе
+            // (методы/атрибуты метакласса, привязанные к cls как получателю).
+            // Только для реального кастомного метакласса, чтобы дефолтные
+            // классы вели себя ровно как раньше.
+            if (cls->metaclass && cls->metaclass != Runtime::typeClass) {
+
+                Value val = findAttrInHierarchy(cls->metaclass, attr);
+
+                if (DescriptorUtils::hasGet(val)) {
+                    return DescriptorUtils::callGet(val, Value(cls), cls->metaclass);
+                }
+
+                return val;
+            }
+
+            throw;
+        }
     }
 
     if (obj.isModule()) {
@@ -241,7 +266,39 @@ QString pythonStr(const Value& obj) {
     return obj.toString();
 }
 
+// Возвращает class-объект (тип) значения — основа для type(x) и __class__.
+Value typeOf(const Value& obj) {
+    if (obj.isInstance())  return Value(obj.asInstance()->klass);
+    if (obj.isClass()) {
+        const auto& c = obj.asClass();
+        return Value(c->metaclass ? c->metaclass : Runtime::typeClass);
+    }
+
+    if (obj.isBool())      return Value(Runtime::boolClass);
+    if (obj.isBigInt())    return Value(Runtime::intClass);
+    if (obj.isBigFloat())  return Value(Runtime::floatClass);
+    if (obj.isString())    return Value(Runtime::strClass);
+    if (obj.isBytes())     return Value(Runtime::bytesClass);
+    if (obj.isByteArray()) return Value(Runtime::bytearrayClass);
+    if (obj.isList())      return Value(Runtime::listClass);
+    if (obj.isTuple())     return Value(Runtime::tupleClass);
+    if (obj.isDict())      return Value(Runtime::dictClass);
+    if (obj.isSet())       return Value(Runtime::setClass);
+    if (obj.isFrozenSet()) return Value(Runtime::frozensetClass);
+    if (obj.isRange())     return Value(Runtime::rangeClass);
+    if (obj.isNone())      return Value(Runtime::noneTypeClass);
+
+    if (obj.isBuiltinFunction()) return Value(Runtime::builtinFunctionClass);
+    if (obj.isCallable())        return Value(Runtime::functionClass);
+
+    return Value(Runtime::objectClass);
+}
+
 Value getAttrValue(const Value& obj, const QString& attr) {
+
+    if (attr == "__class__") {
+        return typeOf(obj);
+    }
 
     // super bypasses __getattribute__
     if (obj.isSuper()) {
@@ -290,7 +347,29 @@ Value getAttrValue(const Value& obj, const QString& attr) {
 
 Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
     std::vector<Value::ClassPtr> mro;
-    buildMRO(getObjectClass(super->receiver), mro);
+
+    // Выбор MRO. Получатель-экземпляр → MRO его класса. Получатель-класс:
+    // если он подкласс origin — это classmethod-случай, идём по MRO самого
+    // класса; иначе это метод метакласса (получатель — экземпляр origin, т.е.
+    // его метакласс — подкласс origin), идём по MRO метакласса.
+    Value::ClassPtr mroBase;
+    const Value& recv = super->receiver;
+
+    if (recv.isClass()) {
+        const auto recvCls = recv.asClass();
+
+        if (PythonException::isSubclass(recvCls, super->originClass)) {
+            mroBase = recvCls;
+        }
+        else {
+            mroBase = recvCls->metaclass ? recvCls->metaclass : Runtime::typeClass;
+        }
+    }
+    else {
+        mroBase = getObjectClass(recv);
+    }
+
+    buildMRO(mroBase, mro);
 
     bool foundOrigin = false;
 
@@ -307,6 +386,13 @@ Value getAttrFromSuper(const Value::SuperPtr& super, const QString& attr) {
         if (cls->attributes.contains(attr)) {
 
             Value val = cls->attributes[attr];
+
+            // __new__ по семантике Python — staticmethod: не привязываем его
+            // через super, иначе super().__new__(mcs, ...) получит лишний
+            // receiver и уедет на один аргумент вправо.
+            if (attr == "__new__") {
+                return val;
+            }
 
             if (DescriptorUtils::hasGet(val)) {
                 return DescriptorUtils::callGet(val, Value(super->receiver), cls);

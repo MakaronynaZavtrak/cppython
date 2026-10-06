@@ -6566,6 +6566,81 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("pow(2, -1, 5)",         "3"),
     ("pow(3, -1, 7)",         "5"),
 
+    # type(x).__name__ — тип значения для всех встроенных
+    ("type(5).__name__",           "'int'"),
+    ("type(3.14).__name__",        "'float'"),
+    ("type(True).__name__",        "'bool'"),
+    ("type('x').__name__",         "'str'"),
+    ("type([]).__name__",          "'list'"),
+    ("type(()).__name__",          "'tuple'"),
+    ("type({}).__name__",          "'dict'"),
+    ("type(None).__name__",        "'NoneType'"),
+    ("type(range(3)).__name__",    "'range'"),
+    ("type(len).__name__",         "'builtin_function_or_method'"),
+    ("type(lambda: 0).__name__",   "'function'"),
+    ("type(int).__name__",         "'type'"),
+    ("type(type).__name__",        "'type'"),
+
+    # встроенные значения ЕСТЬ свои типы (идентичность через is)
+    ("type(5) is int",             "True"),
+    ("type([]) is list",           "True"),
+    ("type('x') is str",           "True"),
+    ("type({}) is dict",           "True"),
+    ("type(int) is type",          "True"),
+    ("type(type) is type",         "True"),
+
+    # __class__ — тип значения
+    ("(5).__class__.__name__",     "'int'"),
+    ("'hi'.__class__.__name__",    "'str'"),
+    ("[1].__class__ is list",      "True"),
+
+    # динамический класс через 3-арг type и его метакласс
+    ("type('X', (), {}).__name__",       "'X'"),
+    ("type(type('X', (), {})) is type",  "True"),
+
+    # isinstance / issubclass на встроенных типах
+    ("isinstance(5, int)",               "True"),
+    ("isinstance(5, str)",               "False"),
+    ("isinstance('x', str)",             "True"),
+    ("isinstance(5, object)",            "True"),
+    ("isinstance([], list)",             "True"),
+    ("isinstance(int, type)",            "True"),
+    ("isinstance(5, (str, int))",        "True"),
+    ("isinstance(5, (str, float))",      "False"),
+    ("issubclass(int, object)",          "True"),
+    ("issubclass(int, int)",             "True"),
+    ("issubclass(int, str)",             "False"),
+    ("issubclass(type, object)",         "True"),
+    ("issubclass(int, (str, int))",      "True"),
+    ("issubclass(str, (int, float))",    "False"),
+
+    # bool — подкласс int (паритет с CPython)
+    ("issubclass(bool, int)",            "True"),
+    ("issubclass(bool, object)",         "True"),
+    ("issubclass(int, bool)",            "False"),
+    ("isinstance(True, int)",            "True"),
+    ("isinstance(False, int)",           "True"),
+    ("isinstance(True, bool)",           "True"),
+    ("isinstance(True, (str, int))",     "True"),
+    ("type(True) is bool",               "True"),
+
+    # классы хешируемы (ключи dict / элементы set), равенство по идентичности
+    ("int == int",                       "True"),
+    ("int == str",                       "False"),
+    ("type(5) == int",                   "True"),
+    ("hash(int) == hash(int)",           "True"),
+    ("int in {int: 1}",                  "True"),
+    ("str in {int: 1}",                  "False"),
+    ("{int: 'a'}[int]",                  "'a'"),
+    ("int in {int, str}",                "True"),
+    ("len({int, str, int})",             "2"),
+
+    # глобал __name__ существует и является строкой
+    # (значение контекстно-зависимо: скрипт -> '__main__', InteractiveConsole ->
+    #  '__console__', поэтому проверяем тип, а не значение)
+    ("isinstance(__name__, str)",        "True"),
+    ("type(__name__) is str",            "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -14307,6 +14382,544 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "d.b",
       "d.a",
       "d.b"], ["11", "20", "11", "20"]),
+
+    # type() 3-арг — создание класса с атрибутами
+    (["D = type('D', (), {'x': 10, 'y': 20})",
+      "D.x",
+      "D.y",
+      "D().x"], ["10", "20", "10"]),
+
+    # type() 3-арг — метод из namespace
+    (["E = type('E', (), {'greet': lambda self: 'hi', 'n': 42})",
+      "e = E()",
+      "e.greet()",
+      "e.n"], ["'hi'", "42"]),
+
+    # type() 3-арг — наследование от базового класса
+    (["class Base:",
+      "    def m(self):",
+      "        return 'base'",
+      "    def shared(self):",
+      "        return 100",
+      "",
+      "F = type('F', (Base,), {'own': lambda self: 'own'})",
+      "f = F()",
+      "f.m()",
+      "f.shared()",
+      "f.own()"], ["'base'", "100", "'own'"]),
+
+    # type() — без аргументов / два аргумента -> TypeError
+    (["try:",
+      "    type()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    type(1, 2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # type() 3-арг — имя не строка / базы не кортеж / namespace не словарь / база не класс
+    (["try:",
+      "    type(5, (), {})",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    type('D', 'notuple', {})",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    type('D', (), 5)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    (["try:",
+      "    type('D', (5,), {})",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # type() — экземпляр -> его класс, класс -> type
+    (["class C:",
+      "    pass",
+      "",
+      "type(C()).__name__",
+      "type(C).__name__",
+      "type(C) is type"], ["'C'", "'type'", "True"]),
+
+    # __class__ на экземпляре
+    (["class C:",
+      "    pass",
+      "",
+      "c = C()",
+      "c.__class__ is C",
+      "c.__class__.__name__"], ["True", "'C'"]),
+
+    # 3-арг type — динамический класс + его метакласс type
+    (["D = type('D', (), {'x': 10})",
+      "D.__name__",
+      "D().x",
+      "type(D).__name__"], ["'D'", "10", "'type'"]),
+
+    # type() — без аргументов -> TypeError
+    (["try:",
+      "    type()",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # type() — два аргумента -> TypeError
+    (["try:",
+      "    type(1, 2)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # ===== Метаклассы =====
+
+    # кастомный метакласс: type(F) — это метакласс
+    (["class Meta(type):",
+      "    pass",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "type(F) is Meta",
+      "type(F).__name__"], ["True", "'Meta'"]),
+
+    # обычный класс -> метакласс type
+    (["class C:",
+      "    pass",
+      "",
+      "type(C) is type"], "True"),
+
+    # Meta.__new__ инъектирует атрибут через явный type.__new__
+    (["class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        ns['injected'] = 42",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "F.injected",
+      "type(F) is Meta"], ["42", "True"]),
+
+    # метаклассовый __init__ получает (cls, name, bases, ns)
+    (["log = []",
+      "class Meta(type):",
+      "    def __init__(cls, name, bases, ns):",
+      "        log.append(name)",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "log"], "['F']"),
+
+    # __new__ и __init__ метакласса работают вместе и по порядку
+    (["order = []",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        order.append('new')",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "    def __init__(cls, name, bases, ns):",
+      "        order.append('init')",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "order"], "['new', 'init']"),
+
+    # метакласс наследуется потомком
+    (["class Meta(type):",
+      "    pass",
+      "",
+      "class A(metaclass=Meta):",
+      "    pass",
+      "",
+      "class B(A):",
+      "    pass",
+      "",
+      "type(B) is Meta"], "True"),
+
+    # конфликт метаклассов -> TypeError
+    (["class M1(type):",
+      "    pass",
+      "",
+      "class M2(type):",
+      "    pass",
+      "",
+      "class A(metaclass=M1):",
+      "    pass",
+      "",
+      "class B(metaclass=M2):",
+      "    pass",
+      "",
+      "try:",
+      "    class C(A, B):",
+      "        pass",
+      "except TypeError:",
+      "    'conflict'",
+      ""], "'conflict'"),
+
+    # метод метакласса доступен на классе (cls как получатель)
+    (["class Meta(type):",
+      "    def shout(cls):",
+      "        return cls.__name__ + '!'",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "F.shout()"], "'F!'"),
+
+    # 3-арг type: динамический класс, его метакласс — type
+    (["D = type('D', (), {'val': 7})",
+      "type(D) is type",
+      "D().val"], ["True", "7"]),
+
+    # super().__new__ внутри метакласса
+    (["class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        ns['tag'] = 'x'",
+      "        return super().__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "F.tag",
+      "type(F) is Meta"], ["'x'", "True"]),
+
+    # super().__new__ + метаклассовый __init__ по порядку
+    (["order = []",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        order.append('new')",
+      "        return super().__new__(mcs, name, bases, ns)",
+      "    def __init__(cls, name, bases, ns):",
+      "        order.append('init')",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "order"], "['new', 'init']"),
+
+    # метаклассовый __call__: синглтон (один экземпляр)
+    (["class Singleton(type):",
+      "    def __init__(cls, *a):",
+      "        cls._inst = None",
+      "    def __call__(cls, *args, **kwargs):",
+      "        if cls._inst is None:",
+      "            cls._inst = super().__call__(*args, **kwargs)",
+      "        return cls._inst",
+      "",
+      "class DB(metaclass=Singleton):",
+      "    pass",
+      "",
+      "DB() is DB()"], "True"),
+
+    # синглтон сохраняет состояние между вызовами
+    (["class Singleton(type):",
+      "    def __init__(cls, *a):",
+      "        cls._inst = None",
+      "    def __call__(cls, *args, **kwargs):",
+      "        if cls._inst is None:",
+      "            cls._inst = super().__call__(*args, **kwargs)",
+      "        return cls._inst",
+      "",
+      "class Counter(metaclass=Singleton):",
+      "    def __init__(self):",
+      "        self.n = 0",
+      "",
+      "a = Counter()",
+      "a.n = 5",
+      "b = Counter()",
+      "b.n"], "5"),
+
+    # метаклассовый __call__ полностью подменяет создание
+    (["class Meta(type):",
+      "    def __call__(cls, *args, **kwargs):",
+      "        return 'intercepted'",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "F()"], "'intercepted'"),
+
+    # isinstance / issubclass с пользовательскими классами
+    (["class A:",
+      "    pass",
+      "",
+      "class B(A):",
+      "    pass",
+      "",
+      "b = B()",
+      "isinstance(b, A)",
+      "isinstance(b, B)",
+      "issubclass(B, A)",
+      "issubclass(A, B)"], ["True", "True", "True", "False"]),
+
+    # isinstance/issubclass в связке с метаклассом
+    (["class Meta(type):",
+      "    pass",
+      "",
+      "class C(metaclass=Meta):",
+      "    pass",
+      "",
+      "c = C()",
+      "isinstance(c, C)",
+      "isinstance(C, Meta)",
+      "issubclass(Meta, type)"], ["True", "True", "True"]),
+
+    # isinstance: второй аргумент не класс -> TypeError
+    (["try:",
+      "    isinstance(5, 10)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # __subclasscheck__: метакласс переопределяет issubclass
+    (["class Meta(type):",
+      "    def __subclasscheck__(cls, sub):",
+      "        return True",
+      "",
+      "class Virtual(metaclass=Meta):",
+      "    pass",
+      "",
+      "issubclass(int, Virtual)",
+      "issubclass(str, Virtual)"], ["True", "True"]),
+
+    # __instancecheck__: метакласс переопределяет isinstance
+    (["class Meta(type):",
+      "    def __instancecheck__(cls, obj):",
+      "        return True",
+      "",
+      "class Any(metaclass=Meta):",
+      "    pass",
+      "",
+      "isinstance(5, Any)",
+      "isinstance('x', Any)"], ["True", "True"]),
+
+    # переопределение с делегированием в super().__subclasscheck__
+    (["class Meta(type):",
+      "    def __subclasscheck__(cls, sub):",
+      "        if sub is str:",
+      "            return True",
+      "        return super().__subclasscheck__(sub)",
+      "",
+      "class Special(metaclass=Meta):",
+      "    pass",
+      "",
+      "class Child(Special):",
+      "    pass",
+      "",
+      "issubclass(str, Special)",
+      "issubclass(Child, Special)",
+      "issubclass(int, Special)"], ["True", "True", "False"]),
+
+    # дефолтное поведение не изменилось (обычные классы)
+    (["class A:",
+      "    pass",
+      "",
+      "class B(A):",
+      "    pass",
+      "",
+      "issubclass(B, A)",
+      "isinstance(B(), A)",
+      "isinstance(A(), B)"], ["True", "True", "False"]),
+
+    # классы как ключи dict
+    (["d = {}",
+      "d[int] = 'i'",
+      "d[str] = 's'",
+      "d[int]",
+      "d[str]",
+      "len(d)",
+      "int in d",
+      "float in d"], ["'i'", "'s'", "2", "True", "False"]),
+
+    # классы в set (дедупликация по идентичности)
+    (["s = {int, str, int, float}",
+      "len(s)",
+      "int in s",
+      "bool in s"], ["3", "True", "False"]),
+
+    # канонический синглтон со словарём {cls: inst}
+    (["class Singleton(type):",
+      "    _instances = {}",
+      "    def __call__(cls, *args, **kwargs):",
+      "        if cls not in cls._instances:",
+      "            cls._instances[cls] = super().__call__(*args, **kwargs)",
+      "        return cls._instances[cls]",
+      "",
+      "class DB(metaclass=Singleton):",
+      "    pass",
+      "",
+      "DB() is DB()"], "True"),
+
+    # разные классы — разные ключи
+    (["class A:",
+      "    pass",
+      "",
+      "class B:",
+      "    pass",
+      "",
+      "reg = {A: 1, B: 2}",
+      "reg[A]",
+      "reg[B]",
+      "len(reg)"], ["1", "2", "2"]),
+
+    # __prepare__ задаёт объект namespace, тело исполняется в него
+    (["class Meta(type):",
+      "    @classmethod",
+      "    def __prepare__(mcs, name, bases):",
+      "        d = {}",
+      "        d['injected'] = 99",
+      "        return d",
+      "    def __new__(mcs, name, bases, ns):",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    x = 1",
+      "",
+      "F.injected",
+      "F.x"], ["99", "1"]),
+
+    # __prepare__: порядок определения сохраняется в namespace
+    (["order = []",
+      "class Meta(type):",
+      "    @classmethod",
+      "    def __prepare__(mcs, name, bases):",
+      "        return {}",
+      "    def __new__(mcs, name, bases, ns):",
+      "        order.extend([k for k in ns if k in ('a', 'b', 'c')])",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    b = 1",
+      "    a = 2",
+      "    c = 3",
+      "",
+      "order"], "['b', 'a', 'c']"),
+
+    # порядок namespace сохраняется и без __prepare__
+    (["order = []",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        order.extend([k for k in ns if k in ('first', 'second')])",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    first = 1",
+      "    second = 2",
+      "",
+      "order"], "['first', 'second']"),
+
+    # __prepare__ обязан вернуть mapping -> TypeError
+    (["class Meta(type):",
+      "    @classmethod",
+      "    def __prepare__(mcs, name, bases):",
+      "        return 42",
+      "",
+      "try:",
+      "    class F(metaclass=Meta):",
+      "        pass",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
+    # __module__/__qualname__ в namespace: идут первыми, тело сохраняет порядок.
+    # (version-robust: 3.13+ добавляет служебные __firstlineno__/__static_attributes__,
+    #  их отфильтровываем, т.к. это не часть нашей модели)
+    (["first_two = []",
+      "body_keys = []",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        global first_two, body_keys",
+      "        first_two = list(ns)[:2]",
+      "        body_keys = [k for k in ns if not k.startswith('__')]",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    b = 1",
+      "    a = 2",
+      "",
+      "first_two",
+      "body_keys"], ["['__module__', '__qualname__']", "['b', 'a']"]),
+
+    # __qualname__ доступен на классе (метакласс и обычный)
+    # (__module__ тоже есть, но его значение контекстно-зависимо: скрипт ->
+    #  '__main__', а обвязка гоняет CPython в InteractiveConsole -> '__console__',
+    #  поэтому проверяем только ключ через list(ns) выше)
+    (["class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "class Plain:",
+      "    pass",
+      "",
+      "F.__qualname__",
+      "Plain.__qualname__",
+      "hasattr(F, '__module__')",
+      "hasattr(Plain, '__module__')"], ["'F'", "'Plain'", "True", "True"]),
+
+    # __module__ завязан на __name__ (globals) — инвариант паритетен
+    (["class F:",
+      "    pass",
+      "",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class G(metaclass=Meta):",
+      "    pass",
+      "",
+      "F.__module__ == __name__",
+      "G.__module__ == __name__"], ["True", "True"]),
+
+    # __module__ следует за переопределением __name__
+    (["__name__ = 'mymod'",
+      "class H:",
+      "    pass",
+      "",
+      "H.__module__"], "'mymod'"),
+
+    # __qualname__: вложенные классы -> точечный путь
+    (["class Outer:",
+      "    class Inner:",
+      "        class Deep:",
+      "            pass",
+      "",
+      "Outer.__qualname__",
+      "Outer.Inner.__qualname__",
+      "Outer.Inner.Deep.__qualname__",
+      "Outer.Inner.__name__"], ["'Outer'", "'Outer.Inner'", "'Outer.Inner.Deep'", "'Inner'"]),
+
+    # __qualname__: класс внутри функции -> <func>.<locals>.<name>
+    (["def f():",
+      "    class Local:",
+      "        pass",
+      "    return Local",
+      "",
+      "f().__qualname__"], "'f.<locals>.Local'"),
+
+    # __qualname__: класс внутри метода
+    (["class Outer:",
+      "    def method(self):",
+      "        class Local:",
+      "            pass",
+      "        return Local",
+      "",
+      "Outer().method().__qualname__"], "'Outer.method.<locals>.Local'"),
 
 ])
 

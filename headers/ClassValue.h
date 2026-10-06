@@ -16,6 +16,9 @@ public:
     QMap<QString, Value> attributes;
     std::vector<std::shared_ptr<ClassValue>> bases;
 
+    // Тип самого класса (его метакласс). nullptr трактуется как `type`.
+    std::shared_ptr<ClassValue> metaclass;
+
     explicit ClassValue(QString name)
        : name(std::move(name)) {}
 

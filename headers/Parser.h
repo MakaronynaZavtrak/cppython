@@ -264,6 +264,9 @@ private:
     QVector<Token> tokens;
     int current = 0;
 
+    // Лексический префикс для __qualname__ вложенных классов/функций.
+    QString qualnamePrefix;
+
     std::vector<Param> parseParamList(bool isLambda);
 
     [[nodiscard]] bool isAtEndOfInput() const;

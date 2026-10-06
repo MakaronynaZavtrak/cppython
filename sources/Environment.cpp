@@ -1,5 +1,6 @@
 #include "Environment.h"
 
+#include "DictValue.h"
 #include "../exception/NameErrorException.h"
 #include "../exception/SyntaxErrorException.h"
 
@@ -33,6 +34,11 @@ void Environment::set(const QString& name, const Value& value) {
     }
 
     variables[name] = value;
+
+    // Захват в namespace (тело класса через метакласс): порядок хранит DictValue.
+    if (nsCapture) {
+        nsCapture->setItem(Value(name), value);
+    }
 }
 
 /**

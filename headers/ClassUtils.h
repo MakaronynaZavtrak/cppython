@@ -27,4 +27,6 @@ void buildMRO(const Value::ClassPtr&, std::vector<Value::ClassPtr>&);
 Value::ClassPtr getObjectClass(const Value& obj);
 
 Value findAttrInHierarchy(const Value::ClassPtr&, const QString&);
+
+Value typeOf(const Value&);
 #endif //CPPYTHON_CLASSUTILS_H

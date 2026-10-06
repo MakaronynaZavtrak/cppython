@@ -79,3 +79,40 @@ void registerRangeClass(const std::shared_ptr<Environment>& env) {
 
     env->set("range", Value(Runtime::rangeClass));
 }
+
+void registerBuiltinTypeClasses(const std::shared_ptr<Environment>& env) {
+
+    auto make = [&](std::shared_ptr<ClassValue>& slot,
+                    const QString& name,
+                    const QString& callName) {
+        slot = std::make_shared<ClassValue>(name);
+        slot->bases.push_back(Runtime::objectClass);
+        slot->attributes["__new__"] = env->get(callName);
+        env->set(name, Value(slot));
+    };
+
+    make(Runtime::intClass,   "int",   "__int_call__");
+    make(Runtime::floatClass, "float", "__float_call__");
+    make(Runtime::boolClass,  "bool",  "__bool_call__");
+
+    // bool — подкласс int (как в CPython): MRO bool -> int -> object
+    Runtime::boolClass->bases = { Runtime::intClass };
+    make(Runtime::listClass,  "list",  "__list_call__");
+    make(Runtime::tupleClass, "tuple", "__tuple_call__");
+    make(Runtime::dictClass,  "dict",  "__dict_call__");
+    make(Runtime::setClass,   "set",   "__set_call__");
+
+    // метакласс type: вызывается через __new__ (1-арг и 3-арг)
+    make(Runtime::typeClass, "type", "__type_call__");
+
+    // классы-маркеры типов (для type(x); напрямую не конструируются)
+    auto marker = [&](std::shared_ptr<ClassValue>& slot, const QString& name) {
+        slot = std::make_shared<ClassValue>(name);
+        slot->bases.push_back(Runtime::objectClass);
+    };
+
+    marker(Runtime::frozensetClass,       "frozenset");
+    marker(Runtime::noneTypeClass,        "NoneType");
+    marker(Runtime::functionClass,        "function");
+    marker(Runtime::builtinFunctionClass, "builtin_function_or_method");
+}

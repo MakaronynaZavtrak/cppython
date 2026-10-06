@@ -1004,7 +1004,13 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
 
     consume(TOKEN_OP, ":");
 
+    // вложенные классы/функции получают префикс <func>.<locals>.
+    const QString savedPrefix = qualnamePrefix;
+    qualnamePrefix = qualnamePrefix + name + ".<locals>.";
+
     auto body = parseBlock();
+
+    qualnamePrefix = savedPrefix;
 
     return std::make_shared<FunctionDefNode>(name, params, body, decorators);
 }
@@ -1134,6 +1140,7 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
     QString name = advance().value;
 
     std::vector<std::shared_ptr<ASTNode>> bases;
+    std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords;
 
     // проверяем, есть ли наследование
     if (matchAndAdvance(TOKEN_OP, "(")) {
@@ -1142,8 +1149,22 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
         if (!match(TOKEN_OP, ")")) {
 
             while (true) {
-                // парсим выражение базового класса
-                bases.push_back(parseExpression());
+
+                // keyword-аргумент заголовка класса: metaclass=Meta и т.п.
+                if (peek().type == TOKEN_ID &&
+                    tokens[current + 1].type == TOKEN_OP &&
+                    tokens[current + 1].value == "=") {
+
+                    const QString kw = advance().value;
+
+                    advance(); // =
+
+                    keywords.push_back({kw, parseExpression()});
+                }
+                else {
+                    // парсим выражение базового класса
+                    bases.push_back(parseExpression());
+                }
 
                 if (matchAndAdvance(TOKEN_OP, ",")) {
                     continue;
@@ -1158,7 +1179,14 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
 
     consume(TOKEN_OP, ":");
 
+    // __qualname__: точечный путь с учётом текущей вложенности
+    const QString classQualname = qualnamePrefix + name;
+    const QString savedPrefix = qualnamePrefix;
+    qualnamePrefix = classQualname + ".";
+
     const auto body = parseBlock();
+
+    qualnamePrefix = savedPrefix;
 
     QVector<std::shared_ptr<ASTNode>> qBody;
 
@@ -1166,7 +1194,7 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
         qBody.push_back(stmt);
     }
 
-    return std::make_shared<ClassDefNode>(name, bases, qBody, decorators);
+    return std::make_shared<ClassDefNode>(name, bases, qBody, decorators, keywords, classQualname);
 }
 
 std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {

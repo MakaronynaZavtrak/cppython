@@ -32,6 +32,12 @@
 // Created by semyo on 03.05.2026.
 //
 
+// Дефолтное создание (new + init), без учёта метаклассового __call__.
+static Value defaultConstruct(const Value::ClassPtr& cls,
+                              const std::vector<Value>& args,
+                              const Kwargs& kwargs,
+                              const std::shared_ptr<Environment>& env);
+
 void bindParams(const std::shared_ptr<Environment>& local,
                 const Value::FunctionPtr& func,
                 const std::vector<Value>& args,
@@ -300,82 +306,201 @@ bool supportsIter(const Value& obj) {
     }
 }
 
-Value constructClass(const Value::ClassPtr& cls,
+// __new__ встроенных типов: конструирование выполняется через штатный протокол,
+// а constructClass диспетчеризует к ним обобщённо (без хардкода cls == ...).
+
+static Value strNew(const std::vector<Value>& args, const Kwargs&,
+                    const std::shared_ptr<Environment>&) {
+    expectArgsRange(args, 0, 1, "str");
+    if (args.empty()) {
+        return Value("");
+    }
+    const Value& obj = args[0];
+    try {
+        Value strMethod = getAttrValue(obj, "__str__");
+        Value result = call(strMethod, {}, {}, nullptr);
+        if (!result.isString()) {
+            throw TypeErrorException("__str__ returned non-string");
+        }
+        return result;
+    } catch (const AttributeErrorException&) {
+        return Value(obj.toString());
+    }
+}
+
+static Value bytesNew(const std::vector<Value>& args, const Kwargs& kwargs,
+                      const std::shared_ptr<Environment>&) {
+    return Value(std::make_shared<BytesValue>(constructBytesData(args, kwargs)));
+}
+
+static Value bytearrayNew(const std::vector<Value>& args, const Kwargs& kwargs,
+                          const std::shared_ptr<Environment>&) {
+    return Value(std::make_shared<ByteArrayValue>(constructBytesData(args, kwargs)));
+}
+
+static Value rangeNew(const std::vector<Value>& args, const Kwargs&,
+                      const std::shared_ptr<Environment>&) {
+    for (const auto& a : args) {
+        if (!a.isBigInt() && !a.isBool()) {
+            throw TypeErrorException(
+                "'" + a.repr() + "' object cannot be interpreted as an integer");
+        }
+    }
+    Value::BigInt start = 0, stop, step = 1;
+    if (args.size() == 1) {
+        stop = args[0].toBigInt();
+    } else if (args.size() == 2) {
+        start = args[0].toBigInt();
+        stop = args[1].toBigInt();
+    } else if (args.size() == 3) {
+        start = args[0].toBigInt();
+        stop = args[1].toBigInt();
+        step = args[2].toBigInt();
+    } else {
+        throw TypeErrorException("range expected at most 3 arguments, got " + QString::number(args.size()));
+    }
+    return Value(std::make_shared<RangeValue>(start, stop, step));
+}
+
+// type.__call__(cls, *args) — дефолтное создание экземпляра (new + init).
+// Нужен, чтобы super().__call__(...) внутри метаклассового __call__ звал
+// штатное создание (иначе рекурсия через сам метаклассовый __call__).
+static Value typeCallDefault(const std::vector<Value>& args,
+                             const Kwargs& kwargs,
+                             const std::shared_ptr<Environment>& env) {
+
+    if (args.empty() || !args[0].isClass()) {
+        throw TypeErrorException("type.__call__: first argument must be a class");
+    }
+
+    const auto cls = args[0].asClass();
+    const std::vector<Value> rest(args.begin() + 1, args.end());
+
+    return defaultConstruct(cls, rest, kwargs, env);
+}
+
+// Дефолтный type.__subclasscheck__(cls, subclass): проверка по MRO.
+// Опора для super().__subclasscheck__(...) в кастомных метаклассах.
+static Value typeSubclassCheck(const std::vector<Value>& args, const Kwargs&,
+                               const std::shared_ptr<Environment>&) {
+    if (args.size() != 2 || !args[0].isClass() || !args[1].isClass()) {
+        throw TypeErrorException("__subclasscheck__ expects (cls, subclass)");
+    }
+    return Value(PythonException::isSubclass(args[1].asClass(), args[0].asClass()));
+}
+
+// Дефолтный type.__instancecheck__(cls, obj): type(obj) — подкласс cls.
+static Value typeInstanceCheck(const std::vector<Value>& args, const Kwargs&,
+                               const std::shared_ptr<Environment>&) {
+    if (args.size() != 2 || !args[0].isClass()) {
+        throw TypeErrorException("__instancecheck__ expects (cls, obj)");
+    }
+    return Value(PythonException::isSubclass(typeOf(args[1]).asClass(), args[0].asClass()));
+}
+
+// Привязывает __new__ к class-объектам встроенных типов (вызывается после их создания).
+void attachBuiltinNewMethods() {
+    Runtime::strClass->attributes["__new__"]       = Value(std::make_shared<BuiltinFunction>("__new__", strNew));
+    Runtime::bytesClass->attributes["__new__"]     = Value(std::make_shared<BuiltinFunction>("__new__", bytesNew));
+    Runtime::bytearrayClass->attributes["__new__"] = Value(std::make_shared<BuiltinFunction>("__new__", bytearrayNew));
+    Runtime::rangeClass->attributes["__new__"]     = Value(std::make_shared<BuiltinFunction>("__new__", rangeNew));
+
+    // дефолтный type.__call__ — опора для super().__call__ в метаклассах
+    Runtime::typeClass->attributes["__call__"] =
+        Value(std::make_shared<BuiltinFunction>("__call__", typeCallDefault));
+
+    // дефолтные проверки типов — опора для super().__subclasscheck__/__instancecheck__
+    Runtime::typeClass->attributes["__subclasscheck__"] =
+        Value(std::make_shared<BuiltinFunction>("__subclasscheck__", typeSubclassCheck));
+    Runtime::typeClass->attributes["__instancecheck__"] =
+        Value(std::make_shared<BuiltinFunction>("__instancecheck__", typeInstanceCheck));
+}
+
+static Value defaultConstruct(const Value::ClassPtr& cls,
                      const std::vector<Value>& args,
                      const Kwargs& kwargs,
                      const std::shared_ptr<Environment>& env) {
 
-    if (cls == Runtime::strClass) {
+    // Конструируем ли мы класс (cls — метакласс)? Тогда по пути __new__
+    // нужно проставить метакласс результата и вызвать метаклассовый __init__.
+    const bool isMetaConstruction =
+        PythonException::isSubclass(cls, Runtime::typeClass);
 
-        expectArgsRange(args, 0, 1, "str");
+    // Обобщённое конструирование: если у класса есть __new__ — конструируем через него.
+    // Ловим AttributeError только на самом поиске __new__ (его отсутствие), а не
+    // на вызовах пользовательского кода, чтобы не глотать настоящие ошибки.
+    Value newMethod;
+    bool hasNew = false;
 
-        if (args.empty()) {
-            return Value("");
-        }
+    try {
+        newMethod = findAttrInHierarchy(cls, "__new__");
+        hasNew = true;
+    } catch (const AttributeErrorException&) {
+        // у класса нет __new__ — обычное создание экземпляра ниже
+    }
 
-        const Value& obj = args[0];
+    if (hasNew) {
 
-        try {
+        // Питоновскому __new__ передаём класс первым аргументом: __new__(cls, ...).
+        // Встроенные __new__ — фабрики без cls, их вызываем как есть.
+        Value constructed;
 
-            Value strMethod = getAttrValue(obj, "__str__");
-            Value result = call(strMethod, {}, {}, nullptr);
+        if (newMethod.isFunction()) {
 
-            if (!result.isString()) {
-                throw TypeErrorException("__str__ returned non-string");
+            const auto newFunc = newMethod.asFunction();
+
+            std::vector<Value> newArgs;
+            newArgs.reserve(args.size() + 1);
+            newArgs.push_back(Value(cls));
+            newArgs.insert(newArgs.end(), args.begin(), args.end());
+
+            // Окружение с __class__ = класс, где определён __new__: нужно, чтобы
+            // zero-arg super() внутри __new__ нашёл origin (получатель — первый
+            // параметр mcs/cls). Без этого super().__new__ не резолвится.
+            std::shared_ptr<Environment> callEnv;
+
+            if (newFunc->ownerClass) {
+                callEnv = std::make_shared<Environment>();
+                callEnv->set("__class__", Value(newFunc->ownerClass));
             }
 
-            return result;
-
-        } catch (const AttributeErrorException&) {
-            return Value(obj.toString());
+            constructed = callFunction(newFunc, newArgs, kwargs, callEnv);
         }
-    }
+        else {
+            constructed = call(newMethod, args, kwargs, env);
+        }
 
-    if (cls == Runtime::bytesClass) {
+        // Путь метакласса: закрепляем метакласс и зовём его __init__.
+        if (isMetaConstruction && constructed.isClass()) {
 
-        return Value(
-            std::make_shared<BytesValue>(
-                constructBytesData(args, kwargs)
-            )
-        );
+            const auto newClass = constructed.asClass();
 
-    }
+            if (!newClass->metaclass && cls != Runtime::typeClass) {
+                newClass->metaclass = cls;
+            }
 
-    if (cls == Runtime::bytearrayClass) {
+            // Метаклассовый __init__(cls_result, name, bases, ns), если он задан
+            // пользователем (type/object своего __init__ здесь не имеют).
+            Value metaInit;
+            bool hasInit = false;
 
-        return Value(
-            std::make_shared<ByteArrayValue>(
-                constructBytesData(args, kwargs)
-            )
-        );
-    }
+            try {
+                metaInit = findAttrInHierarchy(cls, "__init__");
+                hasInit = true;
+            } catch (const AttributeErrorException&) {}
 
-    if (cls == Runtime::rangeClass) {
+            if (hasInit && metaInit.isFunction()) {
 
-        for (const auto& a : args) {
-            if (!a.isBigInt() && !a.isBool()) {
-                throw TypeErrorException(
-                    "'" + a.repr() + "' object cannot be interpreted as an integer"
-                );
+                std::vector<Value> initArgs;
+                initArgs.reserve(args.size() + 1);
+                initArgs.push_back(constructed);
+                initArgs.insert(initArgs.end(), args.begin(), args.end());
+
+                call(metaInit, initArgs, kwargs, env);
             }
         }
 
-        Value::BigInt start = 0, stop, step = 1;
-
-        if (args.size() == 1) {
-            stop = args[0].toBigInt();
-        } else if (args.size() == 2) {
-            start = args[0].toBigInt();
-            stop = args[1].toBigInt();
-        } else if (args.size() == 3) {
-            start = args[0].toBigInt();
-            stop = args[1].toBigInt();
-            step = args[2].toBigInt();
-        } else {
-            throw TypeErrorException("range expected at most 3 arguments, got " + QString::number(args.size()));
-        }
-
-        return Value(std::make_shared<RangeValue>(start, stop, step));
+        return constructed;
     }
 
     const auto instance = std::make_shared<InstanceValue>(cls);
@@ -397,6 +522,49 @@ Value constructClass(const Value::ClassPtr& cls,
     }
 
     return Value(instance);
+}
+
+// Публичная точка конструирования: учитывает метаклассовый __call__.
+// F(...) == type(F).__call__(F, ...). Если у метакласса есть собственный
+// __call__ (питоновская функция) — идём через него; иначе — дефолтное создание.
+Value constructClass(const Value::ClassPtr& cls,
+                     const std::vector<Value>& args,
+                     const Kwargs& kwargs,
+                     const std::shared_ptr<Environment>& env) {
+
+    const auto meta = cls->metaclass ? cls->metaclass : Runtime::typeClass;
+
+    Value callMethod;
+    bool hasCall = false;
+
+    try {
+        callMethod = findAttrInHierarchy(meta, "__call__");
+        hasCall = true;
+    } catch (const AttributeErrorException&) {}
+
+    // Кастомным считаем только питоновскую функцию; встроенный type.__call__
+    // означает дефолтное создание (и защищает от рекурсии).
+    if (hasCall && callMethod.isFunction()) {
+
+        const auto callFunc = callMethod.asFunction();
+
+        std::vector<Value> callArgs;
+        callArgs.reserve(args.size() + 1);
+        callArgs.push_back(Value(cls));
+        callArgs.insert(callArgs.end(), args.begin(), args.end());
+
+        // __class__ = класс, где определён __call__ — чтобы работал zero-arg super()
+        std::shared_ptr<Environment> callEnv;
+
+        if (callFunc->ownerClass) {
+            callEnv = std::make_shared<Environment>();
+            callEnv->set("__class__", Value(callFunc->ownerClass));
+        }
+
+        return callFunction(callFunc, callArgs, kwargs, callEnv);
+    }
+
+    return defaultConstruct(cls, args, kwargs, env);
 }
 
 Value callBoundMethod(const Value::BoundMethodPtr &bm,

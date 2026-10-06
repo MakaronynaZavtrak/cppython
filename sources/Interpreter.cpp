@@ -566,7 +566,8 @@ namespace {
             "hasattr", "getattr", "setattr", "property", "staticmethod",
             "classmethod", "object", "type", "exit", "sum", "all", "any",
             "min", "max", "sorted", "map", "filter", "zip", "enumerate",
-            "callable", "abs", "round", "divmod", "pow",
+            "callable", "abs", "round", "divmod", "pow", "type",
+            "isinstance", "issubclass",
             // исключения
             "BaseException", "Exception", "ArithmeticError", "OverflowError",
             "LookupError", "IndexError", "KeyError", "RuntimeError", "NameError",
@@ -643,6 +644,9 @@ void Interpreter::run(int argc, char* argv[]) {
     BuiltinFunction::registerBuiltins(globalEnv);
     Runtime::initialize(globalEnv);
     registerExceptionClasses(globalEnv);
+
+    // имя модуля верхнего уровня (как у скрипта/REPL CPython)
+    globalEnv->set("__name__", Value(QStringLiteral("__main__")));
 
     Lexer lexer;
 
