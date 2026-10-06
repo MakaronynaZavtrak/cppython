@@ -14769,6 +14769,65 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "reg[B]",
       "len(reg)"], ["1", "2", "2"]),
 
+    # __prepare__ задаёт объект namespace, тело исполняется в него
+    (["class Meta(type):",
+      "    @classmethod",
+      "    def __prepare__(mcs, name, bases):",
+      "        d = {}",
+      "        d['injected'] = 99",
+      "        return d",
+      "    def __new__(mcs, name, bases, ns):",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    x = 1",
+      "",
+      "F.injected",
+      "F.x"], ["99", "1"]),
+
+    # __prepare__: порядок определения сохраняется в namespace
+    (["order = []",
+      "class Meta(type):",
+      "    @classmethod",
+      "    def __prepare__(mcs, name, bases):",
+      "        return {}",
+      "    def __new__(mcs, name, bases, ns):",
+      "        order.extend([k for k in ns if k in ('a', 'b', 'c')])",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    b = 1",
+      "    a = 2",
+      "    c = 3",
+      "",
+      "order"], "['b', 'a', 'c']"),
+
+    # порядок namespace сохраняется и без __prepare__
+    (["order = []",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        order.extend([k for k in ns if k in ('first', 'second')])",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    first = 1",
+      "    second = 2",
+      "",
+      "order"], "['first', 'second']"),
+
+    # __prepare__ обязан вернуть mapping -> TypeError
+    (["class Meta(type):",
+      "    @classmethod",
+      "    def __prepare__(mcs, name, bases):",
+      "        return 42",
+      "",
+      "try:",
+      "    class F(metaclass=Meta):",
+      "        pass",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

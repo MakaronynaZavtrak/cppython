@@ -6,11 +6,13 @@
 
 #include "CallRuntime.h"
 #include "ClassMethodValue.h"
+#include "ClassUtils.h"
 #include "ClassValue.h"
 #include "DictValue.h"
 #include "FunctionValue.h"
 #include "StaticMethodValue.h"
 #include "TupleValue.h"
+#include "../../exception/AttributeErrorException.h"
 #include "../../exception/PythonException.h"
 #include "../../exception/TypeErrorException.h"
 
@@ -148,21 +150,9 @@ Value ClassDefNode::eval(EnvPtr env) const {
     }
     else {
 
-        // --- путь метакласса: собираем namespace и зовём metaclass(name, bases, ns) ---
-        const auto classEnv = std::make_shared<Environment>(env);
+        // --- путь метакласса ---
 
-        for (const auto& stmt : body) {
-            [[maybe_unused]] const auto _ = stmt->eval(classEnv);
-        }
-
-        const auto ns = std::make_shared<DictValue>();
-
-        for (auto it = classEnv->variables.cbegin();
-             it != classEnv->variables.cend();
-             ++it) {
-            ns->setItem(Value(it.key()), it.value());
-        }
-
+        // кортеж баз (нужен и для __prepare__, и для вызова метакласса)
         std::vector<Value> baseValues;
         baseValues.reserve(bases.size());
 
@@ -171,6 +161,43 @@ Value ClassDefNode::eval(EnvPtr env) const {
         }
 
         const auto basesTuple = std::make_shared<TupleValue>(baseValues);
+
+        // namespace: из metaclass.__prepare__(name, bases, **kwds), иначе пустой dict
+        std::shared_ptr<DictValue> ns;
+
+        Value prepareMethod;
+        bool hasPrepare = false;
+
+        try {
+            prepareMethod = getAttrValue(Value(metaclass), "__prepare__");
+            hasPrepare = true;
+        } catch (const AttributeErrorException&) {}
+
+        if (hasPrepare) {
+
+            Value prepared = call(prepareMethod,
+                                  { Value(name), Value(basesTuple) },
+                                  extraKwargs, env);
+
+            if (!prepared.isDict()) {
+                throw TypeErrorException(
+                    "__prepare__() must return a mapping, not "
+                    + prepared.getTypeName());
+            }
+
+            ns = prepared.asDict();
+        }
+        else {
+            ns = std::make_shared<DictValue>();
+        }
+
+        // тело класса исполняется В namespace: имена пишутся в ns по порядку
+        const auto classEnv = std::make_shared<Environment>(env);
+        classEnv->nsCapture = ns;
+
+        for (const auto& stmt : body) {
+            [[maybe_unused]] const auto _ = stmt->eval(classEnv);
+        }
 
         classValue = call(
             Value(metaclass),
