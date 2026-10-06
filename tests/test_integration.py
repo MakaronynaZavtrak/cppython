@@ -14834,19 +14834,24 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
-    # __module__/__qualname__ в namespace -> полный паритет list(ns)
-    (["log = []",
+    # __module__/__qualname__ в namespace: идут первыми, тело сохраняет порядок.
+    # (version-robust: 3.13+ добавляет служебные __firstlineno__/__static_attributes__,
+    #  их отфильтровываем, т.к. это не часть нашей модели)
+    (["first_two = []",
+      "body_keys = []",
       "class Meta(type):",
       "    def __new__(mcs, name, bases, ns):",
-      "        global log",
-      "        log = list(ns)",
+      "        global first_two, body_keys",
+      "        first_two = list(ns)[:2]",
+      "        body_keys = [k for k in ns if not k.startswith('__')]",
       "        return type.__new__(mcs, name, bases, ns)",
       "",
       "class F(metaclass=Meta):",
       "    b = 1",
       "    a = 2",
       "",
-      "log"], "['__module__', '__qualname__', 'b', 'a']"),
+      "first_two",
+      "body_keys"], ["['__module__', '__qualname__']", "['b', 'a']"]),
 
     # __qualname__ доступен на классе (метакласс и обычный)
     # (__module__ тоже есть, но его значение контекстно-зависимо: скрипт ->
