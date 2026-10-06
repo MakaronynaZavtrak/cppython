@@ -14828,6 +14828,39 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # __module__/__qualname__ в namespace -> полный паритет list(ns)
+    (["log = []",
+      "class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        global log",
+      "        log = list(ns)",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    b = 1",
+      "    a = 2",
+      "",
+      "log"], "['__module__', '__qualname__', 'b', 'a']"),
+
+    # __qualname__ доступен на классе (метакласс и обычный)
+    # (__module__ тоже есть, но его значение контекстно-зависимо: скрипт ->
+    #  '__main__', а обвязка гоняет CPython в InteractiveConsole -> '__console__',
+    #  поэтому проверяем только ключ через list(ns) выше)
+    (["class Meta(type):",
+      "    def __new__(mcs, name, bases, ns):",
+      "        return type.__new__(mcs, name, bases, ns)",
+      "",
+      "class F(metaclass=Meta):",
+      "    pass",
+      "",
+      "class Plain:",
+      "    pass",
+      "",
+      "F.__qualname__",
+      "Plain.__qualname__",
+      "hasattr(F, '__module__')",
+      "hasattr(Plain, '__module__')"], ["'F'", "'Plain'", "True", "True"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):

@@ -146,6 +146,14 @@ Value ClassDefNode::eval(EnvPtr env) const {
             cls->attributes.insert(key, val);
         }
 
+        // __module__ / __qualname__ (как в CPython), если не заданы телом
+        if (!cls->attributes.contains("__module__")) {
+            cls->attributes.insert("__module__", Value(QStringLiteral("__main__")));
+        }
+        if (!cls->attributes.contains("__qualname__")) {
+            cls->attributes.insert("__qualname__", Value(name));
+        }
+
         classValue = Value(cls);
     }
     else {
@@ -189,6 +197,16 @@ Value ClassDefNode::eval(EnvPtr env) const {
         }
         else {
             ns = std::make_shared<DictValue>();
+        }
+
+        // __module__ / __qualname__ кладутся в namespace до тела (идут первыми),
+        // как в CPython
+        if (!ns->hasKey(Value(QStringLiteral("__module__")))) {
+            ns->setItem(Value(QStringLiteral("__module__")),
+                        Value(QStringLiteral("__main__")));
+        }
+        if (!ns->hasKey(Value(QStringLiteral("__qualname__")))) {
+            ns->setItem(Value(QStringLiteral("__qualname__")), Value(name));
         }
 
         // тело класса исполняется В namespace: имена пишутся в ns по порядку
