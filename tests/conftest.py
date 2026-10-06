@@ -15,7 +15,7 @@ def cppython_bin():
 
     root = Path(__file__).resolve().parent.parent
 
-    for d in ("cmake-build-debug", "cmake-build-release", "build", "build/Debug"):
+    for d in ("cmake-build-debug", "cmake-build-release", "build", "build/Debug", "build/Release"):
         for name in ("cppython.exe", "cppython"):
             if (cand := root / d / name).exists():
                 return cand
