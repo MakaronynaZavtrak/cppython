@@ -14888,6 +14888,34 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "",
       "H.__module__"], "'mymod'"),
 
+    # __qualname__: вложенные классы -> точечный путь
+    (["class Outer:",
+      "    class Inner:",
+      "        class Deep:",
+      "            pass",
+      "",
+      "Outer.__qualname__",
+      "Outer.Inner.__qualname__",
+      "Outer.Inner.Deep.__qualname__",
+      "Outer.Inner.__name__"], ["'Outer'", "'Outer.Inner'", "'Outer.Inner.Deep'", "'Inner'"]),
+
+    # __qualname__: класс внутри функции -> <func>.<locals>.<name>
+    (["def f():",
+      "    class Local:",
+      "        pass",
+      "    return Local",
+      "",
+      "f().__qualname__"], "'f.<locals>.Local'"),
+
+    # __qualname__: класс внутри метода
+    (["class Outer:",
+      "    def method(self):",
+      "        class Local:",
+      "            pass",
+      "        return Local",
+      "",
+      "Outer().method().__qualname__"], "'Outer.method.<locals>.Local'"),
+
 ])
 
 def test_multiline_expressions(commands, expected):

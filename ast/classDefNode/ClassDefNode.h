@@ -20,11 +20,15 @@ public:
     // keyword-аргументы заголовка класса: metaclass=... и прочие (name, expr).
     std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords;
 
+    // Полное имя (__qualname__): точечный путь с учётом вложенности.
+    QString qualname;
+
     ClassDefNode(QString name,
                  std::vector<std::shared_ptr<ASTNode>> bases,
                  QVector<std::shared_ptr<ASTNode>> body,
                  std::vector<std::shared_ptr<ASTNode>> decorators = {},
-                 std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords = {});
+                 std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords = {},
+                 QString qualname = {});
 
     [[nodiscard]] Value eval(EnvPtr env) const override;
 

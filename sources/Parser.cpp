@@ -1004,7 +1004,13 @@ std::shared_ptr<ASTNode> Parser::parseFunctionDef(const std::vector<std::shared_
 
     consume(TOKEN_OP, ":");
 
+    // вложенные классы/функции получают префикс <func>.<locals>.
+    const QString savedPrefix = qualnamePrefix;
+    qualnamePrefix = qualnamePrefix + name + ".<locals>.";
+
     auto body = parseBlock();
+
+    qualnamePrefix = savedPrefix;
 
     return std::make_shared<FunctionDefNode>(name, params, body, decorators);
 }
@@ -1173,7 +1179,14 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
 
     consume(TOKEN_OP, ":");
 
+    // __qualname__: точечный путь с учётом текущей вложенности
+    const QString classQualname = qualnamePrefix + name;
+    const QString savedPrefix = qualnamePrefix;
+    qualnamePrefix = classQualname + ".";
+
     const auto body = parseBlock();
+
+    qualnamePrefix = savedPrefix;
 
     QVector<std::shared_ptr<ASTNode>> qBody;
 
@@ -1181,7 +1194,7 @@ std::shared_ptr<ASTNode> Parser::parseClassDef(
         qBody.push_back(stmt);
     }
 
-    return std::make_shared<ClassDefNode>(name, bases, qBody, decorators, keywords);
+    return std::make_shared<ClassDefNode>(name, bases, qBody, decorators, keywords, classQualname);
 }
 
 std::shared_ptr<ASTNode> Parser::parsePostfix(std::shared_ptr<ASTNode> node) {

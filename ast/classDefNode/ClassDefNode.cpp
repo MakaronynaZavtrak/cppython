@@ -21,12 +21,14 @@ ClassDefNode::ClassDefNode(QString name,
                            std::vector<std::shared_ptr<ASTNode>> bases,
                            QVector<std::shared_ptr<ASTNode>> body,
                            std::vector<std::shared_ptr<ASTNode>> decorators,
-                           std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords)
+                           std::vector<std::pair<QString, std::shared_ptr<ASTNode>>> keywords,
+                           QString qualname)
         : name(std::move(name)),
         baseExprs(std::move(bases)),
         body(std::move(body)),
         decorators(std::move(decorators)),
-        keywords(std::move(keywords)) {}
+        keywords(std::move(keywords)),
+        qualname(std::move(qualname)) {}
 
 
 Value ClassDefNode::eval(EnvPtr env) const {
@@ -38,6 +40,9 @@ Value ClassDefNode::eval(EnvPtr env) const {
     } catch (const NameErrorException&) {
         moduleName = Value(QStringLiteral("__main__"));
     }
+
+    // __qualname__: точечный путь (задан парсером), иначе простое имя
+    const QString qualName = qualname.isEmpty() ? name : qualname;
 
     // --- базовые классы ---
     std::vector<Value::ClassPtr> bases;
@@ -160,7 +165,7 @@ Value ClassDefNode::eval(EnvPtr env) const {
             cls->attributes.insert("__module__", moduleName);
         }
         if (!cls->attributes.contains("__qualname__")) {
-            cls->attributes.insert("__qualname__", Value(name));
+            cls->attributes.insert("__qualname__", Value(qualName));
         }
 
         classValue = Value(cls);
@@ -214,7 +219,7 @@ Value ClassDefNode::eval(EnvPtr env) const {
             ns->setItem(Value(QStringLiteral("__module__")), moduleName);
         }
         if (!ns->hasKey(Value(QStringLiteral("__qualname__")))) {
-            ns->setItem(Value(QStringLiteral("__qualname__")), Value(name));
+            ns->setItem(Value(QStringLiteral("__qualname__")), Value(qualName));
         }
 
         // тело класса исполняется В namespace: имена пишутся в ns по порядку
