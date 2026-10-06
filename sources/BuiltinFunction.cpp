@@ -216,6 +216,33 @@ static Value::BigInt modInverse(const Value::BigInt &a, const Value::BigInt &mod
     return floorMod(x, mod);
 }
 
+// Маршрутизирует проверку типа через type(B).__<dunder>__(B, arg).
+// type несёт дефолтные реализации, кастомный метакласс может переопределить;
+// питоновскому методу пробрасываем __class__ ради super().
+static Value callTypeCheck(const Value::ClassPtr& B, const QString& dunder,
+                           const Value& arg, const std::shared_ptr<Environment>& env) {
+
+    const auto meta = B->metaclass ? B->metaclass : Runtime::typeClass;
+    const Value method = findAttrInHierarchy(meta, dunder);
+
+    const std::vector<Value> callArgs = { Value(B), arg };
+
+    if (method.isFunction()) {
+
+        const auto f = method.asFunction();
+
+        std::shared_ptr<Environment> callEnv;
+        if (f->ownerClass) {
+            callEnv = std::make_shared<Environment>();
+            callEnv->set("__class__", Value(f->ownerClass));
+        }
+
+        return callFunction(f, callArgs, {}, callEnv);
+    }
+
+    return call(method, callArgs, {}, env);
+}
+
 void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) {
 
     env->set("super",
@@ -1684,7 +1711,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
         [](const std::vector<Value> &args,
            const Kwargs &kwargs,
-           const std::shared_ptr<Environment> &) -> Value {
+           const std::shared_ptr<Environment> &env) -> Value {
 
             expectArgs(args, 2, "issubclass");
             expectNoKwargs(kwargs, "issubclass");
@@ -1701,7 +1728,8 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
                     throw TypeErrorException(
                         "issubclass() arg 2 must be a class or tuple of classes");
                 }
-                return PythonException::isSubclass(cls, target.asClass());
+                return callTypeCheck(target.asClass(), "__subclasscheck__",
+                                     Value(cls), env).toBool();
             };
 
             if (info.isTuple()) {
@@ -1723,7 +1751,7 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
 
         [](const std::vector<Value> &args,
            const Kwargs &kwargs,
-           const std::shared_ptr<Environment> &) -> Value {
+           const std::shared_ptr<Environment> &env) -> Value {
 
             expectArgs(args, 2, "isinstance");
             expectNoKwargs(kwargs, "isinstance");
@@ -1731,14 +1759,13 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             const Value &obj = args[0];
             const Value &info = args[1];
 
-            const auto objType = typeOf(obj).asClass();
-
             auto check = [&](const Value &target) -> bool {
                 if (!target.isClass()) {
                     throw TypeErrorException(
                         "isinstance() arg 2 must be a class or tuple of classes");
                 }
-                return PythonException::isSubclass(objType, target.asClass());
+                return callTypeCheck(target.asClass(), "__instancecheck__",
+                                     obj, env).toBool();
             };
 
             if (info.isTuple()) {

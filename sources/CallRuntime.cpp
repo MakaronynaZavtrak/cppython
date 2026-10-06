@@ -379,6 +379,25 @@ static Value typeCallDefault(const std::vector<Value>& args,
     return defaultConstruct(cls, rest, kwargs, env);
 }
 
+// Дефолтный type.__subclasscheck__(cls, subclass): проверка по MRO.
+// Опора для super().__subclasscheck__(...) в кастомных метаклассах.
+static Value typeSubclassCheck(const std::vector<Value>& args, const Kwargs&,
+                               const std::shared_ptr<Environment>&) {
+    if (args.size() != 2 || !args[0].isClass() || !args[1].isClass()) {
+        throw TypeErrorException("__subclasscheck__ expects (cls, subclass)");
+    }
+    return Value(PythonException::isSubclass(args[1].asClass(), args[0].asClass()));
+}
+
+// Дефолтный type.__instancecheck__(cls, obj): type(obj) — подкласс cls.
+static Value typeInstanceCheck(const std::vector<Value>& args, const Kwargs&,
+                               const std::shared_ptr<Environment>&) {
+    if (args.size() != 2 || !args[0].isClass()) {
+        throw TypeErrorException("__instancecheck__ expects (cls, obj)");
+    }
+    return Value(PythonException::isSubclass(typeOf(args[1]).asClass(), args[0].asClass()));
+}
+
 // Привязывает __new__ к class-объектам встроенных типов (вызывается после их создания).
 void attachBuiltinNewMethods() {
     Runtime::strClass->attributes["__new__"]       = Value(std::make_shared<BuiltinFunction>("__new__", strNew));
@@ -389,6 +408,12 @@ void attachBuiltinNewMethods() {
     // дефолтный type.__call__ — опора для super().__call__ в метаклассах
     Runtime::typeClass->attributes["__call__"] =
         Value(std::make_shared<BuiltinFunction>("__call__", typeCallDefault));
+
+    // дефолтные проверки типов — опора для super().__subclasscheck__/__instancecheck__
+    Runtime::typeClass->attributes["__subclasscheck__"] =
+        Value(std::make_shared<BuiltinFunction>("__subclasscheck__", typeSubclassCheck));
+    Runtime::typeClass->attributes["__instancecheck__"] =
+        Value(std::make_shared<BuiltinFunction>("__instancecheck__", typeInstanceCheck));
 }
 
 static Value defaultConstruct(const Value::ClassPtr& cls,

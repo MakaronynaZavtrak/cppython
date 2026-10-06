@@ -14657,6 +14657,56 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    'ok'",
       ""], "'ok'"),
 
+    # __subclasscheck__: метакласс переопределяет issubclass
+    (["class Meta(type):",
+      "    def __subclasscheck__(cls, sub):",
+      "        return True",
+      "",
+      "class Virtual(metaclass=Meta):",
+      "    pass",
+      "",
+      "issubclass(int, Virtual)",
+      "issubclass(str, Virtual)"], ["True", "True"]),
+
+    # __instancecheck__: метакласс переопределяет isinstance
+    (["class Meta(type):",
+      "    def __instancecheck__(cls, obj):",
+      "        return True",
+      "",
+      "class Any(metaclass=Meta):",
+      "    pass",
+      "",
+      "isinstance(5, Any)",
+      "isinstance('x', Any)"], ["True", "True"]),
+
+    # переопределение с делегированием в super().__subclasscheck__
+    (["class Meta(type):",
+      "    def __subclasscheck__(cls, sub):",
+      "        if sub is str:",
+      "            return True",
+      "        return super().__subclasscheck__(sub)",
+      "",
+      "class Special(metaclass=Meta):",
+      "    pass",
+      "",
+      "class Child(Special):",
+      "    pass",
+      "",
+      "issubclass(str, Special)",
+      "issubclass(Child, Special)",
+      "issubclass(int, Special)"], ["True", "True", "False"]),
+
+    # дефолтное поведение не изменилось (обычные классы)
+    (["class A:",
+      "    pass",
+      "",
+      "class B(A):",
+      "    pass",
+      "",
+      "issubclass(B, A)",
+      "isinstance(B(), A)",
+      "isinstance(A(), B)"], ["True", "True", "False"]),
+
 ])
 
 def test_multiline_expressions(commands, expected):
