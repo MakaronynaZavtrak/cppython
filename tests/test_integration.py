@@ -6614,6 +6614,16 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("issubclass(int, (str, int))",      "True"),
     ("issubclass(str, (int, float))",    "False"),
 
+    # bool — подкласс int (паритет с CPython)
+    ("issubclass(bool, int)",            "True"),
+    ("issubclass(bool, object)",         "True"),
+    ("issubclass(int, bool)",            "False"),
+    ("isinstance(True, int)",            "True"),
+    ("isinstance(False, int)",           "True"),
+    ("isinstance(True, bool)",           "True"),
+    ("isinstance(True, (str, int))",     "True"),
+    ("type(True) is bool",               "True"),
+
 ])
 
 def test_single_line_expressions(expr, expected):

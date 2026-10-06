@@ -94,6 +94,9 @@ void registerBuiltinTypeClasses(const std::shared_ptr<Environment>& env) {
     make(Runtime::intClass,   "int",   "__int_call__");
     make(Runtime::floatClass, "float", "__float_call__");
     make(Runtime::boolClass,  "bool",  "__bool_call__");
+
+    // bool — подкласс int (как в CPython): MRO bool -> int -> object
+    Runtime::boolClass->bases = { Runtime::intClass };
     make(Runtime::listClass,  "list",  "__list_call__");
     make(Runtime::tupleClass, "tuple", "__tuple_call__");
     make(Runtime::dictClass,  "dict",  "__dict_call__");
