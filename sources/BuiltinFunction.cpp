@@ -23,6 +23,7 @@
 #include "Value.h"
 #include "ZipIterator.h"
 #include "../exception/AttributeErrorException.h"
+#include "../exception/PythonException.h"
 #include "../exception/StopIterationException.h"
 #include "../exception/TypeErrorException.h"
 #include "../exception/ValueErrorException.h"
@@ -1674,6 +1675,82 @@ void BuiltinFunction::registerBuiltins(const std::shared_ptr<Environment> &env) 
             expectNoKwargs(kwargs, "callable");
 
             return Value(args[0].isCallable());
+        }
+    ));
+
+    env->set("issubclass",
+    makeBuiltin(
+        "issubclass",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 2, "issubclass");
+            expectNoKwargs(kwargs, "issubclass");
+
+            if (!args[0].isClass()) {
+                throw TypeErrorException("issubclass() arg 1 must be a class");
+            }
+
+            const auto cls = args[0].asClass();
+            const Value &info = args[1];
+
+            auto check = [&](const Value &target) -> bool {
+                if (!target.isClass()) {
+                    throw TypeErrorException(
+                        "issubclass() arg 2 must be a class or tuple of classes");
+                }
+                return PythonException::isSubclass(cls, target.asClass());
+            };
+
+            if (info.isTuple()) {
+                for (const auto &target : info.asTuple()->items) {
+                    if (check(target)) {
+                        return Value(true);
+                    }
+                }
+                return Value(false);
+            }
+
+            return Value(check(info));
+        }
+    ));
+
+    env->set("isinstance",
+    makeBuiltin(
+        "isinstance",
+
+        [](const std::vector<Value> &args,
+           const Kwargs &kwargs,
+           const std::shared_ptr<Environment> &) -> Value {
+
+            expectArgs(args, 2, "isinstance");
+            expectNoKwargs(kwargs, "isinstance");
+
+            const Value &obj = args[0];
+            const Value &info = args[1];
+
+            const auto objType = typeOf(obj).asClass();
+
+            auto check = [&](const Value &target) -> bool {
+                if (!target.isClass()) {
+                    throw TypeErrorException(
+                        "isinstance() arg 2 must be a class or tuple of classes");
+                }
+                return PythonException::isSubclass(objType, target.asClass());
+            };
+
+            if (info.isTuple()) {
+                for (const auto &target : info.asTuple()->items) {
+                    if (check(target)) {
+                        return Value(true);
+                    }
+                }
+                return Value(false);
+            }
+
+            return Value(check(info));
         }
     ));
 

@@ -567,6 +567,7 @@ namespace {
             "classmethod", "object", "type", "exit", "sum", "all", "any",
             "min", "max", "sorted", "map", "filter", "zip", "enumerate",
             "callable", "abs", "round", "divmod", "pow", "type",
+            "isinstance", "issubclass",
             // исключения
             "BaseException", "Exception", "ArithmeticError", "OverflowError",
             "LookupError", "IndexError", "KeyError", "RuntimeError", "NameError",

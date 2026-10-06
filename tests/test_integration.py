@@ -6598,6 +6598,22 @@ def run_cppython(cmds: str | list[str]) -> list[str]:
     ("type('X', (), {}).__name__",       "'X'"),
     ("type(type('X', (), {})) is type",  "True"),
 
+    # isinstance / issubclass на встроенных типах
+    ("isinstance(5, int)",               "True"),
+    ("isinstance(5, str)",               "False"),
+    ("isinstance('x', str)",             "True"),
+    ("isinstance(5, object)",            "True"),
+    ("isinstance([], list)",             "True"),
+    ("isinstance(int, type)",            "True"),
+    ("isinstance(5, (str, int))",        "True"),
+    ("isinstance(5, (str, float))",      "False"),
+    ("issubclass(int, object)",          "True"),
+    ("issubclass(int, int)",             "True"),
+    ("issubclass(int, str)",             "False"),
+    ("issubclass(type, object)",         "True"),
+    ("issubclass(int, (str, int))",      "True"),
+    ("issubclass(str, (int, float))",    "False"),
+
 ])
 
 def test_single_line_expressions(expr, expected):
@@ -14608,6 +14624,38 @@ def run_cpython(cmds: str | list[str]) -> list[str]:
       "    pass",
       "",
       "F()"], "'intercepted'"),
+
+    # isinstance / issubclass с пользовательскими классами
+    (["class A:",
+      "    pass",
+      "",
+      "class B(A):",
+      "    pass",
+      "",
+      "b = B()",
+      "isinstance(b, A)",
+      "isinstance(b, B)",
+      "issubclass(B, A)",
+      "issubclass(A, B)"], ["True", "True", "True", "False"]),
+
+    # isinstance/issubclass в связке с метаклассом
+    (["class Meta(type):",
+      "    pass",
+      "",
+      "class C(metaclass=Meta):",
+      "    pass",
+      "",
+      "c = C()",
+      "isinstance(c, C)",
+      "isinstance(C, Meta)",
+      "issubclass(Meta, type)"], ["True", "True", "True"]),
+
+    # isinstance: второй аргумент не класс -> TypeError
+    (["try:",
+      "    isinstance(5, 10)",
+      "except TypeError:",
+      "    'ok'",
+      ""], "'ok'"),
 
 ])
 
