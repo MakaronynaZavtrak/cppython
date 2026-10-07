@@ -6,7 +6,11 @@ import platform
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-if platform.system() == "Windows":
+_env_bin = os.environ.get("CPPYTHON_BIN")
+
+if _env_bin:
+    MYPYTHON = _env_bin
+elif platform.system() == "Windows":
     MYPYTHON = os.path.join(ROOT, "cmake-build-debug", "cppython.exe")
 else:
     MYPYTHON = os.path.join(ROOT, "build", "cppython")

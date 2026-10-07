@@ -283,3 +283,11 @@ target_link_libraries(cppython
         Boost::boost
         isocline
 )
+
+# На Windows дефолтный стек ~1 МБ — его переполняет глубокая рекурсия
+# (tree-walking интерпретатор тратит много нативного стека на уровень,
+# из-за чего factorial(500)/fib(400) роняют процесс). Поднимаем до 64 МБ,
+# с запасом над Linux/macOS, где стек по умолчанию больше.
+if(MSVC)
+    target_link_options(cppython PRIVATE /STACK:67108864)
+endif()
